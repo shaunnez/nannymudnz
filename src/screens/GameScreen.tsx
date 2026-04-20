@@ -3,6 +3,13 @@ import type { GuildId } from '../simulation/types';
 import { createInitialState, tickSimulation, resetController } from '../simulation/simulation';
 import { createComboBuffer } from '../simulation/comboBuffer';
 import { GameRenderer } from '../rendering/gameRenderer';
+import {
+  CANVAS_BUFFER_WIDTH,
+  CANVAS_BUFFER_HEIGHT,
+  VIRTUAL_WIDTH,
+  VIRTUAL_HEIGHT,
+  RENDER_SCALE,
+} from '../rendering/constants';
 import { InputManager } from '../input/inputManager';
 import { loadKeyBindings } from '../input/keyBindings';
 import { AudioManager } from '../audio/audioManager';
@@ -93,14 +100,18 @@ export function GameScreen({ guildId, onVictory, onDefeat, onQuit }: Props) {
       if (state.player.state === 'blocking') audio.playBlock();
       if (state.player.state === 'jumping' && state.player.z < 10 && inputState.jumpJustPressed) audio.playJump();
 
+      ctx.setTransform(RENDER_SCALE, 0, 0, RENDER_SCALE, 0, 0);
+
       rendererRef.current.render(
         ctx,
         state,
         comboBufferRef.current,
-        canvas.width,
-        canvas.height,
+        VIRTUAL_WIDTH,
+        VIRTUAL_HEIGHT,
         dtMs,
       );
+
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
 
       if (state.phase === 'playing' || state.phase === 'paused') {
         animFrameRef.current = requestAnimationFrame(gameLoop);
@@ -128,14 +139,13 @@ export function GameScreen({ guildId, onVictory, onDefeat, onQuit }: Props) {
     }}>
       <canvas
         ref={canvasRef}
-        width={900}
-        height={500}
+        width={CANVAS_BUFFER_WIDTH}
+        height={CANVAS_BUFFER_HEIGHT}
         style={{
           width: '100%',
-          maxWidth: 900,
-          height: 'auto',
+          height: '100%',
           display: 'block',
-          imageRendering: 'crisp-edges',
+          imageRendering: 'pixelated',
         }}
         tabIndex={0}
       />
