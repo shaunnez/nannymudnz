@@ -2,7 +2,7 @@ import type { SimState, Actor } from '../simulation/types';
 import { GUILDS } from '../simulation/guildData';
 import { ENEMY_DEFS } from '../simulation/enemyData';
 import { PlaceholderRenderer } from './placeholderRenderer';
-import type { ActorRenderHandle } from './actorRenderer';
+import type { ActorRendererImpl, ActorRenderHandle } from './actorRenderer';
 import { ParticleSystem } from './particles';
 import { renderHUD, renderPauseOverlay, renderControlsHint } from './hud';
 import { renderHudButtons } from './hudButtons';
@@ -21,9 +21,15 @@ for (const [kind, def] of Object.entries(ENEMY_DEFS)) {
 export class GameRenderer {
   private particles: ParticleSystem;
   private frameCount: number = 0;
+  private actorRenderer: ActorRendererImpl;
 
-  constructor() {
+  constructor(actorRenderer: ActorRendererImpl = PlaceholderRenderer) {
     this.particles = new ParticleSystem();
+    this.actorRenderer = actorRenderer;
+  }
+
+  setActorRenderer(impl: ActorRendererImpl): void {
+    this.actorRenderer = impl;
   }
 
   render(
@@ -204,7 +210,7 @@ export class GameRenderer {
       ctx.globalAlpha = 0.5 + Math.sin(Date.now() * 0.02) * 0.3;
     }
 
-    PlaceholderRenderer.renderActor(
+    this.actorRenderer.renderActor(
       ctx, handle, color, initial,
       screenX, screenY, actor.width, actor.height,
       actor.isAlive, actor.hp, actor.hpMax,
