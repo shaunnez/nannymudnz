@@ -104,6 +104,7 @@ export class InputManager {
       blockJustPressed: this.justPressed.has(b.block),
       grabJustPressed: this.justPressed.has(b.grab),
       pauseJustPressed: this.justPressed.has(b.pause),
+      fullscreenToggleJustPressed: this.justPressed.has(b.fullscreen),
       lastLeftPressMs: this.lastLeftPressMs,
       lastRightPressMs: this.lastRightPressMs,
       runningLeft: this.runningLeft,

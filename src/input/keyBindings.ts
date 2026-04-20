@@ -8,6 +8,7 @@ export interface KeyBindings {
   block: string;
   grab: string;
   pause: string;
+  fullscreen: string;
 }
 
 export const DEFAULT_BINDINGS: KeyBindings = {
@@ -19,21 +20,40 @@ export const DEFAULT_BINDINGS: KeyBindings = {
   attack: 'j',
   block: 'k',
   grab: 'l',
-  pause: 'Escape',
+  pause: 'p',
+  fullscreen: 'f',
 };
 
 const STORAGE_KEY = 'nannymud_keybindings';
 
 export function loadKeyBindings(): KeyBindings {
+  let bindings: KeyBindings = { ...DEFAULT_BINDINGS };
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
-      return { ...DEFAULT_BINDINGS, ...JSON.parse(saved) };
+      bindings = { ...DEFAULT_BINDINGS, ...JSON.parse(saved) };
     }
   } catch {
     /* ignore */
   }
-  return { ...DEFAULT_BINDINGS };
+
+  // Migrate legacy bindings: Esc used to be pause, but browser fullscreen
+  // hijacks Esc. One-shot rewrite so old players don't find pause unusable.
+  let migrated = false;
+  if (bindings.pause === 'Escape' || bindings.pause === 'Esc') {
+    bindings.pause = 'p';
+    migrated = true;
+  }
+  // Fill in any keys that didn't exist in older saved copies.
+  if (!bindings.fullscreen) {
+    bindings.fullscreen = 'f';
+    migrated = true;
+  }
+  if (migrated) {
+    saveKeyBindings(bindings);
+  }
+
+  return bindings;
 }
 
 export function saveKeyBindings(bindings: KeyBindings): void {

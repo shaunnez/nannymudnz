@@ -304,6 +304,7 @@ export interface InputState {
   blockJustPressed: boolean;
   grabJustPressed: boolean;
   pauseJustPressed: boolean;
+  fullscreenToggleJustPressed: boolean;
   lastLeftPressMs: number;
   lastRightPressMs: number;
   runningLeft: boolean;
