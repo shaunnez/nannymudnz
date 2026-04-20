@@ -3,6 +3,7 @@ import { TitleScreen } from './screens/TitleScreen';
 import { GuildSelect } from './screens/GuildSelect';
 import { GameScreen } from './screens/GameScreen';
 import { GameOverScreen } from './screens/GameOverScreen';
+import { ScalingFrame } from './layout/ScalingFrame';
 import type { GuildId } from './simulation/types';
 
 type AppScreen = 'title' | 'guild_select' | 'game' | 'game_over';
@@ -14,16 +15,7 @@ export default function App() {
   const [finalScore, setFinalScore] = useState(0);
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      background: '#0f172a',
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'flex-start',
-      padding: 0,
-      margin: 0,
-      fontFamily: 'sans-serif',
-    }}>
+    <ScalingFrame>
       {screen === 'title' && (
         <TitleScreen onStart={() => setScreen('guild_select')} />
       )}
@@ -58,6 +50,6 @@ export default function App() {
           onMenu={() => setScreen('guild_select')}
         />
       )}
-    </div>
+    </ScalingFrame>
   );
 }

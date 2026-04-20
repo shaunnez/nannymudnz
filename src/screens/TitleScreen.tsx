@@ -158,7 +158,7 @@ export function TitleScreen({ onStart }: Props) {
 
   return (
     <div
-      style={{ position: 'relative', width: '100%', maxWidth: 900, margin: '0 auto', cursor: 'pointer' }}
+      style={{ position: 'relative', width: '100%', height: '100%', cursor: 'pointer' }}
       onClick={onStart}
     >
       <canvas

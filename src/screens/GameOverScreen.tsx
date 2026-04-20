@@ -152,8 +152,7 @@ export function GameOverScreen({ outcome, score, onRetry, onMenu }: Props) {
     <div style={{
       position: 'relative',
       width: '100%',
-      maxWidth: 900,
-      margin: '0 auto',
+      height: '100%',
     }}>
       <canvas
         ref={canvasRef}

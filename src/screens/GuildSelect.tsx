@@ -37,9 +37,8 @@ export function GuildSelect({ onSelect }: Props) {
   return (
     <div style={{
       width: '100%',
-      maxWidth: 900,
-      margin: '0 auto',
-      minHeight: '100vh',
+      height: '100%',
+      overflow: 'auto',
       background: 'linear-gradient(180deg, #0f172a 0%, #1e293b 100%)',
       display: 'flex',
       flexDirection: 'column',

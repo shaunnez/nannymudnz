@@ -130,12 +130,13 @@ export function GameScreen({ guildId, onVictory, onDefeat, onQuit }: Props) {
 
   return (
     <div style={{
+      position: 'absolute',
+      inset: 0,
       display: 'flex',
       flexDirection: 'column',
-      alignItems: 'center',
-      background: '#000000',
-      minHeight: '100vh',
-      justifyContent: 'center',
+      alignItems: 'stretch',
+      justifyContent: 'stretch',
+      background: '#000',
     }}>
       <canvas
         ref={canvasRef}
