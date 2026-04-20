@@ -1,10 +1,11 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, type MouseEvent } from 'react';
 import type { GuildId } from '../simulation/types';
 import { createInitialState, tickSimulation, resetController, forcePause } from '../simulation/simulation';
 import { createComboBuffer } from '../simulation/comboBuffer';
 import { useFullscreen } from '../layout/useFullscreen';
 import { FULLSCREEN_EXIT_EVENT } from '../layout/fullscreenConstants';
 import { GameRenderer } from '../rendering/gameRenderer';
+import { hitTestHudButton } from '../rendering/hudButtons';
 import {
   CANVAS_BUFFER_WIDTH,
   CANVAS_BUFFER_HEIGHT,
@@ -38,9 +39,11 @@ export function GameScreen({ guildId, onVictory, onDefeat, onQuit }: Props) {
   const onVictoryRef = useRef(onVictory);
   const onDefeatRef = useRef(onDefeat);
 
-  const { toggle: toggleFullscreen } = useFullscreen();
+  const { isFullscreen, toggle: toggleFullscreen } = useFullscreen();
   const toggleFullscreenRef = useRef(toggleFullscreen);
+  const isFullscreenRef = useRef(isFullscreen);
   useEffect(() => { toggleFullscreenRef.current = toggleFullscreen; }, [toggleFullscreen]);
+  useEffect(() => { isFullscreenRef.current = isFullscreen; }, [isFullscreen]);
 
   useEffect(() => { onQuitRef.current = onQuit; }, [onQuit]);
   useEffect(() => { onVictoryRef.current = onVictory; }, [onVictory]);
@@ -127,6 +130,7 @@ export function GameScreen({ guildId, onVictory, onDefeat, onQuit }: Props) {
         VIRTUAL_WIDTH,
         VIRTUAL_HEIGHT,
         dtMs,
+        isFullscreenRef.current,
       );
 
       ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -145,6 +149,26 @@ export function GameScreen({ guildId, onVictory, onDefeat, onQuit }: Props) {
       resetController('player');
     };
   }, [guildId]);
+
+  const handleCanvasClick = (e: MouseEvent<HTMLCanvasElement>) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    const bufferX = ((e.clientX - rect.left) / rect.width) * canvas.width;
+    const bufferY = ((e.clientY - rect.top) / rect.height) * canvas.height;
+    const virtualX = bufferX / RENDER_SCALE;
+    const virtualY = bufferY / RENDER_SCALE;
+
+    const hit = hitTestHudButton(virtualX, virtualY);
+    if (!hit) return;
+    if (hit === 'pause') {
+      stateRef.current = forcePause(stateRef.current);
+    } else if (hit === 'fullscreen') {
+      toggleFullscreen();
+    } else if (hit === 'quit') {
+      onQuit();
+    }
+  };
 
   return (
     <div style={{
@@ -167,6 +191,7 @@ export function GameScreen({ guildId, onVictory, onDefeat, onQuit }: Props) {
           imageRendering: 'pixelated',
         }}
         tabIndex={0}
+        onClick={handleCanvasClick}
       />
     </div>
   );

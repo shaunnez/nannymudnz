@@ -5,6 +5,7 @@ import { PlaceholderRenderer } from './placeholderRenderer';
 import type { ActorRenderHandle } from './actorRenderer';
 import { ParticleSystem } from './particles';
 import { renderHUD, renderPauseOverlay } from './hud';
+import { renderHudButtons } from './hudButtons';
 import type { ComboBuffer } from '../simulation/types';
 
 const GUILD_COLORS: Record<string, { color: string; initial: string }> = {};
@@ -32,6 +33,7 @@ export class GameRenderer {
     width: number,
     height: number,
     dtMs: number,
+    isFullscreen: boolean,
   ): void {
     this.frameCount++;
     this.particles.tick(dtMs);
@@ -56,6 +58,8 @@ export class GameRenderer {
     this.particles.render(ctx);
 
     renderHUD(ctx, state, comboBuffer, width, height);
+
+    renderHudButtons(ctx, state.phase === 'paused', isFullscreen);
 
     if (state.phase === 'paused') {
       renderPauseOverlay(ctx, width, height);
