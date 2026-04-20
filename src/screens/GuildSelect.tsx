@@ -272,7 +272,8 @@ export function GuildSelect({ onSelect }: Props) {
         <span>J Attack</span>
         <span>K Block</span>
         <span>L Grab/Throw</span>
-        <span>Esc Pause</span>
+        <span>P Pause</span>
+        <span>F Fullscreen</span>
       </div>
     </div>
   );
