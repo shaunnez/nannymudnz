@@ -5,6 +5,8 @@ import { createComboBuffer } from '../simulation/comboBuffer';
 import { useFullscreen } from '../layout/useFullscreen';
 import { FULLSCREEN_EXIT_EVENT } from '../layout/fullscreenConstants';
 import { GameRenderer } from '../rendering/gameRenderer';
+import { loadGuildSpriteSet } from '../rendering/sprite/spriteLoader';
+import { SpriteActorRenderer } from '../rendering/sprite/spriteActorRenderer';
 import { hitTestHudButton } from '../rendering/hudButtons';
 import {
   CANVAS_BUFFER_WIDTH,
@@ -23,6 +25,15 @@ interface Props {
   onDefeat: () => void;
   onQuit: () => void;
 }
+
+const SPRITE_FLAG_KEY = 'nannymud:sprites';
+const shouldUseSprites = (): boolean => {
+  try {
+    return localStorage.getItem(SPRITE_FLAG_KEY) === '1';
+  } catch {
+    return false;
+  }
+};
 
 export function GameScreen({ guildId, onVictory, onDefeat, onQuit }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -74,6 +85,14 @@ export function GameScreen({ guildId, onVictory, onDefeat, onQuit }: Props) {
     bossWasMusicStarted.current = false;
 
     audio.startStageMusic();
+
+    let cancelled = false;
+    if (shouldUseSprites()) {
+      loadGuildSpriteSet(guildId).then((set) => {
+        if (cancelled || !set) return;
+        rendererRef.current.setActorRenderer(new SpriteActorRenderer(set));
+      });
+    }
 
     const gameLoop = (timestamp: number) => {
       if (!canvas) return;
@@ -143,6 +162,7 @@ export function GameScreen({ guildId, onVictory, onDefeat, onQuit }: Props) {
     animFrameRef.current = requestAnimationFrame(gameLoop);
 
     return () => {
+      cancelled = true;
       cancelAnimationFrame(animFrameRef.current);
       input.dispose();
       audio.dispose();
