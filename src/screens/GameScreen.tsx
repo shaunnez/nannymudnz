@@ -168,35 +168,6 @@ export function GameScreen({ guildId, onVictory, onDefeat, onQuit }: Props) {
         }}
         tabIndex={0}
       />
-      <div style={{
-        display: 'flex',
-        gap: 16,
-        padding: '8px 16px',
-        background: '#0f172a',
-        width: '100%',
-        maxWidth: 900,
-        boxSizing: 'border-box',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-      }}>
-        <div style={{ color: '#6b7280', fontSize: 11 }}>
-          ← → ↑ ↓ Move &nbsp;|&nbsp; Space Jump &nbsp;|&nbsp; J Attack &nbsp;|&nbsp; K Block &nbsp;|&nbsp; L Grab &nbsp;|&nbsp; Esc Pause
-        </div>
-        <button
-          onClick={onQuit}
-          style={{
-            background: 'transparent',
-            border: '1px solid #374151',
-            color: '#9ca3af',
-            padding: '4px 12px',
-            borderRadius: 4,
-            cursor: 'pointer',
-            fontSize: 11,
-          }}
-        >
-          Quit
-        </button>
-      </div>
     </div>
   );
 }
