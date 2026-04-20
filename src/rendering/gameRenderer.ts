@@ -39,7 +39,7 @@ export class GameRenderer {
 
     this.renderBackground(ctx, state, width, height);
 
-    this.renderPickups(ctx, state);
+    this.renderPickups(ctx, state, height);
 
     const allActors: Actor[] = [
       ...state.enemies,
@@ -51,7 +51,7 @@ export class GameRenderer {
       this.renderActor(ctx, actor, state.cameraX, width, height);
     }
 
-    this.renderProjectiles(ctx, state);
+    this.renderProjectiles(ctx, state, height);
 
     this.particles.render(ctx);
 
@@ -235,10 +235,10 @@ export class GameRenderer {
     ctx.fillText('BOSS', sx, sy - actor.height - 14);
   }
 
-  private renderProjectiles(ctx: CanvasRenderingContext2D, state: SimState): void {
+  private renderProjectiles(ctx: CanvasRenderingContext2D, state: SimState, canvasHeight: number): void {
     for (const proj of state.projectiles) {
       const sx = proj.x - state.cameraX;
-      const sy = this.worldYToScreenY(proj.y, 500) - proj.z * 0.5;
+      const sy = this.worldYToScreenY(proj.y, canvasHeight) - proj.z * 0.5;
 
       ctx.save();
       ctx.fillStyle = proj.color;
@@ -272,10 +272,10 @@ export class GameRenderer {
     }
   }
 
-  private renderPickups(ctx: CanvasRenderingContext2D, state: SimState): void {
+  private renderPickups(ctx: CanvasRenderingContext2D, state: SimState, canvasHeight: number): void {
     for (const pickup of state.pickups) {
       const sx = pickup.x - state.cameraX;
-      const sy = this.worldYToScreenY(pickup.y, 500);
+      const sy = this.worldYToScreenY(pickup.y, canvasHeight);
 
       ctx.save();
       ctx.fillStyle = pickup.type === 'rock' ? '#9ca3af' : '#92400e';
