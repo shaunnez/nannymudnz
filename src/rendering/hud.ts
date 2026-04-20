@@ -301,5 +301,41 @@ export function renderPauseOverlay(ctx: CanvasRenderingContext2D, width: number,
 
   ctx.font = '18px sans-serif';
   ctx.fillStyle = '#9ca3af';
-  ctx.fillText('Press Esc to resume', width / 2, height / 2 + 10);
+  ctx.fillText('Press P to resume', width / 2, height / 2 + 10);
+}
+
+// Fades from full opacity to zero across 5 seconds of real gameplay time,
+// then stays hidden. Re-shows at full opacity whenever the game is paused.
+export function renderControlsHint(
+  ctx: CanvasRenderingContext2D,
+  canvasWidth: number,
+  canvasHeight: number,
+  simTimeMs: number,
+  isPaused: boolean,
+): void {
+  const fadeStartMs = 4000;
+  const fadeEndMs = 5000;
+  let alpha: number;
+  if (isPaused) {
+    alpha = 0.9;
+  } else if (simTimeMs < fadeStartMs) {
+    alpha = 0.7;
+  } else if (simTimeMs < fadeEndMs) {
+    alpha = 0.7 * (1 - (simTimeMs - fadeStartMs) / (fadeEndMs - fadeStartMs));
+  } else {
+    return;
+  }
+
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.fillStyle = '#9ca3af';
+  ctx.font = '10px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'bottom';
+  ctx.fillText(
+    '← → ↑ ↓ Move  |  Space Jump  |  J Attack  |  K Block  |  L Grab  |  P Pause  |  F Fullscreen',
+    canvasWidth / 2,
+    canvasHeight - 8,
+  );
+  ctx.restore();
 }

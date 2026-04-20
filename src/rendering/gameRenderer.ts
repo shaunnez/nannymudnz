@@ -4,7 +4,7 @@ import { ENEMY_DEFS } from '../simulation/enemyData';
 import { PlaceholderRenderer } from './placeholderRenderer';
 import type { ActorRenderHandle } from './actorRenderer';
 import { ParticleSystem } from './particles';
-import { renderHUD, renderPauseOverlay } from './hud';
+import { renderHUD, renderPauseOverlay, renderControlsHint } from './hud';
 import { renderHudButtons } from './hudButtons';
 import type { ComboBuffer } from '../simulation/types';
 
@@ -58,6 +58,8 @@ export class GameRenderer {
     this.particles.render(ctx);
 
     renderHUD(ctx, state, comboBuffer, width, height);
+
+    renderControlsHint(ctx, width, height, state.timeMs, state.phase === 'paused');
 
     renderHudButtons(ctx, state.phase === 'paused', isFullscreen);
 
