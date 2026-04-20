@@ -1026,3 +1026,8 @@ export function tickSimulation(state: SimState, input: InputState, dtMs: number)
 
   return state;
 }
+
+export function forcePause(state: SimState): SimState {
+  if (state.phase !== 'playing') return state;
+  return { ...state, phase: 'paused' };
+}

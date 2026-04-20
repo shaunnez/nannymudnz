@@ -1,7 +1,9 @@
 import { useEffect, useRef } from 'react';
 import type { GuildId } from '../simulation/types';
-import { createInitialState, tickSimulation, resetController } from '../simulation/simulation';
+import { createInitialState, tickSimulation, resetController, forcePause } from '../simulation/simulation';
 import { createComboBuffer } from '../simulation/comboBuffer';
+import { useFullscreen } from '../layout/useFullscreen';
+import { FULLSCREEN_EXIT_EVENT } from '../layout/fullscreenConstants';
 import { GameRenderer } from '../rendering/gameRenderer';
 import {
   CANVAS_BUFFER_WIDTH,
@@ -36,9 +38,21 @@ export function GameScreen({ guildId, onVictory, onDefeat, onQuit }: Props) {
   const onVictoryRef = useRef(onVictory);
   const onDefeatRef = useRef(onDefeat);
 
+  const { toggle: toggleFullscreen } = useFullscreen();
+  const toggleFullscreenRef = useRef(toggleFullscreen);
+  useEffect(() => { toggleFullscreenRef.current = toggleFullscreen; }, [toggleFullscreen]);
+
   useEffect(() => { onQuitRef.current = onQuit; }, [onQuit]);
   useEffect(() => { onVictoryRef.current = onVictory; }, [onVictory]);
   useEffect(() => { onDefeatRef.current = onDefeat; }, [onDefeat]);
+
+  useEffect(() => {
+    const onExit = () => {
+      stateRef.current = forcePause(stateRef.current);
+    };
+    window.addEventListener(FULLSCREEN_EXIT_EVENT, onExit);
+    return () => window.removeEventListener(FULLSCREEN_EXIT_EVENT, onExit);
+  }, []);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -68,6 +82,10 @@ export function GameScreen({ guildId, onVictory, onDefeat, onQuit }: Props) {
       lastTimeRef.current = timestamp;
 
       const inputState = input.getInputState(stateRef.current.timeMs + dtMs);
+
+      if (inputState.fullscreenToggleJustPressed) {
+        toggleFullscreenRef.current();
+      }
 
       const prevPhase = stateRef.current.phase;
       stateRef.current = tickSimulation(stateRef.current, inputState, dtMs);
