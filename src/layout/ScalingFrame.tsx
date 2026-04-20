@@ -1,21 +1,66 @@
+import { useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
+import { FULLSCREEN_EXIT_EVENT } from './fullscreenConstants';
+import { FullscreenContext } from './useFullscreen';
 
 interface Props {
   children: ReactNode;
 }
 
-// ScalingFrame fills the browser viewport with a black background and centers
-// a 16:9 box inside it. Children render inside that box at whatever natural
-// size they want; CSS aspect-ratio handles the letterbox math. The frame
-// never overflows — on ultrawide monitors you get pillar bars, on narrow
-// monitors you get letterbox bars.
 export function ScalingFrame({ children }: Props) {
+  const rootRef = useRef<HTMLDivElement>(null);
+  const wasFullscreenRef = useRef(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  const toggle = () => {
+    const el = rootRef.current;
+    if (!el) return;
+    if (!document.fullscreenElement) {
+      el.requestFullscreen().catch(() => {
+        // Browser refused (iframe without allow="fullscreen", user gesture
+        // missing, etc.). Graceful no-op.
+      });
+    } else {
+      document.exitFullscreen().catch(() => {});
+    }
+  };
+
+  useEffect(() => {
+    const onChange = () => {
+      const nowFullscreen = !!document.fullscreenElement;
+      if (wasFullscreenRef.current && !nowFullscreen) {
+        window.dispatchEvent(new CustomEvent(FULLSCREEN_EXIT_EVENT));
+      }
+      wasFullscreenRef.current = nowFullscreen;
+      setIsFullscreen(nowFullscreen);
+    };
+    document.addEventListener('fullscreenchange', onChange);
+    return () => document.removeEventListener('fullscreenchange', onChange);
+  }, []);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'f' && e.key !== 'F') return;
+      // Don't hijack modified F (Ctrl+F find, Cmd+F, Alt+F, etc.).
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      const target = e.target as HTMLElement | null;
+      // Don't hijack F while typing in an input.
+      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')) return;
+      e.preventDefault();
+      toggle();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+
   return (
-    <div style={outerStyle}>
-      <div style={innerStyle}>
-        {children}
+    <FullscreenContext.Provider value={{ isFullscreen, toggle }}>
+      <div ref={rootRef} style={outerStyle}>
+        <div style={innerStyle}>
+          {children}
+        </div>
       </div>
-    </div>
+    </FullscreenContext.Provider>
   );
 }
 
