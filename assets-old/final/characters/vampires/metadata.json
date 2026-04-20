@@ -1,0 +1,30 @@
+{
+  "character": {
+    "id": "a6bc151f-00b8-4b2b-8435-2064567c6e6f",
+    "name": "Isometric pixel art character, 3/4 front-facing pose, 92\u00d792 sprite. An aristocratic stalker in a high-collared crimson-lined black cloak, dark leather doublet with silver buckles, tight black trousers and riding boots. Paper-pale skin, dark-rimmed eyes with red irises, long black hair. Slight fang visible on parted lips, slim curved dagger at hip. One hand gloved, the other bare and clawed. Cloak curling in unseen draft. Mist coiling at feet. Palette: deep blood-red #4A0E0E, near-black #1A0505, pallid bone #D9C4B0. Limited 16-color palette, crisp pixels, no anti-aliasing. Dark fantasy MUD aesthetic.",
+    "prompt": "Isometric pixel art character, 3/4 front-facing pose, 92\u00d792 sprite. An aristocratic stalker in a high-collared crimson-lined black cloak, dark leather doublet with silver buckles, tight black trousers and riding boots. Paper-pale skin, dark-rimmed eyes with red irises, long black hair. Slight fang visible on parted lips, slim curved dagger at hip. One hand gloved, the other bare and clawed. Cloak curling in unseen draft. Mist coiling at feet. Palette: deep blood-red #4A0E0E, near-black #1A0505, pallid bone #D9C4B0. Limited 16-color palette, crisp pixels, no anti-aliasing. Dark fantasy MUD aesthetic.",
+    "size": {
+      "width": 92,
+      "height": 92
+    },
+    "template_id": "mannequin",
+    "directions": 8,
+    "view": "low top-down",
+    "created_at": "2026-04-19T12:00:28.37533+00:00"
+  },
+  "frames": {
+    "rotations": {
+      "south": "rotations/south.png",
+      "south-east": "rotations/south-east.png",
+      "east": "rotations/east.png",
+      "north-east": "rotations/north-east.png",
+      "north": "rotations/north.png",
+      "north-west": "rotations/north-west.png",
+      "west": "rotations/west.png",
+      "south-west": "rotations/south-west.png"
+    },
+    "animations": {}
+  },
+  "export_version": "2.0",
+  "export_date": "2026-04-19T12:07:37.594110"
+}

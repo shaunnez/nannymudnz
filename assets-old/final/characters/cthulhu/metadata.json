@@ -1,0 +1,30 @@
+{
+  "character": {
+    "id": "0eb9d577-bbfc-4ded-9196-796a2724fa89",
+    "name": "Isometric pixel art character, 3/4 front-facing pose, 92\u00d792 sprite. A hunched coastal cultist in seaweed-tangled dark-teal robes, barefoot with webbed toes. Fish-belly pale skin with faint scale-patches on neck and forearms. Bulging unblinking eyes, too-wide mouth, gills slit beneath jawline. Clutches a barnacle-crusted idol of a tentacled figure in one hand, a rusted curved ritual knife in the other. Damp hair plastered to skull. A faint green tentacle-shadow curls behind them, half-seen. Palette: deep teal `#1A3A3A`, sickly sea-green `#5C8F8F`, bog green `#2F5F3F`. Limited 16-color palette, crisp pixels, no anti-aliasing. Dark fantasy MUD aesthetic.",
+    "prompt": "Isometric pixel art character, 3/4 front-facing pose, 92\u00d792 sprite. A hunched coastal cultist in seaweed-tangled dark-teal robes, barefoot with webbed toes. Fish-belly pale skin with faint scale-patches on neck and forearms. Bulging unblinking eyes, too-wide mouth, gills slit beneath jawline. Clutches a barnacle-crusted idol of a tentacled figure in one hand, a rusted curved ritual knife in the other. Damp hair plastered to skull. A faint green tentacle-shadow curls behind them, half-seen. Palette: deep teal `#1A3A3A`, sickly sea-green `#5C8F8F`, bog green `#2F5F3F`. Limited 16-color palette, crisp pixels, no anti-aliasing. Dark fantasy MUD aesthetic.",
+    "size": {
+      "width": 92,
+      "height": 92
+    },
+    "template_id": "mannequin",
+    "directions": 8,
+    "view": "low top-down",
+    "created_at": "2026-04-19T12:08:38.882044+00:00"
+  },
+  "frames": {
+    "rotations": {
+      "south": "rotations/south.png",
+      "south-east": "rotations/south-east.png",
+      "east": "rotations/east.png",
+      "north-east": "rotations/north-east.png",
+      "north": "rotations/north.png",
+      "north-west": "rotations/north-west.png",
+      "west": "rotations/west.png",
+      "south-west": "rotations/south-west.png"
+    },
+    "animations": {}
+  },
+  "export_version": "2.0",
+  "export_date": "2026-04-19T12:10:04.319642"
+}

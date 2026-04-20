@@ -1,0 +1,224 @@
+{
+  "description": "Item catalog. Items are divided into: equipment (weapons/armor), consumables, currency, materials, and quest items. Rarity tiers govern drop rates and visual treatment. Canonical fields: wc (weapon class, from RULES/weapon.html), ac (armour class, from RULES/armour.html), query_value (canonical shop value; shops buy at 2x and sell at 0.9x capped at 900gc).",
+  "canonicalReference": "docs/canonical-mechanics.md",
+  "rarityTiers": [
+    { "id": "common", "color": "#B0B0B0", "dropWeight": 60, "maxAffixes": 0, "wcBand": [1, 8], "acBand": [0, 3] },
+    { "id": "uncommon", "color": "#4CAF50", "dropWeight": 25, "maxAffixes": 1, "wcBand": [8, 14], "acBand": [3, 6] },
+    { "id": "rare", "color": "#2196F3", "dropWeight": 10, "maxAffixes": 2, "wcBand": [14, 17], "acBand": [6, 8] },
+    { "id": "epic", "color": "#9C27B0", "dropWeight": 4, "maxAffixes": 3, "wcBand": [18, 24], "acBand": [8, 10] },
+    { "id": "legendary", "color": "#FF9800", "dropWeight": 1, "maxAffixes": 4, "wcBand": [25, 30], "acBand": [10, 12] }
+  ],
+  "slots": ["mainhand", "offhand", "head", "chest", "legs", "feet", "hands", "neck", "ring1", "ring2", "ammo"],
+  "currencies": [
+    { "id": "copper", "value": 1, "stackable": true, "weight": 0.01 },
+    { "id": "silver", "value": 100, "stackable": true, "weight": 0.005 },
+    { "id": "gold", "value": 10000, "stackable": true, "weight": 0.001, "note": "Canon Nanny uses 'gc' as the sole currency. We subdivide for inventory convenience; gc = gold in our game." },
+    { "id": "mastery-token", "value": 0, "stackable": true, "weight": 0, "note": "Meta-progression currency earned from arena matches. Spent at Queen for cosmetics." }
+  ],
+  "items": [
+    {
+      "id": "wooden-sword",
+      "name": "Wooden Practice Sword",
+      "slot": "mainhand",
+      "rarity": "common",
+      "class": ["adventurers", "knights"],
+      "canonical": { "wc": 3, "weight": 2, "query_value": 10 },
+      "stats": { "attackDamage": 5, "attackSpeed": 1.0 },
+      "value": 10,
+      "mvp": true,
+      "startingItem": true
+    },
+    {
+      "id": "iron-shortsword",
+      "name": "Iron Shortsword",
+      "slot": "mainhand",
+      "rarity": "common",
+      "class": ["adventurers", "knights"],
+      "canonical": { "wc": 6, "weight": 3, "query_value": 80 },
+      "stats": { "attackDamage": 12, "attackSpeed": 1.1 },
+      "value": 80,
+      "mvp": true
+    },
+    {
+      "id": "steel-longsword",
+      "name": "Steel Longsword",
+      "slot": "mainhand",
+      "rarity": "uncommon",
+      "class": ["knights", "adventurers"],
+      "canonical": { "wc": 10, "weight": 4, "query_value": 450 },
+      "stats": { "attackDamage": 22, "attackSpeed": 1.0 },
+      "value": 450,
+      "mvp": true
+    },
+    {
+      "id": "kite-shield",
+      "name": "Kite Shield",
+      "slot": "offhand",
+      "rarity": "uncommon",
+      "class": ["knights"],
+      "canonical": { "ac": 4, "slot_type": "shield", "weight": 5, "query_value": 300 },
+      "stats": { "armor": 15, "blockChance": 0.2 },
+      "value": 300,
+      "mvp": true
+    },
+    {
+      "id": "apprentice-staff",
+      "name": "Apprentice Staff",
+      "slot": "mainhand",
+      "rarity": "common",
+      "class": ["mages"],
+      "canonical": { "wc": 4, "weight": 3, "query_value": 40, "magical": true },
+      "stats": { "spellpower": 8, "manaRegen": 2 },
+      "value": 40,
+      "mvp": true,
+      "startingItem": true
+    },
+    {
+      "id": "runebound-staff",
+      "name": "Runebound Staff of Beldin",
+      "slot": "mainhand",
+      "rarity": "epic",
+      "class": ["mages"],
+      "canonical": { "wc": 22, "weight": 4, "query_value": 4000, "magical": true, "unique": false },
+      "stats": { "spellpower": 45, "manaRegen": 8, "critChance": 0.12 },
+      "affixes": ["+15% frostbolt damage", "-1s cooldown on blink"],
+      "value": 4000,
+      "mvp": true
+    },
+    {
+      "id": "hunting-bow",
+      "name": "Hunting Bow",
+      "slot": "mainhand",
+      "rarity": "common",
+      "class": ["hunters"],
+      "canonical": { "wc": 7, "weight": 2, "query_value": 60, "ranged": true },
+      "stats": { "attackDamage": 14, "attackSpeed": 0.9, "range": 18 },
+      "value": 60,
+      "mvp": true,
+      "startingItem": true
+    },
+    {
+      "id": "druid-sickle",
+      "name": "Druid's Ceremonial Sickle",
+      "slot": "mainhand",
+      "rarity": "common",
+      "class": ["druids"],
+      "canonical": { "wc": 4, "weight": 1, "query_value": 50, "magical": true },
+      "stats": { "attackDamage": 7, "healingPower": 10 },
+      "value": 50,
+      "mvp": true,
+      "startingItem": true
+    },
+    {
+      "id": "monk-handwraps",
+      "name": "Cathbad Handwraps",
+      "slot": "hands",
+      "rarity": "common",
+      "class": ["monks"],
+      "canonical": { "wc": 3, "ac": 1, "slot_type": "glove", "weight": 0.5, "query_value": 30 },
+      "stats": { "attackDamage": 5, "attackSpeed": 1.3 },
+      "value": 30,
+      "mvp": true,
+      "startingItem": true
+    },
+    {
+      "id": "leather-tunic",
+      "name": "Leather Tunic",
+      "slot": "chest",
+      "rarity": "common",
+      "class": ["*"],
+      "canonical": { "ac": 2, "slot_type": "armour", "weight": 4, "query_value": 50 },
+      "stats": { "armor": 8, "health": 20 },
+      "value": 50,
+      "mvp": true
+    },
+    {
+      "id": "chain-hauberk",
+      "name": "Chain Hauberk",
+      "slot": "chest",
+      "rarity": "uncommon",
+      "class": ["knights", "adventurers", "hunters"],
+      "canonical": { "ac": 6, "slot_type": "armour", "weight": 8, "query_value": 500 },
+      "stats": { "armor": 22, "health": 50 },
+      "value": 500,
+      "mvp": true
+    },
+    {
+      "id": "robe-of-the-arcane",
+      "name": "Robe of the Arcane",
+      "slot": "chest",
+      "rarity": "uncommon",
+      "class": ["mages", "druids"],
+      "canonical": { "ac": 2, "slot_type": "armour", "weight": 2, "query_value": 400, "magical": true },
+      "stats": { "armor": 6, "spellpower": 12, "manaMax": 30 },
+      "value": 400,
+      "mvp": true
+    },
+    {
+      "id": "minor-health-potion",
+      "name": "Minor Health Potion",
+      "type": "consumable",
+      "rarity": "common",
+      "stackSize": 10,
+      "canonical": { "heal_hp": 50, "query_value": 25, "note": "Canonical: food/potion caps at 50 HP per use" },
+      "stats": { "healInstant": 50, "cooldownSeconds": 20 },
+      "value": 25,
+      "mvp": true
+    },
+    {
+      "id": "minor-mana-potion",
+      "name": "Minor Mana Potion",
+      "type": "consumable",
+      "rarity": "common",
+      "stackSize": 10,
+      "canonical": { "heal_sp": 40, "query_value": 25 },
+      "stats": { "manaInstant": 40, "cooldownSeconds": 20 },
+      "value": 25,
+      "mvp": true
+    },
+    {
+      "id": "dragonblood-moss",
+      "name": "Dragonblood Moss",
+      "type": "material",
+      "rarity": "rare",
+      "canonical": { "query_value": 200 },
+      "value": 200,
+      "note": "Gathered in the Dragonspine Foothills. Used by Alchemists for potent potions.",
+      "mvp": true
+    },
+    {
+      "id": "mithril-ore",
+      "name": "Mithril Ore",
+      "type": "material",
+      "rarity": "rare",
+      "canonical": { "query_value": 300 },
+      "value": 300,
+      "note": "Gathered in Dragonspine. Used for endgame weapon crafting.",
+      "mvp": false
+    },
+    {
+      "id": "ring-of-ghan-toth",
+      "name": "Signet Ring of Ghan-Toth",
+      "slot": "ring1",
+      "rarity": "legendary",
+      "class": ["*"],
+      "canonical": { "ac": 2, "slot_type": "ring", "weight": 0.1, "query_value": 50000, "unique": true, "magical": true },
+      "stats": { "allStats": 5, "health": 100, "mana": 50 },
+      "affixes": ["+10% reputation gain", "Unique: halves PK flag duration if equipped"],
+      "value": 50000,
+      "mvp": false,
+      "note": "Quest reward from King Darion endgame chain."
+    }
+  ],
+  "shopRules": {
+    "sell_to_player_multiplier": 2.0,
+    "buy_from_player_multiplier": 0.9,
+    "buy_from_player_cap_gc": 900,
+    "source": "RULES/shop.html"
+  },
+  "healerPriceFormula": {
+    "formula": "price_gc = 4*H + H*H/10",
+    "where": "H = HP restored",
+    "source": "RULES/heal.html"
+  }
+}

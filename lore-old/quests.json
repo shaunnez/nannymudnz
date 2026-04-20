@@ -1,0 +1,149 @@
+{
+  "description": "Quests for the Nannymud-inspired game. Nannymud's original questbook lists 136+ quests; we ship 3 in MVP that cover the core loop (tutorial, PvE, PvP bounty), and stub another 6 for post-MVP expansion.",
+  "questTypes": {
+    "tutorial": "One-time. Teaches core mechanic. Auto-offered at character creation.",
+    "story": "One-time. Advances main narrative. Chain-linked.",
+    "daily": "Resets every 24h. Rotating pool. Modest reward.",
+    "bounty": "Hunt a named PK-flagged player. Reward scales with target's PK rating.",
+    "guild": "Guild-specific. Only offered to members of that guild."
+  },
+  "quests": [
+    {
+      "id": "q-tutorial-arrival",
+      "name": "Arrival in Ghan-Toth",
+      "type": "tutorial",
+      "mvp": true,
+      "giver": "padrone",
+      "giverZone": "ghan-toth",
+      "minLevel": 1,
+      "objectives": [
+        { "type": "move-to", "target": "bank-plaza", "note": "Visit Titleist and open a bank account." },
+        { "type": "move-to", "target": "market-square", "note": "Buy a weapon upgrade from Vulcan." },
+        { "type": "move-to", "target": "guild-row", "note": "Pick a guild and speak to its trainer." },
+        { "type": "return-to", "target": "padrone" }
+      ],
+      "reward": { "xp": 200, "gold": 50, "items": ["minor-health-potion:3"] },
+      "narrative": "The Crossroads City. Padrone welcomes you and tells you the basics. He asks you to see the Keeper of the Bank, the Smith, and finally a guild hall of your choosing. This is your first day as an adventurer."
+    },
+    {
+      "id": "q-plains-bandits",
+      "name": "Thieves in the Wheat",
+      "type": "story",
+      "mvp": true,
+      "giver": "king-of-ghan-toth",
+      "giverZone": "ghan-toth",
+      "minLevel": 3,
+      "prerequisiteQuests": ["q-tutorial-arrival"],
+      "objectives": [
+        { "type": "kill", "target": "plains-bandit", "count": 5 },
+        { "type": "kill", "target": "bandit-bowman", "count": 2 },
+        { "type": "return-to", "target": "king-of-ghan-toth" }
+      ],
+      "reward": { "xp": 800, "gold": 200, "items": ["iron-shortsword"] },
+      "narrative": "The farmers of Gandor Village are being robbed of their harvest. King Darion dispatches you to clear out the bandit camps on the Plains of Nan. 'Teach them the price of stealing from the Crown.'"
+    },
+    {
+      "id": "q-bounty-rook",
+      "name": "Bounty: Rook the Bandit Chief",
+      "type": "bounty",
+      "mvp": true,
+      "giver": "queen-of-ghan-toth",
+      "giverZone": "ghan-toth",
+      "minLevel": 15,
+      "prerequisiteQuests": ["q-plains-bandits"],
+      "objectives": [
+        { "type": "kill", "target": "bandit-chief", "count": 1, "location": "dragonspine-foothills" },
+        { "type": "return-to", "target": "queen-of-ghan-toth" }
+      ],
+      "reward": { "xp": 2500, "gold": 800, "items": ["steel-longsword"], "reputation": { "crown": 10 } },
+      "warning": "The Foothills are Outlands — other players may attack you here. Travel with a party.",
+      "narrative": "Queen Yalenor has had enough. Rook's banditry has reached the capital. She hands you a warrant sealed in red wax: bring back his signet, or bring back word that Nanny is short one bandit chief."
+    },
+    {
+      "id": "q-daily-arena",
+      "name": "Arena Challenge (Daily)",
+      "type": "daily",
+      "mvp": true,
+      "giver": "astrodeath",
+      "giverZone": "ghan-toth",
+      "minLevel": 5,
+      "objectives": [
+        { "type": "win-matches", "mode": "3v3", "count": 3 }
+      ],
+      "reward": { "xp": 400, "mastery-token": 50 },
+      "narrative": "Astrodeath sips his cold star-wine. 'The Arena calls. Three wins, and I'll pay you in tokens. Win or die.'"
+    },
+    {
+      "id": "q-druid-grove",
+      "name": "The Whispering Grove",
+      "type": "guild",
+      "guild": "druids",
+      "mvp": false,
+      "giver": "driad-willowmoon",
+      "minLevel": 8,
+      "objectives": [
+        { "type": "gather", "item": "dragonblood-moss", "count": 5 },
+        { "type": "heal-ally", "count": 10 }
+      ],
+      "reward": { "xp": 1200, "items": ["druid-sickle"] }
+    },
+    {
+      "id": "q-monk-ascension",
+      "name": "Trial of the Silent Step",
+      "type": "guild",
+      "guild": "monks",
+      "mvp": false,
+      "giver": "abbot-cathbad",
+      "minLevel": 10,
+      "objectives": [
+        { "type": "deal-damage-unarmed", "amount": 5000 },
+        { "type": "meditate-at", "target": "bamboo-forest-shrine", "duration": 60 }
+      ],
+      "reward": { "xp": 1500, "items": ["monk-handwraps"] }
+    },
+    {
+      "id": "q-knight-oath",
+      "name": "The Oath of the Round Table",
+      "type": "guild",
+      "guild": "knights",
+      "mvp": false,
+      "giver": "grandmaster-kael",
+      "minLevel": 5,
+      "objectives": [
+        { "type": "protect-ally", "count": 20, "note": "Save allies from killing blows by intercepting damage." },
+        { "type": "never-flee-combat", "matches": 5 }
+      ],
+      "reward": { "xp": 1000, "items": ["kite-shield"] }
+    },
+    {
+      "id": "q-hunter-firstkill",
+      "name": "First Blood: Dragonspine",
+      "type": "guild",
+      "guild": "hunters",
+      "mvp": false,
+      "giver": "huntmaster-orren",
+      "minLevel": 10,
+      "objectives": [
+        { "type": "kill", "target": "foothills-wolf", "count": 3 },
+        { "type": "kill", "target": "young-dragon", "count": 1, "note": "Landing the killing blow grants bonus reward." }
+      ],
+      "reward": { "xp": 3000, "items": ["hunting-bow"] }
+    },
+    {
+      "id": "q-pk-redemption",
+      "name": "The Long Road Back",
+      "type": "story",
+      "mvp": false,
+      "giver": "abbot-cathbad",
+      "minLevel": 1,
+      "requirement": "Must be PK-flagged.",
+      "objectives": [
+        { "type": "complete-peaceful-quests", "count": 5 },
+        { "type": "donate-gold", "amount": 10000 },
+        { "type": "wait-real-time", "hours": 24 }
+      ],
+      "reward": { "removes": "pk-flag", "xp": 500 },
+      "narrative": "Cathbad's door is open to all who would leave the crimson road. He asks three things: penitent deeds, a tithe, and time to think on what you have done."
+    }
+  ]
+}

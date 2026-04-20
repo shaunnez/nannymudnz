@@ -1,0 +1,30 @@
+{
+  "character": {
+    "id": "1b8055c7-5214-41f5-b230-e4040b367451",
+    "name": "Isometric pixel art character, 3/4 front-facing pose, 92\u00d792 sprite. A hulking northern berserker in furred leathers and riveted iron hauberk, shoulders draped in wolf-pelt cloak. Two-handed battleaxe gripped across body, small round shield on back painted with a dark-red rune. Braided blond beard, warpaint streaked across bridge of nose, cold blue eyes, teeth bared in a snarl. Dented iron helm with nose-guard, no horns. Breath steams in cold air. Palette: leather brown #6B4423, iron grey #B8B8B8, blood red #8B0000. Limited 16-color palette, crisp pixels, no anti-aliasing. Dark fantasy MUD aesthetic.",
+    "prompt": "Isometric pixel art character, 3/4 front-facing pose, 92\u00d792 sprite. A hulking northern berserker in furred leathers and riveted iron hauberk, shoulders draped in wolf-pelt cloak. Two-handed battleaxe gripped across body, small round shield on back painted with a dark-red rune. Braided blond beard, warpaint streaked across bridge of nose, cold blue eyes, teeth bared in a snarl. Dented iron helm with nose-guard, no horns. Breath steams in cold air. Palette: leather brown #6B4423, iron grey #B8B8B8, blood red #8B0000. Limited 16-color palette, crisp pixels, no anti-aliasing. Dark fantasy MUD aesthetic.",
+    "size": {
+      "width": 92,
+      "height": 92
+    },
+    "template_id": "mannequin",
+    "directions": 8,
+    "view": "low top-down",
+    "created_at": "2026-04-19T12:00:04.521285+00:00"
+  },
+  "frames": {
+    "rotations": {
+      "south": "rotations/south.png",
+      "south-east": "rotations/south-east.png",
+      "east": "rotations/east.png",
+      "north-east": "rotations/north-east.png",
+      "north": "rotations/north.png",
+      "north-west": "rotations/north-west.png",
+      "west": "rotations/west.png",
+      "south-west": "rotations/south-west.png"
+    },
+    "animations": {}
+  },
+  "export_version": "2.0",
+  "export_date": "2026-04-19T12:07:42.582697"
+}

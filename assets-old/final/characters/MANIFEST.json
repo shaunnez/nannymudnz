@@ -1,0 +1,88 @@
+{
+  "generated_by": "assets/character-raw/_sort.py",
+  "source_count": 15,
+  "classes": {
+    "adventurers": {
+      "variants": 1,
+      "sources": [
+        "Isometric_pixel_art_character_3_4_front-facing_pos (1).zip"
+      ]
+    },
+    "cthulhu": {
+      "variants": 1,
+      "sources": [
+        "Isometric_pixel_art_character_3_4_front-facing_pos (12).zip"
+      ]
+    },
+    "dark": {
+      "variants": 1,
+      "sources": [
+        "Isometric_pixel_art_character_3_4_front-facing_pos (14).zip"
+      ]
+    },
+    "druids": {
+      "variants": 1,
+      "sources": [
+        "Isometric_pixel_art_character_3_4_front-facing_pos (4).zip"
+      ]
+    },
+    "hunters": {
+      "variants": 1,
+      "sources": [
+        "Isometric_pixel_art_character_3_4_front-facing_pos (6).zip",
+        "Isometric_pixel_art_character_3_4_front-facing_pos (8).zip"
+      ]
+    },
+    "khorne": {
+      "variants": 1,
+      "sources": [
+        "Isometric_pixel_art_character_3_4_front-facing_pos (13).zip"
+      ]
+    },
+    "knights": {
+      "variants": 1,
+      "sources": [
+        "Isometric_pixel_art_character_3_4_front-facing_pos (2).zip"
+      ]
+    },
+    "lepers": {
+      "variants": 1,
+      "sources": [
+        "Isometric_pixel_art_character_3_4_front-facing_pos.zip"
+      ]
+    },
+    "mages": {
+      "variants": 1,
+      "sources": [
+        "Isometric_pixel_art_character_3_4_front-facing_pos (3).zip",
+        "Isometric_pixel_art_character_3_4_front-facing_pos (5).zip"
+      ]
+    },
+    "monks": {
+      "variants": 1,
+      "sources": [
+        "Isometric_pixel_art_character_3_4_front-facing_pos (7).zip"
+      ]
+    },
+    "prophets": {
+      "variants": 1,
+      "sources": [
+        "Isometric_pixel_art_character_3_4_front-facing_pos (9).zip"
+      ]
+    },
+    "vampires": {
+      "variants": 1,
+      "sources": [
+        "Isometric_pixel_art_character_3_4_front-facing_pos (10).zip"
+      ]
+    },
+    "vikings": {
+      "variants": 1,
+      "sources": [
+        "Isometric_pixel_art_character_3_4_front-facing_pos (11).zip"
+      ]
+    }
+  },
+  "unmatched": [],
+  "missing_mvp": []
+}

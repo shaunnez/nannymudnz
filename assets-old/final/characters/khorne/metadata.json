@@ -1,0 +1,30 @@
+{
+  "character": {
+    "id": "833df993-8bea-4ec3-bf95-be83255451bb",
+    "name": " > Isometric pixel art character, 3/4 front-facing pose, 92\u00d792 sprite. A towering blood-pact warrior in jagged black plate armor spattered with dried gore, sharp spiked pauldrons. Massive serrated cleaver-sword held one-handed, trophy skulls chained to belt. Helm is a featureless dark iron mask with two glowing red slits for eyes \u2014 no facial detail visible. Gold-trim etched runes along the gauntlets and chestplate. Steam rising off the armor. Palette: blood red `#8B0000`, black `#000000`, burnished gold `#C9A961`. Limited 16-color palette, crisp pixels, no anti-aliasing. Dark fantasy MUD aesthetic.",
+    "prompt": " > Isometric pixel art character, 3/4 front-facing pose, 92\u00d792 sprite. A towering blood-pact warrior in jagged black plate armor spattered with dried gore, sharp spiked pauldrons. Massive serrated cleaver-sword held one-handed, trophy skulls chained to belt. Helm is a featureless dark iron mask with two glowing red slits for eyes \u2014 no facial detail visible. Gold-trim etched runes along the gauntlets and chestplate. Steam rising off the armor. Palette: blood red `#8B0000`, black `#000000`, burnished gold `#C9A961`. Limited 16-color palette, crisp pixels, no anti-aliasing. Dark fantasy MUD aesthetic.",
+    "size": {
+      "width": 92,
+      "height": 92
+    },
+    "template_id": "mannequin",
+    "directions": 8,
+    "view": "low top-down",
+    "created_at": "2026-04-19T12:08:55.360931+00:00"
+  },
+  "frames": {
+    "rotations": {
+      "south": "rotations/south.png",
+      "south-east": "rotations/south-east.png",
+      "east": "rotations/east.png",
+      "north-east": "rotations/north-east.png",
+      "north": "rotations/north.png",
+      "north-west": "rotations/north-west.png",
+      "west": "rotations/west.png",
+      "south-west": "rotations/south-west.png"
+    },
+    "animations": {}
+  },
+  "export_version": "2.0",
+  "export_date": "2026-04-19T12:10:34.797258"
+}

@@ -1,0 +1,30 @@
+{
+  "character": {
+    "id": "ead582ec-4d67-48dd-9b54-627173b16e66",
+    "name": "Isometric pixel art character, 3/4 front-facing pose, 92\u00d792 sprite. A gaunt shadow-caster in layered near-black robes with deep-purple undercloak, hood drawn low casting face in darkness \u2014 only sharp pale chin and cold glowing pale-violet eyes visible. Tall crooked obsidian staff topped with a shard of black ice. Skeletal hands protruding from long sleeves. Tendrils of shadow and frost creeping from hem of robe across the ground. Breath visible as frost. Palette: near-black `#0A0A1A`, shadow purple `#3A2A4A`, muted lilac `#7A6A8A`. Limited 16-color palette, crisp pixels, no anti-aliasing. Dark fantasy MUD aesthetic.",
+    "prompt": "Isometric pixel art character, 3/4 front-facing pose, 92\u00d792 sprite. A gaunt shadow-caster in layered near-black robes with deep-purple undercloak, hood drawn low casting face in darkness \u2014 only sharp pale chin and cold glowing pale-violet eyes visible. Tall crooked obsidian staff topped with a shard of black ice. Skeletal hands protruding from long sleeves. Tendrils of shadow and frost creeping from hem of robe across the ground. Breath visible as frost. Palette: near-black `#0A0A1A`, shadow purple `#3A2A4A`, muted lilac `#7A6A8A`. Limited 16-color palette, crisp pixels, no anti-aliasing. Dark fantasy MUD aesthetic.",
+    "size": {
+      "width": 92,
+      "height": 92
+    },
+    "template_id": "mannequin",
+    "directions": 8,
+    "view": "low top-down",
+    "created_at": "2026-04-19T12:10:14.782955+00:00"
+  },
+  "frames": {
+    "rotations": {
+      "south": "rotations/south.png",
+      "south-east": "rotations/south-east.png",
+      "east": "rotations/east.png",
+      "north-east": "rotations/north-east.png",
+      "north": "rotations/north.png",
+      "north-west": "rotations/north-west.png",
+      "west": "rotations/west.png",
+      "south-west": "rotations/south-west.png"
+    },
+    "animations": {}
+  },
+  "export_version": "2.0",
+  "export_date": "2026-04-19T12:11:32.310335"
+}

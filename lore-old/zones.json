@@ -1,0 +1,229 @@
+{
+  "description": "Canonical zones/regions for the Nannymud-inspired game world. Each zone has a category that determines PvP rules and gameplay purpose. MVP ships with 1 hub + 1 PvE zone + 1 PvP arena + 1 Outlands zone.",
+  "categoryRules": {
+    "hub": "Persistent town. Safe zone. PvP disabled. PK-flagged players are auto-attacked by guards on sight. Bank, merchants, NPCs, quest givers live here.",
+    "pve-instance": "Instanced per party. PvP disabled. For quests and coop adventure.",
+    "pvp-arena": "Consensual PvP. Matchmade instance. No PK flag consequence. Cosmetic rewards + meta XP.",
+    "outlands": "Open-PvP instanced zone. You can be attacked by any other player. Killing someone here triggers the PK flag on the killer. Loot-on-death active."
+  },
+  "zones": [
+    {
+      "id": "ghan-toth",
+      "displayName": "Ghan-Toth, the Crossroads City",
+      "category": "hub",
+      "mvp": true,
+      "loreSummary": "The largest city in the mainland. Ruled by the King and Queen of Ghan-Toth. Neutral ground — all guilds welcome. Houses the Central Bank of Ghan-Toth and the Grand Bazaar.",
+      "connectedTo": ["dragonspine-foothills", "plains-of-nan", "old-wood"],
+      "neighborhoods": [
+        { "id": "market-square", "type": "merchant-district", "note": "General merchants, armorer, fletcher, alchemist." },
+        { "id": "bank-plaza", "type": "banking", "note": "Central Bank. Item storage + gold vault. Taxed withdrawal after death events." },
+        { "id": "guild-row", "type": "guild-halls", "note": "Entry portals to each of the 6 MVP guilds." },
+        { "id": "tavern-maple", "type": "social", "note": "The Maple Tree Pub. Where players form parties and post contracts." },
+        { "id": "castle", "type": "questing", "note": "Throne room — royal quest giver." }
+      ],
+      "guardsLevel": 60,
+      "audioAmbience": "medieval-city-daytime"
+    },
+    {
+      "id": "plains-of-nan",
+      "displayName": "The Plains of Nan",
+      "category": "pve-instance",
+      "mvp": true,
+      "loreSummary": "Rolling grasslands stretching from Ghan-Toth to the horizon. Bandit camps, roaming pegasi, and old ruins dot the plain. The newbie adventuring ground.",
+      "connectedTo": ["ghan-toth", "dragonspine-foothills"],
+      "levelRange": [1, 15],
+      "notableEncounters": ["bandit-camp", "wild-pegasus", "ruin-of-blackfire"],
+      "audioAmbience": "windswept-grassland"
+    },
+    {
+      "id": "arena-of-trials",
+      "displayName": "The Arena of Trials",
+      "category": "pvp-arena",
+      "mvp": true,
+      "loreSummary": "A colosseum beneath Ghan-Toth, built by Mats himself. Champions clash for honor, glory, and matchmaking rank.",
+      "connectedTo": ["ghan-toth"],
+      "modes": [
+        { "id": "1v1", "note": "Duel mode. Best of 3 rounds." },
+        { "id": "3v3", "note": "Small team skirmish. 10 minute match." },
+        { "id": "5v5", "note": "Core MOBA mode. Capture three shrines, hold them to drain the enemy nexus." }
+      ],
+      "audioAmbience": "crowd-roar-colosseum"
+    },
+    {
+      "id": "dragonspine-foothills",
+      "displayName": "Dragonspine Foothills",
+      "category": "outlands",
+      "mvp": true,
+      "loreSummary": "The lawless borderland. Dragons prowl the peaks above; bandits and killers prowl the valleys below. The richest ore veins in the world sit here — but so do the best reasons to die.",
+      "connectedTo": ["plains-of-nan", "ghan-toth"],
+      "levelRange": [15, 40],
+      "pvpRules": "Open PvP. PK flag applied to killer. Loot-on-death: winner picks one item from corpse + all carried gold.",
+      "notableResources": ["mithril-vein", "dragonblood-moss", "raremetal-ore"],
+      "notableEncounters": ["young-dragon", "bandit-warband", "other-players"],
+      "audioAmbience": "mountain-wind-distant-dragon"
+    },
+    {
+      "id": "old-wood",
+      "displayName": "The Old Wood",
+      "category": "pve-instance",
+      "mvp": false,
+      "loreSummary": "Primeval forest where druids gather. Home to Laurana's Pool, the Kerish Roses, and the Ash Tree Giant's Lair.",
+      "connectedTo": ["ghan-toth", "bamboo-forest"],
+      "levelRange": [10, 30]
+    },
+    {
+      "id": "bamboo-forest",
+      "displayName": "The Bamboo Forest",
+      "category": "pve-instance",
+      "mvp": false,
+      "loreSummary": "Monks of the Holy Order train here beneath swaying green shafts. The Cathbad Abbey stands at its heart.",
+      "connectedTo": ["old-wood"],
+      "levelRange": [5, 20]
+    },
+    {
+      "id": "the-moors",
+      "displayName": "The Moors",
+      "category": "outlands",
+      "mvp": false,
+      "loreSummary": "Fog-shrouded highlands. Vampires stalk the night. Kefka's and Angmar's castles loom through the mist."
+    },
+    {
+      "id": "swamp-of-silence",
+      "displayName": "The Swamp of Silence",
+      "category": "pve-instance",
+      "mvp": false,
+      "loreSummary": "Undead marsh. The path to the Drowned Cult's coastal shrines. (Drowned Cult = IP-sanitized Cthulhu guild domain.)"
+    },
+    {
+      "id": "sea-of-claws",
+      "displayName": "The Sea of Claws",
+      "category": "pve-instance",
+      "mvp": false,
+      "loreSummary": "Cold northern sea. Viking longships raid its coasts. Isles of Hope and Despair, Casada, Xenios rise from its waves."
+    },
+    {
+      "id": "antharis",
+      "displayName": "Antharis (Continent)",
+      "category": "pve-instance",
+      "mvp": false,
+      "loreSummary": "The second continent, reachable only by portal from the Mages Guild hall. Endgame zone with late-game dungeons."
+    },
+    {
+      "id": "island-of-ganennon",
+      "displayName": "Ganennon, Isle of the Simyarin",
+      "category": "pve-instance",
+      "mvp": false,
+      "loreSummary": "Magical island populated by the Simyarin. Mages pilgrimage here to deepen their craft."
+    },
+    {
+      "id": "gandor-village",
+      "displayName": "Gandor Village",
+      "category": "hub",
+      "mvp": false,
+      "loreSummary": "Small farming village west of Ghan-Toth. A minor hub with a single merchant and an inn. Lower-population alternative to Ghan-Toth for roleplay-oriented players."
+    },
+    {
+      "id": "sandon-village",
+      "displayName": "Sandon Village",
+      "category": "hub",
+      "mvp": false,
+      "loreSummary": "Coastal fishing village. Gateway to the Sea of Claws voyages. Shipwrights sell rowboats here."
+    },
+    {
+      "id": "trackless-tundral-wastes",
+      "displayName": "Trackless Tundral Wastes",
+      "category": "outlands",
+      "mvp": false,
+      "loreSummary": "Frozen northern reaches mapped on the Earendil '98 world map. Ice giants, mammoths, and frost cultists roam this endless white. No safe roads — only cairns.",
+      "levelRange": [20, 35],
+      "sourceMap": "earendil-1998-world"
+    },
+    {
+      "id": "professor-mountains",
+      "displayName": "Professor Mountains",
+      "category": "pve-instance",
+      "mvp": false,
+      "loreSummary": "A rugged range marked on the old hand-drawn map. Miners, mountain dwarves, and a hidden monastery clinging to the cliffs.",
+      "levelRange": [12, 25],
+      "sourceMap": "earendil-1998-world"
+    },
+    {
+      "id": "seagland",
+      "displayName": "Seagland",
+      "category": "pve-instance",
+      "mvp": false,
+      "loreSummary": "Marshy coastal region labeled on the Earendil map. Fishing hamlets, marsh-hags, and the ruins of a sunken lighthouse.",
+      "levelRange": [5, 18],
+      "sourceMap": "earendil-1998-world"
+    },
+    {
+      "id": "najira",
+      "displayName": "Najira",
+      "category": "hub",
+      "mvp": false,
+      "loreSummary": "Desert trade city from the old world map. A caravanserai hub where merchants from the southern sands meet those from the mainland. Fewer guilds, exotic wares.",
+      "sourceMap": "earendil-1998-world"
+    },
+    {
+      "id": "icoon-andro",
+      "displayName": "Icoon Andro",
+      "category": "pve-instance",
+      "mvp": false,
+      "loreSummary": "Mountainous region north of Ghan-Toth on the Earendil map. Hermit outposts and snowbound ruins. Entry point to the tundra above.",
+      "levelRange": [10, 20],
+      "sourceMap": "earendil-1998-world"
+    },
+    {
+      "id": "mors",
+      "displayName": "Mors",
+      "category": "outlands",
+      "mvp": false,
+      "loreSummary": "A cursed region on the old map. The name itself means death. Necropolis, lich-lords, and restless barrows. Endgame zone.",
+      "levelRange": [25, 40],
+      "sourceMap": "earendil-1998-world"
+    },
+    {
+      "id": "pelin",
+      "displayName": "Pelin",
+      "category": "pve-instance",
+      "mvp": false,
+      "loreSummary": "Farming province south of Ghan-Toth on the Earendil map. Orchards, millers, and bandit raids on the backroads. Good for low-level quests.",
+      "levelRange": [3, 12],
+      "sourceMap": "earendil-1998-world"
+    },
+    {
+      "id": "island-of-hope",
+      "displayName": "Isle of Hope",
+      "category": "pve-instance",
+      "mvp": false,
+      "loreSummary": "One of the twin isles in the hand-drawn island map. Bright cliffs, ruined temple, a single NPC scholar cataloguing a lost civilization.",
+      "sourceMap": "hand-drawn-islands"
+    },
+    {
+      "id": "island-of-despair",
+      "displayName": "Isle of Despair",
+      "category": "outlands",
+      "mvp": false,
+      "loreSummary": "Twin isle to Hope. Open-PvP. Shipwrecks, pirates, and a black tower. Legend says no one who lands alone returns.",
+      "levelRange": [18, 30],
+      "sourceMap": "hand-drawn-islands"
+    }
+  ],
+  "sourceMaps": {
+    "earendil-1998-world": {
+      "artist": "Earendil",
+      "year": 1998,
+      "style": "hand-drawn world map",
+      "note": "The canonical mainland map used by the Nannymud community. Regions inferred from visible labels."
+    },
+    "hand-drawn-islands": {
+      "artist": "unknown",
+      "style": "hand-drawn island chain",
+      "note": "Depicts the Sea of Claws archipelago."
+    },
+    "pixel-colored-map": {
+      "style": "pixel art, coloured",
+      "note": "More modern rendering of the same world."
+    }
+  }
+}

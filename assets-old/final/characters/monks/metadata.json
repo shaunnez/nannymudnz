@@ -1,0 +1,30 @@
+{
+  "character": {
+    "id": "ab659152-e609-46ea-a08a-4309c43ba4fb",
+    "name": "Isometric pixel art character, 3/4 front-facing pose, 92\u00d792 sprite. A shaven-headed ascetic warrior in saffron-gold monastic robes with one shoulder bare, cloth wrappings around forearms and shins, simple sandals. Prayer-bead necklace, crimson sash tied at waist. No weapon \u2014 hands held in a martial ready stance. Serene but focused expression, faint burn-scar on one cheekbone. Subtle gold chi-glow around fists. Palette: saffron gold #D9A441, deep crimson #8B2F1F, cream #F5E6D3. Limited 16-color palette, crisp pixels, no anti-aliasing. Dark fantasy MUD aesthetic.",
+    "prompt": "Isometric pixel art character, 3/4 front-facing pose, 92\u00d792 sprite. A shaven-headed ascetic warrior in saffron-gold monastic robes with one shoulder bare, cloth wrappings around forearms and shins, simple sandals. Prayer-bead necklace, crimson sash tied at waist. No weapon \u2014 hands held in a martial ready stance. Serene but focused expression, faint burn-scar on one cheekbone. Subtle gold chi-glow around fists. Palette: saffron gold #D9A441, deep crimson #8B2F1F, cream #F5E6D3. Limited 16-color palette, crisp pixels, no anti-aliasing. Dark fantasy MUD aesthetic.",
+    "size": {
+      "width": 92,
+      "height": 92
+    },
+    "template_id": "mannequin",
+    "directions": 8,
+    "view": "low top-down",
+    "created_at": "2026-04-19T11:54:26.45571+00:00"
+  },
+  "frames": {
+    "rotations": {
+      "south": "rotations/south.png",
+      "south-east": "rotations/south-east.png",
+      "east": "rotations/east.png",
+      "north-east": "rotations/north-east.png",
+      "north": "rotations/north.png",
+      "north-west": "rotations/north-west.png",
+      "west": "rotations/west.png",
+      "south-west": "rotations/south-west.png"
+    },
+    "animations": {}
+  },
+  "export_version": "2.0",
+  "export_date": "2026-04-19T11:55:55.966695"
+}

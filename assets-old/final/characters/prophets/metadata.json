@@ -1,0 +1,30 @@
+{
+  "character": {
+    "id": "9aae83b7-bbf0-4ef9-bc36-e3206f85e7aa",
+    "name": "Isometric pixel art character, 3/4 front-facing pose, 92\u00d792 sprite. A serene divine seer in pale cream robes trimmed with gold brocade, hooded but face visible. Eyes glowing faint gold, irises replaced with holy light \u2014 prophetic blindness. Holds a gilded scroll-case and a golden sun-medallion on a chain. Thin circlet of beaten gold across brow. Wispy white beard or braided hair. Faint golden halo-shimmer around head. Hands weathered, serene. Palette: pale gold #F5E6A3, deep gold #C9A961, white #FFFFFF. Limited 16-color palette, crisp pixels, no anti-aliasing. Dark fantasy MUD aesthetic.",
+    "prompt": "Isometric pixel art character, 3/4 front-facing pose, 92\u00d792 sprite. A serene divine seer in pale cream robes trimmed with gold brocade, hooded but face visible. Eyes glowing faint gold, irises replaced with holy light \u2014 prophetic blindness. Holds a gilded scroll-case and a golden sun-medallion on a chain. Thin circlet of beaten gold across brow. Wispy white beard or braided hair. Faint golden halo-shimmer around head. Hands weathered, serene. Palette: pale gold #F5E6A3, deep gold #C9A961, white #FFFFFF. Limited 16-color palette, crisp pixels, no anti-aliasing. Dark fantasy MUD aesthetic.",
+    "size": {
+      "width": 92,
+      "height": 92
+    },
+    "template_id": "mannequin",
+    "directions": 8,
+    "view": "low top-down",
+    "created_at": "2026-04-19T11:56:33.097891+00:00"
+  },
+  "frames": {
+    "rotations": {
+      "south": "rotations/south.png",
+      "south-east": "rotations/south-east.png",
+      "east": "rotations/east.png",
+      "north-east": "rotations/north-east.png",
+      "north": "rotations/north.png",
+      "north-west": "rotations/north-west.png",
+      "west": "rotations/west.png",
+      "south-west": "rotations/south-west.png"
+    },
+    "animations": {}
+  },
+  "export_version": "2.0",
+  "export_date": "2026-04-19T11:58:52.372399"
+}

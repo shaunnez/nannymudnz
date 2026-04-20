@@ -1,0 +1,30 @@
+{
+  "character": {
+    "id": "f343bd32-d465-410e-9526-b5fd256f801f",
+    "name": "Isometric pixel art character, 3/4 front-facing pose, 92\u00d792 sprite. A weathered nature-keeper in layered green and earthen robes woven with bark and moss, antler-crowned circlet on head. Gnarled wooden staff with living leaves sprouting from the tip. Bare feet, leaf-pendant necklace, small pouches of herbs. Long braided hair, lined sunworn face, calm serene expression. Faint green motes of life-essence drifting around them. Palette: forest green #2F5D3A, soft sage #8FB776, pale wheat #D9C48F. Limited 16-color palette, crisp pixels, no anti-aliasing. Dark fantasy MUD aesthetic.",
+    "prompt": "Isometric pixel art character, 3/4 front-facing pose, 92\u00d792 sprite. A weathered nature-keeper in layered green and earthen robes woven with bark and moss, antler-crowned circlet on head. Gnarled wooden staff with living leaves sprouting from the tip. Bare feet, leaf-pendant necklace, small pouches of herbs. Long braided hair, lined sunworn face, calm serene expression. Faint green motes of life-essence drifting around them. Palette: forest green #2F5D3A, soft sage #8FB776, pale wheat #D9C48F. Limited 16-color palette, crisp pixels, no anti-aliasing. Dark fantasy MUD aesthetic.",
+    "size": {
+      "width": 92,
+      "height": 92
+    },
+    "template_id": "mannequin",
+    "directions": 8,
+    "view": "low top-down",
+    "created_at": "2026-04-19T11:49:45.438933+00:00"
+  },
+  "frames": {
+    "rotations": {
+      "south": "rotations/south.png",
+      "south-east": "rotations/south-east.png",
+      "east": "rotations/east.png",
+      "north-east": "rotations/north-east.png",
+      "north": "rotations/north.png",
+      "north-west": "rotations/north-west.png",
+      "west": "rotations/west.png",
+      "south-west": "rotations/south-west.png"
+    },
+    "animations": {}
+  },
+  "export_version": "2.0",
+  "export_date": "2026-04-19T11:53:11.190424"
+}

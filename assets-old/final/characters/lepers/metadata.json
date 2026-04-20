@@ -1,0 +1,30 @@
+{
+  "character": {
+    "id": "ada2c664-8e93-4a12-9702-30099b118d1f",
+    "name": "Isometric pixel art character, 3/4 front-facing pose, 64x64 sprite.\n  \u258e                                                                                                            \n  \u258e A gaunt, hunched leper-necromancer wrapped in filthy grey-green burial bandages, tattered hooded robe\n  \u258e stained with mildew and dried blood. Skin a sickly olive-green (#6B7F4F), mottled with black rot patches\n  \u258e and weeping sores. One eye milky-white and bulging, the other sunken into a black socket. Stringy hair\n  \u258e matted under the hood. Exposed ribs visible through torn wrappings.\n  \u258e\n  \u258e Key detail: his LEFT arm is ripped clean off at the shoulder \u2014 a ragged stump trailing sinew and dripping\n  \u258e dark ichor. He grips the severed arm in his RIGHT hand like a club, bone protruding from the torn end,\n  \u258e fingers still twitching. Swinging pose, mid-combat.\n  \u258e\n  \u258e Wreathed in curling puffs of sickly yellow-green stink vapor and swirling motes of black decay magic. Faint\n  \u258e  necrotic glow around the stump. Flies orbiting him.\n  \u258e\n  \u258e Palette: moldy green #6B7F4F, muddy brown #8B5A2B, deep swamp #3F4F2F, bone white, bruise purple accents.\n  \u258e Limited 16-color pixel palette, crisp dithering, no anti-aliasing. Dark fantasy MUD aesthetic, Diablo 1 /\n  \u258e Ultima Online vibe.",
+    "prompt": "Isometric pixel art character, 3/4 front-facing pose, 64x64 sprite.\n  \u258e                                                                                                            \n  \u258e A gaunt, hunched leper-necromancer wrapped in filthy grey-green burial bandages, tattered hooded robe\n  \u258e stained with mildew and dried blood. Skin a sickly olive-green (#6B7F4F), mottled with black rot patches\n  \u258e and weeping sores. One eye milky-white and bulging, the other sunken into a black socket. Stringy hair\n  \u258e matted under the hood. Exposed ribs visible through torn wrappings.\n  \u258e\n  \u258e Key detail: his LEFT arm is ripped clean off at the shoulder \u2014 a ragged stump trailing sinew and dripping\n  \u258e dark ichor. He grips the severed arm in his RIGHT hand like a club, bone protruding from the torn end,\n  \u258e fingers still twitching. Swinging pose, mid-combat.\n  \u258e\n  \u258e Wreathed in curling puffs of sickly yellow-green stink vapor and swirling motes of black decay magic. Faint\n  \u258e  necrotic glow around the stump. Flies orbiting him.\n  \u258e\n  \u258e Palette: moldy green #6B7F4F, muddy brown #8B5A2B, deep swamp #3F4F2F, bone white, bruise purple accents.\n  \u258e Limited 16-color pixel palette, crisp dithering, no anti-aliasing. Dark fantasy MUD aesthetic, Diablo 1 /\n  \u258e Ultima Online vibe.",
+    "size": {
+      "width": 92,
+      "height": 92
+    },
+    "template_id": "mannequin",
+    "directions": 8,
+    "view": "low top-down",
+    "created_at": "2026-04-19T11:31:01.657343+00:00"
+  },
+  "frames": {
+    "rotations": {
+      "south": "rotations/south.png",
+      "south-east": "rotations/south-east.png",
+      "east": "rotations/east.png",
+      "north-east": "rotations/north-east.png",
+      "north": "rotations/north.png",
+      "north-west": "rotations/north-west.png",
+      "west": "rotations/west.png",
+      "south-west": "rotations/south-west.png"
+    },
+    "animations": {}
+  },
+  "export_version": "2.0",
+  "export_date": "2026-04-19T11:33:47.195961"
+}

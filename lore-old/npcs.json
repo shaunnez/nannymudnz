@@ -1,0 +1,174 @@
+{
+  "description": "Named NPCs for the game, extracted from Nannymud lore and extended for gameplay purposes. Merchants, quest-givers, guild trainers, and flavor characters.",
+  "categories": {
+    "merchant": "Buys and sells items. Prices modified by reputation.",
+    "banker": "Stores gold and items across sessions. Charges 1% withdrawal fee.",
+    "trainer": "Teaches guild abilities on level-up. Must visit to unlock new skills.",
+    "quest-giver": "Offers one or more quests from quests.json.",
+    "guard": "Attacks PK-flagged players on sight in safe hubs.",
+    "royal": "Flavor NPC, rarely quest-givers for top-tier content.",
+    "flavor": "Ambient NPC, no mechanical function. Populates hubs."
+  },
+  "npcs": [
+    {
+      "id": "mats",
+      "displayName": "Mats, Local God of Nanny",
+      "zone": "ghan-toth",
+      "location": "castle-throne-room",
+      "category": "royal",
+      "mvp": true,
+      "lore": "The local god. Creator of Nanny. Appears only to those who have mastered all six base guilds and completed the High Quest. 'Beware his wrath.'",
+      "gameplayRole": "Endgame quest-giver. Triggers the Master class unlock chain.",
+      "voiceDirection": "Deep, amused, faintly accented. Never angry — merely disappointed, which is worse."
+    },
+    {
+      "id": "beldin",
+      "displayName": "Beldin the High Wizard",
+      "zone": "ghan-toth",
+      "location": "mages-guild-tower",
+      "category": "trainer",
+      "mvp": true,
+      "lore": "Ancient wizard, member of the original four High Wizards. Teaches the Mages Guild abilities.",
+      "gameplayRole": "Mage class trainer. Sells mage-specific consumables."
+    },
+    {
+      "id": "titleist",
+      "displayName": "Titleist the Keeper",
+      "zone": "ghan-toth",
+      "location": "bank-plaza",
+      "category": "banker",
+      "mvp": true,
+      "lore": "Keeper of the Central Bank of Ghan-Toth. Stern, impartial, unbribable.",
+      "gameplayRole": "Primary banker. Stores items (80 slot vault) and gold. Withdrawal fee 1%."
+    },
+    {
+      "id": "vulcan",
+      "displayName": "Vulcan the Smith",
+      "zone": "ghan-toth",
+      "location": "market-square",
+      "category": "merchant",
+      "mvp": true,
+      "lore": "Master armorer and weaponsmith. His forge never cools. Hands are scarred but his eye is true.",
+      "gameplayRole": "Primary weapon/armor merchant. Sells tier 1-3 gear. Buys loot at 40% value."
+    },
+    {
+      "id": "astrodeath",
+      "displayName": "Astrodeath the Seer",
+      "zone": "ghan-toth",
+      "location": "tavern-maple",
+      "category": "quest-giver",
+      "mvp": true,
+      "lore": "Divination specialist. Sits at the back of the Maple Tree Pub nursing a cold cup of stars. Knows where things are lost.",
+      "gameplayRole": "Daily quest giver. Rotates 3 daily quests (PvE, PvP, social)."
+    },
+    {
+      "id": "king-of-ghan-toth",
+      "displayName": "King Darion of Ghan-Toth",
+      "zone": "ghan-toth",
+      "location": "castle-throne-room",
+      "category": "royal",
+      "mvp": true,
+      "lore": "Ruler of the Crossroads City. Benevolent but politically cautious. Offers main-story quests.",
+      "gameplayRole": "Main campaign quest giver for levels 1-20."
+    },
+    {
+      "id": "queen-of-ghan-toth",
+      "displayName": "Queen Yalenor of Ghan-Toth",
+      "zone": "ghan-toth",
+      "location": "castle-throne-room",
+      "category": "royal",
+      "mvp": true,
+      "lore": "The King's equal. Handles foreign affairs — which includes dealing with the Outlands PK problem.",
+      "gameplayRole": "Offers bounty quests to hunt down PK-flagged players."
+    },
+    {
+      "id": "grandmaster-kael",
+      "displayName": "Grandmaster Kael, High Defender of Camelot",
+      "zone": "ghan-toth",
+      "location": "guild-row-knights",
+      "category": "trainer",
+      "mvp": true,
+      "lore": "Leader of the Assembly of Knights. Upholds the Four Virtues. Decides who earns a seat at the Round Table.",
+      "gameplayRole": "Knight class trainer. Offers Knight-exclusive tournament quests."
+    },
+    {
+      "id": "padrone",
+      "displayName": "Padrone the Founder",
+      "zone": "ghan-toth",
+      "location": "guild-row-adventurers",
+      "category": "trainer",
+      "mvp": true,
+      "lore": "Ancient hero, one of the earliest adventurers. Runs the Adventurers Guild. Friendly, patient, rarely impressed.",
+      "gameplayRole": "Adventurer class trainer. Delivers tutorial quest chain."
+    },
+    {
+      "id": "driad-willowmoon",
+      "displayName": "Archdruid Willowmoon",
+      "zone": "ghan-toth",
+      "location": "guild-row-druids",
+      "category": "trainer",
+      "mvp": true,
+      "lore": "Leader of the Druids, chosen by the Old Wood itself. Speaks to trees. Trees speak back.",
+      "gameplayRole": "Druid class trainer."
+    },
+    {
+      "id": "huntmaster-orren",
+      "displayName": "Huntmaster Orren",
+      "zone": "ghan-toth",
+      "location": "guild-row-hunters",
+      "category": "trainer",
+      "mvp": true,
+      "lore": "One-eyed veteran of a hundred Dragonspine hunts. Keeps a wolf-hound at his heel at all times.",
+      "gameplayRole": "Hunter class trainer. Sells bows, arrows, traps."
+    },
+    {
+      "id": "abbot-cathbad",
+      "displayName": "Abbot Cathbad",
+      "zone": "ghan-toth",
+      "location": "guild-row-monks",
+      "category": "trainer",
+      "mvp": true,
+      "lore": "Abbot of Cathbad Abbey. Never smiles. Never raises his voice. Strikes like a landslide.",
+      "gameplayRole": "Monk class trainer."
+    },
+    {
+      "id": "captain-of-the-guard",
+      "displayName": "Captain Hargrim of the Ghan-Toth Guard",
+      "zone": "ghan-toth",
+      "location": "city-gates",
+      "category": "guard",
+      "mvp": true,
+      "lore": "Commands the city watch. Under standing order from the Queen: any PK-flagged killer who sets foot inside the walls does not leave.",
+      "gameplayRole": "Level 60 elite. Spawns alongside 4 patrol guards if any PK player enters hub."
+    },
+    {
+      "id": "fletcher-merrow",
+      "displayName": "Fletcher Merrow",
+      "zone": "ghan-toth",
+      "location": "market-square",
+      "category": "merchant",
+      "mvp": true,
+      "lore": "Fletcher and bowyer. Rumored to have once outshot the Huntmaster at a fair.",
+      "gameplayRole": "Ranged weapon / ammunition merchant."
+    },
+    {
+      "id": "alchemist-yves",
+      "displayName": "Alchemist Yves",
+      "zone": "ghan-toth",
+      "location": "market-square",
+      "category": "merchant",
+      "mvp": true,
+      "lore": "Alchemist. Sells potions. Smells faintly of rosemary and burning copper.",
+      "gameplayRole": "Consumable merchant. Sells healing potions, mana potions, antidotes."
+    },
+    {
+      "id": "bandit-chief-rook",
+      "displayName": "Rook the Bandit Chief",
+      "zone": "dragonspine-foothills",
+      "category": "quest-giver",
+      "mvp": true,
+      "lore": "Leader of the Foothills bandit warband. A contract target for the Queen's bounty quests. Sometimes offers PKs a quest of their own — for a price.",
+      "gameplayRole": "Miniboss. Drops rare loot. Elite PKs can parley with him for alternative quests."
+    }
+  ]
+}

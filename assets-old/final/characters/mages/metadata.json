@@ -1,0 +1,30 @@
+{
+  "character": {
+    "id": "ebc4604f-1b8e-4bf1-9c10-b873ecb6bed6",
+    "name": "Isometric pixel art character, 3/4 front-facing pose, 92\u00d792 sprite. A slender arcane scholar in flowing purple robes with wide sleeves, hood drawn back revealing long silver hair. Ornate wooden staff crowned with a glowing violet rune-crystal held in one hand. Spellbook chained to belt, pouches of reagents. Pale skin, intense focused eyes. Faint wisps of arcane energy swirling at fingertips. Palette: deep purple #4A2E75, soft violet #8E6DC8, lavender #E8D5FF. Limited 16-color palette, crisp pixels, no anti-aliasing. Dark fantasy MUD aesthetic.",
+    "prompt": "Isometric pixel art character, 3/4 front-facing pose, 92\u00d792 sprite. A slender arcane scholar in flowing purple robes with wide sleeves, hood drawn back revealing long silver hair. Ornate wooden staff crowned with a glowing violet rune-crystal held in one hand. Spellbook chained to belt, pouches of reagents. Pale skin, intense focused eyes. Faint wisps of arcane energy swirling at fingertips. Palette: deep purple #4A2E75, soft violet #8E6DC8, lavender #E8D5FF. Limited 16-color palette, crisp pixels, no anti-aliasing. Dark fantasy MUD aesthetic.",
+    "size": {
+      "width": 92,
+      "height": 92
+    },
+    "template_id": "mannequin",
+    "directions": 8,
+    "view": "low top-down",
+    "created_at": "2026-04-19T11:49:22.607641+00:00"
+  },
+  "frames": {
+    "rotations": {
+      "south": "rotations/south.png",
+      "south-east": "rotations/south-east.png",
+      "east": "rotations/east.png",
+      "north-east": "rotations/north-east.png",
+      "north": "rotations/north.png",
+      "north-west": "rotations/north-west.png",
+      "west": "rotations/west.png",
+      "south-west": "rotations/south-west.png"
+    },
+    "animations": {}
+  },
+  "export_version": "2.0",
+  "export_date": "2026-04-19T11:53:00.886713"
+}

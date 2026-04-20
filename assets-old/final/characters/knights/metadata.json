@@ -1,0 +1,30 @@
+{
+  "character": {
+    "id": "1c33ff6f-b1e3-48e1-9e69-f8f596669efe",
+    "name": " Isometric pixel art character, 3/4 front-facing pose, 92\u00d792 sprite. A Templar-inspired armored protector in\n  \u258e  full plate mail with a white tabard over the chestplate. Kite shield slung on arm, longsword sheathed at\n  \u258e hip. Helm tucked under arm or worn with visor up, revealing noble weathered features. Gold filigree trim,\n  \u258e Arthurian cross motif on shield. Stoic, upright posture. Palette: gold #C9A961, deep blue #2B4C6F, white\n  \u258e #F5F5F5. Limited 16-color palette, crisp pixels, no anti-aliasing. Dark fantasy MUD aesthetic.",
+    "prompt": " Isometric pixel art character, 3/4 front-facing pose, 92\u00d792 sprite. A Templar-inspired armored protector in\n  \u258e  full plate mail with a white tabard over the chestplate. Kite shield slung on arm, longsword sheathed at\n  \u258e hip. Helm tucked under arm or worn with visor up, revealing noble weathered features. Gold filigree trim,\n  \u258e Arthurian cross motif on shield. Stoic, upright posture. Palette: gold #C9A961, deep blue #2B4C6F, white\n  \u258e #F5F5F5. Limited 16-color palette, crisp pixels, no anti-aliasing. Dark fantasy MUD aesthetic.",
+    "size": {
+      "width": 92,
+      "height": 92
+    },
+    "template_id": "mannequin",
+    "directions": 8,
+    "view": "low top-down",
+    "created_at": "2026-04-19T11:42:01.064112+00:00"
+  },
+  "frames": {
+    "rotations": {
+      "south": "rotations/south.png",
+      "south-east": "rotations/south-east.png",
+      "east": "rotations/east.png",
+      "north-east": "rotations/north-east.png",
+      "north": "rotations/north.png",
+      "north-west": "rotations/north-west.png",
+      "west": "rotations/west.png",
+      "south-west": "rotations/south-west.png"
+    },
+    "animations": {}
+  },
+  "export_version": "2.0",
+  "export_date": "2026-04-19T11:48:48.283814"
+}

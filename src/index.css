@@ -1,0 +1,22 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background: #0f172a;
+  overflow-x: hidden;
+}
+
+canvas {
+  display: block;
+}
+
+button {
+  font-family: inherit;
+}

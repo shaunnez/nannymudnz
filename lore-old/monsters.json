@@ -1,0 +1,146 @@
+{
+  "description": "Monster/mob catalog. Each monster has a level, zone, behavior pattern, loot table reference, and ability set. MVP ships with ~6 monster types covering the 4 MVP zones. Canonical stats from RULES/monster.html: HP/AC/WC scale with level (L1: 50/0/3, L10: 210/5/14, L20: 400/10/25). Max loot gc = HP*AC*WC/20, capped at 1000gc (we use 2000gc in Outlands).",
+  "canonicalReference": "docs/canonical-mechanics.md",
+  "canonicalLevelTable": {
+    "note": "Reference only; individual monsters may deviate for design reasons.",
+    "rows": [
+      { "level": 1,  "hp": 50,  "ac": 0,  "wc": 3 },
+      { "level": 5,  "hp": 110, "ac": 2,  "wc": 7 },
+      { "level": 10, "hp": 210, "ac": 5,  "wc": 14 },
+      { "level": 15, "hp": 310, "ac": 7,  "wc": 19 },
+      { "level": 20, "hp": 400, "ac": 10, "wc": 25 }
+    ]
+  },
+  "lootFormula": "max_gc = (hp * ac * wc) / 20",
+  "behaviors": {
+    "passive": "Never attacks unless attacked.",
+    "defensive": "Attacks only if attacked or if player enters close range.",
+    "aggressive": "Attacks on sight within perception radius.",
+    "pack": "Aggressive; calls nearby monsters of same type for help.",
+    "boss": "Scripted encounter with phases."
+  },
+  "monsters": [
+    {
+      "id": "plains-bandit",
+      "displayName": "Plains Bandit",
+      "zone": "plains-of-nan",
+      "level": 3,
+      "health": 80,
+      "damage": 8,
+      "behavior": "aggressive",
+      "lootTable": "bandit-common",
+      "abilities": ["slash"],
+      "mvp": true,
+      "modelRef": "humanoid-male-light-armor"
+    },
+    {
+      "id": "bandit-bowman",
+      "displayName": "Bandit Bowman",
+      "zone": "plains-of-nan",
+      "level": 4,
+      "health": 65,
+      "damage": 10,
+      "range": 12,
+      "behavior": "aggressive",
+      "lootTable": "bandit-common",
+      "abilities": ["aimed-shot"],
+      "mvp": true,
+      "modelRef": "humanoid-male-light-armor"
+    },
+    {
+      "id": "wild-pegasus",
+      "displayName": "Wild Pegasus",
+      "zone": "plains-of-nan",
+      "level": 6,
+      "health": 200,
+      "damage": 15,
+      "behavior": "defensive",
+      "lootTable": "beast-feathers",
+      "abilities": ["kick", "fly-away"],
+      "mvp": true,
+      "modelRef": "pegasus",
+      "note": "Flavor creature. Taming quest available from Archdruid Willowmoon."
+    },
+    {
+      "id": "foothills-wolf",
+      "displayName": "Dragonspine Wolf",
+      "zone": "dragonspine-foothills",
+      "level": 12,
+      "health": 220,
+      "damage": 22,
+      "behavior": "pack",
+      "lootTable": "beast-pelts",
+      "abilities": ["bite", "howl"],
+      "mvp": true,
+      "modelRef": "wolf"
+    },
+    {
+      "id": "young-dragon",
+      "displayName": "Young Dragon",
+      "zone": "dragonspine-foothills",
+      "level": 25,
+      "health": 1800,
+      "damage": 80,
+      "behavior": "boss",
+      "lootTable": "dragon-loot",
+      "abilities": ["breath-fire", "tail-sweep", "takeoff"],
+      "mvp": true,
+      "modelRef": "young-dragon",
+      "note": "Miniboss. Respawns every 15 minutes. PvP-active zone — other players may contest the kill."
+    },
+    {
+      "id": "bandit-chief",
+      "displayName": "Rook the Bandit Chief",
+      "zone": "dragonspine-foothills",
+      "level": 18,
+      "health": 1100,
+      "damage": 45,
+      "behavior": "boss",
+      "lootTable": "bandit-chief-loot",
+      "abilities": ["dual-slash", "whistle-reinforcements", "throw-dagger"],
+      "mvp": true,
+      "modelRef": "humanoid-male-heavy-armor"
+    },
+    {
+      "id": "arena-dummy",
+      "displayName": "Training Dummy",
+      "zone": "arena-of-trials",
+      "level": 1,
+      "health": 1000,
+      "damage": 0,
+      "behavior": "passive",
+      "lootTable": "none",
+      "abilities": [],
+      "mvp": true,
+      "note": "Used in the combat prototype and tutorial. Does not die; resets HP."
+    }
+  ],
+  "lootTables": {
+    "bandit-common": [
+      { "itemId": "copper", "minCount": 5, "maxCount": 30, "chance": 1.0 },
+      { "itemId": "wooden-sword", "chance": 0.15 },
+      { "itemId": "leather-tunic", "chance": 0.08 },
+      { "itemId": "minor-health-potion", "chance": 0.10 }
+    ],
+    "beast-pelts": [
+      { "itemId": "copper", "minCount": 0, "maxCount": 5, "chance": 0.3 },
+      { "itemId": "dragonblood-moss", "chance": 0.04, "note": "Technically on dragon-adjacent creatures only" }
+    ],
+    "beast-feathers": [
+      { "itemId": "copper", "minCount": 0, "maxCount": 3, "chance": 0.3 }
+    ],
+    "dragon-loot": [
+      { "itemId": "gold", "minCount": 1, "maxCount": 5, "chance": 1.0 },
+      { "itemId": "runebound-staff", "chance": 0.03 },
+      { "itemId": "dragonblood-moss", "minCount": 3, "maxCount": 8, "chance": 1.0 },
+      { "itemId": "mithril-ore", "minCount": 1, "maxCount": 3, "chance": 0.5 }
+    ],
+    "bandit-chief-loot": [
+      { "itemId": "gold", "minCount": 1, "maxCount": 3, "chance": 1.0 },
+      { "itemId": "steel-longsword", "chance": 0.25 },
+      { "itemId": "chain-hauberk", "chance": 0.15 },
+      { "itemId": "kite-shield", "chance": 0.15 }
+    ],
+    "none": []
+  }
+}
