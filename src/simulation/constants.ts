@@ -29,12 +29,6 @@ export const DODGE_DURATION_MS = 400;
 export const DODGE_DISTANCE = 80;
 export const DODGE_INVULN_MS = 400;
 export const RUN_SPEED_MULT = 1.6;
-export const CANVAS_WIDTH = 900;
-export const CANVAS_HEIGHT = 500;
-export const WORLD_TO_SCREEN_X_SCALE = CANVAS_WIDTH / 900;
-export const VIEW_HEIGHT = CANVAS_HEIGHT;
-export const GROUND_SCREEN_Y = 420;
-export const DEPTH_SCALE = 0.6;
 export const COMBO_HINTS = {
   'down,down,attack': { name: 'Slot 1', slots: 1 },
   'right,right,attack': { name: 'Slot 2', slots: 2 },
