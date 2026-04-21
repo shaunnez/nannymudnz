@@ -60,7 +60,7 @@ export function tickAI(actor: Actor, state: SimState, dtSec: number, vfxEvents: 
       tickPackerAI(actor, target, state, dtSec, vfxEvents, speed, dist, dx, dy);
       break;
     case 'brute':
-      tickBruteAI(actor, target, state, dtSec, vfxEvents, speed, dist, dx, dy);
+      tickBruteAI(actor, target, state, dtSec, vfxEvents, speed, dist, dx);
       break;
   }
 }
@@ -213,7 +213,7 @@ function tickPackerAI(actor: Actor, target: Actor, state: SimState, dtSec: numbe
   }
 }
 
-function tickBruteAI(actor: Actor, target: Actor, _state: SimState, dtSec: number, vfxEvents: VFXEvent[], speed: number, dist: number, dx: number, _dy: number): void {
+function tickBruteAI(actor: Actor, target: Actor, _state: SimState, dtSec: number, vfxEvents: VFXEvent[], speed: number, dist: number, dx: number): void {
   const def = ENEMY_DEFS[actor.kind];
   if (!def) return;
   const ai = actor.aiState;
