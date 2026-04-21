@@ -20,3 +20,8 @@ export function worldYToScreenY(worldY: number, canvasHeight: number): number {
   const t = (worldY - WORLD_Y_MIN) / (WORLD_Y_MAX - WORLD_Y_MIN);
   return screenYMin + t * (screenYMax - screenYMin);
 }
+
+// VS HUD band reservations — the React HUD overlay covers these strips,
+// so the camera viewport shrinks to the middle to keep action centered.
+export const HUD_TOP_PX = 72;
+export const HUD_BOTTOM_PX = 160;
