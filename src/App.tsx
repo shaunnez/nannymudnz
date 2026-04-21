@@ -77,7 +77,12 @@ export default function App() {
 
         {state.screen === 'game' && (
           <GameScreen
-            guildId={state.p1}
+            mode={state.mode === 'vs' ? 'vs' : 'story'}
+            p1={state.p1}
+            p2={state.p2}
+            stageId={state.stageId}
+            animateHud={state.animateHud}
+            showLog={state.showLog}
             onVictory={(score) => {
               setFinalScore(score);
               set({ winner: 'P1' });
