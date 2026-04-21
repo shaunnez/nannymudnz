@@ -152,6 +152,7 @@ function createEnemyActor(kind: string, x: number, y: number, state: SimState): 
   };
 }
 
+// eslint-disable-next-line no-restricted-globals -- seed is chosen once at boot, outside the tick loop
 export function createInitialState(guildId: GuildId, seed: number = Date.now()): SimState {
   return {
     tick: 0,

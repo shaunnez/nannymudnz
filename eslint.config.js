@@ -24,5 +24,28 @@ export default tseslint.config(
         { allowConstantExport: true },
       ],
     },
+  },
+  {
+    files: ['src/simulation/**/*.ts'],
+    ignores: ['src/simulation/**/__tests__/**'],
+    rules: {
+      'no-restricted-globals': [
+        'error',
+        { name: 'window', message: 'simulation must stay portable to Node — do not reference window.' },
+        { name: 'document', message: 'simulation must stay portable to Node — do not reference document.' },
+        { name: 'localStorage', message: 'simulation must stay portable to Node — do not reference localStorage.' },
+        { name: 'setTimeout', message: 'simulation must be tick-driven — replace with a countdown field on state or a controller.' },
+        { name: 'setInterval', message: 'simulation must be tick-driven — replace with a countdown field on state or a controller.' },
+        { name: 'Date', message: 'simulation must be deterministic — read time from state.timeMs, not Date.' },
+        { name: 'performance', message: 'simulation must be deterministic — read time from state.timeMs, not performance.now().' },
+      ],
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: "CallExpression[callee.object.name='Math'][callee.property.name='random']",
+          message: 'simulation must be deterministic — use state.rng() instead of Math.random().',
+        },
+      ],
+    },
   }
 );
