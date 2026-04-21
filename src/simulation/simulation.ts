@@ -20,12 +20,6 @@ import { tickPhysics, tickKnockdown, tickGetup, tickProjectile, updateCamera, ge
 import { createComboBuffer, pushComboKey, detectComboFromInput, clearCombo } from './comboBuffer';
 import { tickAI, spawnEnemyAt } from './ai';
 
-let actorIdCounter = 1;
-
-function nextId(): string {
-  return `actor_${actorIdCounter++}`;
-}
-
 export function createPlayerActor(guildId: GuildId): Actor {
   const guild = getGuild(guildId);
   return {
@@ -95,12 +89,12 @@ export function createPlayerActor(guildId: GuildId): Actor {
   };
 }
 
-function createEnemyActor(kind: string, x: number, y: number, rng: () => number): Actor {
+function createEnemyActor(kind: string, x: number, y: number, state: SimState): Actor {
   const def = ENEMY_DEFS[kind];
   if (!def) throw new Error(`Unknown enemy: ${kind}`);
 
   return {
-    id: nextId(),
+    id: `actor_${state.nextActorId++}`,
     kind: def.kind,
     team: 'enemy',
     x,
@@ -140,9 +134,9 @@ function createEnemyActor(kind: string, x: number, y: number, rng: () => number)
     aiState: {
       behavior: def.ai,
       targetId: null,
-      lastActionMs: rng() * 600,
+      lastActionMs: state.rng() * 600,
       retreating: false,
-      packRole: kind === 'wolf' ? (rng() > 0.5 ? 'leader' : 'circler') : null,
+      packRole: kind === 'wolf' ? (state.rng() > 0.5 ? 'leader' : 'circler') : null,
       phase: 0,
       patrolDir: 1,
       leapCooldown: 0,
@@ -291,7 +285,7 @@ function fireAbility(player: Actor, ability: AbilityDef, state: SimState, ctrl: 
       const delay = i * 100;
       const spread = (i - Math.floor(projCount / 2)) * 3;
       const proj: Projectile = {
-        id: `proj_${Date.now()}_${i}`,
+        id: `proj_${state.nextProjectileId++}`,
         ownerId: player.id,
         team: player.team,
         x: player.x,
@@ -499,7 +493,7 @@ function performBasicAttack(player: Actor, state: SimState, ctrl: PlayerControll
   state.vfxEvents.push({ type: 'hit_spark', color: guild.color, x: player.x + player.facing * 30, y: player.y - 20, z: player.z });
 }
 
-function tickPlayerResourceRegen(player: Actor, dtMs: number, inCombat: boolean): void {
+function tickPlayerResourceRegen(player: Actor, dtMs: number, inCombat: boolean, state: SimState): void {
   if (!player.guildId) return;
   const guild = getGuild(player.guildId);
   const res = guild.resource;
@@ -523,10 +517,10 @@ function tickPlayerResourceRegen(player: Actor, dtMs: number, inCombat: boolean)
   }
   if (player.guildId === 'champion') {
     if (!inCombat && (player.bloodtally || 0) > 0) {
-      if (state_timeTracker >= 15000) {
+      if (state.bloodtallyDecayMs >= 15000) {
         player.bloodtally = Math.max(0, (player.bloodtally || 0) - 1);
         player.mp = player.bloodtally;
-        state_timeTracker = 0;
+        state.bloodtallyDecayMs = 0;
       }
     }
     return;
@@ -535,8 +529,6 @@ function tickPlayerResourceRegen(player: Actor, dtMs: number, inCombat: boolean)
   const regen = inCombat ? res.regenCombat : res.regenIdle;
   player.mp = Math.min(res.max, player.mp + (regen * dtMs) / 1000);
 }
-
-let state_timeTracker = 0;
 
 function tickHPRegen(actor: Actor, dtMs: number, inCombat: boolean): void {
   if (!actor.isAlive) return;
@@ -582,7 +574,7 @@ function tickWaves(state: SimState): void {
             state.bossSpawned = true;
           }
 
-          const enemy = createEnemyActor(spawn.kind as string, spawnX, spawnY, state.rng);
+          const enemy = createEnemyActor(spawn.kind as string, spawnX, spawnY, state);
           if (spawn.kind === 'bandit_king') {
             enemy.stats = { STR: 14, DEX: 10, CON: 18, INT: 8, WIS: 8, CHA: 8 };
           }
@@ -800,7 +792,7 @@ function handlePlayerInput(state: SimState, input: InputState, ctrl: PlayerContr
     if (player.heldPickup) {
       const pickup = player.heldPickup;
       const proj: Projectile = {
-        id: `throw_${Date.now()}`,
+        id: `proj_${state.nextProjectileId++}`,
         ownerId: player.id,
         team: player.team,
         x: player.x,
@@ -926,7 +918,7 @@ function spawnPickup(state: SimState, enemy: Actor): void {
   if (!def) return;
   if (def.dropWeapon && state.rng() < def.dropWeaponChance) {
     state.pickups.push({
-      id: `pickup_${Date.now()}_${Math.random()}`,
+      id: `pickup_${state.nextPickupId++}`,
       type: def.dropWeapon as 'rock' | 'club',
       x: enemy.x,
       y: enemy.y,
@@ -949,7 +941,7 @@ export function tickSimulation(state: SimState, input: InputState, dtMs: number)
   state.tick++;
   state.vfxEvents = [];
 
-  state_timeTracker += dtMs;
+  state.bloodtallyDecayMs += dtMs;
 
   const ctrl = getOrCreateController('player', input);
 
@@ -963,7 +955,7 @@ export function tickSimulation(state: SimState, input: InputState, dtMs: number)
     tickStatusEffects(state.player, dtMs, state.vfxEvents);
     tickHPRegen(state.player, dtMs, state.enemies.filter(e => e.isAlive).length > 0);
     const inCombat = state.enemies.filter(e => e.isAlive).length > 0;
-    tickPlayerResourceRegen(state.player, dtMs, inCombat);
+    tickPlayerResourceRegen(state.player, dtMs, inCombat, state);
   } else {
     state.phase = 'defeat';
     return state;
