@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import type { GuildId } from '../simulation/types';
+import type { GuildId, SimMode } from '../simulation/types';
 import { VIRTUAL_WIDTH, VIRTUAL_HEIGHT } from './constants';
 import { BootScene } from './scenes/BootScene';
 import { GameplayScene } from './scenes/GameplayScene';
@@ -15,6 +15,10 @@ export interface GameCallbacks {
 
 export interface GameBootConfig {
   guildId: GuildId;
+  mode: SimMode;
+  p2?: GuildId;
+  stageId: string;
+  seed?: number;
   callbacks: GameCallbacks;
 }
 
@@ -32,15 +36,15 @@ export function makePhaserGame(parent: HTMLElement, boot: GameBootConfig): Phase
     },
     scene: [BootScene, GameplayScene, HudScene],
     disableContextMenu: true,
-    input: {
-      keyboard: true,
-    },
-    render: {
-      antialias: false,
-    },
+    input: { keyboard: true },
+    render: { antialias: false },
   });
 
   game.registry.set('guildId', boot.guildId);
+  game.registry.set('mode', boot.mode);
+  game.registry.set('p2', boot.p2 ?? null);
+  game.registry.set('stageId', boot.stageId);
+  game.registry.set('seed', boot.seed ?? null);
   game.registry.set('callbacks', boot.callbacks);
 
   return game;
