@@ -86,6 +86,7 @@ No externally-visible change. Game plays identically to a human tester. Typechec
 - `npm run lint` passes with the new `src/simulation/**` override.
 - Golden-state test passes (same seed + same inputs → identical `SimState`).
 - A human tester spot-checks a few minutes of play and can't distinguish it from the pre-change build. Note: this is *subjectively* indistinguishable, not byte-identical — swapping `Math.random()` for a seeded stream necessarily produces different specific rolls.
+- `CLAUDE.md` updated: the line "There is no test runner configured; do not fabricate a `test` script" is replaced with a Vitest entry under Commands, and the testing conventions section documents the golden-state pattern. Without this update, future sessions will read stale guidance.
 
 ### Phase 2 — Phaser port (~1–2 weeks)
 
@@ -124,6 +125,7 @@ src/
 - HUD (`src/rendering/hud.ts`) reimplements on `HudScene` using Phaser text + graphics + the existing tween engine for damage-number float-up.
 - `vfxEvents` consumption moves into `GameplayScene` — `hit_spark` / `aoe_pop` / `blink_trail` / `damage_number` each map to a Phaser tween or particle emitter.
 - **Audio triggers move too.** The `audio.playAttack()` / `playHeal()` / `playBlock()` / `playJump()` calls currently living in `GameScreen.tsx`'s rAF loop (which inspect `state.vfxEvents` and `state.player.state`) move into `GameplayScene.update` after the tick runs. React no longer has per-tick state to read, so it cannot drive audio. `AudioManager` itself is unchanged — only the call sites relocate.
+- **Fullscreen-exit pause rewire.** Today `GameScreen.tsx` listens for `FULLSCREEN_EXIT_EVENT` on `window` and calls `forcePause(stateRef.current)`. In Phase 2 `stateRef` goes away. `GameplayScene` takes over the listener in its `create()` (removing it in `shutdown()`) and calls `this.simState = forcePause(this.simState)` directly. React keeps the `useFullscreen` hook for the `F` key and fullscreen-button wiring; it no longer mediates the pause.
 
 **Sprite pipeline:**
 
@@ -201,7 +203,7 @@ Lift the simulation to a shared package. Run it on the server. Client becomes a 
 
 ## Architecture boundaries (post-rewrite)
 
-Same one-way dep flow as today, with Colyseus slotted between the authoritative simulation (server) and the rendering client. The client holds a read-only `SimState` mirror populated by `ColyseusClient`; everything on the client reads from that mirror.
+Same one-way dep flow as today, with Colyseus slotted between the authoritative simulation (server) and the rendering client. The client holds a `SimState` mirror that only `StateSync` writes to (in response to server patches); all other client code — `game/`, `audio/` — reads the mirror and never mutates it. "Read-only" below is from the perspective of the rendering and audio layers, not an absolute.
 
 ```
 SERVER (packages/server)
@@ -215,11 +217,11 @@ SERVER (packages/server)
                                     ▼
 ─────────────────────────────────────────────────────────
 CLIENT (src/)
-  PhaserInputAdapter ──► ColyseusClient ──► client SimState mirror
-                              ▲                      │
-                              │                      ├──► game/ (Phaser views, read-only)
-                              │                      │
-                              │                      └──► audio/ (reads vfxEvents + phase)
+  PhaserInputAdapter ──► ColyseusClient ──► StateSync ──► client SimState mirror
+                              ▲                                    │
+                              │                                    ├──► game/ (reads only)
+                              │                                    │
+                              │                                    └──► audio/ (reads only)
                               │
                        InputState over socket
 ```
@@ -234,12 +236,17 @@ Rules that stay enforced:
 ## Risks and mitigations
 
 - **Phaser 3 is a large API surface.** Mitigation: start `GameplayScene` as close to a 1:1 port of `gameRenderer.ts` as possible. Don't opportunistically adopt Phaser physics, Phaser cameras' bounds system, or scene transitions in Phase 2. Idioms can land in Phase 3.
-- **Simulation "pure" cleanup is easy to get wrong.** Mitigation: a small golden-state test — tick a scripted input sequence for N frames, snapshot `SimState`, assert byte-equality on re-run with the same seed. Land this with Phase 1.
+- **Simulation "pure" cleanup is easy to get wrong.** Mitigation: a small golden-state test — tick a scripted input sequence for N frames, snapshot `SimState`, assert deep-equality on re-run with the same seed. Land this with Phase 1.
 - **Colyseus Schema vs. plain `SimState`.** Colyseus emits deltas based on Schema mutations. If the tick function mutates plain TS objects, there are three ways to feed the Schema, each with different costs; we do not pick one in this spec because the right answer depends on profiling and the size of `SimState` after Phase 3:
   1. **Mutate the Schema in place inside `tickSimulation`.** Purest delta stream, smallest bandwidth. Contaminates the simulation with `@colyseus/schema` runtime types, which is the opposite of why we lifted it to `packages/shared` — this leaks a transport concern into the logic layer.
   2. **Run tick against plain types, then apply a plain→Schema diff.** Keeps the simulation pure. Needs a diff/applier utility (~200 LOC, not trivial) that understands every collection field. Delta stream is correct; CPU cost is one extra pass per tick.
   3. **Run tick against plain types, overwrite Schema wholesale each tick.** Simplest code; every tick ships full state. Bandwidth grows with actor count — fine for 2-player small matches, probably unacceptable for 4+ players with many projectiles.
   Decision deferred to Phase 4 kickoff, when we can measure `SimState` size in bytes with real content. Phase 4 plan-doc owns picking one.
+- **Per-tick `vfxEvents` don't map cleanly to Schema sync.** `SimState.vfxEvents` is an ephemeral per-tick array: the simulation pushes events during `tickSimulation` and both rendering and audio consume it within the same frame. On the server it will be cleared at the start of every tick. Colyseus Schema syncs collection *state*, not events, and patches arrive at 20 Hz while ticks run at 60 Hz — naively syncing the array would drop events (server clears before the next patch) or double-emit (client sees the same events across consecutive patches). Three plausible fixes, decision deferred to Phase 4 kickoff:
+  1. Promote `vfxEvents` out of `SimState` and send them as server-push messages (`room.broadcast` or per-client `client.send`) each tick, not through Schema. Consume-once semantics, clean.
+  2. Include `vfxEvents` in Schema as an append-only array with monotonic ids; client tracks `lastSeenVfxId` and skips entries it has already consumed. Server periodically truncates.
+  3. Accept lossy audio/VFX: server writes events into Schema and lets the 20 Hz patch rate coalesce them; cosmetic misses are acceptable but hit-feedback sounds may stutter.
+  Option 1 is the likely answer; flagged here so it isn't a surprise in Phase 4.
 - **Two-phase gap (Phase 2 rendering regression).** Mitigation: Phase 2 is a single branch merged only when feature-parity is reached. Don't ship a half-ported GameplayScene to main.
 - **React + Phaser lifecycle hazards (double-mount in StrictMode, HMR).** Mitigation: destroy the Phaser instance in the effect cleanup; guard with a ref; disable StrictMode for `GameScreen` if necessary.
 
@@ -272,5 +279,5 @@ Phase 2 and Phase 4 each need their own plan document when they come up; they're
 ## Open questions
 
 - **Sprite asset pipeline.** Current work lives under `scripts/` and `public/` (per git status); after Phase 2, atlas generation needs to target Phaser's atlas JSON format. Decide whether to keep the existing pixellab-driven generation scripts or adopt TexturePacker / free-tex-packer. Decision deferred to Phase 2 kickoff.
-- **Fixed timestep.** Simulation currently runs at variable `dtMs` clamped to 50. Colyseus prefers fixed-step (e.g. 60 Hz); the simulation handles variable `dtMs` today. Phase 4 will need to decide whether to fix the step server-side and accumulate on the client, or keep variable and live with minor drift. Revisit at Phase 4 kickoff.
+- **Client-side timestep reconciliation.** Phase 4 fixes the server step at 60 Hz (`setSimulationInterval(..., 1000/60)`). The current client simulation runs at variable `dtMs` clamped to 50. Once the client stops calling `tickSimulation` this is moot server-side, but if we later add prediction (noted as the Phase 4 follow-up), the client mirror needs a matching fixed-step accumulator so predicted state and authoritative state agree on tick boundaries. Design that when prediction lands, not now.
 - **Authentication / accounts.** Colyseus supports JWT auth hooks. Out of scope here; surfaces again when we decide how players identify themselves.
