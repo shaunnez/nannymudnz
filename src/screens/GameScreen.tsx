@@ -72,7 +72,7 @@ export function GameScreen({ guildId, onVictory, onDefeat, onQuit }: Props) {
 
     stateRef.current = createInitialState(guildId);
     comboBufferRef.current = createComboBuffer();
-    resetController('player');
+    resetController(stateRef.current, 'player');
     bossWasMusicStarted.current = false;
 
     audio.startStageMusic();
@@ -155,7 +155,7 @@ export function GameScreen({ guildId, onVictory, onDefeat, onQuit }: Props) {
       cancelAnimationFrame(animFrameRef.current);
       input.dispose();
       audio.dispose();
-      resetController('player');
+      resetController(stateRef.current, 'player');
     };
   }, [guildId]);
 

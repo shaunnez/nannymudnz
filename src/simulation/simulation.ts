@@ -1,8 +1,9 @@
 import type {
   SimState, Actor, InputState, GuildId, Projectile,
-  AbilityDef, ActorKind
+  AbilityDef, ActorKind, PlayerController,
 } from './types';
 import { getGuild } from './guildData';
+import { makeRng } from './rng';
 import { ENEMY_DEFS, STAGE_WAVES } from './enemyData';
 import {
   PLAYER_SPAWN_X, PLAYER_SPAWN_Y, ENEMY_SPAWN_Y_RANGE,
@@ -18,12 +19,6 @@ import {
 import { tickPhysics, tickKnockdown, tickGetup, tickProjectile, updateCamera, getEffectiveMoveSpeed } from './physics';
 import { createComboBuffer, pushComboKey, detectComboFromInput, clearCombo } from './comboBuffer';
 import { tickAI, spawnEnemyAt } from './ai';
-
-let actorIdCounter = 1;
-
-function nextId(): string {
-  return `actor_${actorIdCounter++}`;
-}
 
 export function createPlayerActor(guildId: GuildId): Actor {
   const guild = getGuild(guildId);
@@ -76,6 +71,7 @@ export function createPlayerActor(guildId: GuildId): Actor {
       leapCooldown: 0,
       windupActive: false,
       windupTimeMs: 0,
+      lungeMs: 0,
     },
     bossPhase: 0,
     summonedByPlayer: false,
@@ -93,12 +89,12 @@ export function createPlayerActor(guildId: GuildId): Actor {
   };
 }
 
-function createEnemyActor(kind: string, x: number, y: number): Actor {
+function createEnemyActor(kind: string, x: number, y: number, state: SimState): Actor {
   const def = ENEMY_DEFS[kind];
   if (!def) throw new Error(`Unknown enemy: ${kind}`);
 
   return {
-    id: nextId(),
+    id: `actor_${state.nextActorId++}`,
     kind: def.kind,
     team: 'enemy',
     x,
@@ -138,14 +134,15 @@ function createEnemyActor(kind: string, x: number, y: number): Actor {
     aiState: {
       behavior: def.ai,
       targetId: null,
-      lastActionMs: Math.random() * 600,
+      lastActionMs: state.rng() * 600,
       retreating: false,
-      packRole: kind === 'wolf' ? (Math.random() > 0.5 ? 'leader' : 'circler') : null,
+      packRole: kind === 'wolf' ? (state.rng() > 0.5 ? 'leader' : 'circler') : null,
       phase: 0,
       patrolDir: 1,
       leapCooldown: 0,
       windupActive: false,
       windupTimeMs: 0,
+      lungeMs: 0,
     },
     bossPhase: 0,
     summonedByPlayer: false,
@@ -155,7 +152,8 @@ function createEnemyActor(kind: string, x: number, y: number): Actor {
   };
 }
 
-export function createInitialState(guildId: GuildId): SimState {
+// eslint-disable-next-line no-restricted-globals -- seed is chosen once at boot, outside the tick loop
+export function createInitialState(guildId: GuildId, seed: number = Date.now()): SimState {
   return {
     tick: 0,
     timeMs: 0,
@@ -172,29 +170,21 @@ export function createInitialState(guildId: GuildId): SimState {
     phase: 'playing',
     bossSpawned: false,
     score: 0,
+    rngSeed: seed,
+    rng: makeRng(seed),
+    nextActorId: 1,
+    nextProjectileId: 1000,
+    nextPickupId: 1,
+    nextEffectId: 1,
+    bloodtallyDecayMs: 0,
+    controllers: {},
   };
 }
 
-interface PlayerController {
-  input: InputState;
-  comboBuffer: ReturnType<typeof createComboBuffer>;
-  lastAttackMs: number;
-  blockingMs: number;
-  dodgeMs: number;
-  parryWindowMs: number;
-  channelMs: number;
-  channelingAbility: string | null;
-  groundTargetX: number;
-  groundTargetY: number;
-  attackChain: number;
-  runningDir: number;
-}
-
-const controllers = new Map<string, PlayerController>();
-
-export function getOrCreateController(playerId: string, input: InputState): PlayerController {
-  if (!controllers.has(playerId)) {
-    controllers.set(playerId, {
+export function getOrCreateController(state: SimState, playerId: string, input: InputState): PlayerController {
+  let ctrl = state.controllers[playerId];
+  if (!ctrl) {
+    ctrl = {
       input,
       comboBuffer: createComboBuffer(),
       lastAttackMs: 0,
@@ -207,15 +197,15 @@ export function getOrCreateController(playerId: string, input: InputState): Play
       groundTargetY: 220,
       attackChain: 0,
       runningDir: 0,
-    });
+    };
+    state.controllers[playerId] = ctrl;
   }
-  const ctrl = controllers.get(playerId)!;
   ctrl.input = input;
   return ctrl;
 }
 
-export function resetController(playerId: string): void {
-  controllers.delete(playerId);
+export function resetController(state: SimState, playerId: string): void {
+  delete state.controllers[playerId];
 }
 
 function consumeResource(player: Actor, cost: number): boolean {
@@ -275,7 +265,7 @@ function fireAbility(player: Actor, ability: AbilityDef, state: SimState, ctrl: 
     state.vfxEvents.push({ type: 'blink_trail', color: ability.vfxColor, x: player.x, y: player.y, z: player.z, x2: tx, y2: player.y });
     player.x = Math.max(20, Math.min(3980, tx));
     if (ability.effects.stealth) {
-      addStatusEffect(player, 'stealth', 1, ability.effects.stealth.durationMs, player.id);
+      addStatusEffect(state, player, 'stealth', 1, ability.effects.stealth.durationMs, player.id);
     }
     clearCombo(ctrl.comboBuffer);
     return;
@@ -295,7 +285,7 @@ function fireAbility(player: Actor, ability: AbilityDef, state: SimState, ctrl: 
       const delay = i * 100;
       const spread = (i - Math.floor(projCount / 2)) * 3;
       const proj: Projectile = {
-        id: `proj_${Date.now()}_${i}`,
+        id: `proj_${state.nextProjectileId++}`,
         ownerId: player.id,
         team: player.team,
         x: player.x,
@@ -304,7 +294,7 @@ function fireAbility(player: Actor, ability: AbilityDef, state: SimState, ctrl: 
         vx: dir * (ability.projectileSpeed + delay * 0),
         vy: spread * 0.5,
         vz: 0,
-        damage: Math.round(calcDamage(ability, player.stats, state.enemies[0] || player, false) * dmgMult),
+        damage: Math.round(calcDamage(ability, player.stats, state.enemies[0] || player, false, state.rng) * dmgMult),
         damageType: ability.damageType,
         range: ability.range || 400,
         traveled: 0,
@@ -315,7 +305,7 @@ function fireAbility(player: Actor, ability: AbilityDef, state: SimState, ctrl: 
         piercing: ability.id === 'arcane_shard',
         color: ability.vfxColor,
         type: ability.id,
-        hitActorIds: new Set(),
+        hitActorIds: [],
       };
       state.projectiles.push(proj);
     }
@@ -328,8 +318,8 @@ function fireAbility(player: Actor, ability: AbilityDef, state: SimState, ctrl: 
       Math.hypot(e.x - player.x, e.y - player.y) <= ability.aoeRadius
     );
     for (const target of aoeTargets) {
-      const isCrit = checkCrit(player);
-      const dmg = Math.round(calcDamage(ability, player.stats, target, isCrit) * dmgMult);
+      const isCrit = checkCrit(player, state.rng);
+      const dmg = Math.round(calcDamage(ability, player.stats, target, isCrit, state.rng) * dmgMult);
       applyDamage(target, dmg, state.vfxEvents, isCrit);
       applyEffects(ability, target, player, state);
       if (ability.knockdown && dmg >= KNOCKDOWN_THRESHOLD) {
@@ -344,8 +334,8 @@ function fireAbility(player: Actor, ability: AbilityDef, state: SimState, ctrl: 
       e.isAlive && isInRange(player, e, ability.range || 60)
     );
     for (const target of targets) {
-      const isCrit = checkCrit(player);
-      const dmg = Math.round(calcDamage(ability, player.stats, target, isCrit) * dmgMult);
+      const isCrit = checkCrit(player, state.rng);
+      const dmg = Math.round(calcDamage(ability, player.stats, target, isCrit, state.rng) * dmgMult);
       applyDamage(target, dmg, state.vfxEvents, isCrit);
       applyEffects(ability, target, player, state);
       if (ability.knockdown || dmg >= KNOCKDOWN_THRESHOLD) {
@@ -358,7 +348,7 @@ function fireAbility(player: Actor, ability: AbilityDef, state: SimState, ctrl: 
   if (ability.effects) {
     for (const [etype, edata] of Object.entries(ability.effects)) {
       if (edata && (etype === 'speed_boost' || etype === 'damage_boost' || etype === 'attack_speed_boost' || etype === 'shield' || etype === 'damage_reduction' || etype === 'lifesteal')) {
-        addStatusEffect(player, etype as any, edata.magnitude, edata.durationMs, player.id);
+        addStatusEffect(state, player, etype as any, edata.magnitude, edata.durationMs, player.id);
       }
     }
   }
@@ -403,12 +393,12 @@ function fireAbility(player: Actor, ability: AbilityDef, state: SimState, ctrl: 
   clearCombo(ctrl.comboBuffer);
 }
 
-function applyEffects(ability: AbilityDef, target: Actor, source: Actor, _state: SimState): void {
+function applyEffects(ability: AbilityDef, target: Actor, source: Actor, state: SimState): void {
   for (const [etype, edata] of Object.entries(ability.effects)) {
     if (!edata) continue;
     const effectType = etype as any;
     if (effectType === 'speed_boost' || effectType === 'damage_boost' || effectType === 'shield' || effectType === 'lifesteal' || effectType === 'damage_reduction') continue;
-    addStatusEffect(target, effectType, edata.magnitude, edata.durationMs, source.id);
+    addStatusEffect(state, target, effectType, edata.magnitude, edata.durationMs, source.id);
   }
 }
 
@@ -451,7 +441,7 @@ function performBasicAttack(player: Actor, state: SimState, ctrl: PlayerControll
 
   const guild = getGuild(player.guildId!);
   const baseStr = player.stats.STR;
-  const baseDmg = Math.round((10 + baseStr * 0.5) * dmgMult * (0.95 + Math.random() * 0.1));
+  const baseDmg = Math.round((10 + baseStr * 0.5) * dmgMult * (0.95 + state.rng() * 0.1));
   const range = (player.heldPickup?.type === 'club' ? 70 : 55) * (isJumpAttack ? 1.2 : 1);
 
   const animId = ctrl.attackChain === 1 ? 'attack_1' : ctrl.attackChain === 2 ? 'attack_2' : 'attack_3';
@@ -466,7 +456,7 @@ function performBasicAttack(player: Actor, state: SimState, ctrl: PlayerControll
   }
 
   for (const target of targets) {
-    const isCrit = checkCrit(player);
+    const isCrit = checkCrit(player, state.rng);
     const finalDmg = Math.max(1, isCrit ? Math.round(baseDmg * 1.5) : baseDmg);
 
     const lifesteal = player.statusEffects.find(e => e.type === 'lifesteal');
@@ -503,7 +493,7 @@ function performBasicAttack(player: Actor, state: SimState, ctrl: PlayerControll
   state.vfxEvents.push({ type: 'hit_spark', color: guild.color, x: player.x + player.facing * 30, y: player.y - 20, z: player.z });
 }
 
-function tickPlayerResourceRegen(player: Actor, dtMs: number, inCombat: boolean): void {
+function tickPlayerResourceRegen(player: Actor, dtMs: number, inCombat: boolean, state: SimState): void {
   if (!player.guildId) return;
   const guild = getGuild(player.guildId);
   const res = guild.resource;
@@ -527,10 +517,10 @@ function tickPlayerResourceRegen(player: Actor, dtMs: number, inCombat: boolean)
   }
   if (player.guildId === 'champion') {
     if (!inCombat && (player.bloodtally || 0) > 0) {
-      if (state_timeTracker >= 15000) {
+      if (state.bloodtallyDecayMs >= 15000) {
         player.bloodtally = Math.max(0, (player.bloodtally || 0) - 1);
         player.mp = player.bloodtally;
-        state_timeTracker = 0;
+        state.bloodtallyDecayMs = 0;
       }
     }
     return;
@@ -539,8 +529,6 @@ function tickPlayerResourceRegen(player: Actor, dtMs: number, inCombat: boolean)
   const regen = inCombat ? res.regenCombat : res.regenIdle;
   player.mp = Math.min(res.max, player.mp + (regen * dtMs) / 1000);
 }
-
-let state_timeTracker = 0;
 
 function tickHPRegen(actor: Actor, dtMs: number, inCombat: boolean): void {
   if (!actor.isAlive) return;
@@ -580,13 +568,13 @@ function tickWaves(state: SimState): void {
       for (const spawn of wave.enemies) {
         for (let j = 0; j < spawn.count; j++) {
           const spawnX = state.player.x + 300 + j * 80;
-          const spawnY = ENEMY_SPAWN_Y_RANGE[0] + Math.random() * (ENEMY_SPAWN_Y_RANGE[1] - ENEMY_SPAWN_Y_RANGE[0]);
+          const spawnY = ENEMY_SPAWN_Y_RANGE[0] + state.rng() * (ENEMY_SPAWN_Y_RANGE[1] - ENEMY_SPAWN_Y_RANGE[0]);
 
           if (spawn.kind === 'bandit_king') {
             state.bossSpawned = true;
           }
 
-          const enemy = createEnemyActor(spawn.kind as string, spawnX, spawnY);
+          const enemy = createEnemyActor(spawn.kind as string, spawnX, spawnY, state);
           if (spawn.kind === 'bandit_king') {
             enemy.stats = { STR: 14, DEX: 10, CON: 18, INT: 8, WIS: 8, CHA: 8 };
           }
@@ -614,16 +602,16 @@ function tickProjectiles(state: SimState, dtSec: number): void {
 
     let hit = false;
     for (const target of checkTargets) {
-      if (proj.hitActorIds.has(target.id)) continue;
+      if (proj.hitActorIds.includes(target.id)) continue;
       const dx = Math.abs(target.x - proj.x);
       const dy = Math.abs(target.y - proj.y);
       if (dx <= target.width / 2 + proj.radius && dy <= 30) {
-        const isCrit = Math.random() < 0.05;
+        const isCrit = state.rng() < 0.05;
         applyDamage(target, proj.damage * (isCrit ? 1.5 : 1), state.vfxEvents, isCrit);
         state.vfxEvents.push({ type: 'hit_spark', color: proj.color, x: proj.x, y: proj.y, z: proj.z });
 
         for (const [etype, edata] of Object.entries(proj.effects)) {
-          if (edata) addStatusEffect(target, etype as any, edata.magnitude, edata.durationMs, proj.ownerId);
+          if (edata) addStatusEffect(state, target, etype as any, edata.magnitude, edata.durationMs, proj.ownerId);
         }
 
         if (proj.knockdown) {
@@ -631,7 +619,7 @@ function tickProjectiles(state: SimState, dtSec: number): void {
         }
 
         if (proj.piercing) {
-          proj.hitActorIds.add(target.id);
+          proj.hitActorIds.push(target.id);
         } else {
           hit = true;
           break;
@@ -651,6 +639,16 @@ function handlePlayerInput(state: SimState, input: InputState, ctrl: PlayerContr
   const dtSec = dtMs / 1000;
 
   if (!player.isAlive) return;
+
+  if (player.state === 'dodging') {
+    ctrl.dodgeMs -= dtMs;
+    if (ctrl.dodgeMs <= 0) {
+      ctrl.dodgeMs = 0;
+      player.state = 'idle';
+      player.vx = 0;
+    }
+    return;
+  }
 
   const stunned = isStunned(player);
   const rooted = isRooted(player);
@@ -733,7 +731,7 @@ function handlePlayerInput(state: SimState, input: InputState, ctrl: PlayerContr
         }
         const nearbyEnemies = state.enemies.filter(e => e.isAlive && Math.abs(e.x - player.x) < 80);
         for (const e of nearbyEnemies) {
-          addStatusEffect(e, 'stun', 1, 500, player.id);
+          addStatusEffect(state, e, 'stun', 1, 500, player.id);
         }
       }
       player.state = 'idle';
@@ -756,12 +754,7 @@ function handlePlayerInput(state: SimState, input: InputState, ctrl: PlayerContr
       const dodgeDir = input.rightJustPressed ? 1 : -1;
       player.vx = dodgeDir * (DODGE_DISTANCE / (DODGE_DURATION_MS / 1000));
       player.animationId = 'dodge';
-      setTimeout(() => {
-        if (player.state === 'dodging') {
-          player.state = 'idle';
-          player.vx = 0;
-        }
-      }, DODGE_DURATION_MS);
+      ctrl.dodgeMs = DODGE_DURATION_MS;
       return;
     }
     player.state = 'blocking';
@@ -804,7 +797,7 @@ function handlePlayerInput(state: SimState, input: InputState, ctrl: PlayerContr
     if (player.heldPickup) {
       const pickup = player.heldPickup;
       const proj: Projectile = {
-        id: `throw_${Date.now()}`,
+        id: `proj_${state.nextProjectileId++}`,
         ownerId: player.id,
         team: player.team,
         x: player.x,
@@ -824,7 +817,7 @@ function handlePlayerInput(state: SimState, input: InputState, ctrl: PlayerContr
         piercing: false,
         color: pickup.type === 'rock' ? '#9ca3af' : '#92400e',
         type: `thrown_${pickup.type}`,
-        hitActorIds: new Set(),
+        hitActorIds: [],
       };
       state.projectiles.push(proj);
       player.heldPickup = null;
@@ -905,7 +898,7 @@ function handlePlayerInput(state: SimState, input: InputState, ctrl: PlayerContr
     for (const t of miasmaTargets) {
       const dotDmg = (5 + player.stats.CON * 0.2) * dtSec;
       if (dotDmg > 0.01) {
-        applyDamage(t, Math.max(1, Math.round(dotDmg * (Math.random() > 0.9 ? 1 : 0))), state.vfxEvents, false);
+        applyDamage(t, Math.max(1, Math.round(dotDmg * (state.rng() > 0.9 ? 1 : 0))), state.vfxEvents, false);
       }
     }
     player.mp = Math.max(0, player.mp - dtSec * 2);
@@ -928,9 +921,9 @@ function handlePlayerInput(state: SimState, input: InputState, ctrl: PlayerContr
 function spawnPickup(state: SimState, enemy: Actor): void {
   const def = ENEMY_DEFS[enemy.kind];
   if (!def) return;
-  if (def.dropWeapon && Math.random() < def.dropWeaponChance) {
+  if (def.dropWeapon && state.rng() < def.dropWeaponChance) {
     state.pickups.push({
-      id: `pickup_${Date.now()}_${Math.random()}`,
+      id: `pickup_${state.nextPickupId++}`,
       type: def.dropWeapon as 'rock' | 'club',
       x: enemy.x,
       y: enemy.y,
@@ -953,9 +946,9 @@ export function tickSimulation(state: SimState, input: InputState, dtMs: number)
   state.tick++;
   state.vfxEvents = [];
 
-  state_timeTracker += dtMs;
+  state.bloodtallyDecayMs += dtMs;
 
-  const ctrl = getOrCreateController('player', input);
+  const ctrl = getOrCreateController(state, 'player', input);
 
   tickWaves(state);
 
@@ -967,7 +960,7 @@ export function tickSimulation(state: SimState, input: InputState, dtMs: number)
     tickStatusEffects(state.player, dtMs, state.vfxEvents);
     tickHPRegen(state.player, dtMs, state.enemies.filter(e => e.isAlive).length > 0);
     const inCombat = state.enemies.filter(e => e.isAlive).length > 0;
-    tickPlayerResourceRegen(state.player, dtMs, inCombat);
+    tickPlayerResourceRegen(state.player, dtMs, inCombat, state);
   } else {
     state.phase = 'defeat';
     return state;

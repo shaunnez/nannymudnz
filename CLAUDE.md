@@ -14,9 +14,11 @@ npm run build      # Production build to dist/
 npm run preview    # Serve the built dist/
 npm run lint       # ESLint (flat config, eslint.config.js)
 npm run typecheck  # tsc --noEmit -p tsconfig.app.json
+npm test           # Vitest run (src/**/*.test.ts)
+npm run test:watch # Vitest watch mode
 ```
 
-There is no test runner configured; do not fabricate a `test` script.
+Tests run via Vitest. `src/simulation/__tests__/golden.test.ts` is the reproducibility gate — if it fails after a change in `src/simulation/**`, you have introduced non-determinism and the Colyseus rewrite (see `docs/superpowers/specs/2026-04-21-phaser-colyseus-rewrite-design.md`) will be harder. Keep it green.
 
 ## Architecture: strict layer separation
 
@@ -28,7 +30,7 @@ input/  ──►  simulation/  ◄── (read-only) ──  rendering/
 audio/  ──────────┘ (reads VFX events + phase transitions only)
 ```
 
-- **`src/simulation/`** — pure TypeScript. Combat, AI, physics, wave progression, status effects, HP/MP, combo detection. **No DOM, no canvas, no `window`, no browser APIs.** It must remain portable to a Node server. Anything non-deterministic other than `Math.random()` is a bug here.
+- **`src/simulation/`** — pure TypeScript. Combat, AI, physics, wave progression, status effects, HP/MP, combo detection. **No DOM, no canvas, no `window`, no browser APIs.** It must remain portable to a Node server. Nothing non-deterministic is permitted — no `Math.random()`, no `Date.now()`, no `setTimeout`, no module-level mutable counters. Use `state.rng()` for rolls, tick-based countdown fields for timers, and `state.next*Id` counters for IDs. The ESLint override on `src/simulation/**` enforces this.
 - **`src/rendering/`** — Canvas 2D drawing. **Reads** `SimState`; never mutates it. `GameRenderer` delegates per-actor drawing to an `ActorRendererImpl` (see `actorRenderer.ts`). Swapping placeholder art for sprites = implement that interface and inject a new impl in `GameRenderer`. Don't read rendering concepts back into simulation types. Render-only constants (`VIRTUAL_WIDTH`, `VIRTUAL_HEIGHT`, `CANVAS_BUFFER_WIDTH`, `CANVAS_BUFFER_HEIGHT`, `RENDER_SCALE`, `DEPTH_SCALE`) live in `src/rendering/constants.ts` — never in `src/simulation/constants.ts`. The game loop in `GameScreen.tsx` applies `ctx.setTransform(RENDER_SCALE, …)` once per frame so the renderer draws in virtual 900×506 units and the transform upscales to the 1600×900 backing buffer.
 - **`src/input/`** — translates `KeyboardEvent`s into an `InputState` struct. `inputManager.getInputState(timeMs)` is the only thing simulation sees. Double-tap run detection lives here, not in the simulation.
 - **`src/audio/`** — Web Audio API synth. Entirely independent; `GameScreen` inspects `state.vfxEvents` and phase transitions to trigger sounds. Do not call audio from inside `simulation/`.
@@ -47,7 +49,7 @@ One `requestAnimationFrame` loop drives everything:
 6. `renderer.render(ctx, state, comboBuffer, w, h, dtMs, isFullscreen)`.
 7. Stop looping when `state.phase` leaves `'playing' | 'paused'`.
 
-`resetController('player')` is called on mount and cleanup — actor controller state in `simulation/` is held in module-level maps keyed by actor id, so retries/re-mounts must reset it or stale input bindings leak across runs.
+`resetController(stateRef.current, 'player')` is called on mount and cleanup — actor controller state in `simulation/` is held in module-level maps keyed by actor id, so retries/re-mounts must reset it or stale input bindings leak across runs.
 
 Keybinds: movement on arrow keys; `Space` jump; `J` attack; `K` block; `L` grab; `P` pause (previously `Esc`, remapped so browser fullscreen doesn't hijack); `F` fullscreen. Defaults and migration in `src/input/keyBindings.ts`.
 

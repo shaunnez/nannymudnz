@@ -4,7 +4,6 @@ import { isStunned, applyDamage, addStatusEffect } from './combat';
 import { GROUND_Y_MIN, GROUND_Y_MAX } from './constants';
 import { getEffectiveMoveSpeed } from './physics';
 
-let projIdCounter = 1000;
 
 function findTarget(actor: Actor, state: SimState): Actor | null {
   const targets = actor.team === 'enemy'
@@ -61,7 +60,7 @@ export function tickAI(actor: Actor, state: SimState, dtSec: number, vfxEvents: 
       tickPackerAI(actor, target, state, dtSec, vfxEvents, speed, dist, dx, dy);
       break;
     case 'brute':
-      tickBruteAI(actor, target, state, dtSec, vfxEvents, speed, dist, dx, dy);
+      tickBruteAI(actor, target, state, dtSec, vfxEvents, speed, dist, dx);
       break;
   }
 }
@@ -82,7 +81,7 @@ function stopMoving(actor: Actor): void {
   actor.animationId = 'idle';
 }
 
-function tryMeleeAttack(actor: Actor, target: Actor, damage: number, cooldownMs: number, vfxEvents: VFXEvent[]): boolean {
+function tryMeleeAttack(state: SimState, actor: Actor, target: Actor, damage: number, cooldownMs: number, vfxEvents: VFXEvent[]): boolean {
   if (actor.aiState.lastActionMs < cooldownMs) return false;
   const def = ENEMY_DEFS[actor.kind];
   if (!def) return false;
@@ -91,7 +90,7 @@ function tryMeleeAttack(actor: Actor, target: Actor, damage: number, cooldownMs:
 
   actor.aiState.lastActionMs = 0;
   actor.animationId = 'attack_1';
-  applyDamage(target, damage + Math.round(Math.random() * 4), vfxEvents);
+  applyDamage(target, damage + Math.round(state.rng() * 4), vfxEvents);
   vfxEvents.push({ type: 'hit_spark', color: '#fbbf24', x: target.x, y: target.y, z: target.z });
   return true;
 }
@@ -101,7 +100,7 @@ function spawnProjectile(state: SimState, actor: Actor, target: Actor, damage: n
   const dy = target.y - actor.y;
   const dist = Math.hypot(dx, dy) || 1;
   const proj: Projectile = {
-    id: `proj_${projIdCounter++}`,
+    id: `proj_${state.nextProjectileId++}`,
     ownerId: actor.id,
     team: actor.team,
     x: actor.x,
@@ -121,12 +120,12 @@ function spawnProjectile(state: SimState, actor: Actor, target: Actor, damage: n
     piercing: false,
     color: '#d97706',
     type: 'arrow',
-    hitActorIds: new Set(),
+    hitActorIds: [],
   };
   state.projectiles.push(proj);
 }
 
-function tickChaserAI(actor: Actor, target: Actor, _state: SimState, _dtSec: number, vfxEvents: VFXEvent[], speed: number, dist: number, dx: number, dy: number): void {
+function tickChaserAI(actor: Actor, target: Actor, state: SimState, _dtSec: number, vfxEvents: VFXEvent[], speed: number, dist: number, dx: number, dy: number): void {
   const def = ENEMY_DEFS[actor.kind];
   if (!def) return;
 
@@ -145,11 +144,11 @@ function tickChaserAI(actor: Actor, target: Actor, _state: SimState, _dtSec: num
     moveToward(actor, target.x, target.y, speed);
   } else {
     stopMoving(actor);
-    tryMeleeAttack(actor, target, def.damage, def.attackCooldownMs, vfxEvents);
+    tryMeleeAttack(state, actor, target, def.damage, def.attackCooldownMs, vfxEvents);
   }
 }
 
-function tickArcherAI(actor: Actor, target: Actor, _state: SimState, _dtSec: number, _vfxEvents: VFXEvent[], speed: number, dist: number, dx: number, dy: number): void {
+function tickArcherAI(actor: Actor, target: Actor, state: SimState, _dtSec: number, _vfxEvents: VFXEvent[], speed: number, dist: number, dx: number, dy: number): void {
   const def = ENEMY_DEFS[actor.kind];
   if (!def) return;
   const idealDist = 300;
@@ -171,11 +170,11 @@ function tickArcherAI(actor: Actor, target: Actor, _state: SimState, _dtSec: num
   if (actor.aiState.lastActionMs >= def.attackCooldownMs && Math.abs(dy) <= 30) {
     actor.aiState.lastActionMs = 0;
     actor.animationId = 'attack_1';
-    spawnProjectile(_state, actor, target, def.damage, def.projectileSpeed || 400, def.projectileRange || 350);
+    spawnProjectile(state, actor, target, def.damage, def.projectileSpeed || 400, def.projectileRange || 350);
   }
 }
 
-function tickPackerAI(actor: Actor, target: Actor, _state: SimState, dtSec: number, vfxEvents: VFXEvent[], speed: number, dist: number, dx: number, dy: number): void {
+function tickPackerAI(actor: Actor, target: Actor, state: SimState, dtSec: number, vfxEvents: VFXEvent[], speed: number, dist: number, dx: number, dy: number): void {
   const def = ENEMY_DEFS[actor.kind];
   if (!def) return;
 
@@ -197,7 +196,7 @@ function tickPackerAI(actor: Actor, target: Actor, _state: SimState, dtSec: numb
         target.knockdownTimeMs = 0;
       }
     } else if (dist < 60) {
-      tryMeleeAttack(actor, target, def.damage, def.attackCooldownMs, vfxEvents);
+      tryMeleeAttack(state, actor, target, def.damage, def.attackCooldownMs, vfxEvents);
     } else {
       moveToward(actor, target.x, target.y, speed);
     }
@@ -209,12 +208,12 @@ function tickPackerAI(actor: Actor, target: Actor, _state: SimState, dtSec: numb
     if (cdist > 30) {
       moveToward(actor, circleX, circleY, speed * 0.8);
     } else {
-      tryMeleeAttack(actor, target, def.damage, def.attackCooldownMs + 500, vfxEvents);
+      tryMeleeAttack(state, actor, target, def.damage, def.attackCooldownMs + 500, vfxEvents);
     }
   }
 }
 
-function tickBruteAI(actor: Actor, target: Actor, _state: SimState, dtSec: number, vfxEvents: VFXEvent[], speed: number, dist: number, dx: number, _dy: number): void {
+function tickBruteAI(actor: Actor, target: Actor, _state: SimState, dtSec: number, vfxEvents: VFXEvent[], speed: number, dist: number, dx: number): void {
   const def = ENEMY_DEFS[actor.kind];
   if (!def) return;
   const ai = actor.aiState;
@@ -263,6 +262,13 @@ function tickBossAI(actor: Actor, target: Actor, state: SimState, dtSec: number,
     onBossPhaseTransition(actor, currentPhase, state, vfxEvents);
   }
 
+  if (ai.lungeMs > 0) {
+    ai.lungeMs = Math.max(0, ai.lungeMs - dtSec * 1000);
+    if (ai.lungeMs === 0) {
+      actor.vx = 0;
+    }
+  }
+
   const attackSpeedMult = currentPhase === 2 ? 1.3 : 1.0;
   const damageMult = currentPhase === 2 ? 1.2 : 1.0;
   const baseDamage = Math.round(40 + (actor.stats?.STR || 12) * 0.9);
@@ -281,21 +287,21 @@ function tickBossAI(actor: Actor, target: Actor, state: SimState, dtSec: number,
       if (Math.abs(dy) <= 35) {
         const finalDmg = Math.round(baseDamage * damageMult);
 
-        if (currentPhase >= 1 && Math.random() < 0.3) {
+        if (currentPhase >= 1 && state.rng() < 0.3) {
           actor.vx = actor.facing * speed * 3;
-          setTimeout(() => { actor.vx = 0; }, 300);
+          ai.lungeMs = 300;
         }
 
         if (Math.abs(target.x - actor.x) < 90) {
           applyDamage(target, finalDmg, vfxEvents, false);
         }
 
-        if (currentPhase >= 2 && Math.random() < 0.3) {
+        if (currentPhase >= 2 && state.rng() < 0.3) {
           vfxEvents.push({ type: 'aoe_pop', color: '#8a0f0f', x: actor.x, y: actor.y, z: actor.z, radius: 180 });
           const allTargets = [state.player, ...state.allies].filter(a => a.isAlive && Math.hypot(a.x - actor.x, a.y - actor.y) < 180);
           for (const t of allTargets) {
             applyDamage(t, Math.round(30 + (actor.stats?.STR || 12) * 0.5), vfxEvents, false);
-            addStatusEffect(t, 'stun', 1, 800, actor.id);
+            addStatusEffect(state, t, 'stun', 1, 800, actor.id);
           }
         }
       }
@@ -317,7 +323,7 @@ function onBossPhaseTransition(actor: Actor, phase: number, state: SimState, vfx
 }
 
 function spawnBanditMinion(state: SimState, boss: Actor): void {
-  spawnEnemyAt(state, 'plains_bandit', boss.x + (Math.random() > 0.5 ? 150 : -150), boss.y + (Math.random() - 0.5) * 100);
+  spawnEnemyAt(state, 'plains_bandit', boss.x + (state.rng() > 0.5 ? 150 : -150), boss.y + (state.rng() - 0.5) * 100);
 }
 
 function spawnEnemyAt(state: SimState, kind: string, x: number, y: number): void {
@@ -325,7 +331,7 @@ function spawnEnemyAt(state: SimState, kind: string, x: number, y: number): void
   if (!def) return;
 
   const newEnemy: Actor = {
-    id: `enemy_${Date.now()}_${Math.random().toString(36).slice(2)}`,
+    id: `actor_${state.nextActorId++}`,
     kind: def.kind,
     team: 'enemy',
     x: Math.max(50, Math.min(3950, x)),
@@ -365,14 +371,15 @@ function spawnEnemyAt(state: SimState, kind: string, x: number, y: number): void
     aiState: {
       behavior: def.ai,
       targetId: null,
-      lastActionMs: Math.random() * 1000,
+      lastActionMs: state.rng() * 1000,
       retreating: false,
-      packRole: kind === 'wolf' ? (Math.random() > 0.5 ? 'leader' : 'circler') : null,
+      packRole: kind === 'wolf' ? (state.rng() > 0.5 ? 'leader' : 'circler') : null,
       phase: 0,
       patrolDir: 1,
       leapCooldown: 0,
       windupActive: false,
       windupTimeMs: 0,
+      lungeMs: 0,
     },
     bossPhase: 0,
     summonedByPlayer: false,
