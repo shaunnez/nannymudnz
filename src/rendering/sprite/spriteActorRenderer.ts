@@ -2,6 +2,8 @@ import type { ActorRendererImpl, ActorRenderHandle } from '../actorRenderer';
 import type { GuildSpriteSet } from './types';
 import { resolveAnimation } from './animationFallback';
 
+const DISPLAY_SCALE = 2;
+
 interface AnimPlayhead {
   animationId: string;
   startMs: number;
@@ -58,6 +60,10 @@ export class SpriteActorRenderer implements ActorRendererImpl {
 
     const { w: fw, h: fh } = this.set.frameSize;
     const { x: ax, y: ay } = sheet.meta.anchor;
+    const dw = fw * DISPLAY_SCALE;
+    const dh = fh * DISPLAY_SCALE;
+    const dax = ax * DISPLAY_SCALE;
+    const day = ay * DISPLAY_SCALE;
 
     ctx.save();
     if (handle.direction === -1) {
@@ -69,7 +75,7 @@ export class SpriteActorRenderer implements ActorRendererImpl {
     ctx.drawImage(
       sheet.image,
       frameIdx * fw, 0, fw, fh,
-      screenX - ax, screenY - ay, fw, fh,
+      screenX - dax, screenY - day, dw, dh,
     );
     ctx.restore();
 
@@ -77,7 +83,7 @@ export class SpriteActorRenderer implements ActorRendererImpl {
       const barW = width;
       const barH = 4;
       const barX = screenX - barW / 2;
-      const barY = screenY - ay - 10;
+      const barY = screenY - day - 10;
       ctx.fillStyle = '#1f2937';
       ctx.fillRect(barX, barY, barW, barH);
       ctx.fillStyle = '#ef4444';
