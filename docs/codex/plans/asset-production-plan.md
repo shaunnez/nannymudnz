@@ -161,7 +161,7 @@ A guild VFX baseline is done when:
 
 ## Immediate Next Step
 
-1. Create the Leper VFX markdown plan.
-2. Write the guild VFX runbook.
-3. Decide which Leper VFX can be generated immediately from existing hooks.
-4. Add any missing runtime hooks before generating the first Leper VFX batch.
+1. Normalize Knight's legacy character sheets to the `124x124` baseline while the repo lacks a Knight raw export.
+2. Generate the first Knight VFX batch from the current hook families.
+3. Validate Knight sprites and VFX in-game against the Leper baseline.
+4. Use the Knight pass to decide whether Mage or Vampire is the cleaner next batch.
