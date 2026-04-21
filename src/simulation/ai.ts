@@ -295,7 +295,7 @@ function tickBossAI(actor: Actor, target: Actor, state: SimState, dtSec: number,
           const allTargets = [state.player, ...state.allies].filter(a => a.isAlive && Math.hypot(a.x - actor.x, a.y - actor.y) < 180);
           for (const t of allTargets) {
             applyDamage(t, Math.round(30 + (actor.stats?.STR || 12) * 0.5), vfxEvents, false);
-            addStatusEffect(t, 'stun', 1, 800, actor.id);
+            addStatusEffect(state, t, 'stun', 1, 800, actor.id);
           }
         }
       }

@@ -1,14 +1,13 @@
-import type { Actor, StatusEffect, StatusEffectType, VFXEvent, DamageType } from './types';
+import type { Actor, StatusEffect, StatusEffectType, VFXEvent, DamageType, SimState } from './types';
 import type { Stats } from './types';
 import { ATTACK_Y_TOLERANCE } from './constants';
-
-let effectIdCounter = 0;
 
 export function calcDamage(
   ability: { baseDamage: number; scaleStat: keyof Stats | null; scaleAmount: number; damageType: DamageType },
   actorStats: Stats,
   target: Actor,
   isCrit: boolean,
+  rng: () => number,
 ): number {
   const statVal = ability.scaleStat ? actorStats[ability.scaleStat] : 0;
   let dmg = ability.baseDamage + ability.scaleAmount * statVal;
@@ -23,17 +22,17 @@ export function calcDamage(
   }
 
   if (isCrit) dmg *= 1.5;
-  dmg *= 0.95 + Math.random() * 0.1;
+  dmg *= 0.95 + rng() * 0.1;
 
   return Math.max(1, Math.round(dmg));
 }
 
-export function checkCrit(actor: Actor): boolean {
+export function checkCrit(actor: Actor, rng: () => number): boolean {
   let critChance = 0.05;
   actor.statusEffects.forEach(e => {
     if (e.type === 'bless') critChance += 0.15;
   });
-  return Math.random() < critChance;
+  return rng() < critChance;
 }
 
 export function applyDamage(
@@ -114,6 +113,7 @@ export function applyHeal(
 }
 
 export function addStatusEffect(
+  state: SimState,
   target: Actor,
   type: StatusEffectType,
   magnitude: number,
@@ -127,7 +127,7 @@ export function addStatusEffect(
     return;
   }
   const effect: StatusEffect = {
-    id: `fx_${effectIdCounter++}`,
+    id: `fx_${state.nextEffectId++}`,
     type,
     magnitude,
     durationMs,

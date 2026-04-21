@@ -271,7 +271,7 @@ function fireAbility(player: Actor, ability: AbilityDef, state: SimState, ctrl: 
     state.vfxEvents.push({ type: 'blink_trail', color: ability.vfxColor, x: player.x, y: player.y, z: player.z, x2: tx, y2: player.y });
     player.x = Math.max(20, Math.min(3980, tx));
     if (ability.effects.stealth) {
-      addStatusEffect(player, 'stealth', 1, ability.effects.stealth.durationMs, player.id);
+      addStatusEffect(state, player, 'stealth', 1, ability.effects.stealth.durationMs, player.id);
     }
     clearCombo(ctrl.comboBuffer);
     return;
@@ -300,7 +300,7 @@ function fireAbility(player: Actor, ability: AbilityDef, state: SimState, ctrl: 
         vx: dir * (ability.projectileSpeed + delay * 0),
         vy: spread * 0.5,
         vz: 0,
-        damage: Math.round(calcDamage(ability, player.stats, state.enemies[0] || player, false) * dmgMult),
+        damage: Math.round(calcDamage(ability, player.stats, state.enemies[0] || player, false, state.rng) * dmgMult),
         damageType: ability.damageType,
         range: ability.range || 400,
         traveled: 0,
@@ -324,8 +324,8 @@ function fireAbility(player: Actor, ability: AbilityDef, state: SimState, ctrl: 
       Math.hypot(e.x - player.x, e.y - player.y) <= ability.aoeRadius
     );
     for (const target of aoeTargets) {
-      const isCrit = checkCrit(player);
-      const dmg = Math.round(calcDamage(ability, player.stats, target, isCrit) * dmgMult);
+      const isCrit = checkCrit(player, state.rng);
+      const dmg = Math.round(calcDamage(ability, player.stats, target, isCrit, state.rng) * dmgMult);
       applyDamage(target, dmg, state.vfxEvents, isCrit);
       applyEffects(ability, target, player, state);
       if (ability.knockdown && dmg >= KNOCKDOWN_THRESHOLD) {
@@ -340,8 +340,8 @@ function fireAbility(player: Actor, ability: AbilityDef, state: SimState, ctrl: 
       e.isAlive && isInRange(player, e, ability.range || 60)
     );
     for (const target of targets) {
-      const isCrit = checkCrit(player);
-      const dmg = Math.round(calcDamage(ability, player.stats, target, isCrit) * dmgMult);
+      const isCrit = checkCrit(player, state.rng);
+      const dmg = Math.round(calcDamage(ability, player.stats, target, isCrit, state.rng) * dmgMult);
       applyDamage(target, dmg, state.vfxEvents, isCrit);
       applyEffects(ability, target, player, state);
       if (ability.knockdown || dmg >= KNOCKDOWN_THRESHOLD) {
@@ -354,7 +354,7 @@ function fireAbility(player: Actor, ability: AbilityDef, state: SimState, ctrl: 
   if (ability.effects) {
     for (const [etype, edata] of Object.entries(ability.effects)) {
       if (edata && (etype === 'speed_boost' || etype === 'damage_boost' || etype === 'attack_speed_boost' || etype === 'shield' || etype === 'damage_reduction' || etype === 'lifesteal')) {
-        addStatusEffect(player, etype as any, edata.magnitude, edata.durationMs, player.id);
+        addStatusEffect(state, player, etype as any, edata.magnitude, edata.durationMs, player.id);
       }
     }
   }
@@ -399,12 +399,12 @@ function fireAbility(player: Actor, ability: AbilityDef, state: SimState, ctrl: 
   clearCombo(ctrl.comboBuffer);
 }
 
-function applyEffects(ability: AbilityDef, target: Actor, source: Actor, _state: SimState): void {
+function applyEffects(ability: AbilityDef, target: Actor, source: Actor, state: SimState): void {
   for (const [etype, edata] of Object.entries(ability.effects)) {
     if (!edata) continue;
     const effectType = etype as any;
     if (effectType === 'speed_boost' || effectType === 'damage_boost' || effectType === 'shield' || effectType === 'lifesteal' || effectType === 'damage_reduction') continue;
-    addStatusEffect(target, effectType, edata.magnitude, edata.durationMs, source.id);
+    addStatusEffect(state, target, effectType, edata.magnitude, edata.durationMs, source.id);
   }
 }
 
@@ -462,7 +462,7 @@ function performBasicAttack(player: Actor, state: SimState, ctrl: PlayerControll
   }
 
   for (const target of targets) {
-    const isCrit = checkCrit(player);
+    const isCrit = checkCrit(player, state.rng);
     const finalDmg = Math.max(1, isCrit ? Math.round(baseDmg * 1.5) : baseDmg);
 
     const lifesteal = player.statusEffects.find(e => e.type === 'lifesteal');
@@ -619,7 +619,7 @@ function tickProjectiles(state: SimState, dtSec: number): void {
         state.vfxEvents.push({ type: 'hit_spark', color: proj.color, x: proj.x, y: proj.y, z: proj.z });
 
         for (const [etype, edata] of Object.entries(proj.effects)) {
-          if (edata) addStatusEffect(target, etype as any, edata.magnitude, edata.durationMs, proj.ownerId);
+          if (edata) addStatusEffect(state, target, etype as any, edata.magnitude, edata.durationMs, proj.ownerId);
         }
 
         if (proj.knockdown) {
@@ -729,7 +729,7 @@ function handlePlayerInput(state: SimState, input: InputState, ctrl: PlayerContr
         }
         const nearbyEnemies = state.enemies.filter(e => e.isAlive && Math.abs(e.x - player.x) < 80);
         for (const e of nearbyEnemies) {
-          addStatusEffect(e, 'stun', 1, 500, player.id);
+          addStatusEffect(state, e, 'stun', 1, 500, player.id);
         }
       }
       player.state = 'idle';
