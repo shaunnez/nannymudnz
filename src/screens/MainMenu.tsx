@@ -24,8 +24,8 @@ const MENU_ITEMS: MenuItem[] = [
   { id: 'batt',  label: 'BATTLE',        sub: '4 vs 4 · configure all 8 slots',target: 'charselect', mode: 'batt',  enabled: false },
   { id: 'champ', label: 'CHAMPIONSHIP',  sub: 'Bracketed tournament',          target: 'charselect', mode: 'champ', enabled: true },
   { id: 'diff',  label: '1P DIFFICULTY', sub: 'Training · Knight · Master',    target: null, slider: true, enabled: true },
-  { id: 'moves', label: 'MOVE LIST',     sub: 'Ability reference per guild',   target: 'moves',      enabled: false },
-  { id: 'set',   label: 'SETTINGS',      sub: 'Controls · video · audio',      target: 'settings',   enabled: false },
+  { id: 'moves', label: 'MOVE LIST',     sub: 'Ability reference per guild',   target: 'moves',      enabled: true },
+  { id: 'set',   label: 'SETTINGS',      sub: 'Controls · video · audio',      target: 'settings',   enabled: true },
 ];
 
 const DIFFICULTY_LABELS = ['Training', 'Easy', 'Knight', 'Veteran', 'Master', 'Mats Himself'];

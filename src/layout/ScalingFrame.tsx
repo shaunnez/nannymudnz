@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { FULLSCREEN_EXIT_EVENT } from './fullscreenConstants';
 import { FullscreenContext } from './useFullscreen';
+import { loadKeyBindings, KEYBINDINGS_CHANGED_EVENT } from '../input/keyBindings';
 
 interface Props {
   children: ReactNode;
@@ -39,18 +40,23 @@ export function ScalingFrame({ children }: Props) {
   }, []);
 
   useEffect(() => {
+    let fullscreenKey = loadKeyBindings().fullscreen;
+    const refresh = () => { fullscreenKey = loadKeyBindings().fullscreen; };
     const onKey = (e: KeyboardEvent) => {
-      if (e.key !== 'f' && e.key !== 'F') return;
-      // Don't hijack modified F (Ctrl+F find, Cmd+F, Alt+F, etc.).
+      // Don't hijack modified variants (Ctrl+F find, Cmd+F, Alt+F, etc.).
       if (e.ctrlKey || e.metaKey || e.altKey) return;
+      if (e.key.toLowerCase() !== fullscreenKey.toLowerCase()) return;
       const target = e.target as HTMLElement | null;
-      // Don't hijack F while typing in an input.
       if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')) return;
       e.preventDefault();
       toggle();
     };
     window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+    window.addEventListener(KEYBINDINGS_CHANGED_EVENT, refresh);
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      window.removeEventListener(KEYBINDINGS_CHANGED_EVENT, refresh);
+    };
   }, []);
 
   return (

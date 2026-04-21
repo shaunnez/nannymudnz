@@ -260,7 +260,9 @@ function pushAbilityVfx(
 ): void {
   events.push({
     ...event,
+    z: event.z ?? player.z + player.height * 0.5,
     color: event.color ?? ability.vfxColor,
+    facing: event.facing ?? player.facing,
     guildId: player.guildId,
     abilityId: ability.id,
     ownerId: player.id,
@@ -303,11 +305,16 @@ function fireAbility(player: Actor, ability: AbilityDef, state: SimState, ctrl: 
   if (ability.isHeal) {
     const healAmt = Math.round((ability.baseDamage + ability.scaleAmount * (ability.scaleStat ? player.stats[ability.scaleStat] : 0)) * dmgMult);
     applyHeal(player, healAmt, state.vfxEvents);
+    const healVfxZ = player.guildId === 'leper' && ability.id === 'necrotic_embrace'
+      ? player.z + player.height * 1.08
+      : undefined;
     pushAbilityVfx(state.vfxEvents, player, ability, {
       type: 'heal_glow',
-      x: player.x - 10,
+      x: player.guildId === 'leper' && ability.id === 'necrotic_embrace'
+        ? player.x
+        : player.x - 10,
       y: player.y,
-      z: player.z + player.height * 0.6,
+      ...(healVfxZ !== undefined ? { z: healVfxZ } : {}),
     });
   }
 
@@ -317,7 +324,6 @@ function fireAbility(player: Actor, ability: AbilityDef, state: SimState, ctrl: 
       type: 'blink_trail',
       x: player.x,
       y: player.y,
-      z: player.z,
       x2: tx,
       y2: player.y,
     });
@@ -371,7 +377,6 @@ function fireAbility(player: Actor, ability: AbilityDef, state: SimState, ctrl: 
       type: 'projectile_spawn',
       x: player.x,
       y: player.y,
-      z: player.z,
       vx: dir * ability.projectileSpeed,
       vy: 0,
     });
@@ -391,11 +396,19 @@ function fireAbility(player: Actor, ability: AbilityDef, state: SimState, ctrl: 
         applyKnockback(target, ability.knockbackForce || 150, player.facing, true, state.vfxEvents);
       }
     }
+    const aoeVfxX = player.guildId === 'leper' && ability.id === 'plague_vomit'
+      ? player.x + player.facing * 24 - 4
+      : player.x;
+    const aoeVfxZ = player.guildId === 'leper' && ability.id === 'plague_vomit'
+      ? player.z + player.height * 0.98
+      : player.guildId === 'leper' && ability.id === 'rotting_tide'
+        ? player.z + player.height * 0.82
+      : undefined;
     pushAbilityVfx(state.vfxEvents, player, ability, {
       type: 'aoe_pop',
-      x: player.x - 12,
+      x: aoeVfxX,
       y: player.y,
-      z: player.z + (player.guildId === 'leper' ? player.height * 0.45 : 0),
+      ...(aoeVfxZ !== undefined ? { z: aoeVfxZ } : {}),
       radius: ability.aoeRadius,
     });
   }
@@ -413,11 +426,17 @@ function fireAbility(player: Actor, ability: AbilityDef, state: SimState, ctrl: 
         applyKnockback(target, ability.knockbackForce || 100, player.facing, ability.knockdown, state.vfxEvents);
       }
     }
+    const hitSparkX = player.guildId === 'leper' && ability.id === 'diseased_claw'
+      ? player.x + player.facing * 30
+      : player.x + player.facing * 18 - 6;
+    const hitSparkZ = player.guildId === 'leper' && ability.id === 'diseased_claw'
+      ? player.z + player.height * 0.68
+      : undefined;
     pushAbilityVfx(state.vfxEvents, player, ability, {
       type: 'hit_spark',
-      x: player.x + player.facing * 18 - 6,
+      x: hitSparkX,
       y: player.y,
-      z: player.z + (player.guildId === 'leper' ? player.height * 0.52 : 0),
+      ...(hitSparkZ !== undefined ? { z: hitSparkZ } : {}),
     });
   }
 
@@ -490,9 +509,9 @@ function fireAbility(player: Actor, ability: AbilityDef, state: SimState, ctrl: 
     player.miasmaActive = !player.miasmaActive;
     pushAbilityVfx(state.vfxEvents, player, ability, {
       type: 'aura_pulse',
-      x: player.x - 10,
+      x: player.x,
       y: player.y,
-      z: player.z + player.height * 0.33,
+      z: player.z + player.height * 0.62,
       radius: ability.aoeRadius || 90,
     });
   }
@@ -597,7 +616,14 @@ function performBasicAttack(player: Actor, state: SimState, ctrl: PlayerControll
     }
   }
 
-  state.vfxEvents.push({ type: 'hit_spark', color: guild.color, x: player.x + player.facing * 30, y: player.y - 20, z: player.z });
+  state.vfxEvents.push({
+    type: 'hit_spark',
+    color: guild.color,
+    x: player.x + player.facing * 16,
+    y: player.y,
+    z: player.z + player.height * 0.55,
+    facing: player.facing,
+  });
 }
 
 function tickPlayerResourceRegen(player: Actor, dtMs: number, inCombat: boolean, state: SimState): void {
@@ -792,9 +818,8 @@ function handlePlayerInput(state: SimState, input: InputState, ctrl: PlayerContr
       if (Math.floor(prevChannelMs / pulseEveryMs) !== Math.floor(ctrl.channelMs / pulseEveryMs)) {
         pushAbilityVfx(state.vfxEvents, player, ability, {
           type: 'channel_pulse',
-          x: player.x - 12,
+          x: player.x,
           y: player.y,
-          z: player.z + player.height * 0.38,
           radius: ability.aoeRadius || 180,
         });
       }
@@ -1029,9 +1054,9 @@ function handlePlayerInput(state: SimState, input: InputState, ctrl: PlayerContr
     if (Math.floor((now - dtMs) / pulseEveryMs) !== Math.floor(now / pulseEveryMs)) {
       pushAbilityVfx(state.vfxEvents, player, leperRmb, {
         type: 'aura_pulse',
-        x: player.x - 10,
+        x: player.x,
         y: player.y,
-        z: player.z + player.height * 0.33,
+        z: player.z + player.height * 0.62,
         radius: leperRmb.aoeRadius || 90,
       });
     }
