@@ -68,12 +68,13 @@ export function applyDamage(
     type: 'damage_number',
     color: isCrit ? '#f97316' : '#fef08a',
     x: target.x,
-    y: target.y - target.height,
+    y: target.y,
+    z: target.z + target.height,
     value: amount,
     isCrit,
   });
 
-  vfxEvents.push({ type: 'hit_spark', color: '#fef08a', x: target.x, y: target.y - target.height / 2 });
+  vfxEvents.push({ type: 'hit_spark', color: '#fef08a', x: target.x, y: target.y, z: target.z + target.height / 2 });
 
   if (target.hp <= 0) {
     target.isAlive = false;
@@ -97,13 +98,15 @@ export function applyHeal(
       type: 'heal_glow',
       color: '#4ade80',
       x: target.x,
-      y: target.y - target.height,
+      y: target.y,
+      z: target.z + target.height,
     });
     vfxEvents.push({
       type: 'damage_number',
       color: '#4ade80',
       x: target.x,
-      y: target.y - target.height,
+      y: target.y,
+      z: target.z + target.height,
       value: actual,
       isHeal: true,
     });
@@ -242,7 +245,7 @@ export function applyKnockback(
     target.animationId = 'knockdown';
     target.stateTimeMs = 0;
     target.knockdownTimeMs = 0;
-    vfxEvents.push({ type: 'hit_spark', color: '#ef4444', x: target.x, y: target.y });
+    vfxEvents.push({ type: 'hit_spark', color: '#ef4444', x: target.x, y: target.y, z: target.z });
   }
 }
 

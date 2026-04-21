@@ -26,7 +26,7 @@ public/sprites/<guildId>/
 └── metadata.json
 ```
 
-Each PNG is a horizontal strip of 64×64 frames. `metadata.json` schema is documented in `docs/superpowers/specs/2026-04-20-pixellab-guild-sprites-design.md` §Sprite contract.
+Each PNG is a horizontal strip of per-frame images. Target frame size is 64×64 but **PixelLab pads to 68×68 in practice** — `SpriteActorRenderer` reads `frameSize` from metadata at runtime, so this is fine; just record what PixelLab actually produced. `metadata.json` schema is documented in `docs/superpowers/specs/2026-04-20-pixellab-guild-sprites-design.md` §Sprite contract.
 
 ## Step 1 — Base character prompt
 
@@ -112,11 +112,26 @@ These abilities do **not** generate their full effect in the base-character shee
 
 Some RMB utilities have no visually distinct caster pose (e.g. Chef's Pocket Dish, Hunter's Pet Command). For those, skip — the runtime renderer falls back to `idle`.
 
-## Step 4 — Place files + author metadata
+## Step 4 — Download + composite
 
-Save each returned PNG to `public/sprites/<guildId>/<animation>.png`.
+PixelLab returns *individual frame PNGs* per animation, not horizontal strips. The `scripts/composite-pixellab-sprites.py` helper turns them into the strip format `SpriteActorRenderer` expects.
 
-Author `public/sprites/<guildId>/metadata.json`:
+```bash
+# 1. Download the character bundle (URL from `get_character` response)
+mkdir -p public/sprites/<guildId>/raw
+curl --fail -L -o /tmp/char.zip "https://api.pixellab.ai/mcp/characters/<characterId>/download"
+unzip /tmp/char.zip -d public/sprites/<guildId>/raw/
+
+# 2. Composite east-direction frames into horizontal strips + write metadata.json
+python scripts/composite-pixellab-sprites.py <guildId>
+
+# 3. Remove the raw/ directory so it doesn't ship in the Vite bundle
+rm -rf public/sprites/<guildId>/raw
+```
+
+The script classifies PixelLab's opaque folder names (e.g. `animating-af84334a`) using folder-prefix heuristics and frame counts. If you add new template mappings in Step 3, extend `FOLDER_PREFIX_MAP` / `FRAMECOUNT_AMBIGUOUS_MAP` at the top of the script.
+
+Expected outcome — a `public/sprites/<guildId>/metadata.json` of this shape:
 
 ```json
 {

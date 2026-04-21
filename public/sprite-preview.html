@@ -1,0 +1,114 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>Sprite preview</title>
+<style>
+  body {
+    background: #1a1a1a;
+    color: #ddd;
+    font: 14px sans-serif;
+    margin: 0;
+    padding: 24px;
+  }
+  h1 { margin: 0 0 16px; font-size: 18px; }
+  .controls {
+    margin-bottom: 16px;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+  }
+  select, input[type=range] { font: inherit; }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 16px;
+  }
+  .cell {
+    background: #2a2a2a;
+    border: 1px solid #3a3a3a;
+    border-radius: 6px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+  .label { font-weight: 600; color: #fde047; }
+  .sub { color: #888; font-size: 12px; }
+  canvas {
+    image-rendering: pixelated;
+    background:
+      repeating-conic-gradient(#333 0% 25%, #2a2a2a 0% 50%) 50% / 16px 16px;
+    border-radius: 3px;
+  }
+</style>
+</head>
+<body>
+<h1>Nannymud sprite preview</h1>
+<div class="controls">
+  <label>guild:
+    <select id="guild">
+      <option value="leper">leper</option>
+    </select>
+  </label>
+  <label>scale:
+    <input id="scale" type="range" min="1" max="6" value="3" />
+    <span id="scaleVal">3×</span>
+  </label>
+</div>
+<div id="grid" class="grid"></div>
+
+<script>
+  const grid = document.getElementById('grid');
+  const guildSel = document.getElementById('guild');
+  const scaleEl = document.getElementById('scale');
+  const scaleVal = document.getElementById('scaleVal');
+
+  async function load(guildId) {
+    grid.innerHTML = '';
+    const meta = await fetch(`/sprites/${guildId}/metadata.json`).then(r => r.json());
+    const { w, h } = meta.frameSize;
+    const scale = parseInt(scaleEl.value, 10);
+    const entries = Object.entries(meta.animations).sort(([a],[b]) => a.localeCompare(b));
+    for (const [animId, spec] of entries) {
+      const img = new Image();
+      img.src = `/sprites/${guildId}/${animId}.png`;
+      await new Promise(r => img.onload = r);
+      const cell = document.createElement('div');
+      cell.className = 'cell';
+      cell.innerHTML = `
+        <canvas width="${w*scale}" height="${h*scale}"></canvas>
+        <div class="label">${animId}</div>
+        <div class="sub">${spec.frames} frames · ${spec.frameDurationMs}ms · ${spec.loop ? 'loop' : 'once'}</div>
+      `;
+      grid.appendChild(cell);
+      const canvas = cell.querySelector('canvas');
+      const ctx = canvas.getContext('2d');
+      ctx.imageSmoothingEnabled = false;
+      let frame = 0;
+      let last = performance.now();
+      let elapsed = 0;
+      function tick(now) {
+        const dt = now - last;
+        last = now;
+        elapsed += dt;
+        const raw = Math.floor(elapsed / spec.frameDurationMs);
+        frame = spec.loop ? raw % spec.frames : Math.min(raw, spec.frames - 1);
+        if (!spec.loop && raw >= spec.frames + 6) {
+          elapsed = 0;
+        }
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, frame * w, 0, w, h, 0, 0, w * scale, h * scale);
+        requestAnimationFrame(tick);
+      }
+      requestAnimationFrame(tick);
+    }
+  }
+
+  scaleEl.oninput = () => { scaleVal.textContent = scaleEl.value + '×'; load(guildSel.value); };
+  guildSel.onchange = () => load(guildSel.value);
+  load(guildSel.value);
+</script>
+</body>
+</html>

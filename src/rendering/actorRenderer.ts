@@ -1,6 +1,7 @@
 import type { AnimationId } from '../simulation/types';
 
 export interface ActorRenderHandle {
+  id: string;
   actorKind: string;
   animationId: AnimationId;
   direction: -1 | 1;

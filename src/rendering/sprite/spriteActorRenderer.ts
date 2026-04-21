@@ -2,8 +2,14 @@ import type { ActorRendererImpl, ActorRenderHandle } from '../actorRenderer';
 import type { GuildSpriteSet } from './types';
 import { resolveAnimation } from './animationFallback';
 
+interface AnimPlayhead {
+  animationId: string;
+  startMs: number;
+}
+
 export class SpriteActorRenderer implements ActorRendererImpl {
   private set: GuildSpriteSet;
+  private playheads: Map<string, AnimPlayhead> = new Map();
 
   constructor(set: GuildSpriteSet) {
     this.set = set;
@@ -39,10 +45,16 @@ export class SpriteActorRenderer implements ActorRendererImpl {
       return;
     }
 
-    const { frames, loop } = sheet.meta;
-    const frameIdx = loop
-      ? handle.frameIndex % frames
-      : Math.min(handle.frameIndex, frames - 1);
+    const { frames, loop, frameDurationMs } = sheet.meta;
+    const now = performance.now();
+    let playhead = this.playheads.get(handle.id);
+    if (!playhead || playhead.animationId !== resolvedId) {
+      playhead = { animationId: resolvedId, startMs: now };
+      this.playheads.set(handle.id, playhead);
+    }
+    const elapsed = now - playhead.startMs;
+    const rawFrame = Math.floor(elapsed / frameDurationMs);
+    const frameIdx = loop ? rawFrame % frames : Math.min(rawFrame, frames - 1);
 
     const { w: fw, h: fh } = this.set.frameSize;
     const { x: ax, y: ay } = sheet.meta.anchor;

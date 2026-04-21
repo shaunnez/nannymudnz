@@ -1,55 +1,81 @@
 import { useState } from 'react';
 import { TitleScreen } from './screens/TitleScreen';
-import { GuildSelect } from './screens/GuildSelect';
+import { MainMenu } from './screens/MainMenu';
+import { CharSelect } from './screens/CharSelect';
 import { GameScreen } from './screens/GameScreen';
 import { GameOverScreen } from './screens/GameOverScreen';
 import { ScalingFrame } from './layout/ScalingFrame';
-import type { GuildId } from './simulation/types';
-
-type AppScreen = 'title' | 'guild_select' | 'game' | 'game_over';
+import { Scanlines, theme } from './ui';
+import { useAppState } from './state/useAppState';
 
 export default function App() {
-  const [screen, setScreen] = useState<AppScreen>('title');
-  const [selectedGuild, setSelectedGuild] = useState<GuildId>('adventurer');
+  const { state, go, set } = useAppState();
   const [outcome, setOutcome] = useState<'victory' | 'defeat'>('defeat');
   const [finalScore, setFinalScore] = useState(0);
 
   return (
     <ScalingFrame>
-      {screen === 'title' && (
-        <TitleScreen onStart={() => setScreen('guild_select')} />
-      )}
-      {screen === 'guild_select' && (
-        <GuildSelect
-          onSelect={(guildId) => {
-            setSelectedGuild(guildId);
-            setScreen('game');
-          }}
-        />
-      )}
-      {screen === 'game' && (
-        <GameScreen
-          guildId={selectedGuild}
-          onVictory={(score) => {
-            setOutcome('victory');
-            setFinalScore(score);
-            setScreen('game_over');
-          }}
-          onDefeat={() => {
-            setOutcome('defeat');
-            setScreen('game_over');
-          }}
-          onQuit={() => setScreen('guild_select')}
-        />
-      )}
-      {screen === 'game_over' && (
-        <GameOverScreen
-          outcome={outcome}
-          score={finalScore}
-          onRetry={() => setScreen('game')}
-          onMenu={() => setScreen('guild_select')}
-        />
-      )}
+      <div
+        style={{
+          position: 'absolute',
+          inset: 0,
+          background: theme.bg,
+          color: theme.ink,
+          fontFamily: theme.fontBody,
+          overflow: 'hidden',
+        }}
+      >
+        {state.screen === 'title' && <TitleScreen onStart={() => go('menu')} />}
+
+        {state.screen === 'menu' && (
+          <MainMenu
+            onPick={(target, mode) => {
+              if (mode) set({ mode });
+              go(target);
+            }}
+          />
+        )}
+
+        {state.screen === 'charselect' && (
+          <CharSelect
+            mode={state.mode}
+            initialP1={state.p1}
+            initialP2={state.p2}
+            onBack={() => go('menu')}
+            onReady={(p1, p2) => {
+              set({ p1, p2 });
+              go('game');
+            }}
+          />
+        )}
+
+        {state.screen === 'game' && (
+          <GameScreen
+            guildId={state.p1}
+            onVictory={(score) => {
+              setOutcome('victory');
+              setFinalScore(score);
+              go('results');
+            }}
+            onDefeat={() => {
+              setOutcome('defeat');
+              go('results');
+            }}
+            onQuit={() => go('menu')}
+          />
+        )}
+
+        {state.screen === 'results' && (
+          <GameOverScreen
+            outcome={outcome}
+            score={finalScore}
+            onRetry={() => go('game')}
+            onMenu={() => go('menu')}
+          />
+        )}
+
+        <Scanlines />
+      </div>
     </ScalingFrame>
   );
 }

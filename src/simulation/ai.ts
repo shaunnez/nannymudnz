@@ -92,7 +92,7 @@ function tryMeleeAttack(actor: Actor, target: Actor, damage: number, cooldownMs:
   actor.aiState.lastActionMs = 0;
   actor.animationId = 'attack_1';
   applyDamage(target, damage + Math.round(Math.random() * 4), vfxEvents);
-  vfxEvents.push({ type: 'hit_spark', color: '#fbbf24', x: target.x, y: target.y });
+  vfxEvents.push({ type: 'hit_spark', color: '#fbbf24', x: target.x, y: target.y, z: target.z });
   return true;
 }
 
@@ -291,7 +291,7 @@ function tickBossAI(actor: Actor, target: Actor, state: SimState, dtSec: number,
         }
 
         if (currentPhase >= 2 && Math.random() < 0.3) {
-          vfxEvents.push({ type: 'aoe_pop', color: '#8a0f0f', x: actor.x, y: actor.y, radius: 180 });
+          vfxEvents.push({ type: 'aoe_pop', color: '#8a0f0f', x: actor.x, y: actor.y, z: actor.z, radius: 180 });
           const allTargets = [state.player, ...state.allies].filter(a => a.isAlive && Math.hypot(a.x - actor.x, a.y - actor.y) < 180);
           for (const t of allTargets) {
             applyDamage(t, Math.round(30 + (actor.stats?.STR || 12) * 0.5), vfxEvents, false);
@@ -308,7 +308,7 @@ function tickBossAI(actor: Actor, target: Actor, state: SimState, dtSec: number,
 }
 
 function onBossPhaseTransition(actor: Actor, phase: number, state: SimState, vfxEvents: VFXEvent[]): void {
-  vfxEvents.push({ type: 'aoe_pop', color: '#ff0000', x: actor.x, y: actor.y, radius: 200 });
+  vfxEvents.push({ type: 'aoe_pop', color: '#ff0000', x: actor.x, y: actor.y, z: actor.z, radius: 200 });
 
   if (phase === 1) {
     spawnEnemyAt(state, 'wolf', actor.x - 100, actor.y + 50);

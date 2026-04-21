@@ -7,6 +7,7 @@ import { ParticleSystem } from './particles';
 import { renderHUD, renderPauseOverlay, renderControlsHint } from './hud';
 import { renderHudButtons } from './hudButtons';
 import type { ComboBuffer } from '../simulation/types';
+import { worldYToScreenY } from './constants';
 
 const GUILD_COLORS: Record<string, { color: string; initial: string }> = {};
 for (const g of GUILDS) {
@@ -43,7 +44,7 @@ export class GameRenderer {
   ): void {
     this.frameCount++;
     this.particles.tick(dtMs);
-    this.particles.emit(state.vfxEvents, state.cameraX);
+    this.particles.emit(state.vfxEvents, state.cameraX, height);
 
     this.renderBackground(ctx, state, width, height);
 
@@ -189,6 +190,7 @@ export class GameRenderer {
     }
 
     const handle: ActorRenderHandle = {
+      id: actor.id,
       actorKind: actor.kind,
       animationId: actor.animationId,
       direction: actor.facing,
@@ -384,11 +386,6 @@ export class GameRenderer {
   }
 
   private worldYToScreenY(worldY: number, canvasHeight: number): number {
-    const WORLD_Y_MIN = 60;
-    const WORLD_Y_MAX = 380;
-    const SCREEN_Y_MIN = canvasHeight * 0.42;
-    const SCREEN_Y_MAX = canvasHeight * 0.92;
-    const t = (worldY - WORLD_Y_MIN) / (WORLD_Y_MAX - WORLD_Y_MIN);
-    return SCREEN_Y_MIN + t * (SCREEN_Y_MAX - SCREEN_Y_MIN);
+    return worldYToScreenY(worldY, canvasHeight);
   }
 }

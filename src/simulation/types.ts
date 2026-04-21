@@ -251,6 +251,7 @@ export interface VFXEvent {
   color: string;
   x: number;
   y: number;
+  z?: number;
   radius?: number;
   vx?: number;
   vy?: number;

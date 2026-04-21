@@ -267,12 +267,12 @@ function fireAbility(player: Actor, ability: AbilityDef, state: SimState, ctrl: 
   if (ability.isHeal) {
     const healAmt = Math.round((ability.baseDamage + ability.scaleAmount * (ability.scaleStat ? player.stats[ability.scaleStat] : 0)) * dmgMult);
     applyHeal(player, healAmt, state.vfxEvents);
-    state.vfxEvents.push({ type: 'heal_glow', color: ability.vfxColor, x: player.x, y: player.y });
+    state.vfxEvents.push({ type: 'heal_glow', color: ability.vfxColor, x: player.x, y: player.y, z: player.z });
   }
 
   if (ability.isTeleport) {
     const tx = player.x + player.facing * ability.teleportDist;
-    state.vfxEvents.push({ type: 'blink_trail', color: ability.vfxColor, x: player.x, y: player.y, x2: tx, y2: player.y });
+    state.vfxEvents.push({ type: 'blink_trail', color: ability.vfxColor, x: player.x, y: player.y, z: player.z, x2: tx, y2: player.y });
     player.x = Math.max(20, Math.min(3980, tx));
     if (ability.effects.stealth) {
       addStatusEffect(player, 'stealth', 1, ability.effects.stealth.durationMs, player.id);
@@ -319,7 +319,7 @@ function fireAbility(player: Actor, ability: AbilityDef, state: SimState, ctrl: 
       };
       state.projectiles.push(proj);
     }
-    state.vfxEvents.push({ type: 'projectile_spawn', color: ability.vfxColor, x: player.x, y: player.y, vx: dir * ability.projectileSpeed, vy: 0 });
+    state.vfxEvents.push({ type: 'projectile_spawn', color: ability.vfxColor, x: player.x, y: player.y, z: player.z, vx: dir * ability.projectileSpeed, vy: 0 });
   }
 
   if (ability.aoeRadius > 0 && !ability.isGroundTarget) {
@@ -336,7 +336,7 @@ function fireAbility(player: Actor, ability: AbilityDef, state: SimState, ctrl: 
         applyKnockback(target, ability.knockbackForce || 150, player.facing, true, state.vfxEvents);
       }
     }
-    state.vfxEvents.push({ type: 'aoe_pop', color: ability.vfxColor, x: player.x, y: player.y, radius: ability.aoeRadius });
+    state.vfxEvents.push({ type: 'aoe_pop', color: ability.vfxColor, x: player.x, y: player.y, z: player.z, radius: ability.aoeRadius });
   }
 
   if (!ability.isProjectile && !ability.isHeal && !ability.isTeleport && ability.baseDamage > 0 && !ability.isGroundTarget && ability.aoeRadius === 0) {
@@ -352,7 +352,7 @@ function fireAbility(player: Actor, ability: AbilityDef, state: SimState, ctrl: 
         applyKnockback(target, ability.knockbackForce || 100, player.facing, ability.knockdown, state.vfxEvents);
       }
     }
-    state.vfxEvents.push({ type: 'hit_spark', color: ability.vfxColor, x: player.x + player.facing * 30, y: player.y });
+    state.vfxEvents.push({ type: 'hit_spark', color: ability.vfxColor, x: player.x + player.facing * 30, y: player.y, z: player.z });
   }
 
   if (ability.effects) {
@@ -500,7 +500,7 @@ function performBasicAttack(player: Actor, state: SimState, ctrl: PlayerControll
     }
   }
 
-  state.vfxEvents.push({ type: 'hit_spark', color: guild.color, x: player.x + player.facing * 30, y: player.y - 20 });
+  state.vfxEvents.push({ type: 'hit_spark', color: guild.color, x: player.x + player.facing * 30, y: player.y - 20, z: player.z });
 }
 
 function tickPlayerResourceRegen(player: Actor, dtMs: number, inCombat: boolean): void {
@@ -620,7 +620,7 @@ function tickProjectiles(state: SimState, dtSec: number): void {
       if (dx <= target.width / 2 + proj.radius && dy <= 30) {
         const isCrit = Math.random() < 0.05;
         applyDamage(target, proj.damage * (isCrit ? 1.5 : 1), state.vfxEvents, isCrit);
-        state.vfxEvents.push({ type: 'hit_spark', color: proj.color, x: proj.x, y: proj.y });
+        state.vfxEvents.push({ type: 'hit_spark', color: proj.color, x: proj.x, y: proj.y, z: proj.z });
 
         for (const [etype, edata] of Object.entries(proj.effects)) {
           if (edata) addStatusEffect(target, etype as any, edata.magnitude, edata.durationMs, proj.ownerId);
@@ -672,7 +672,7 @@ function handlePlayerInput(state: SimState, input: InputState, ctrl: PlayerContr
       for (const t of aoeTargets) {
         applyDamage(t, Math.round(15 + player.stats.STR * 0.3), state.vfxEvents, false);
       }
-      state.vfxEvents.push({ type: 'aoe_pop', color: '#ffffff', x: player.x, y: player.y, radius: 80 });
+      state.vfxEvents.push({ type: 'aoe_pop', color: '#ffffff', x: player.x, y: player.y, z: player.z, radius: 80 });
     }
     return;
   }
@@ -725,7 +725,7 @@ function handlePlayerInput(state: SimState, input: InputState, ctrl: PlayerContr
     if (input.attackJustPressed) {
       const parrySucceeds = ctrl.parryWindowMs < PARRY_WINDOW_MS;
       if (parrySucceeds) {
-        state.vfxEvents.push({ type: 'aoe_pop', color: '#fbbf24', x: player.x, y: player.y, radius: 60 });
+        state.vfxEvents.push({ type: 'aoe_pop', color: '#fbbf24', x: player.x, y: player.y, z: player.z, radius: 60 });
         player.mp = Math.min(player.mpMax, player.mp + 10);
         if (player.guildId === 'monk') {
           player.chiOrbs = Math.min(5, (player.chiOrbs || 0) + 1);

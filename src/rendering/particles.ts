@@ -1,4 +1,5 @@
 import type { VFXEvent } from '../simulation/types';
+import { worldYToScreenY, DEPTH_SCALE } from './constants';
 
 interface Particle {
   id: number;
@@ -25,10 +26,10 @@ let particleIdCounter = 0;
 export class ParticleSystem {
   private particles: Particle[] = [];
 
-  emit(events: VFXEvent[], cameraX: number): void {
+  emit(events: VFXEvent[], cameraX: number, canvasHeight: number): void {
     for (const event of events) {
       const sx = event.x - cameraX;
-      const sy = event.y;
+      const sy = worldYToScreenY(event.y, canvasHeight) - (event.z ?? 0) * DEPTH_SCALE;
 
       switch (event.type) {
         case 'damage_number':
@@ -153,7 +154,7 @@ export class ParticleSystem {
             lifetime: 400,
             age: 0,
             x2: (event.x2 || event.x) - cameraX,
-            y2: event.y2 || event.y,
+            y2: worldYToScreenY(event.y2 ?? event.y, canvasHeight) - (event.z ?? 0) * DEPTH_SCALE,
           });
           break;
 
