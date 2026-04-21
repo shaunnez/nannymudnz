@@ -206,8 +206,6 @@ export class ActorView {
       this.initial.y = -this.height / 2;
     }
 
-    this.shadow.setVisible(true);
-
     // Facing flip via container scaleX. Avoid scaling the shadow.
     this.container.scaleX = actor.facing === -1 ? -1 : 1;
 
@@ -226,15 +224,19 @@ export class ActorView {
       this.nose.fillPath();
     }
 
-    // Shadow when grounded only.
+    // Shadow for airborne actors only — LF2 convention, matches the pre-port
+    // Canvas renderer. The shadow is drawn at ground level (world y) while the
+    // sprite has lifted by actor.z * 0.6 upward, so the gap between shadow
+    // and feet reads as jump height.
     this.shadow.clear();
-    if (actor.z === 0) {
-      this.shadow.fillStyle(0x000000, 0.25);
-      this.shadow.fillEllipse(0, -2, this.width, 12);
-    } else {
+    if (actor.z > 0) {
       this.shadow.fillStyle(0x000000, 0.3);
       const shrink = Math.min(1, 1 - actor.z / 200);
-      this.shadow.fillEllipse(0, -2, this.width * 0.8 * shrink, 10);
+      const shadowOffset = actor.z * 0.6;
+      this.shadow.fillEllipse(0, shadowOffset - 2, this.width * 0.8 * shrink, 10);
+      this.shadow.setVisible(true);
+    } else {
+      this.shadow.setVisible(false);
     }
 
     // HP bar above the head when below max.

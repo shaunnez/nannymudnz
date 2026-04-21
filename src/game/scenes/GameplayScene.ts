@@ -17,6 +17,7 @@ import { consumeVfxEvents } from '../view/ParticleFX';
 import type { Actor, Projectile, Pickup, InputState } from '../../simulation/types';
 import type { GameCallbacks } from '../PhaserGame';
 import { AudioManager } from '../../audio/audioManager';
+import { VIRTUAL_HEIGHT } from '../constants';
 
 export class GameplayScene extends Phaser.Scene {
   private simState!: SimState;
@@ -62,16 +63,18 @@ export class GameplayScene extends Phaser.Scene {
 
     this.scene.launch('Hud');
 
-    this.debugText = this.add
-      .text(12, 12, '', {
-        fontFamily: 'monospace',
-        fontSize: '12px',
-        color: '#ffff88',
-        backgroundColor: '#000000a0',
-        padding: { x: 6, y: 4 },
-      })
-      .setScrollFactor(0)
-      .setDepth(10000);
+    if (import.meta.env.DEV) {
+      this.debugText = this.add
+        .text(12, VIRTUAL_HEIGHT - 80, '', {
+          fontFamily: 'monospace',
+          fontSize: '10px',
+          color: '#ffff88',
+          backgroundColor: '#000000a0',
+          padding: { x: 4, y: 2 },
+        })
+        .setScrollFactor(0)
+        .setDepth(10000);
+    }
 
     window.addEventListener(FULLSCREEN_EXIT_EVENT, this.onFullscreenExit);
 
