@@ -177,6 +177,11 @@ export function createInitialState(guildId: GuildId, seed: number = Date.now()):
     nextPickupId: 1,
     nextEffectId: 1,
     bloodtallyDecayMs: 0,
+    mode: 'story',
+    opponent: null,
+    round: null,
+    combatLog: [],
+    nextLogId: 1,
     controllers: {},
   };
 }

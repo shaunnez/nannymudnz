@@ -283,6 +283,29 @@ export interface VFXEvent {
   assetKey?: string;
 }
 
+export type LogTag = 'P1' | 'P2' | 'SYS';
+export type LogTone = 'info' | 'damage' | 'ko' | 'round';
+
+export interface LogEntry {
+  id: number;
+  tickId: number;
+  tag: LogTag;
+  tone: LogTone;
+  text: string;
+}
+
+export interface RoundState {
+  index: 0 | 1 | 2;
+  wins: { p1: number; p2: number };
+  timeRemainingMs: number;
+  phase: 'intro' | 'fighting' | 'resolved' | 'matchOver';
+  phaseStartedAtMs: number;
+  winnerOfRound: 'p1' | 'p2' | 'draw' | null;
+  matchWinner: 'p1' | 'p2' | 'draw' | null;
+}
+
+export type SimMode = 'story' | 'vs';
+
 export interface Wave {
   triggerX: number;
   enemies: { kind: ActorKind; count: number; offsetX?: number; offsetY?: number }[];
@@ -313,6 +336,11 @@ export interface SimState {
   nextPickupId: number;
   nextEffectId: number;
   bloodtallyDecayMs: number;
+  mode: SimMode;
+  opponent: Actor | null;
+  round: RoundState | null;
+  combatLog: LogEntry[];
+  nextLogId: number;
   controllers: Record<string, PlayerController>;
 }
 
