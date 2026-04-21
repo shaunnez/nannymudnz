@@ -180,11 +180,10 @@ export function createInitialState(guildId: GuildId, seed: number = Date.now()):
   };
 }
 
-const controllers = new Map<string, PlayerController>();
-
-export function getOrCreateController(playerId: string, input: InputState): PlayerController {
-  if (!controllers.has(playerId)) {
-    controllers.set(playerId, {
+export function getOrCreateController(state: SimState, playerId: string, input: InputState): PlayerController {
+  let ctrl = state.controllers[playerId];
+  if (!ctrl) {
+    ctrl = {
       input,
       comboBuffer: createComboBuffer(),
       lastAttackMs: 0,
@@ -197,15 +196,15 @@ export function getOrCreateController(playerId: string, input: InputState): Play
       groundTargetY: 220,
       attackChain: 0,
       runningDir: 0,
-    });
+    };
+    state.controllers[playerId] = ctrl;
   }
-  const ctrl = controllers.get(playerId)!;
   ctrl.input = input;
   return ctrl;
 }
 
-export function resetController(playerId: string): void {
-  controllers.delete(playerId);
+export function resetController(state: SimState, playerId: string): void {
+  delete state.controllers[playerId];
 }
 
 function consumeResource(player: Actor, cost: number): boolean {
@@ -948,7 +947,7 @@ export function tickSimulation(state: SimState, input: InputState, dtMs: number)
 
   state.bloodtallyDecayMs += dtMs;
 
-  const ctrl = getOrCreateController('player', input);
+  const ctrl = getOrCreateController(state, 'player', input);
 
   tickWaves(state);
 
