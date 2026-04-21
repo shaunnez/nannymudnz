@@ -20,6 +20,7 @@ import { tickPhysics, tickKnockdown, tickGetup, tickProjectile, updateCamera, ge
 import { createComboBuffer, pushComboKey, detectComboFromInput, clearCombo } from './comboBuffer';
 import { tickAI, spawnEnemyAt } from './ai';
 import { tickRound } from './vsSimulation';
+import { appendLog as appendCombatLog } from './combatLog';
 
 export function createPlayerActor(guildId: GuildId): Actor {
   const guild = getGuild(guildId);
@@ -324,6 +325,16 @@ function fireAbility(player: Actor, ability: AbilityDef, state: SimState, ctrl: 
     text: ability.name,
     abilityId: ability.id,
   });
+
+  if (state.mode === 'vs') {
+    const tag = player.id === 'player' ? 'P1' : player.id === 'opponent' ? 'P2' : 'SYS';
+    const guild = getGuild(player.guildId!);
+    appendCombatLog(state, {
+      tag,
+      tone: 'info',
+      text: `${guild.name} uses ${ability.name}`,
+    });
+  }
 
   const dmgMult = getDamageMultiplier(player);
 
@@ -1269,6 +1280,25 @@ function tickVsSimulation(state: SimState, input: InputState, dtMs: number): Sim
   tickProjectiles(state, dtSec);
   updateCamera(state);
   tickRound(state, dtMs);
+
+  // KO detection (VS-only) — fires when hp hits 0 or actor is externally marked dead
+  if ((state.player.hp <= 0 || !state.player.isAlive) && state.player.deathTimeMs === 0) {
+    state.player.isAlive = false;
+    state.player.deathTimeMs = state.timeMs;
+    appendCombatLog(state, {
+      tag: 'SYS', tone: 'ko',
+      text: `${getGuild(state.player.guildId!).name} is KO'd.`,
+    });
+  }
+  const opp2 = state.opponent;
+  if (opp2 && (opp2.hp <= 0 || !opp2.isAlive) && opp2.deathTimeMs === 0) {
+    opp2.isAlive = false;
+    opp2.deathTimeMs = state.timeMs;
+    appendCombatLog(state, {
+      tag: 'SYS', tone: 'ko',
+      text: `${getGuild(opp2.guildId!).name} is KO'd.`,
+    });
+  }
 
   return state;
 }

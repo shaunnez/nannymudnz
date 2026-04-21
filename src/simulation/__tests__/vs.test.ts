@@ -96,6 +96,33 @@ describe('vsSimulation: resetActorsForRound', () => {
   });
 });
 
+describe('vsSimulation: combat log sources', () => {
+  it('appends [P1] ... uses <ability> on player ability fire', () => {
+    const s = createVsState('knight', 'mage', 'assembly', 1);
+    // force to fighting phase
+    let st = s;
+    for (let i = 0; i < 120; i++) st = tickSimulation(st, idleInput(), 16);
+    // knight starts with 0 Resolve; give enough to fire slot 1 (cost 35)
+    st.player.mp = st.player.mpMax;
+    const input = idleInput();
+    input.testAbilitySlot = 1;
+    st = tickSimulation(st, input, 16);
+    const entry = st.combatLog.find(e => e.tag === 'P1' && e.text.toLowerCase().includes('uses'));
+    expect(entry).toBeDefined();
+  });
+
+  it('appends [SYS] <name> is KO\'d when an actor dies in VS', () => {
+    let st = createVsState('knight', 'mage', 'assembly', 1);
+    for (let i = 0; i < 120; i++) st = tickSimulation(st, idleInput(), 16);
+    st.opponent!.hp = 0.1;
+    // any damage event — cheap way: directly set to 0 and tick once so KO append runs
+    st.opponent!.hp = 0;
+    st.opponent!.isAlive = false;
+    st = tickSimulation(st, idleInput(), 16);
+    expect(st.combatLog.some(e => /KO/i.test(e.text))).toBe(true);
+  });
+});
+
 describe('vsSimulation: tickRound', () => {
   it('transitions intro -> fighting after 1500ms', () => {
     const s = createVsState('knight', 'mage', 'assembly', 1);
