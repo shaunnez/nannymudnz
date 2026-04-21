@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 import { GUILDS } from '../simulation/guildData';
 import type { GuildId, Stats } from '../simulation/types';
 import { GUILD_META } from '../data/guildMeta';
-import { theme, guildAccent, Btn, Chip, GuildMonogram } from '../ui';
+import { theme, guildAccent, Btn, Chip, GuildMonogram, ComboDisplay } from '../ui';
 import { GuildDetails } from './GuildDetails';
 import type { GameMode } from '../state/useAppState';
 
@@ -301,9 +301,9 @@ export function CharSelect({ mode, initialP1, initialP2, onBack, onReady }: Prop
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 10 }}>
-              <span style={{ fontFamily: theme.fontMono, fontSize: 10, color: theme.inkMuted, letterSpacing: 2 }}>
+              {/* <span style={{ fontFamily: theme.fontMono, fontSize: 10, color: theme.inkMuted, letterSpacing: 2 }}>
                 {active === 'p1' ? 'P1 · HOVER' : 'CPU · HOVER'}
-              </span>
+              </span> */}
               <span
                 style={{
                   fontFamily: theme.fontDisplay,
@@ -313,7 +313,7 @@ export function CharSelect({ mode, initialP1, initialP2, onBack, onReady }: Prop
               >
                 {hoveredGuild.name}
               </span>
-              <span
+              {/* <span
                 style={{
                   fontFamily: theme.fontBody,
                   fontSize: 12,
@@ -322,7 +322,7 @@ export function CharSelect({ mode, initialP1, initialP2, onBack, onReady }: Prop
                 }}
               >
                 {hoveredMeta.sub}
-              </span>
+              </span> */}
               <span style={{ marginLeft: 'auto' }}>
                 <Chip tone="accent" mono>{hoveredMeta.tag}</Chip>
               </span>
@@ -419,7 +419,7 @@ function SidePanel({ role, guildId, locked, active, onView }: SidePanelProps) {
         </span>
       </div>
       <GuildMonogram guildId={guildId} size={180} selected={locked} />
-      <div>
+      <div style={{ marginBottom: 6 }}>
         <div
           style={{
             fontFamily: theme.fontDisplay,
@@ -435,7 +435,19 @@ function SidePanel({ role, guildId, locked, active, onView }: SidePanelProps) {
           {meta.sub}
         </div>
       </div>
-      <div style={{ fontFamily: theme.fontBody, fontSize: 12, color: theme.inkDim, lineHeight: 1.55 }}>
+      <div
+        style={{
+          fontFamily: theme.fontBody,
+          fontSize: 12,
+          color: theme.inkDim,
+          lineHeight: 1.55,
+          minHeight: 'calc(12px * 1.55 * 4)',
+          display: '-webkit-box',
+          WebkitLineClamp: 4,
+          WebkitBoxOrient: 'vertical',
+          overflow: 'hidden',
+        }}
+      >
         {meta.bio}
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -449,6 +461,9 @@ function SidePanel({ role, guildId, locked, active, onView }: SidePanelProps) {
       <div style={{ marginTop: 'auto', borderTop: `1px solid ${theme.lineSoft}`, paddingTop: 10 }}>
         <div
           style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
             fontFamily: theme.fontMono,
             fontSize: 10,
             color: theme.inkMuted,
@@ -456,7 +471,8 @@ function SidePanel({ role, guildId, locked, active, onView }: SidePanelProps) {
             marginBottom: 6,
           }}
         >
-          ULT · ↓↑↓↑J
+          <span>ULT ·</span>
+          <ComboDisplay combo={ult.combo} size={12} color={theme.ink} />
         </div>
         <div style={{ fontFamily: theme.fontDisplay, fontSize: 16, color: accent }}>{ult.name}</div>
         <div style={{ fontFamily: theme.fontBody, fontSize: 11, color: theme.inkDim }}>
@@ -492,7 +508,7 @@ function VitalRow({ label, value, accent, emphasized }: VitalRowProps) {
       <span
         style={{
           fontFamily: theme.fontMono,
-          fontSize: 11,
+          fontSize: emphasized ? 11 : 13,
           color: emphasized ? accent : theme.ink,
           fontWeight: emphasized ? 400 : 700,
           letterSpacing: 2,
@@ -503,7 +519,7 @@ function VitalRow({ label, value, accent, emphasized }: VitalRowProps) {
       <span
         style={{
           fontFamily: theme.fontDisplay,
-          fontSize: 17,
+          fontSize: emphasized ? 17 : 13,
           color: fg,
           lineHeight: 1,
         }}

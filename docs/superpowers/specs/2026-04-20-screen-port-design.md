@@ -183,11 +183,18 @@ Each batch ends with the user running `npm run dev`, clicking through, approving
 
 **Batch 2 — Title + Main Menu (01, 02).** Replaces `TitleScreen`; adds `MainMenu`. Keyboard nav (↑↓ Enter), flavor panel per item. FIGHT routes to `charselect`, SETTINGS to `settings` stub, etc.
 
-**Batch 3 — Char Select (03) + Team Config (04).** P1/P2 dual-cursor grid, LOCK button, bio panel. Team Config with 3 slots per side + stat preview. P2 is CPU — auto-pick on charselect entry (randomized from sim's 15 guilds), auto-team on team entry. Replaces `GuildSelect.tsx`.
+**Batch 3 — Char Select (03).** Per-mode layout driven by `state.mode`:
+- **VS**: P1 panel + CPU OPPONENT panel, dual-cursor grid, click-to-pick with extra accent outline, lock/swap, bio panel.
+- **STAGE / SURVIVAL / CHAMPIONSHIP**: single P1 panel, single cursor, click or arrow+Enter commits.
+- **BATTLE**: dimmed in main menu — own dedicated batch (see Batch 5a).
 
-**Batch 4 — Stage Select (05) + Loading (06).** 9 stage tiles, only `assembly` clickable. Loading screen with per-player progress bars, stage backdrop, rotating tips. On done → mount `GameScreen`. Team-rotation wiring on P1 death is included here only if it's <50 lines of sim change; otherwise deferred to Batch 5.
+Replaces `GuildSelect.tsx`. The previous "Team Config (04) with 3 slots per side" is deleted — LF2 has no player-party rosters; there is only one human player per game. (Team *sides* still exist in BATTLE/MP — covered in later batches.)
 
-**Batch 5 — Pause (08) + Results (09).** `PauseOverlay` renders on top of `GameScreen` (GameScreen stays mounted, loop paused via existing pause path). `ResultsScreen` replaces `GameOverScreen`, reads winner/stats from sim phase + score. Team rotation lands here if not already in 4.
+**Batch 4 — Stage Select (05) + Loading (06).** 9 stage tiles, only `assembly` clickable. Loading screen with per-player progress bars, stage backdrop, rotating tips. On done → mount `GameScreen`. No team-roster rotation (no roster exists).
+
+**Batch 5 — Pause (08) + Results (09).** `PauseOverlay` renders on top of `GameScreen` (GameScreen stays mounted, loop paused via existing pause path). `ResultsScreen` replaces `GameOverScreen`, reads winner/stats from sim phase + score.
+
+**Batch 5a — BATTLE 4v4 Config (new).** 8-slot configurator (HUMAN or CPU + team color per slot, but only one HUMAN permitted) feeding into the existing game loop with team-based last-team-standing victory logic. Own batch because the 8-slot grid pattern is shared with Batch 8's MP Room Lobby — land this first so Batch 8 can reuse the layout primitives.
 
 **Batch 6 — Move List (10) + Guild Dossier (11) + Settings (12).** Reference screens. Move List reads live `guildData.ts` combos. Dossier reads both sim and meta. Settings wires to existing audio/keybind stores for overlapping options; terminal-theme toggles (`animateHud`, `showLog`) wire to `useAppState`.
 
@@ -199,7 +206,7 @@ Each batch ends with the user running `npm run dev`, clicking through, approving
 
 ## Open risks / follow-ups
 
-- **Team rotation sim change.** Actor-on-death respawn using the P1 team array is the lightest-touch fighter-shape hook. If it balloons, batches 4/5 can ship team UI without the rotation (P1 just dies as today; team UI is cosmetic until battle rewrite).
+- **Team sides vs team rosters.** Player-party rosters (3-char rotation per player) were removed after clarifying LF2 shape — there is always exactly one human. Team *sides* (color groups) remain valid for BATTLE 4v4 and MP team/co-op modes; victory resolves when all actors on one side are down.
 - **ESC/pause binding overlap.** `P` currently pauses (CLAUDE.md notes the Esc→P remap was intentional because fullscreen hijacks Esc). ESC will now *also* pause from `game`. Both bindings coexist. `F` for fullscreen unchanged.
 - **Scanlines + canvas.** The `Scanlines` overlay sits at `zIndex 5` over the canvas. If it degrades battle readability, Batch 1 gates it to menus only (mount inside each screen, not `ScalingFrame`).
 - **localStorage schema migration.** Existing volume/keybind storage keys are untouched. New `nannymud-app-state-v1` is net-new; no migration needed.
@@ -208,9 +215,10 @@ Each batch ends with the user running `npm run dev`, clicking through, approving
 
 - Batch 1: ~400 LOC (primitives are small, data files are paste-from-handoff).
 - Batch 2: ~250 LOC.
-- Batch 3: ~500 LOC (two large screens).
-- Batch 4: ~300 LOC + 0–50 sim LOC for team rotation if included.
+- Batch 3: ~350 LOC (single CharSelect, per-mode shape).
+- Batch 4: ~300 LOC.
 - Batch 5: ~250 LOC.
+- Batch 5a (BATTLE config): ~350 LOC.
 - Batch 6: ~600 LOC (three reference screens, each dense).
 - Batch 7: ~500 LOC (hub table + 2 modals).
 - Batch 8: ~400 LOC.
