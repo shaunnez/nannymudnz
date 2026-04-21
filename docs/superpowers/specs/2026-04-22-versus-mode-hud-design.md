@@ -1,7 +1,9 @@
 # Versus Mode + Battle HUD — Design
 
-**Date:** 2026-04-22
-**Scope:** Build real 1v1 Versus mode. Replace the canvas HUD with a React/DOM terminal-themed HUD (top bar, round timer, combat log, per-player ability strip). Story modes (`stage`, `surv`, `champ`) keep the existing wave sim unchanged. 4v4 BATTLE stays stubbed — HUD primitives are shaped so a later project can drop it in without rewrites.
+**Date:** 2026-04-22 (revised 2026-04-22 after Phase-2 Phaser merge)
+**Scope:** Build real 1v1 Versus mode. Add a React/DOM terminal-themed HUD overlay (top bar, round timer, combat log, per-player ability strip) that renders on top of the Phaser canvas. Story modes (`stage`, `surv`, `champ`) keep the existing `HudScene` Phaser HUD unchanged. 4v4 BATTLE stays stubbed — HUD primitives are shaped so a later project can drop it in without rewrites.
+
+**Context:** Phase 2 replaced `src/rendering/` with `src/game/` (Phaser 3 scenes: `BootScene`, `GameplayScene`, `HudScene`). The game loop now lives in `GameplayScene.update`; React only hosts the Phaser mount + pause overlay. The simulation layer is still pure TypeScript and untouched by the Phaser migration. This spec builds the VS HUD on top of that new architecture, not the old canvas renderer.
 
 ## Goals
 
@@ -17,10 +19,10 @@
 - **4v4 BATTLE sim.** Kept stubbed. `mode === 'batt'` still shows the existing "Coming soon" shell in the menu; no 8-slot configurator, no team win logic. Out of scope until Batch 5a of the screen-port project.
 - **Second resource bar ("Resolve").** The mock's `RESOLVE 80/100` label was decorative. In the real HUD, only the guild's existing resource (`guildDef.resource`) renders under HP. No new sim-level resource.
 - **Combat redesign.** Damage numbers, ability costs, cooldowns, status effects, crit math stay as `guildData.ts` / `combat.ts` define them today.
-- **Stage variety.** One canvas-drawn stage (Assembly Hall) remains.
+- **Stage variety.** One Phaser-drawn stage (Assembly Hall) remains.
 - **Real multiplayer.** No sockets, no Supabase, no lobby backend.
 - **Sprite / VFX work.** Existing sprite and VFX loading pathways unchanged.
-- **Story-mode HUD refresh.** The new DOM HUD is VS-only for this project. Story mode retains its current canvas HUD until a later pass.
+- **Story-mode HUD refresh.** The new React overlay is VS-only for this project. Story mode retains its current Phaser `HudScene` until a later pass.
 
 ## Architecture
 
@@ -34,25 +36,29 @@ src/
 │   ├── simulation.ts            tickSimulation branches on state.mode
 │   ├── types.ts                 +mode, +opponent, +round, +combatLog, +LogEntry
 │   └── ... (unchanged)
-├── rendering/
-│   ├── gameRenderer.ts          render(..., viewport, drawHud) — viewport sub-rect + HUD opt-out
-│   ├── hud.ts                   KEPT — story mode still uses it; VS disables it
+├── game/                         Phaser layer (from Phase 2)
+│   ├── PhaserGame.ts            +mode/p2/stageId in GameBootConfig + registry
+│   ├── scenes/
+│   │   ├── GameplayScene.ts     branches: VS uses createVsState; skips Hud launch
+│   │   ├── HudScene.ts          UNCHANGED — still used by story mode
+│   │   └── BootScene.ts         unchanged
+│   ├── input/PhaserInputAdapter.ts   promote 1-5, R in VS via existing testAbility slots
 │   └── ... (unchanged)
 ├── screens/
-│   ├── GameScreen.tsx           branches: VS wraps canvas in HudFrame; story unchanged
+│   ├── GameScreen.tsx           VS renders HudOverlay over Phaser; story unchanged
 │   └── hud/                     NEW
-│       ├── HudFrame.tsx
+│       ├── HudOverlay.tsx       absolute-positioned React overlay root
 │       ├── HudTopBar.tsx
 │       ├── RoundTimer.tsx
 │       ├── AbilityStrip.tsx
 │       ├── CombatLog.tsx
 │       └── HudFooter.tsx
 ├── ui/                          unchanged (MeterBar, Chip, SectionLabel, GuildMonogram all reused)
-├── input/                       keyBindings.ts: 1-5,R promoted from test to first-class
+├── input/keyBindings.ts         unchanged — existing testAbility slots are reused
 └── App.tsx                      passes {mode, p1, p2, stageId} to GameScreen
 ```
 
-Strict one-way dependency rule preserved: simulation reads nothing from rendering/ui/screens. Rendering reads simulation types. Screens read simulation state and call input/audio. No cycles.
+Strict one-way dependency rule preserved: simulation reads nothing from game/ui/screens. Phaser scenes read simulation types and mutate only their own view state. React HUD reads a snapshot of `SimState` (pulled from `game.registry` or a push-style event) and never mutates it. No cycles.
 
 ### Simulation additions
 
@@ -112,60 +118,61 @@ Damage number source: sum `damageEvent` VFX events emitted during the cast frame
 
 All appends are pure, tick-stamped, and go through `appendLog(state, entry)` which mutates `state.combatLog` in the same style as the rest of the sim (array push + cap at 64). Determinism preserved — no `Date.now()`, no `Math.random()`.
 
-### Rendering changes
+### Phaser (src/game/) changes
 
-`rendering/hud.ts` **stays**. Story mode still calls `renderHUD` exactly as today — that mode's canvas HUD is out of scope to replace in this project. VS mode skips it.
+`HudScene` **stays untouched**. Story mode continues to launch it from `GameplayScene.create` exactly as today — that mode's Phaser HUD is out of scope to replace here. VS mode simply does **not** launch `HudScene`; the React overlay owns that layer instead.
 
-`GameRenderer.render` signature grows two optional args: `viewport?: { x, y, w, h }` and `drawHud: boolean = true`. When `viewport` is absent, behaves as today (full canvas). When present, camera/world draws are constrained to the sub-rect. When `drawHud === false`, the canvas-HUD call (`renderHUD`, `renderControlsHint`, `renderHudButtons`) is skipped — VS mode passes `drawHud: false` because the React HUD owns that layer. Story mode passes defaults (no viewport, `drawHud: true`) — zero behavior change.
+`PhaserGame.ts` / `GameBootConfig` grows three fields passed in from the React host:
 
-`VIRTUAL_WIDTH` / `VIRTUAL_HEIGHT` stay 900×506; when the HUD shrinks the arena, the canvas element itself shrinks and `RENDER_SCALE` already handles the non-native resize (existing logic). The sim doesn't care about pixels.
+```ts
+interface GameBootConfig {
+  guildId: GuildId;
+  mode: 'story' | 'vs';
+  p2?: GuildId;                        // required when mode === 'vs'
+  stageId: StageId;
+  seed?: number;                       // optional deterministic seed
+  callbacks: GameCallbacks;
+}
+```
 
-### React HUD
+These land in `game.registry` alongside the existing entries. `GameplayScene.create` reads `mode`/`p2`/`stageId` and:
+- `mode === 'story'` — calls `createInitialState(guildId, seed)` and `this.scene.launch('Hud')` as today.
+- `mode === 'vs'` — calls `createVsState(p1, p2, stageId, seed)`. Does not launch `HudScene`. Optionally calls `this.cameras.main.setViewport(0, HUD_TOP_PX, VIRTUAL_WIDTH, VIRTUAL_HEIGHT - HUD_TOP_PX - HUD_BOTTOM_PX)` so the camera-followed action centers in the un-covered band between the top bar and the footer. `HUD_TOP_PX` / `HUD_BOTTOM_PX` are render-only constants in `src/game/constants.ts` (suggested values: 72 / 160).
+
+Virtual resolution (`VIRTUAL_WIDTH` / `VIRTUAL_HEIGHT` = 900×506) is unchanged. Phaser's `Scale.FIT` continues to upscale the whole canvas to the host div, which the React HUD overlays sit on top of in the same coordinate space.
+
+`GameplayScene.update` pushes `simState` to the registry each tick as today. For VS mode it additionally emits `scene.events.emit('sim-tick', state)` — the React overlay subscribes to that event to schedule a re-render. (Alternative: React `useSyncExternalStore` against the registry. Either works; plan phase picks one.)
+
+### React HUD overlay
 
 New directory `src/screens/hud/`:
 
-- **`HudFrame.tsx`** — CSS-grid layout: `grid-template-rows: auto 1fr auto`. Top row hosts `HudTopBar`; middle row hosts the canvas (via `children`); bottom row hosts `HudFooter`. Inside `ScalingFrame` — no `100vh` assumptions.
-- **`HudTopBar.tsx`** — receives `players: HudPlayer[]` (2 for VS, will accept 4 later for BATT), plus `stage: { title: string; tags: string[] }` and `round: RoundState | null`. Renders P1 on the left, stage + `RoundTimer` in the center, P2 on the right. Each player slot: `GuildMonogram` badge, class/title text (`guildDef.name` + `GUILD_META.tag`), HP `MeterBar`, resource `MeterBar`, numeric readouts (`HP 168/180`, `<ResourceName> 80/100`).
-- **`RoundTimer.tsx`** — 60px tabular-numeric display of `ceil(timeRemainingMs / 1000)`, subtitle `ROUND n/3`. Pulses red below 10s only if `settings.animateHud`.
+- **`HudOverlay.tsx`** — root of the VS HUD. Rendered as a sibling of the Phaser mount `<div>` inside `GameScreen`, using `position: absolute; inset: 0; pointer-events: none`. Child regions opt back into `pointer-events: auto` only where they actually need interaction (e.g., a future tweaks menu). Subscribes to the Phaser instance's `sim-tick` event (or polls `game.registry.get('simState')` each rAF), stores the latest `SimState` in a React ref, and triggers a re-render via a tick counter. Renders `HudTopBar` (top strip), `HudFooter` (bottom strip), leaves the middle transparent so the Phaser canvas shows through.
+- **`HudTopBar.tsx`** — receives `players: HudPlayer[]` (2 for VS, accepts 4 later for BATT), plus `stage: { title: string; tags: string[] }` and `round: RoundState | null`. Renders P1 on the left, stage + `RoundTimer` in the center, P2 on the right. Each player slot: `GuildMonogram` badge, class/title text (`guildDef.name` + `GUILD_META.tag`), HP `MeterBar`, resource `MeterBar`, numeric readouts (`HP 168/180`, `<ResourceName> 80/100`). Opaque `theme.bg` background covers the Phaser pixels beneath it.
+- **`RoundTimer.tsx`** — 60px tabular-numeric display of `ceil(timeRemainingMs / 1000)`, subtitle `ROUND n/3`. Pulses red below 10s only if `appState.animateHud`.
 - **`AbilityStrip.tsx`** — props `{ player: Actor; guildDef: GuildDef; side: 'p1'|'p2'; showKeys: boolean }`. Renders 6 cards (5 abilities + RMB). Each card: key label top-left (`1`–`5` / `R`) hidden if `!showKeys`, ability name, combo glyph (reuse Batch 6's combo glyph renderer), cooldown ring, mp-cost chip. Dimmed when on CD or unaffordable. Card index 0–4 maps to `guildDef.abilities[0..4]`; index 5 is RMB (`K+J`).
 - **`CombatLog.tsx`** — props `{ entries: LogEntry[]; visible: boolean }`. Fixed-height panel with auto-scroll to latest. `[P1]` colored `theme.team1`, `[P2]` colored `theme.team2`, `[SYS]` colored `theme.inkDim`. Optional `tone` maps to subtle text color (damage → accent, ko → warn, round → ink). Hidden entirely when `!visible`.
-- **`HudFooter.tsx`** — CSS-grid `log (flex) | p1 strip | p2 strip`. Mounts `CombatLog` + two `AbilityStrip`s.
+- **`HudFooter.tsx`** — CSS-grid `log (flex) | p1 strip | p2 strip`. Mounts `CombatLog` + two `AbilityStrip`s. Opaque `theme.bg` background.
 
-All components use `theme` tokens + existing `ui/` primitives. No new design tokens, no new colors.
+All components use `theme` tokens + existing `ui/` primitives. No new design tokens, no new colors. The existing `Scanlines` overlay at the app root continues to draw over everything, including this HUD — consistent with other screens.
 
 ### `GameScreen.tsx` reshape
 
 New props: `{ mode: 'story' | 'vs'; p1: GuildId; p2?: GuildId; stageId: StageId; onMatchEnd(winner: 'P1'|'P2'|'DRAW', score: number): void; onQuit(): void }`.
 
 Mount logic:
-- `mode === 'story'`: `stateRef = createInitialState(p1)`. Render `<canvas>` alone, unchanged from today's JSX.
-- `mode === 'vs'`: `stateRef = createVsState(p1, p2, stageId)`. Render:
-  ```jsx
-  <HudFrame>
-    <HudTopBar
-      players={[toHudPlayer(state.player, 'p1'), toHudPlayer(state.opponent, 'p2')]}
-      stage={stageInfoFor(state.stageId)}
-      round={state.round}
-    />
-    <canvas ref={canvasRef} />
-    <HudFooter
-      p1={state.player}
-      p2={state.opponent}
-      log={state.combatLog}
-      showLog={settings.showLog}
-    />
-  </HudFrame>
-  ```
+- `mode === 'story'`: call `makePhaserGame(parent, { guildId: p1, mode: 'story', stageId, callbacks })`. JSX is unchanged from today — `<div ref={parentRef}>` + `PauseOverlay` + `GuildDetails`. No React HUD.
+- `mode === 'vs'`: call `makePhaserGame(parent, { guildId: p1, mode: 'vs', p2, stageId, callbacks })`. JSX adds `<HudOverlay game={gameRef.current} settings={{ animateHud, showLog }} />` as a sibling of the Phaser mount div, inside the same absolute-positioned container. `HudOverlay` wires itself to the Phaser instance once mounted.
 
-One render call per frame drives the canvas AND triggers React re-render by bumping a `simVersion` state counter — lightweight (the sim mutates a ref; we tick React manually at 60Hz). Alternative: React reads the ref in a `useSyncExternalStore`; implementation detail for the plan phase.
-
-Pause overlay, Tab move-list, fullscreen toggle — unchanged.
+Pause overlay, Tab move-list, fullscreen toggle — all unchanged. The Phaser `sim-tick` event also powers React re-renders in VS; story mode keeps the registry-pull pattern `HudScene` already uses.
 
 ### Input changes
 
-`src/input/keyBindings.ts` already has `testAbilitySlot_1..5` and `testAbilitySlot_rmb`. In `vsSimulation.ts`'s tick branch, these keys map to real ability fires (same code path as combo-detect → `fireAbility`). Combo grammar input still works — two input paths in parallel, whichever fires first wins.
+`src/input/keyBindings.ts` already has the `testAbilitySlot_1..5` and `testAbilitySlot_rmb` bindings. `PhaserInputAdapter` in `src/game/input/` already reads them into `InputState.testAbilitySlot_*`. No keybinding change is needed.
 
-Story-mode behavior unchanged — test keys remain test keys there, gated by the existing flag in `GameScreen`.
+The behavioral promotion happens inside the VS tick branch in `simulation.ts` / `vsSimulation.ts`: when `state.mode === 'vs'` and a `testAbilitySlot_N` just-pressed flag is set, route it through the same code path the combo detector uses to call `fireAbility(state, playerId, abilityIndex)`. Combo grammar input still works — two input paths in parallel; whichever fires first wins and the other is swallowed for the same tick.
+
+Story-mode behavior unchanged — the same keys still behave as dev-only test bindings there.
 
 ### Mode routing (App.tsx)
 
@@ -208,19 +215,20 @@ interface HudPlayer {
 - [ ] `simulation/vsSimulation.ts` — createVsState, tickVs helpers, round machine
 - [ ] `simulation/combatLog.ts` — appendLog, capLog
 - [ ] `simulation/types.ts` — mode, opponent, round, combatLog, LogEntry
-- [ ] `simulation/simulation.ts` — tick branch on mode
+- [ ] `simulation/simulation.ts` — tick branch on mode; promote `testAbilitySlot_*` to real ability fires when `state.mode === 'vs'`
 - [ ] `simulation/combat.ts` — emit log entries alongside `ability_name` VFX + KO
 - [ ] `simulation/__tests__/vs.test.ts`
-- [ ] `rendering/gameRenderer.ts` — viewport sub-rect + `drawHud` opt-out
-- [ ] `rendering/hud.ts` — no change (still used by story mode)
-- [ ] `screens/hud/HudFrame.tsx`
+- [ ] `game/PhaserGame.ts` — extend `GameBootConfig` with `mode`, `p2`, `stageId`, `seed`; store in registry
+- [ ] `game/scenes/GameplayScene.ts` — VS branch in `create`: `createVsState` path + skip `scene.launch('Hud')`; emit `sim-tick`; optional camera `setViewport` for VS
+- [ ] `game/constants.ts` — add `HUD_TOP_PX`, `HUD_BOTTOM_PX`
+- [ ] `game/scenes/HudScene.ts` — no change (still used by story mode)
+- [ ] `screens/hud/HudOverlay.tsx`
 - [ ] `screens/hud/HudTopBar.tsx`
 - [ ] `screens/hud/RoundTimer.tsx`
 - [ ] `screens/hud/AbilityStrip.tsx`
 - [ ] `screens/hud/CombatLog.tsx`
 - [ ] `screens/hud/HudFooter.tsx`
-- [ ] `screens/GameScreen.tsx` — VS branch, new props
+- [ ] `screens/GameScreen.tsx` — VS branch, new props, mount `HudOverlay` alongside Phaser
 - [ ] `App.tsx` — pass mode/p1/p2/stage, handle match-end winner
-- [ ] `input/keyBindings.ts` — promote 1-5, R bindings in VS mode
 - [ ] Manual browser verification
 - [ ] Golden test still green; new vs.test.ts green
