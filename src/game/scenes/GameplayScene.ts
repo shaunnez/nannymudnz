@@ -76,6 +76,7 @@ export class GameplayScene extends Phaser.Scene {
     this.reconcileProjectiles();
     this.reconcilePickups();
     consumeVfxEvents(this, this.simState.vfxEvents);
+    this.game.registry.set('simState', this.simState);
 
     if (this.debugText) {
       const p = this.simState.player;
