@@ -1,7 +1,18 @@
 import Phaser from 'phaser';
 import type { SimState, Actor } from '../../simulation/types';
 import { GUILDS } from '../../simulation/guildData';
+import { getComboHints } from '../../simulation/comboBuffer';
 import { VIRTUAL_WIDTH } from '../constants';
+
+const COMBO_DISPLAY: Record<string, string> = {
+  'down,down,attack': '↓↓J',
+  'right,right,attack': '→→J',
+  'down,up,attack': '↓↑J',
+  'left,right,attack': '←→J',
+  'down,up,down,up,attack': '↓↑↓↑J',
+};
+
+const CONTROLS_TEXT = '← → ↑ ↓ Move  |  Space Jump  |  J Attack  |  K Block  |  L Grab  |  P Pause  |  F Fullscreen';
 
 /**
  * HUD overlay scene. Renders screen-space UI: portrait, HP bar, resource bar,
@@ -45,6 +56,13 @@ export class HudScene extends Phaser.Scene {
   private chiOrbs!: Phaser.GameObjects.Graphics;
   private bloodtally!: Phaser.GameObjects.Graphics;
   private sanityText!: Phaser.GameObjects.Text;
+
+  private comboBg!: Phaser.GameObjects.Graphics;
+  private comboLabel!: Phaser.GameObjects.Text;
+  private comboLines: Phaser.GameObjects.Text[] = [];
+
+  private controlsText!: Phaser.GameObjects.Text;
+  private pauseDim!: Phaser.GameObjects.Graphics;
 
   constructor() {
     super({ key: 'Hud' });
@@ -105,6 +123,24 @@ export class HudScene extends Phaser.Scene {
     this.sanityText = this.add
       .text(68, 58, '', { fontFamily: 'sans-serif', fontSize: '9px', color: '#9ca3af' });
 
+    // Pause dim sits below HUD overlays but above the world (React's pause
+    // overlay still lands on top of the <canvas>). Start hidden.
+    this.pauseDim = this.add.graphics().setDepth(10);
+    this.pauseDim.fillStyle(0x000000, 0.6);
+    this.pauseDim.fillRect(0, 0, VIRTUAL_WIDTH, this.scale.height);
+    this.pauseDim.setVisible(false);
+
+    this.comboBg = this.add.graphics();
+    this.comboLabel = this.add
+      .text(18, 0, 'Combo hints:', { fontFamily: 'sans-serif', fontSize: '10px', color: '#9ca3af' });
+    this.comboLabel.setVisible(false);
+
+    this.controlsText = this.add
+      .text(VIRTUAL_WIDTH / 2, this.scale.height - 8, CONTROLS_TEXT, {
+        fontFamily: 'sans-serif', fontSize: '10px', color: '#9ca3af',
+      })
+      .setOrigin(0.5, 1);
+
     // HUD scene's camera ignores world. Since HudScene is launched as a
     // sibling scene, it draws to the same canvas but runs on the same main
     // camera — our setScrollFactor(0) + depth layering gives us the overlay
@@ -127,6 +163,74 @@ export class HudScene extends Phaser.Scene {
     this.drawBossBar(state);
     this.drawSpecialInfo(player);
     this.drawGuildResources(player);
+    this.drawComboHints(state, player, guild);
+    this.drawControlsHint(state);
+    this.drawPauseDim(state);
+  }
+
+  private drawComboHints(state: SimState, player: Actor, guild: typeof GUILDS[0]): void {
+    const controller = state.controllers.player;
+    const buffer = controller?.comboBuffer;
+    const bg = this.comboBg;
+    bg.clear();
+    for (const t of this.comboLines) t.destroy();
+    this.comboLines = [];
+    this.comboLabel.setVisible(false);
+    if (!buffer) return;
+
+    const hints = getComboHints(buffer, state.timeMs);
+    if (hints.length === 0) return;
+
+    const baseX = 10;
+    const baseY = this.scale.height - 80;
+    const h = hints.length * 22 + 16;
+
+    bg.fillStyle(0x000000, 0.6);
+    bg.fillRoundedRect(baseX, baseY, 240, h, 6);
+
+    this.comboLabel.setPosition(baseX + 8, baseY + 6);
+    this.comboLabel.setVisible(true);
+
+    hints.slice(0, 5).forEach((hint, i) => {
+      const ability = guild.abilities.find(a => a.combo === hint);
+      if (!ability) return;
+      const cdRemaining = Math.max(0, (player.abilityCooldowns[ability.id] || 0) - state.timeMs);
+      const onCd = cdRemaining > 0;
+      const comboColor = onCd ? '#6b7280' : '#e5e7eb';
+      const nameColor = onCd ? '#6b7280' : guild.color;
+      const comboTxt = this.add.text(baseX + 8, baseY + 20 + i * 22,
+        COMBO_DISPLAY[hint] || hint,
+        { fontFamily: 'monospace', fontStyle: 'bold', fontSize: '11px', color: comboColor });
+      const nameTxt = this.add.text(baseX + 60, baseY + 20 + i * 22,
+        `${ability.name}${onCd ? ` (${Math.ceil(cdRemaining / 1000)}s)` : ''}`,
+        { fontFamily: 'sans-serif', fontSize: '11px', color: nameColor });
+      this.comboLines.push(comboTxt, nameTxt);
+    });
+  }
+
+  private drawControlsHint(state: SimState): void {
+    const isFullscreen = this.game.registry.get('isFullscreen') as boolean | undefined;
+    const isPaused = state.phase === 'paused';
+    const fadeStart = 4000;
+    const fadeEnd = 5000;
+    let alpha: number;
+    if (isFullscreen) {
+      this.controlsText.setVisible(false);
+      return;
+    }
+    if (isPaused) alpha = 0.9;
+    else if (state.timeMs < fadeStart) alpha = 0.7;
+    else if (state.timeMs < fadeEnd) alpha = 0.7 * (1 - (state.timeMs - fadeStart) / (fadeEnd - fadeStart));
+    else {
+      this.controlsText.setVisible(false);
+      return;
+    }
+    this.controlsText.setAlpha(alpha);
+    this.controlsText.setVisible(true);
+  }
+
+  private drawPauseDim(state: SimState): void {
+    this.pauseDim.setVisible(state.phase === 'paused');
   }
 
   private drawPortrait(guild: typeof GUILDS[0]): void {
