@@ -1,0 +1,145 @@
+{
+  "guildId": "vampire",
+  "frameSize": {
+    "w": 68,
+    "h": 68
+  },
+  "facing": "right",
+  "animations": {
+    "ability_1": {
+      "frames": 6,
+      "frameDurationMs": 90,
+      "loop": false,
+      "anchor": {
+        "x": 34,
+        "y": 56
+      }
+    },
+    "ability_2": {
+      "frames": 7,
+      "frameDurationMs": 90,
+      "loop": false,
+      "anchor": {
+        "x": 34,
+        "y": 56
+      }
+    },
+    "ability_3": {
+      "frames": 6,
+      "frameDurationMs": 90,
+      "loop": false,
+      "anchor": {
+        "x": 34,
+        "y": 56
+      }
+    },
+    "ability_4": {
+      "frames": 7,
+      "frameDurationMs": 90,
+      "loop": false,
+      "anchor": {
+        "x": 34,
+        "y": 56
+      }
+    },
+    "ability_5": {
+      "frames": 5,
+      "frameDurationMs": 150,
+      "loop": true,
+      "anchor": {
+        "x": 34,
+        "y": 56
+      }
+    },
+    "attack_1": {
+      "frames": 3,
+      "frameDurationMs": 80,
+      "loop": false,
+      "anchor": {
+        "x": 34,
+        "y": 56
+      }
+    },
+    "attack_2": {
+      "frames": 6,
+      "frameDurationMs": 80,
+      "loop": false,
+      "anchor": {
+        "x": 34,
+        "y": 56
+      }
+    },
+    "attack_3": {
+      "frames": 7,
+      "frameDurationMs": 80,
+      "loop": false,
+      "anchor": {
+        "x": 34,
+        "y": 56
+      }
+    },
+    "block": {
+      "frames": 8,
+      "frameDurationMs": 200,
+      "loop": true,
+      "anchor": {
+        "x": 34,
+        "y": 56
+      }
+    },
+    "death": {
+      "frames": 7,
+      "frameDurationMs": 150,
+      "loop": false,
+      "anchor": {
+        "x": 34,
+        "y": 56
+      }
+    },
+    "hurt": {
+      "frames": 6,
+      "frameDurationMs": 100,
+      "loop": false,
+      "anchor": {
+        "x": 34,
+        "y": 56
+      }
+    },
+    "idle": {
+      "frames": 4,
+      "frameDurationMs": 180,
+      "loop": true,
+      "anchor": {
+        "x": 34,
+        "y": 56
+      }
+    },
+    "jump": {
+      "frames": 9,
+      "frameDurationMs": 120,
+      "loop": false,
+      "anchor": {
+        "x": 34,
+        "y": 56
+      }
+    },
+    "run": {
+      "frames": 6,
+      "frameDurationMs": 90,
+      "loop": true,
+      "anchor": {
+        "x": 34,
+        "y": 56
+      }
+    },
+    "walk": {
+      "frames": 6,
+      "frameDurationMs": 120,
+      "loop": true,
+      "anchor": {
+        "x": 34,
+        "y": 56
+      }
+    }
+  }
+}
