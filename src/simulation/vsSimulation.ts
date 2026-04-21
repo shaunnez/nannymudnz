@@ -56,6 +56,82 @@ function buildOpponent(guildId: GuildId, x: number): Actor {
   return a;
 }
 
+const INTRO_MS = 1500;
+const RESOLVED_MS = 2000;
+
+export function tickRound(state: SimState, dtMs: number): void {
+  const r = state.round;
+  if (!r || r.phase === 'matchOver') return;
+
+  r.phaseStartedAtMs += dtMs;
+
+  if (r.phase === 'intro') {
+    if (r.phaseStartedAtMs >= INTRO_MS) {
+      r.phase = 'fighting';
+      r.phaseStartedAtMs = 0;
+      r.timeRemainingMs = ROUND_TIME_MS;
+      appendLog(state, { tag: 'SYS', tone: 'round', text: `Round ${r.index + 1} — FIGHT!` });
+    }
+    return;
+  }
+
+  if (r.phase === 'fighting') {
+    r.timeRemainingMs = Math.max(0, r.timeRemainingMs - dtMs);
+    const playerDown = !state.player.isAlive || state.player.hp <= 0;
+    const oppDown = !state.opponent?.isAlive || (state.opponent?.hp ?? 0) <= 0;
+
+    if (playerDown || oppDown || r.timeRemainingMs === 0) {
+      let winner: 'p1' | 'p2' | 'draw';
+      if (playerDown && oppDown) winner = 'draw';
+      else if (playerDown) winner = 'p2';
+      else if (oppDown) winner = 'p1';
+      else {
+        // timer out
+        const pHp = state.player.hp;
+        const oHp = state.opponent?.hp ?? 0;
+        if (pHp > oHp) winner = 'p1';
+        else if (oHp > pHp) winner = 'p2';
+        else winner = 'draw';
+      }
+      r.winnerOfRound = winner;
+      if (winner === 'p1') r.wins.p1++;
+      if (winner === 'p2') r.wins.p2++;
+      const label = winner === 'draw' ? 'DRAW' : (winner === 'p1' ? 'P1 WINS' : 'P2 WINS');
+      appendLog(state, { tag: 'SYS', tone: 'round', text: `Round ${r.index + 1} — ${label}` });
+      r.phase = 'resolved';
+      r.phaseStartedAtMs = 0;
+    }
+    return;
+  }
+
+  if (r.phase === 'resolved') {
+    if (r.phaseStartedAtMs < RESOLVED_MS) return;
+
+    const matchOver =
+      r.wins.p1 >= 2 ||
+      r.wins.p2 >= 2 ||
+      r.index >= 2;
+
+    if (matchOver) {
+      let winner: 'p1' | 'p2' | 'draw';
+      if (r.wins.p1 > r.wins.p2) winner = 'p1';
+      else if (r.wins.p2 > r.wins.p1) winner = 'p2';
+      else winner = 'draw';
+      r.matchWinner = winner;
+      r.phase = 'matchOver';
+      state.phase = winner === 'p1' ? 'victory' : 'defeat';
+      return;
+    }
+
+    r.index = (r.index + 1) as 0 | 1 | 2;
+    r.phase = 'intro';
+    r.phaseStartedAtMs = 0;
+    r.timeRemainingMs = ROUND_TIME_MS;
+    r.winnerOfRound = null;
+    resetActorsForRound(state);
+  }
+}
+
 export function resetActorsForRound(state: SimState): void {
   if (!state.opponent) return;
   resetActorState(state.player);

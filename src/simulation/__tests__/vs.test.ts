@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { createVsState, resetActorsForRound } from '../vsSimulation';
+import { createVsState, resetActorsForRound, tickRound } from '../vsSimulation';
 
 describe('vsSimulation: createVsState', () => {
   it('creates a VS state with player, opponent, and round intro phase', () => {
@@ -54,5 +54,88 @@ describe('vsSimulation: resetActorsForRound', () => {
     expect(s.player.statusEffects).toEqual([]);
     expect(s.opponent!.hp).toBe(s.opponent!.hpMax);
     expect(s.opponent!.abilityCooldowns).toEqual({});
+  });
+});
+
+describe('vsSimulation: tickRound', () => {
+  it('transitions intro -> fighting after 1500ms', () => {
+    const s = createVsState('knight', 'mage', 'assembly', 1);
+    expect(s.round!.phase).toBe('intro');
+    tickRound(s, 800);
+    expect(s.round!.phase).toBe('intro');
+    tickRound(s, 800);
+    expect(s.round!.phase).toBe('fighting');
+    expect(s.round!.timeRemainingMs).toBe(60_000);
+  });
+
+  it('decrements timer while fighting', () => {
+    const s = createVsState('knight', 'mage', 'assembly', 1);
+    tickRound(s, 2000); // intro -> fighting
+    tickRound(s, 1000);
+    expect(s.round!.timeRemainingMs).toBe(59_000);
+  });
+
+  it('resolves round when opponent hp hits 0 — p1 wins', () => {
+    const s = createVsState('knight', 'mage', 'assembly', 1);
+    tickRound(s, 2000); // fighting
+    s.opponent!.hp = 0;
+    s.opponent!.isAlive = false;
+    tickRound(s, 16);
+    expect(s.round!.phase).toBe('resolved');
+    expect(s.round!.winnerOfRound).toBe('p1');
+    expect(s.round!.wins.p1).toBe(1);
+  });
+
+  it('times out as draw on equal hp, p2-leaning otherwise', () => {
+    const s = createVsState('knight', 'mage', 'assembly', 1);
+    tickRound(s, 2000);
+    s.round!.timeRemainingMs = 0;
+    s.player.hp = 100;
+    s.opponent!.hp = 100;
+    tickRound(s, 16);
+    expect(s.round!.phase).toBe('resolved');
+    expect(s.round!.winnerOfRound).toBe('draw');
+  });
+
+  it('resolved -> intro of next round after 2000ms, with reset', () => {
+    const s = createVsState('knight', 'mage', 'assembly', 1);
+    tickRound(s, 2000);
+    s.opponent!.hp = 0; s.opponent!.isAlive = false;
+    tickRound(s, 16); // resolved
+    s.player.hp = 1;
+    tickRound(s, 2100); // should flip to intro & reset
+    expect(s.round!.phase).toBe('intro');
+    expect(s.round!.index).toBe(1);
+    expect(s.player.hp).toBe(s.player.hpMax);
+    expect(s.opponent!.hp).toBe(s.opponent!.hpMax);
+  });
+
+  it('declares matchWinner after 2 round wins and sets simPhase to victory for p1', () => {
+    const s = createVsState('knight', 'mage', 'assembly', 1);
+    // Round 1: p1 wins
+    tickRound(s, 2000);
+    s.opponent!.hp = 0; s.opponent!.isAlive = false;
+    tickRound(s, 16);
+    tickRound(s, 2100); // next round intro
+    // Round 2: p1 wins again
+    tickRound(s, 2000);
+    s.opponent!.hp = 0; s.opponent!.isAlive = false;
+    tickRound(s, 16);
+    tickRound(s, 2100);
+    expect(s.round!.phase).toBe('matchOver');
+    expect(s.round!.matchWinner).toBe('p1');
+    expect(s.phase).toBe('victory');
+  });
+
+  it('sets simPhase to defeat when p2 wins the match', () => {
+    const s = createVsState('knight', 'mage', 'assembly', 1);
+    for (let r = 0; r < 2; r++) {
+      tickRound(s, 2000);
+      s.player.hp = 0; s.player.isAlive = false;
+      tickRound(s, 16);
+      tickRound(s, 2100);
+    }
+    expect(s.round!.matchWinner).toBe('p2');
+    expect(s.phase).toBe('defeat');
   });
 });
