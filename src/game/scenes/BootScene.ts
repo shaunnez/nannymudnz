@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { VIRTUAL_WIDTH, VIRTUAL_HEIGHT } from '../constants';
+import { queueGuildSprites, registerGuildAnimations } from '../view/AnimationRegistry';
 
 export class BootScene extends Phaser.Scene {
   constructor() {
@@ -7,6 +8,8 @@ export class BootScene extends Phaser.Scene {
   }
 
   preload(): void {
+    queueGuildSprites(this);
+
     const barBgWidth = Math.floor(VIRTUAL_WIDTH * 0.5);
     const barBgHeight = 16;
     const cx = VIRTUAL_WIDTH / 2;
@@ -37,6 +40,7 @@ export class BootScene extends Phaser.Scene {
   }
 
   create(): void {
+    registerGuildAnimations(this);
     this.scene.start('Gameplay');
   }
 }

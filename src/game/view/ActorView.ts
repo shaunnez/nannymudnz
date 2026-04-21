@@ -1,9 +1,16 @@
 import Phaser from 'phaser';
-import type { Actor } from '../../simulation/types';
+import type { Actor, AnimationId, GuildId } from '../../simulation/types';
 import { GUILDS } from '../../simulation/guildData';
 import { ENEMY_DEFS } from '../../simulation/enemyData';
 import { worldYToScreenY } from '../constants';
 import { VIRTUAL_HEIGHT } from '../constants';
+import {
+  animationKey,
+  getGuildMetadata,
+  guildHasSprites,
+  resolveAnimation,
+  textureKey,
+} from './AnimationRegistry';
 
 const GUILD_LOOKUP: Record<string, { color: string; initial: string }> = {};
 for (const g of GUILDS) GUILD_LOOKUP[g.id] = { color: g.color, initial: g.initial };
@@ -15,6 +22,8 @@ for (const [kind, def] of Object.entries(ENEMY_DEFS)) {
 
 const ALLY_COLOR = '#a3e635';
 const ALLY_INITIAL = 'A';
+
+const DISPLAY_SCALE = 1.5;
 
 function colorAndInitial(actor: Actor): { color: string; initial: string } {
   if (actor.isPlayer && actor.guildId) {
@@ -41,14 +50,18 @@ function darkenInt(int: number, amount: number): number {
 }
 
 /**
- * Per-actor visual: shadow + body rect + facing nose + initial letter +
- * HP bar. Mirrors PlaceholderRenderer.ts at the level of "what's on screen
- * when you stand still." The animation flourishes (squish, leg-wiggle,
- * arm extension) are deferred to Task 9 along with sprite atlases.
+ * Per-actor visual. Two rendering paths share depth sort + shadow + HP bar:
+ * - Sprite path (when the actor's guild has pixellab sprites loaded): a
+ *   Phaser.Sprite plays animations keyed by guild:animId. Placeholder body
+ *   and initial are hidden.
+ * - Placeholder path (enemies and unsupplied guilds): shadow + rounded
+ *   rectangle body + facing nose + initial letter, matching the Canvas
+ *   PlaceholderRenderer.
  *
- * Each frame the GameplayScene calls syncFrom(actor); the view applies
- * world-space x and projected screen-y, sets depth = actor.y for 2.5D
- * sort, flips on facing, dims for stealth/stun, and pulses on getup.
+ * Each frame GameplayScene calls syncFrom(actor); the view applies world-
+ * space x and projected screen-y, sets depth = actor.y for 2.5D sort, flips
+ * on facing, dims for stealth/stun, pulses on getup, and drives animations
+ * from actor.animationId.
  */
 export class ActorView {
   readonly actorId: string;
@@ -60,6 +73,8 @@ export class ActorView {
   private initial: Phaser.GameObjects.Text;
   private hpBg: Phaser.GameObjects.Graphics;
   private hpFg: Phaser.GameObjects.Graphics;
+  private sprite?: Phaser.GameObjects.Sprite;
+  private currentAnim?: string;
 
   private readonly width: number;
   private readonly height: number;
@@ -67,11 +82,15 @@ export class ActorView {
   private readonly outlineColor: number;
   private readonly initialChar: string;
   private readonly initialColor: string;
+  private readonly guildId?: GuildId;
+  private readonly hasSprites: boolean;
 
   constructor(scene: Phaser.Scene, actor: Actor) {
     this.actorId = actor.id;
     this.width = actor.width;
     this.height = actor.height;
+    this.guildId = actor.isPlayer && actor.guildId ? actor.guildId : undefined;
+    this.hasSprites = !!this.guildId && guildHasSprites(this.guildId);
 
     const { color, initial } = colorAndInitial(actor);
     this.fillColor = hexToInt(color);
@@ -91,42 +110,78 @@ export class ActorView {
     this.hpBg = scene.add.graphics();
     this.hpFg = scene.add.graphics();
 
-    this.container = scene.add.container(0, 0, [
+    const children: Phaser.GameObjects.GameObject[] = [
       this.shadow,
       this.body,
       this.nose,
       this.initial,
-      this.hpBg,
-      this.hpFg,
-    ]);
+    ];
+
+    if (this.hasSprites && this.guildId) {
+      const idleTex = textureKey(this.guildId, 'idle');
+      if (scene.textures.exists(idleTex)) {
+        const meta = getGuildMetadata(this.guildId);
+        const idleMeta = meta?.animations.idle;
+        this.sprite = scene.add.sprite(0, 0, idleTex, 0).setScale(DISPLAY_SCALE);
+        if (meta && idleMeta) {
+          const ox = idleMeta.anchor.x / meta.frameSize.w;
+          const oy = idleMeta.anchor.y / meta.frameSize.h;
+          this.sprite.setOrigin(ox, oy);
+        } else {
+          this.sprite.setOrigin(0.5, 1);
+        }
+        children.push(this.sprite);
+      }
+    }
+
+    children.push(this.hpBg, this.hpFg);
+
+    this.container = scene.add.container(0, 0, children);
 
     this.drawBody();
   }
 
   private drawBody(): void {
-    // Body rectangle is local to the body graphics, centered on (0, 0).
     this.body.clear();
+    if (this.sprite) {
+      this.body.setVisible(false);
+      return;
+    }
     this.body.lineStyle(2, this.outlineColor, 1);
     this.body.fillStyle(this.fillColor, 1);
     this.body.fillRoundedRect(-this.width / 2, -this.height / 2, this.width, this.height, 4);
     this.body.strokeRoundedRect(-this.width / 2, -this.height / 2, this.width, this.height, 4);
   }
 
+  private playAnim(animId: AnimationId): void {
+    if (!this.sprite || !this.guildId) return;
+    const resolved = resolveAnimation(this.guildId, animId);
+    if (!resolved) return;
+    const key = animationKey(this.guildId, resolved);
+    if (this.currentAnim === key) return;
+    this.currentAnim = key;
+    this.sprite.play(key, true);
+  }
+
   syncFrom(actor: Actor): void {
     const groundScreenY = worldYToScreenY(actor.y, VIRTUAL_HEIGHT);
     const screenY = groundScreenY - actor.z * 0.6;
 
-    // Container origin sits at the actor's feet on screen; body, nose, and
-    // initial render relative to that anchor.
     this.container.setPosition(actor.x, screenY);
     this.container.setDepth(actor.y);
 
     if (!actor.isAlive) {
-      this.body.setVisible(true);
-      this.body.setAlpha(0.3);
-      this.body.clear();
-      this.body.fillStyle(this.fillColor, 1);
-      this.body.fillRect(-this.width / 2, -this.height * 0.2, this.width, this.height * 0.2);
+      if (this.sprite) {
+        this.playAnim('death');
+        this.sprite.setVisible(true);
+        this.sprite.setAlpha(0.8);
+      } else {
+        this.body.setVisible(true);
+        this.body.setAlpha(0.3);
+        this.body.clear();
+        this.body.fillStyle(this.fillColor, 1);
+        this.body.fillRect(-this.width / 2, -this.height * 0.2, this.width, this.height * 0.2);
+      }
       this.nose.setVisible(false);
       this.initial.setVisible(false);
       this.shadow.setVisible(false);
@@ -135,32 +190,41 @@ export class ActorView {
       return;
     }
 
-    this.body.setAlpha(1);
-    this.nose.setVisible(true);
-    this.initial.setVisible(true);
-    this.shadow.setVisible(true);
-    if (this.body.alpha !== 1) this.body.setAlpha(1);
-    this.drawBody();
+    if (this.sprite) {
+      this.playAnim(actor.animationId);
+      this.sprite.setVisible(true);
+      this.sprite.setAlpha(1);
+      this.nose.setVisible(false);
+      this.initial.setVisible(false);
+    } else {
+      this.body.setAlpha(1);
+      this.nose.setVisible(true);
+      this.initial.setVisible(true);
+      if (this.body.alpha !== 1) this.body.setAlpha(1);
+      this.drawBody();
+      this.body.y = -this.height / 2;
+      this.initial.y = -this.height / 2;
+    }
 
-    // Body sits one body-height above the feet.
-    this.body.y = -this.height / 2;
-    this.initial.y = -this.height / 2;
+    this.shadow.setVisible(true);
 
     // Facing flip via container scaleX. Avoid scaling the shadow.
     this.container.scaleX = actor.facing === -1 ? -1 : 1;
 
-    // Nose triangle, drawn in body-local space (origin at feet).
-    this.nose.clear();
-    this.nose.fillStyle(this.initialColor === '#ffffff' ? 0xffffff : 0x888888, 1);
-    const noseDirX = 1; // container is flipped already
-    const noseTipX = noseDirX * (this.width / 2);
-    const noseY = -this.height / 2 - this.height / 4;
-    this.nose.beginPath();
-    this.nose.moveTo(noseTipX, noseY - 5);
-    this.nose.lineTo(noseTipX + noseDirX * 8, noseY);
-    this.nose.lineTo(noseTipX, noseY + 5);
-    this.nose.closePath();
-    this.nose.fillPath();
+    if (!this.sprite) {
+      // Nose triangle, drawn in body-local space (origin at feet).
+      this.nose.clear();
+      this.nose.fillStyle(this.initialColor === '#ffffff' ? 0xffffff : 0x888888, 1);
+      const noseDirX = 1;
+      const noseTipX = noseDirX * (this.width / 2);
+      const noseY = -this.height / 2 - this.height / 4;
+      this.nose.beginPath();
+      this.nose.moveTo(noseTipX, noseY - 5);
+      this.nose.lineTo(noseTipX + noseDirX * 8, noseY);
+      this.nose.lineTo(noseTipX, noseY + 5);
+      this.nose.closePath();
+      this.nose.fillPath();
+    }
 
     // Shadow when grounded only.
     this.shadow.clear();
@@ -197,16 +261,13 @@ export class ActorView {
     if (actor.statusEffects.some(e => e.type === 'stun')) alpha = Math.min(alpha, 0.7);
     if (actor.statusEffects.some(e => e.type === 'stealth')) alpha = Math.min(alpha, 0.35);
     if (actor.invulnerableMs > 0 && actor.state === 'getup') {
-      // Tick-driven flicker via simulation timeMs would be deterministic but
-      // this is purely a visual hint — using runtime time is acceptable for
-      // a flicker effect.
       alpha = Math.min(alpha, 0.5 + Math.sin(performance.now() * 0.02) * 0.3);
     }
     this.container.setAlpha(alpha);
 
-    // Damage flash via tint-on-fill for invulnerability frames triggered by
-    // a recent hit (signal: invulnerableMs > 0 but state !== 'getup').
-    if (actor.invulnerableMs > 0 && actor.state !== 'getup') {
+    // Damage flash on placeholder body only (sprite tinting is noisier — skip
+    // for now, can add as Sprite.setTintFill in a follow-up if wanted).
+    if (!this.sprite && actor.invulnerableMs > 0 && actor.state !== 'getup') {
       this.body.fillStyle(0xffffff, 1);
       this.body.fillRoundedRect(-this.width / 2, -this.height / 2, this.width, this.height, 4);
     }
