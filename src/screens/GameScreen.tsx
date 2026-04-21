@@ -26,15 +26,6 @@ interface Props {
   onQuit: () => void;
 }
 
-const SPRITE_FLAG_KEY = 'nannymud:sprites';
-const shouldUseSprites = (): boolean => {
-  try {
-    return localStorage.getItem(SPRITE_FLAG_KEY) === '1';
-  } catch {
-    return false;
-  }
-};
-
 export function GameScreen({ guildId, onVictory, onDefeat, onQuit }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const stateRef = useRef(createInitialState(guildId));
@@ -87,12 +78,10 @@ export function GameScreen({ guildId, onVictory, onDefeat, onQuit }: Props) {
     audio.startStageMusic();
 
     let cancelled = false;
-    if (shouldUseSprites()) {
-      loadGuildSpriteSet(guildId).then((set) => {
-        if (cancelled || !set) return;
-        rendererRef.current.setActorRenderer(new SpriteActorRenderer(set));
-      });
-    }
+    loadGuildSpriteSet(guildId).then((set) => {
+      if (cancelled || !set) return;
+      rendererRef.current.setActorRenderer(new SpriteActorRenderer(set));
+    });
 
     const gameLoop = (timestamp: number) => {
       if (!canvas) return;

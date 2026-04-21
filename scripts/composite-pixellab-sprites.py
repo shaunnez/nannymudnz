@@ -56,6 +56,16 @@ GUILD_OVERRIDES: dict[str, dict[str, str]] = {
         "animating-c3df789f": "ability_4",  # throw-object (7f)
         "animating-d1f51e59": "walk",       # walking-6-frames (6f)
     },
+    "knight": {
+        "animating-8fadff24": "ability_3",  # pushing (6f) - collides with walk
+        "animating-b6950d50": "walk",       # walking-6-frames (6f)
+        "animating-dec77c7e": "ability_4",  # throw-object (7f)
+    },
+    "vampire": {
+        "animating-b0fa037f": "walk",       # walking-6-frames (6f)
+        "animating-cf9739d9": "ability_3",  # pushing (6f) - collides with walk
+        "animating-c5fabeb5": "ability_4",  # throw-object (7f)
+    },
 }
 
 LOOP_ANIMS = {"idle", "walk", "run", "block", "ability_5"}

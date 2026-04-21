@@ -1,7 +1,7 @@
 import { GUILDS } from '../simulation/guildData';
 import { GUILD_META } from '../data/guildMeta';
 import type { GuildId, AbilityDef } from '../simulation/types';
-import { theme, guildAccent, ModalShell, SpriteStrip } from '../ui';
+import { theme, guildAccent, ModalShell, SpriteStrip, ComboDisplay } from '../ui';
 
 interface Props {
   guildId: GuildId;
@@ -17,27 +17,33 @@ export function GuildDetails({ guildId, onClose }: Props) {
 
   return (
     <ModalShell title={guild.name} kicker={`GUILD · ${meta.tag}`} onCancel={onClose}>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '260px 1fr', gap: 28, alignItems: 'start' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 14, alignItems: 'center' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '110px 1fr', gap: 16, alignItems: 'start' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'center' }}>
             <div
               style={{
                 background: theme.panel,
                 border: `1px solid ${theme.lineSoft}`,
-                padding: 14,
+                padding: 6,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: '100%',
+                height: 90,
+                boxSizing: 'border-box',
               }}
             >
-              <SpriteStrip guildId={guildId} animationId="idle" scale={3} />
+              <SpriteStrip guildId={guildId} animationId="idle" scale={1.1} />
             </div>
-            <div style={{ fontFamily: theme.fontBody, fontSize: 14, color: theme.inkDim, fontStyle: 'italic', textAlign: 'center' }}>
+            <div style={{ fontFamily: theme.fontBody, fontSize: 11, color: theme.inkDim, fontStyle: 'italic', textAlign: 'center' }}>
               {meta.sub}
             </div>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            <div style={{ fontFamily: theme.fontBody, fontSize: 15, color: theme.inkDim, lineHeight: 1.65 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div style={{ fontFamily: theme.fontBody, fontSize: 14, color: theme.inkDim, lineHeight: 1.55 }}>
               {meta.bio}
             </div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 8 }}>
               <VitalChip label={guild.resource.name} value={String(guild.resource.max)} accent={accent} emphasized />
               <VitalChip label="HP" value={String(guild.hpMax)} />
               <VitalChip label="ARMOR" value={String(meta.uiVitals.Armor)} />
@@ -59,7 +65,7 @@ export function GuildDetails({ guildId, onClose }: Props) {
         >
           ABILITIES
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
           {guild.abilities.map((ability, i) => (
             <AbilityCard
               key={ability.id}
@@ -91,17 +97,17 @@ function VitalChip({ label, value, accent, emphasized }: VitalChipProps) {
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        padding: '8px 14px',
+        justifyContent: 'center',
+        padding: '10px 8px',
         background: theme.panel,
         border: `1px solid ${border}`,
-        minWidth: 80,
       }}
     >
       <span
         style={{
           fontFamily: theme.fontMono,
           fontSize: 10,
-          color: theme.inkMuted,
+          color: theme.ink,
           letterSpacing: 2,
         }}
       >
@@ -110,9 +116,10 @@ function VitalChip({ label, value, accent, emphasized }: VitalChipProps) {
       <span
         style={{
           fontFamily: theme.fontDisplay,
-          fontSize: 20,
+          fontSize: 24,
           color: fg,
           lineHeight: 1.1,
+          marginTop: 2,
         }}
       >
         {value}
@@ -129,23 +136,12 @@ interface AbilityCardProps {
 }
 
 function AbilityCard({ ability, guildId, animationId, accent }: AbilityCardProps) {
-  const comboDisplay = ability.combo
-    .replace(/down/g, '↓')
-    .replace(/up/g, '↑')
-    .replace(/left/g, '←')
-    .replace(/right/g, '→')
-    .replace(/attack/g, 'J')
-    .replace(/block/g, 'K')
-    .replace(/grab/g, 'L')
-    .replace(/\+/g, '+')
-    .replace(/,/g, '');
-
   return (
     <div
       style={{
         display: 'flex',
         gap: 10,
-        padding: 10,
+        padding: 8,
         background: theme.panel,
         border: `1px solid ${theme.lineSoft}`,
       }}
@@ -156,31 +152,23 @@ function AbilityCard({ ability, guildId, animationId, accent }: AbilityCardProps
           border: `1px solid ${theme.lineSoft}`,
           padding: 4,
           flexShrink: 0,
-          width: 172,
-          height: 172,
+          width: 86,
+          height: 86,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
         }}
       >
-        <SpriteStrip guildId={guildId} animationId={animationId} scale={2.4} />
+        <SpriteStrip guildId={guildId} animationId={animationId} scale={1.15} />
       </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 6, minWidth: 0 }}>
-        <div style={{ fontFamily: theme.fontDisplay, fontSize: 18, color: accent, lineHeight: 1.15 }}>{ability.name}</div>
-        <div
-          style={{
-            fontFamily: theme.fontMono,
-            fontSize: 11,
-            color: theme.inkMuted,
-            letterSpacing: 2,
-          }}
-        >
-          {comboDisplay}
-        </div>
-        <div style={{ fontFamily: theme.fontBody, fontSize: 13, color: theme.inkDim, lineHeight: 1.5 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 0 }}>
+        <div style={{ fontFamily: theme.fontDisplay, fontSize: 16, color: accent, lineHeight: 1.15 }}>{ability.name}</div>
+        <ComboDisplay combo={ability.combo} size={14} />
+        <div style={{ fontFamily: theme.fontBody, fontSize: 12, color: theme.inkDim, lineHeight: 1.45 }}>
           {ability.description}
         </div>
       </div>
     </div>
   );
 }
+

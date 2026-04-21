@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { ChevronRight } from 'lucide-react';
 import { theme, SectionLabel } from '../ui';
 import type { AppScreen, GameMode } from '../state/useAppState';
 
@@ -75,10 +76,10 @@ export function MainMenu({ onPick }: Props) {
       <div
         style={{
           flex: '0 0 46%',
-          padding: '56px 48px',
+          padding: '52px 48px',
           display: 'flex',
           flexDirection: 'column',
-          overflow: 'auto',
+          minHeight: 0,
         }}
       >
         <div
@@ -95,10 +96,10 @@ export function MainMenu({ onPick }: Props) {
         <div
           style={{
             fontFamily: theme.fontDisplay,
-            fontSize: 42,
+            fontSize: 36,
             color: theme.ink,
             letterSpacing: '-0.02em',
-            marginBottom: 28,
+            marginBottom: 22,
           }}
         >
           Choose your engagement
@@ -115,10 +116,10 @@ export function MainMenu({ onPick }: Props) {
                 onClick={() => activate(i)}
                 style={{
                   display: 'grid',
-                  gridTemplateColumns: '24px 1fr auto',
+                  gridTemplateColumns: '34px 1fr auto',
                   gap: 14,
                   alignItems: 'center',
-                  padding: '12px 0',
+                  padding: '16px 0',
                   borderBottom: `1px solid ${theme.lineSoft}`,
                   cursor: m.enabled && m.target ? 'pointer' : 'default',
                   opacity: m.enabled ? 1 : 0.45,
@@ -127,8 +128,10 @@ export function MainMenu({ onPick }: Props) {
                 <span
                   style={{
                     fontFamily: theme.fontMono,
-                    fontSize: 10,
-                    color: active ? theme.accent : theme.inkMuted,
+                    fontSize: 15,
+                    fontWeight: 500,
+                    color: active ? theme.accent : theme.ink,
+                    letterSpacing: 1,
                   }}
                 >
                   {String(i + 1).padStart(2, '0')}
@@ -137,9 +140,10 @@ export function MainMenu({ onPick }: Props) {
                   <div
                     style={{
                       fontFamily: theme.fontDisplay,
-                      fontSize: 22,
+                      fontSize: 21,
                       color: active && m.enabled ? theme.accent : theme.ink,
                       letterSpacing: '0.02em',
+                      lineHeight: 1.2,
                     }}
                   >
                     {active && m.enabled && (
@@ -163,8 +167,10 @@ export function MainMenu({ onPick }: Props) {
                   <div
                     style={{
                       fontFamily: theme.fontBody,
-                      fontSize: 12,
-                      color: theme.inkMuted,
+                      fontSize: 14,
+                      color: theme.inkDim,
+                      lineHeight: 1.5,
+                      marginTop: 4,
                     }}
                   >
                     {m.sub}
@@ -172,7 +178,7 @@ export function MainMenu({ onPick }: Props) {
                   {m.slider && active && (
                     <div
                       style={{
-                        marginTop: 10,
+                        marginTop: 8,
                         display: 'flex',
                         alignItems: 'center',
                         gap: 10,
@@ -200,15 +206,12 @@ export function MainMenu({ onPick }: Props) {
                   )}
                 </div>
                 {m.target && (
-                  <span
-                    style={{
-                      fontFamily: theme.fontMono,
-                      fontSize: 10,
-                      color: active && m.enabled ? theme.accent : theme.inkMuted,
-                    }}
-                  >
-                    →
-                  </span>
+                  <ChevronRight
+                    size={22}
+                    strokeWidth={2.25}
+                    color={active && m.enabled ? theme.accent : theme.inkDim}
+                    style={{ display: 'block' }}
+                  />
                 )}
               </div>
             );

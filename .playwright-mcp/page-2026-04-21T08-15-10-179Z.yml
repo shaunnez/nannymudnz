@@ -1,0 +1,115 @@
+- generic [ref=e112]:
+  - generic [ref=e113]:
+    - button "← BACK" [ref=e115] [cursor=pointer]
+    - generic [ref=e116]:
+      - generic [ref=e117]: SELECT · 15 GUILDS · STAGE
+      - generic [ref=e118]: Choose your guild
+    - button "READY →" [ref=e120] [cursor=pointer]
+  - generic [ref=e121]:
+    - generic [ref=e122]:
+      - generic [ref=e123]:
+        - generic [ref=e124]: P1 · HUMAN ◆
+        - generic [ref=e125]: SELECTING…
+      - generic [ref=e127]: Av
+      - generic [ref=e129]:
+        - generic [ref=e130]: Adventurer
+        - generic [ref=e131]: Adventurers Guild
+      - generic [ref=e132]: The first guild a recruit walks into. No creed, no god — just iron in the hand and road in the boots. Adventurers fill every gap in every line.
+      - generic [ref=e133]:
+        - generic [ref=e134]:
+          - generic [ref=e135]: STAMINA
+          - generic [ref=e136]: "100"
+        - generic [ref=e137]:
+          - generic [ref=e138]: HP
+          - generic [ref=e139]: "120"
+        - generic [ref=e140]:
+          - generic [ref=e141]: ARMOR
+          - generic [ref=e142]: "10"
+        - generic [ref=e143]:
+          - generic [ref=e144]: MR
+          - generic [ref=e145]: "5"
+        - generic [ref=e146]:
+          - generic [ref=e147]: MOVE
+          - generic [ref=e148]: "140"
+      - button "VIEW DETAILS" [ref=e149] [cursor=pointer]
+      - generic [ref=e150]:
+        - generic [ref=e151]: ULT · ↓↑↓↑J
+        - generic [ref=e152]: Adrenaline Rush
+        - generic [ref=e153]: "6s: +40% AS, +25% dmg, slow/root immune"
+    - generic [ref=e154]:
+      - generic [ref=e155]:
+        - generic [ref=e156] [cursor=pointer]:
+          - generic [ref=e162]: Av
+          - generic [ref=e164]: ADVENTURER
+          - generic [ref=e165]: ◆ P1
+        - generic [ref=e166] [cursor=pointer]:
+          - generic [ref=e168]: Kn
+          - generic [ref=e170]: KNIGHT
+        - generic [ref=e171] [cursor=pointer]:
+          - generic [ref=e173]: Mg
+          - generic [ref=e175]: MAGE
+        - generic [ref=e176] [cursor=pointer]:
+          - generic [ref=e178]: Dr
+          - generic [ref=e180]: DRUID
+        - generic [ref=e181] [cursor=pointer]:
+          - generic [ref=e183]: Hn
+          - generic [ref=e185]: HUNTER
+        - generic [ref=e186] [cursor=pointer]:
+          - generic [ref=e188]: Mo
+          - generic [ref=e190]: MONK
+        - generic [ref=e191] [cursor=pointer]:
+          - generic [ref=e193]: Vk
+          - generic [ref=e195]: VIKING
+        - generic [ref=e196] [cursor=pointer]:
+          - generic [ref=e198]: Pp
+          - generic [ref=e200]: PROPHET
+        - generic [ref=e201] [cursor=pointer]:
+          - generic [ref=e203]: Vp
+          - generic [ref=e205]: VAMPIRE
+        - generic [ref=e206] [cursor=pointer]:
+          - generic [ref=e208]: Cu
+          - generic [ref=e210]: CULTIST
+        - generic [ref=e211] [cursor=pointer]:
+          - generic [ref=e213]: Ch
+          - generic [ref=e215]: CHAMPION
+        - generic [ref=e216] [cursor=pointer]:
+          - generic [ref=e218]: Dk
+          - generic [ref=e220]: DARKMAGE
+        - generic [ref=e221] [cursor=pointer]:
+          - generic [ref=e223]: Cf
+          - generic [ref=e225]: CHEF
+        - generic [ref=e226] [cursor=pointer]:
+          - generic [ref=e228]: Lp
+          - generic [ref=e230]: LEPER
+        - generic [ref=e231] [cursor=pointer]:
+          - generic [ref=e233]: Ms
+          - generic [ref=e235]: MASTER
+      - generic [ref=e236]:
+        - generic [ref=e237]:
+          - generic [ref=e238]: P1 · HOVER
+          - generic [ref=e239]: Adventurer
+          - generic [ref=e240]: Adventurers Guild
+          - generic [ref=e242]: Generalist Bruiser
+        - generic [ref=e243]:
+          - generic [ref=e245]:
+            - generic [ref=e246]: STR
+            - generic [ref=e247]: "14"
+          - generic [ref=e270]:
+            - generic [ref=e271]: DEX
+            - generic [ref=e272]: "12"
+          - generic [ref=e295]:
+            - generic [ref=e296]: CON
+            - generic [ref=e297]: "14"
+          - generic [ref=e320]:
+            - generic [ref=e321]: INT
+            - generic [ref=e322]: "8"
+          - generic [ref=e345]:
+            - generic [ref=e346]: WIS
+            - generic [ref=e347]: "10"
+          - generic [ref=e370]:
+            - generic [ref=e371]: CHA
+            - generic [ref=e372]: "10"
+  - generic [ref=e394]:
+    - generic [ref=e395]: ◀▶▲▼ MOVE
+    - generic [ref=e396]: ↵ LOCK / READY
+    - generic [ref=e397]: ESC BACK
