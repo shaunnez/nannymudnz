@@ -1,0 +1,184 @@
+{
+  "character": {
+    "id": "aaf95d1a-a4cc-4a3b-8286-66ae7a5237b6",
+    "name": "Hunter LF2-R",
+    "prompt": "hunter guild marksman, lithe ranger with longbow drawn and quiver of arrows on back, forest-green and leather-brown cloak, hooded, leather bracers, dagger at hip, eyes focused, LF2-remastered arcade beat-em-up pixel art style, crisp clean pixel art with flat shading and bold black outlines, side-view fighting game sprite, readable silhouette, no background",
+    "size": {
+      "width": 140,
+      "height": 140
+    },
+    "template_id": "mannequin",
+    "directions": 8,
+    "view": "side",
+    "created_at": "2026-04-21T13:55:52.211317+00:00"
+  },
+  "frames": {
+    "rotations": {
+      "south": "rotations/south.png",
+      "south-east": "rotations/south-east.png",
+      "east": "rotations/east.png",
+      "north-east": "rotations/north-east.png",
+      "north": "rotations/north.png",
+      "north-west": "rotations/north-west.png",
+      "west": "rotations/west.png",
+      "south-west": "rotations/south-west.png"
+    },
+    "animations": {
+      "running-652fe196": {
+        "east": [
+          "animations/running-652fe196/east/frame_000.png",
+          "animations/running-652fe196/east/frame_001.png",
+          "animations/running-652fe196/east/frame_002.png",
+          "animations/running-652fe196/east/frame_003.png",
+          "animations/running-652fe196/east/frame_004.png",
+          "animations/running-652fe196/east/frame_005.png"
+        ]
+      },
+      "animating-316025be": {
+        "east": [
+          "animations/animating-316025be/east/frame_000.png",
+          "animations/animating-316025be/east/frame_001.png",
+          "animations/animating-316025be/east/frame_002.png",
+          "animations/animating-316025be/east/frame_003.png"
+        ]
+      },
+      "animating-886435a8": {
+        "east": [
+          "animations/animating-886435a8/east/frame_000.png",
+          "animations/animating-886435a8/east/frame_001.png",
+          "animations/animating-886435a8/east/frame_002.png",
+          "animations/animating-886435a8/east/frame_003.png",
+          "animations/animating-886435a8/east/frame_004.png",
+          "animations/animating-886435a8/east/frame_005.png"
+        ]
+      },
+      "animating-9481bd37": {
+        "east": [
+          "animations/animating-9481bd37/east/frame_000.png",
+          "animations/animating-9481bd37/east/frame_001.png",
+          "animations/animating-9481bd37/east/frame_002.png",
+          "animations/animating-9481bd37/east/frame_003.png",
+          "animations/animating-9481bd37/east/frame_004.png",
+          "animations/animating-9481bd37/east/frame_005.png",
+          "animations/animating-9481bd37/east/frame_006.png",
+          "animations/animating-9481bd37/east/frame_007.png"
+        ]
+      },
+      "animating-d786c030": {
+        "east": [
+          "animations/animating-d786c030/east/frame_000.png",
+          "animations/animating-d786c030/east/frame_001.png",
+          "animations/animating-d786c030/east/frame_002.png",
+          "animations/animating-d786c030/east/frame_003.png",
+          "animations/animating-d786c030/east/frame_004.png",
+          "animations/animating-d786c030/east/frame_005.png",
+          "animations/animating-d786c030/east/frame_006.png"
+        ]
+      },
+      "jab_attack-68138694": {
+        "east": [
+          "animations/jab_attack-68138694/east/frame_000.png",
+          "animations/jab_attack-68138694/east/frame_001.png",
+          "animations/jab_attack-68138694/east/frame_002.png"
+        ]
+      },
+      "crouching-bc5a5430": {
+        "east": [
+          "animations/crouching-bc5a5430/east/frame_000.png",
+          "animations/crouching-bc5a5430/east/frame_001.png",
+          "animations/crouching-bc5a5430/east/frame_002.png",
+          "animations/crouching-bc5a5430/east/frame_003.png",
+          "animations/crouching-bc5a5430/east/frame_004.png"
+        ]
+      },
+      "cross_punch_attack-81011b2b": {
+        "east": [
+          "animations/cross_punch_attack-81011b2b/east/frame_000.png",
+          "animations/cross_punch_attack-81011b2b/east/frame_001.png",
+          "animations/cross_punch_attack-81011b2b/east/frame_002.png",
+          "animations/cross_punch_attack-81011b2b/east/frame_003.png",
+          "animations/cross_punch_attack-81011b2b/east/frame_004.png",
+          "animations/cross_punch_attack-81011b2b/east/frame_005.png"
+        ]
+      },
+      "animating-ecb531e9": {
+        "east": [
+          "animations/animating-ecb531e9/east/frame_000.png",
+          "animations/animating-ecb531e9/east/frame_001.png",
+          "animations/animating-ecb531e9/east/frame_002.png",
+          "animations/animating-ecb531e9/east/frame_003.png",
+          "animations/animating-ecb531e9/east/frame_004.png",
+          "animations/animating-ecb531e9/east/frame_005.png"
+        ]
+      },
+      "animating-83fdab65": {
+        "east": [
+          "animations/animating-83fdab65/east/frame_000.png",
+          "animations/animating-83fdab65/east/frame_001.png",
+          "animations/animating-83fdab65/east/frame_002.png",
+          "animations/animating-83fdab65/east/frame_003.png",
+          "animations/animating-83fdab65/east/frame_004.png",
+          "animations/animating-83fdab65/east/frame_005.png",
+          "animations/animating-83fdab65/east/frame_006.png",
+          "animations/animating-83fdab65/east/frame_007.png",
+          "animations/animating-83fdab65/east/frame_008.png"
+        ]
+      },
+      "high_kick-a767d703": {
+        "east": [
+          "animations/high_kick-a767d703/east/frame_000.png",
+          "animations/high_kick-a767d703/east/frame_001.png",
+          "animations/high_kick-a767d703/east/frame_002.png",
+          "animations/high_kick-a767d703/east/frame_003.png",
+          "animations/high_kick-a767d703/east/frame_004.png",
+          "animations/high_kick-a767d703/east/frame_005.png",
+          "animations/high_kick-a767d703/east/frame_006.png"
+        ]
+      },
+      "falling_backward-e5d48abe": {
+        "east": [
+          "animations/falling_backward-e5d48abe/east/frame_000.png",
+          "animations/falling_backward-e5d48abe/east/frame_001.png",
+          "animations/falling_backward-e5d48abe/east/frame_002.png",
+          "animations/falling_backward-e5d48abe/east/frame_003.png",
+          "animations/falling_backward-e5d48abe/east/frame_004.png",
+          "animations/falling_backward-e5d48abe/east/frame_005.png",
+          "animations/falling_backward-e5d48abe/east/frame_006.png"
+        ]
+      },
+      "uppercut-52fe90de": {
+        "east": [
+          "animations/uppercut-52fe90de/east/frame_000.png",
+          "animations/uppercut-52fe90de/east/frame_001.png",
+          "animations/uppercut-52fe90de/east/frame_002.png",
+          "animations/uppercut-52fe90de/east/frame_003.png",
+          "animations/uppercut-52fe90de/east/frame_004.png",
+          "animations/uppercut-52fe90de/east/frame_005.png",
+          "animations/uppercut-52fe90de/east/frame_006.png"
+        ]
+      },
+      "taking_a_punch-76686444": {
+        "east": [
+          "animations/taking_a_punch-76686444/east/frame_000.png",
+          "animations/taking_a_punch-76686444/east/frame_001.png",
+          "animations/taking_a_punch-76686444/east/frame_002.png",
+          "animations/taking_a_punch-76686444/east/frame_003.png",
+          "animations/taking_a_punch-76686444/east/frame_004.png",
+          "animations/taking_a_punch-76686444/east/frame_005.png"
+        ]
+      },
+      "casting_a_fireball-a0813675": {
+        "east": [
+          "animations/casting_a_fireball-a0813675/east/frame_000.png",
+          "animations/casting_a_fireball-a0813675/east/frame_001.png",
+          "animations/casting_a_fireball-a0813675/east/frame_002.png",
+          "animations/casting_a_fireball-a0813675/east/frame_003.png",
+          "animations/casting_a_fireball-a0813675/east/frame_004.png",
+          "animations/casting_a_fireball-a0813675/east/frame_005.png"
+        ]
+      }
+    }
+  },
+  "export_version": "2.0",
+  "export_date": "2026-04-21T22:42:53.083661"
+}
