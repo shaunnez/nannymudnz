@@ -26,6 +26,8 @@ export const DEFAULT_BINDINGS: KeyBindings = {
 
 const STORAGE_KEY = 'nannymud_keybindings';
 
+export const KEYBINDINGS_CHANGED_EVENT = 'nannymud:keybindings-changed';
+
 export function loadKeyBindings(): KeyBindings {
   let bindings: KeyBindings = { ...DEFAULT_BINDINGS };
   try {
@@ -59,6 +61,11 @@ export function loadKeyBindings(): KeyBindings {
 export function saveKeyBindings(bindings: KeyBindings): void {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(bindings));
+  } catch {
+    /* ignore */
+  }
+  try {
+    window.dispatchEvent(new CustomEvent(KEYBINDINGS_CHANGED_EVENT));
   } catch {
     /* ignore */
   }

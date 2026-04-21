@@ -266,6 +266,7 @@ export interface VFXEvent {
   x: number;
   y: number;
   z?: number;
+  facing?: 1 | -1;
   radius?: number;
   vx?: number;
   vy?: number;

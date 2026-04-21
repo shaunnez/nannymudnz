@@ -6,6 +6,10 @@ import { StageSelect } from './screens/StageSelect';
 import { LoadingScreen } from './screens/LoadingScreen';
 import { GameScreen } from './screens/GameScreen';
 import { ResultsScreen } from './screens/ResultsScreen';
+import { MoveList } from './screens/MoveList';
+import { GuildDossier } from './screens/GuildDossier';
+import { SettingsScreen } from './screens/SettingsScreen';
+import { GUILDS } from './simulation/guildData';
 import { ScalingFrame } from './layout/ScalingFrame';
 import { Scanlines, theme } from './ui';
 import { useAppState } from './state/useAppState';
@@ -85,6 +89,41 @@ export default function App() {
               go('results');
             }}
             onQuit={() => go('menu')}
+          />
+        )}
+
+        {state.screen === 'moves' && (
+          <MoveList
+            initialGuild={state.guildId}
+            onBack={() => go('menu')}
+            onDossier={(gid) => go('guild_dossier', { guildId: gid })}
+          />
+        )}
+
+        {state.screen === 'guild_dossier' && (
+          <GuildDossier
+            guildId={state.guildId}
+            onBack={() => go('moves')}
+            onPrev={() => {
+              const i = GUILDS.findIndex((g) => g.id === state.guildId);
+              const next = GUILDS[(i - 1 + GUILDS.length) % GUILDS.length].id;
+              set({ guildId: next });
+            }}
+            onNext={() => {
+              const i = GUILDS.findIndex((g) => g.id === state.guildId);
+              const next = GUILDS[(i + 1) % GUILDS.length].id;
+              set({ guildId: next });
+            }}
+          />
+        )}
+
+        {state.screen === 'settings' && (
+          <SettingsScreen
+            animateHud={state.animateHud}
+            showLog={state.showLog}
+            onToggleAnimateHud={() => set({ animateHud: !state.animateHud })}
+            onToggleShowLog={() => set({ showLog: !state.showLog })}
+            onBack={() => go('menu')}
           />
         )}
 

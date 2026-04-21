@@ -14,6 +14,7 @@ interface Particle {
   alpha: number;
   lifetime: number;
   age: number;
+  facing?: 1 | -1;
   value?: number;
   text?: string;
   isCrit?: boolean;
@@ -30,14 +31,15 @@ let particleIdCounter = 0;
 export class ParticleSystem {
   private particles: Particle[] = [];
   private vfxSet: GuildVfxSet | null = null;
+  private cameraX: number = 0;
 
   setVfxSet(set: GuildVfxSet | null): void {
     this.vfxSet = set;
   }
 
   emit(events: VFXEvent[], cameraX: number, canvasHeight: number): void {
+    this.cameraX = cameraX;
     for (const event of events) {
-      const sx = event.x - cameraX;
       const sy = worldYToScreenY(event.y, canvasHeight) - (event.z ?? 0) * DEPTH_SCALE;
       const sprite = event.assetKey ? this.vfxSet?.assets[event.assetKey] : undefined;
       const spriteFrameSize = sprite ? this.vfxSet?.frameSize : undefined;
@@ -47,7 +49,7 @@ export class ParticleSystem {
           this.particles.push({
             id: particleIdCounter++,
             type: event.type,
-            x: sx + (Math.random() - 0.5) * 20,
+            x: event.x + (Math.random() - 0.5) * 20,
             y: sy,
             vx: (Math.random() - 0.5) * 30,
             vy: -80 - Math.random() * 40,
@@ -68,7 +70,7 @@ export class ParticleSystem {
           this.particles.push({
             id: particleIdCounter++,
             type: event.type,
-            x: sx,
+            x: event.x,
             y: sy,
             vx: 0,
             vy: -50,
@@ -88,7 +90,7 @@ export class ParticleSystem {
           this.particles.push({
             id: particleIdCounter++,
             type: event.type,
-            x: sx,
+            x: event.x,
             y: sy,
             vx: 0,
             vy: -18,
@@ -103,40 +105,44 @@ export class ParticleSystem {
 
         case 'hit_spark':
           if (sprite) {
-            this.particles.push(this.createSpriteParticle(event, sx, sy, sprite, spriteFrameSize));
+            this.particles.push(this.createSpriteParticle(event, event.x, sy, sprite, spriteFrameSize));
             break;
           }
+          {
+            const facing = event.facing ?? 1;
           for (let i = 0; i < 6; i++) {
-            const angle = (i / 6) * Math.PI * 2 + Math.random() * 0.5;
-            const speed = 80 + Math.random() * 120;
+            const forwardOffset = 4 + i * 3 + Math.random() * 4;
+            const upwardOffset = 4 + Math.random() * 10;
             this.particles.push({
               id: particleIdCounter++,
               type: event.type,
-              x: sx,
-              y: sy,
-              vx: Math.cos(angle) * speed,
-              vy: Math.sin(angle) * speed,
+              x: event.x + facing * forwardOffset,
+              y: sy - upwardOffset,
+              vx: facing * (55 + Math.random() * 70),
+              vy: -35 - Math.random() * 70,
               radius: 2 + Math.random() * 3,
               color: event.color,
               alpha: 1,
               lifetime: 300,
               age: 0,
+              facing,
               assetKey: event.assetKey,
               sprite,
               spriteFrameSize,
             });
           }
+          }
           break;
 
         case 'aoe_pop':
           if (sprite) {
-            this.particles.push(this.createSpriteParticle(event, sx, sy, sprite, spriteFrameSize));
+            this.particles.push(this.createSpriteParticle(event, event.x, sy, sprite, spriteFrameSize));
             break;
           }
           this.particles.push({
             id: particleIdCounter++,
             type: event.type,
-            x: sx,
+            x: event.x,
             y: sy,
             vx: 0,
             vy: 0,
@@ -155,7 +161,7 @@ export class ParticleSystem {
             this.particles.push({
               id: particleIdCounter++,
               type: 'hit_spark',
-              x: sx + Math.cos(angle) * r,
+              x: event.x + Math.cos(angle) * r,
               y: sy + Math.sin(angle) * r * 0.5,
               vx: Math.cos(angle) * 40,
               vy: Math.sin(angle) * 40,
@@ -173,7 +179,7 @@ export class ParticleSystem {
 
         case 'heal_glow':
           if (sprite) {
-            this.particles.push(this.createSpriteParticle(event, sx, sy, sprite, spriteFrameSize));
+            this.particles.push(this.createSpriteParticle(event, event.x, sy, sprite, spriteFrameSize));
             break;
           }
           for (let i = 0; i < 8; i++) {
@@ -181,7 +187,7 @@ export class ParticleSystem {
             this.particles.push({
               id: particleIdCounter++,
               type: event.type,
-              x: sx + Math.cos(angle) * 15,
+              x: event.x + Math.cos(angle) * 15,
               y: sy + Math.sin(angle) * 15,
               vx: Math.cos(angle) * 20,
               vy: -60 - Math.random() * 30,
@@ -201,7 +207,7 @@ export class ParticleSystem {
           this.particles.push({
             id: particleIdCounter++,
             type: event.type,
-            x: sx,
+            x: event.x,
             y: sy,
             vx: 0,
             vy: 0,
@@ -210,7 +216,7 @@ export class ParticleSystem {
             alpha: 0.8,
             lifetime: 400,
             age: 0,
-            x2: (event.x2 || event.x) - cameraX,
+            x2: event.x2 || event.x,
             y2: worldYToScreenY(event.y2 ?? event.y, canvasHeight) - (event.z ?? 0) * DEPTH_SCALE,
             assetKey: event.assetKey,
             sprite,
@@ -221,11 +227,11 @@ export class ParticleSystem {
         case 'status_mark':
           this.particles.push(
             sprite
-              ? this.createSpriteParticle(event, sx, sy, sprite, spriteFrameSize)
+              ? this.createSpriteParticle(event, event.x, sy, sprite, spriteFrameSize)
               : {
                   id: particleIdCounter++,
                   type: event.type,
-                  x: sx,
+                  x: event.x,
                   y: sy,
                   vx: 0,
                   vy: -12,
@@ -244,11 +250,11 @@ export class ParticleSystem {
         case 'channel_pulse':
           this.particles.push(
             sprite
-              ? this.createSpriteParticle(event, sx, sy, sprite, spriteFrameSize)
+              ? this.createSpriteParticle(event, event.x, sy, sprite, spriteFrameSize)
               : {
                   id: particleIdCounter++,
                   type: event.type,
-                  x: sx,
+                  x: event.x,
                   y: sy,
                   vx: 0,
                   vy: 0,
@@ -267,11 +273,11 @@ export class ParticleSystem {
         case 'aura_pulse':
           this.particles.push(
             sprite
-              ? this.createSpriteParticle(event, sx, sy, sprite, spriteFrameSize)
+              ? this.createSpriteParticle(event, event.x, sy, sprite, spriteFrameSize)
               : {
                   id: particleIdCounter++,
                   type: event.type,
-                  x: sx,
+                  x: event.x,
                   y: sy,
                   vx: 0,
                   vy: 0,
@@ -315,6 +321,8 @@ export class ParticleSystem {
   render(ctx: CanvasRenderingContext2D): void {
     ctx.save();
     for (const p of this.particles) {
+      const rx = p.x - this.cameraX;
+      const rx2 = (p.x2 ?? p.x) - this.cameraX;
       ctx.globalAlpha = p.alpha;
 
       if (p.type === 'damage_number' || p.type === 'status_text') {
@@ -326,8 +334,8 @@ export class ParticleSystem {
         ctx.lineWidth = 3;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.strokeText(text, p.x, p.y);
-        ctx.fillText(text, p.x, p.y);
+        ctx.strokeText(text, rx, p.y);
+        ctx.fillText(text, rx, p.y);
         continue;
       }
 
@@ -338,9 +346,9 @@ export class ParticleSystem {
         ctx.textBaseline = 'middle';
         ctx.strokeStyle = 'rgba(0,0,0,0.9)';
         ctx.lineWidth = 4;
-        ctx.strokeText(text, p.x, p.y);
+        ctx.strokeText(text, rx, p.y);
         ctx.fillStyle = p.color;
-        ctx.fillText(text, p.x, p.y);
+        ctx.fillText(text, rx, p.y);
         continue;
       }
 
@@ -353,14 +361,23 @@ export class ParticleSystem {
         const dw = fw * scale;
         const dh = fh * scale;
         ctx.imageSmoothingEnabled = false;
+        if (p.facing === -1) {
+          ctx.save();
+          ctx.translate(rx, 0);
+          ctx.scale(-1, 1);
+          ctx.translate(-rx, 0);
+        }
         ctx.drawImage(
           image,
           frameIdx * fw, 0, fw, fh,
-          p.x - meta.anchor.x * scale,
+          rx - meta.anchor.x * scale,
           p.y - meta.anchor.y * scale,
           dw,
           dh,
         );
+        if (p.facing === -1) {
+          ctx.restore();
+        }
         continue;
       }
 
@@ -370,7 +387,7 @@ export class ParticleSystem {
         ctx.strokeStyle = p.color;
         ctx.lineWidth = 3 * (1 - prog);
         ctx.beginPath();
-        ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+        ctx.arc(rx, p.y, r, 0, Math.PI * 2);
         ctx.stroke();
         ctx.fillStyle = p.color;
         ctx.globalAlpha = p.alpha * 0.2;
@@ -386,13 +403,13 @@ export class ParticleSystem {
         ctx.lineWidth = (p.type === 'channel_pulse' ? 4 : 2.5) * (1 - prog * 0.6);
         ctx.setLineDash(p.type === 'channel_pulse' ? [] : [6, 5]);
         ctx.beginPath();
-        ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+        ctx.arc(rx, p.y, r, 0, Math.PI * 2);
         ctx.stroke();
         ctx.setLineDash([]);
         ctx.fillStyle = p.color;
         ctx.globalAlpha = p.alpha * (p.type === 'channel_pulse' ? 0.14 : 0.08);
         ctx.beginPath();
-        ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+        ctx.arc(rx, p.y, r, 0, Math.PI * 2);
         ctx.fill();
         ctx.globalAlpha = p.alpha;
         continue;
@@ -404,13 +421,13 @@ export class ParticleSystem {
         ctx.strokeStyle = p.color;
         ctx.lineWidth = 2;
         ctx.beginPath();
-        ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+        ctx.arc(rx, p.y, r, 0, Math.PI * 2);
         ctx.stroke();
         ctx.beginPath();
-        ctx.moveTo(p.x - r * 0.45, p.y);
-        ctx.lineTo(p.x + r * 0.45, p.y);
-        ctx.moveTo(p.x, p.y - r * 0.45);
-        ctx.lineTo(p.x, p.y + r * 0.45);
+        ctx.moveTo(rx - r * 0.45, p.y);
+        ctx.lineTo(rx + r * 0.45, p.y);
+        ctx.moveTo(rx, p.y - r * 0.45);
+        ctx.lineTo(rx, p.y + r * 0.45);
         ctx.stroke();
         continue;
       }
@@ -420,8 +437,8 @@ export class ParticleSystem {
         ctx.lineWidth = 3;
         ctx.setLineDash([5, 5]);
         ctx.beginPath();
-        ctx.moveTo(p.x, p.y);
-        ctx.lineTo(p.x2 || p.x, p.y2 || p.y);
+        ctx.moveTo(rx, p.y);
+        ctx.lineTo(rx2, p.y2 || p.y);
         ctx.stroke();
         ctx.setLineDash([]);
         continue;
@@ -430,14 +447,14 @@ export class ParticleSystem {
       if (p.type === 'heal_glow') {
         ctx.fillStyle = p.color;
         ctx.beginPath();
-        ctx.arc(p.x, p.y, p.radius * (1 - p.age / p.lifetime * 0.5), 0, Math.PI * 2);
+        ctx.arc(rx, p.y, p.radius * (1 - p.age / p.lifetime * 0.5), 0, Math.PI * 2);
         ctx.fill();
         continue;
       }
 
       ctx.fillStyle = p.color;
       ctx.beginPath();
-      ctx.arc(p.x, p.y, Math.max(0.5, p.radius * (1 - p.age / p.lifetime * 0.3)), 0, Math.PI * 2);
+      ctx.arc(rx, p.y, Math.max(0.5, p.radius * (1 - p.age / p.lifetime * 0.3)), 0, Math.PI * 2);
       ctx.fill();
     }
     ctx.restore();
@@ -462,6 +479,7 @@ export class ParticleSystem {
       alpha: 1,
       lifetime: Math.max(sprite.meta.frames * sprite.meta.frameDurationMs, 250),
       age: 0,
+      facing: event.facing,
       assetKey: event.assetKey,
       sprite,
       spriteFrameSize,
