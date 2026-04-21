@@ -5,6 +5,7 @@ import {
   tickSimulation,
   resetController,
   forcePause,
+  forceResume,
 } from '../../simulation/simulation';
 import { FULLSCREEN_EXIT_EVENT } from '../../layout/fullscreenConstants';
 import { PhaserInputAdapter } from '../input/PhaserInputAdapter';
@@ -30,7 +31,12 @@ export class GameplayScene extends Phaser.Scene {
   private audio!: AudioManager;
   private bossMusicStarted = false;
   private onFullscreenExit = (): void => {
-    if (this.simState) this.simState = forcePause(this.simState);
+    if (!this.simState) return;
+    const prev = this.simState.phase;
+    this.simState = forcePause(this.simState);
+    if (prev !== this.simState.phase) {
+      this.game.events.emit('phase-change', this.simState.phase);
+    }
   };
 
   constructor() {
@@ -70,7 +76,31 @@ export class GameplayScene extends Phaser.Scene {
     window.addEventListener(FULLSCREEN_EXIT_EVENT, this.onFullscreenExit);
 
     this.events.on('pause-requested', () => {
-      if (this.simState) this.simState = forcePause(this.simState);
+      if (!this.simState) return;
+      const prev = this.simState.phase;
+      this.simState = forcePause(this.simState);
+      if (prev !== this.simState.phase) {
+        this.game.events.emit('phase-change', this.simState.phase);
+      }
+    });
+    this.events.on('resume-requested', () => {
+      if (!this.simState) return;
+      const prev = this.simState.phase;
+      this.simState = forceResume(this.simState);
+      if (prev !== this.simState.phase) {
+        this.game.events.emit('phase-change', this.simState.phase);
+      }
+    });
+    this.events.on('restart-requested', () => {
+      const currentGuild = this.game.registry.get('guildId') as GuildId;
+      resetController(this.simState, 'player');
+      this.simState = createInitialState(currentGuild, Date.now());
+      resetController(this.simState, 'player');
+      this.phaseHandoffFired = false;
+      this.bossMusicStarted = false;
+      this.audio.stopMusic();
+      this.audio.startStageMusic();
+      this.game.events.emit('phase-change', this.simState.phase);
     });
 
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, this.onShutdown, this);
@@ -91,6 +121,10 @@ export class GameplayScene extends Phaser.Scene {
     const prevPhase = this.simState.phase;
     this.simState = tickSimulation(this.simState, inputState, dtMs);
     this.inputAdapter.clearJustPressed();
+
+    if (prevPhase !== this.simState.phase) {
+      this.game.events.emit('phase-change', this.simState.phase);
+    }
 
     this.dispatchAudio(prevPhase, inputState);
 

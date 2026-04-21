@@ -1,26 +1,10 @@
-import { useCallback, useEffect, useRef, useState, type MouseEvent } from 'react';
-import type { GuildId } from '../simulation/types';
-import { createInitialState, tickSimulation, resetController, forcePause, forceResume } from '../simulation/simulation';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import Phaser from 'phaser';
+import type { GuildId, SimState } from '../simulation/types';
 import { PauseOverlay } from './PauseOverlay';
 import { GuildDetails } from './GuildDetails';
-import { createComboBuffer } from '../simulation/comboBuffer';
 import { useFullscreen } from '../layout/useFullscreen';
-import { FULLSCREEN_EXIT_EVENT } from '../layout/fullscreenConstants';
-import { GameRenderer } from '../rendering/gameRenderer';
-import { loadGuildSpriteSet } from '../rendering/sprite/spriteLoader';
-import { SpriteActorRenderer } from '../rendering/sprite/spriteActorRenderer';
-import { loadGuildVfxSet } from '../rendering/vfx/vfxLoader';
-import { hitTestHudButton } from '../rendering/hudButtons';
-import {
-  CANVAS_BUFFER_WIDTH,
-  CANVAS_BUFFER_HEIGHT,
-  VIRTUAL_WIDTH,
-  VIRTUAL_HEIGHT,
-  RENDER_SCALE,
-} from '../rendering/constants';
-import { InputManager } from '../input/inputManager';
-import { loadKeyBindings } from '../input/keyBindings';
-import { AudioManager } from '../audio/audioManager';
+import { makePhaserGame, type GameCallbacks } from '../game/PhaserGame';
 
 interface Props {
   guildId: GuildId;
@@ -30,173 +14,80 @@ interface Props {
 }
 
 export function GameScreen({ guildId, onVictory, onDefeat, onQuit }: Props) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const stateRef = useRef(createInitialState(guildId));
-  const rendererRef = useRef(new GameRenderer());
-  const inputRef = useRef<InputManager | null>(null);
-  const audioRef = useRef<AudioManager | null>(null);
-  const comboBufferRef = useRef(createComboBuffer());
-  const animFrameRef = useRef<number>(0);
-  const lastTimeRef = useRef<number>(0);
-  const bossWasMusicStarted = useRef(false);
-
-  const onQuitRef = useRef(onQuit);
-  const onVictoryRef = useRef(onVictory);
-  const onDefeatRef = useRef(onDefeat);
-
+  const parentRef = useRef<HTMLDivElement>(null);
+  const gameRef = useRef<Phaser.Game | null>(null);
   const [isPaused, setIsPaused] = useState(false);
-  const restartTokenRef = useRef(0);
-  const [restartToken, setRestartToken] = useState(0);
   const [showMoves, setShowMoves] = useState(false);
   const pausedByMovesRef = useRef(false);
 
   const { isFullscreen, toggle: toggleFullscreen } = useFullscreen();
-  const toggleFullscreenRef = useRef(toggleFullscreen);
   const isFullscreenRef = useRef(isFullscreen);
-  useEffect(() => { toggleFullscreenRef.current = toggleFullscreen; }, [toggleFullscreen]);
+  const toggleFullscreenRef = useRef(toggleFullscreen);
   useEffect(() => { isFullscreenRef.current = isFullscreen; }, [isFullscreen]);
+  useEffect(() => { toggleFullscreenRef.current = toggleFullscreen; }, [toggleFullscreen]);
 
-  useEffect(() => { onQuitRef.current = onQuit; }, [onQuit]);
+  const onVictoryRef = useRef(onVictory);
+  const onDefeatRef = useRef(onDefeat);
+  const onQuitRef = useRef(onQuit);
   useEffect(() => { onVictoryRef.current = onVictory; }, [onVictory]);
   useEffect(() => { onDefeatRef.current = onDefeat; }, [onDefeat]);
+  useEffect(() => { onQuitRef.current = onQuit; }, [onQuit]);
 
   useEffect(() => {
-    const onExit = () => {
-      stateRef.current = forcePause(stateRef.current);
-    };
-    window.addEventListener(FULLSCREEN_EXIT_EVENT, onExit);
-    return () => window.removeEventListener(FULLSCREEN_EXIT_EVENT, onExit);
-  }, []);
+    const parent = parentRef.current;
+    if (!parent) return;
 
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const bindings = loadKeyBindings();
-    const input = new InputManager(bindings);
-    inputRef.current = input;
-
-    const audio = new AudioManager();
-    audioRef.current = audio;
-
-    stateRef.current = createInitialState(guildId);
-    comboBufferRef.current = createComboBuffer();
-    resetController(stateRef.current, 'player');
-    bossWasMusicStarted.current = false;
-
-    audio.startStageMusic();
-
-    let cancelled = false;
-    rendererRef.current.setVfxSet(null);
-    loadGuildSpriteSet(guildId).then((set) => {
-      if (cancelled || !set) return;
-      rendererRef.current.setActorRenderer(new SpriteActorRenderer(set));
-    });
-    loadGuildVfxSet(guildId).then((set) => {
-      if (cancelled) return;
-      rendererRef.current.setVfxSet(set);
-    });
-
-    const gameLoop = (timestamp: number) => {
-      if (!canvas) return;
-
-      const ctx = canvas.getContext('2d');
-      if (!ctx) return;
-
-      const dtMs = Math.min(50, timestamp - (lastTimeRef.current || timestamp));
-      lastTimeRef.current = timestamp;
-
-      const inputState = input.getInputState(stateRef.current.timeMs + dtMs);
-
-      if (inputState.fullscreenToggleJustPressed) {
-        toggleFullscreenRef.current();
-      }
-
-      const prevPhase = stateRef.current.phase;
-      stateRef.current = tickSimulation(stateRef.current, inputState, dtMs);
-      const state = stateRef.current;
-
-      input.clearJustPressed();
-
-      if (prevPhase !== state.phase) {
-        if (state.phase === 'paused') setIsPaused(true);
-        else if (state.phase === 'playing') setIsPaused(false);
-      }
-
-      if (!bossWasMusicStarted.current && state.bossSpawned) {
-        bossWasMusicStarted.current = true;
-        audio.startBossMusic();
-      }
-
-      if (prevPhase === 'playing' && state.phase === 'victory') {
-        audio.stopMusic();
-        audio.playVictory();
-        setTimeout(() => onVictoryRef.current(state.score), 1500);
-        return;
-      }
-
-      if (prevPhase === 'playing' && state.phase === 'defeat') {
-        audio.stopMusic();
-        audio.playDefeat();
-        setTimeout(() => onDefeatRef.current(), 1500);
-        return;
-      }
-
-      const vfx = state.vfxEvents;
-      if (vfx.some(e => e.type === 'hit_spark')) audio.playAttack();
-      if (vfx.some(e => e.type === 'heal_glow')) audio.playHeal();
-      if (state.player.state === 'blocking') audio.playBlock();
-      if (state.player.state === 'jumping' && state.player.z < 10 && inputState.jumpJustPressed) audio.playJump();
-
-      ctx.setTransform(RENDER_SCALE, 0, 0, RENDER_SCALE, 0, 0);
-
-      rendererRef.current.render(
-        ctx,
-        state,
-        comboBufferRef.current,
-        VIRTUAL_WIDTH,
-        VIRTUAL_HEIGHT,
-        dtMs,
-        isFullscreenRef.current,
-      );
-
-      ctx.setTransform(1, 0, 0, 1, 0, 0);
-
-      if (state.phase === 'playing' || state.phase === 'paused') {
-        animFrameRef.current = requestAnimationFrame(gameLoop);
-      }
+    const callbacks: GameCallbacks = {
+      onVictory: (score) => onVictoryRef.current(score),
+      onDefeat: () => onDefeatRef.current(),
+      onQuit: () => onQuitRef.current(),
+      toggleFullscreen: () => toggleFullscreenRef.current(),
+      getIsFullscreen: () => isFullscreenRef.current,
     };
 
-    animFrameRef.current = requestAnimationFrame(gameLoop);
+    const game = makePhaserGame(parent, { guildId, callbacks });
+    gameRef.current = game;
+
+    const onPhaseChange = (phase: SimState['phase']) => {
+      setIsPaused(phase === 'paused');
+    };
+    game.events.on('phase-change', onPhaseChange);
 
     return () => {
-      cancelled = true;
-      cancelAnimationFrame(animFrameRef.current);
-      input.dispose();
-      audio.dispose();
-      resetController(stateRef.current, 'player');
+      game.events.off('phase-change', onPhaseChange);
+      game.destroy(true);
+      gameRef.current = null;
     };
-  }, [guildId, restartToken]);
+  }, [guildId]);
+
+  useEffect(() => {
+    const game = gameRef.current;
+    if (!game) return;
+    game.registry.set('isFullscreen', isFullscreen);
+  }, [isFullscreen]);
+
+  const emitToGameplay = useCallback((event: string) => {
+    const game = gameRef.current;
+    if (!game) return;
+    const scene = game.scene.getScene('Gameplay');
+    if (scene) scene.events.emit(event);
+  }, []);
 
   const handleResume = useCallback(() => {
-    stateRef.current = forceResume(stateRef.current);
-    setIsPaused(false);
-  }, []);
+    emitToGameplay('resume-requested');
+  }, [emitToGameplay]);
 
   const handleRestart = useCallback(() => {
-    restartTokenRef.current += 1;
-    setRestartToken(restartTokenRef.current);
-    setIsPaused(false);
-  }, []);
+    emitToGameplay('restart-requested');
+  }, [emitToGameplay]);
 
   const closeMoves = useCallback(() => {
     setShowMoves(false);
     if (pausedByMovesRef.current) {
-      stateRef.current = forceResume(stateRef.current);
-      setIsPaused(false);
+      emitToGameplay('resume-requested');
       pausedByMovesRef.current = false;
     }
-  }, []);
+  }, [emitToGameplay]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -206,61 +97,31 @@ export function GameScreen({ guildId, onVictory, onDefeat, onQuit }: Props) {
         closeMoves();
         return;
       }
-      if (stateRef.current.phase !== 'playing' && stateRef.current.phase !== 'paused') return;
-      if (stateRef.current.phase === 'playing') {
-        stateRef.current = forcePause(stateRef.current);
-        setIsPaused(true);
+      const game = gameRef.current;
+      if (!game) return;
+      const simState = game.registry.get('simState') as SimState | undefined;
+      if (!simState) return;
+      if (simState.phase !== 'playing' && simState.phase !== 'paused') return;
+      if (simState.phase === 'playing') {
+        emitToGameplay('pause-requested');
         pausedByMovesRef.current = true;
       }
       setShowMoves(true);
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [closeMoves, showMoves]);
-
-  const handleCanvasClick = (e: MouseEvent<HTMLCanvasElement>) => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const rect = canvas.getBoundingClientRect();
-    const bufferX = ((e.clientX - rect.left) / rect.width) * canvas.width;
-    const bufferY = ((e.clientY - rect.top) / rect.height) * canvas.height;
-    const virtualX = bufferX / RENDER_SCALE;
-    const virtualY = bufferY / RENDER_SCALE;
-
-    const hit = hitTestHudButton(virtualX, virtualY);
-    if (!hit) return;
-    if (hit === 'pause') {
-      stateRef.current = forcePause(stateRef.current);
-    } else if (hit === 'fullscreen') {
-      toggleFullscreen();
-    } else if (hit === 'quit') {
-      onQuit();
-    }
-  };
+  }, [closeMoves, emitToGameplay, showMoves]);
 
   return (
-    <div style={{
-      position: 'absolute',
-      inset: 0,
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'stretch',
-      justifyContent: 'stretch',
-      background: '#000',
-    }}>
-      <canvas
-        ref={canvasRef}
-        width={CANVAS_BUFFER_WIDTH}
-        height={CANVAS_BUFFER_HEIGHT}
-        style={{
-          width: '100%',
-          height: '100%',
-          display: 'block',
-          imageRendering: 'pixelated',
-        }}
-        tabIndex={0}
-        onClick={handleCanvasClick}
-      />
+    <div
+      style={{
+        position: 'absolute',
+        inset: 0,
+        display: 'flex',
+        background: '#000',
+      }}
+    >
+      <div ref={parentRef} style={{ width: '100%', height: '100%' }} />
       {isPaused && !showMoves && (
         <PauseOverlay
           onResume={handleResume}
