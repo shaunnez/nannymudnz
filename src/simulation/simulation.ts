@@ -640,6 +640,16 @@ function handlePlayerInput(state: SimState, input: InputState, ctrl: PlayerContr
 
   if (!player.isAlive) return;
 
+  if (player.state === 'dodging') {
+    ctrl.dodgeMs -= dtMs;
+    if (ctrl.dodgeMs <= 0) {
+      ctrl.dodgeMs = 0;
+      player.state = 'idle';
+      player.vx = 0;
+    }
+    return;
+  }
+
   const stunned = isStunned(player);
   const rooted = isRooted(player);
 
@@ -744,12 +754,7 @@ function handlePlayerInput(state: SimState, input: InputState, ctrl: PlayerContr
       const dodgeDir = input.rightJustPressed ? 1 : -1;
       player.vx = dodgeDir * (DODGE_DISTANCE / (DODGE_DURATION_MS / 1000));
       player.animationId = 'dodge';
-      setTimeout(() => {
-        if (player.state === 'dodging') {
-          player.state = 'idle';
-          player.vx = 0;
-        }
-      }, DODGE_DURATION_MS);
+      ctrl.dodgeMs = DODGE_DURATION_MS;
       return;
     }
     player.state = 'blocking';
