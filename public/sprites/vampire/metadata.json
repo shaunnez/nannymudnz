@@ -1,8 +1,8 @@
 {
   "guildId": "vampire",
   "frameSize": {
-    "w": 68,
-    "h": 68
+    "w": 124,
+    "h": 124
   },
   "facing": "right",
   "animations": {
@@ -11,8 +11,8 @@
       "frameDurationMs": 90,
       "loop": false,
       "anchor": {
-        "x": 34,
-        "y": 56
+        "x": 62,
+        "y": 112
       }
     },
     "ability_2": {
@@ -20,8 +20,8 @@
       "frameDurationMs": 90,
       "loop": false,
       "anchor": {
-        "x": 34,
-        "y": 56
+        "x": 62,
+        "y": 112
       }
     },
     "ability_3": {
@@ -29,8 +29,8 @@
       "frameDurationMs": 90,
       "loop": false,
       "anchor": {
-        "x": 34,
-        "y": 56
+        "x": 62,
+        "y": 112
       }
     },
     "ability_4": {
@@ -38,8 +38,8 @@
       "frameDurationMs": 90,
       "loop": false,
       "anchor": {
-        "x": 34,
-        "y": 56
+        "x": 62,
+        "y": 112
       }
     },
     "ability_5": {
@@ -47,8 +47,8 @@
       "frameDurationMs": 150,
       "loop": true,
       "anchor": {
-        "x": 34,
-        "y": 56
+        "x": 62,
+        "y": 112
       }
     },
     "attack_1": {
@@ -56,8 +56,8 @@
       "frameDurationMs": 80,
       "loop": false,
       "anchor": {
-        "x": 34,
-        "y": 56
+        "x": 62,
+        "y": 112
       }
     },
     "attack_2": {
@@ -65,8 +65,8 @@
       "frameDurationMs": 80,
       "loop": false,
       "anchor": {
-        "x": 34,
-        "y": 56
+        "x": 62,
+        "y": 112
       }
     },
     "attack_3": {
@@ -74,8 +74,8 @@
       "frameDurationMs": 80,
       "loop": false,
       "anchor": {
-        "x": 34,
-        "y": 56
+        "x": 62,
+        "y": 112
       }
     },
     "block": {
@@ -83,8 +83,8 @@
       "frameDurationMs": 200,
       "loop": true,
       "anchor": {
-        "x": 34,
-        "y": 56
+        "x": 62,
+        "y": 112
       }
     },
     "death": {
@@ -92,8 +92,8 @@
       "frameDurationMs": 150,
       "loop": false,
       "anchor": {
-        "x": 34,
-        "y": 56
+        "x": 62,
+        "y": 112
       }
     },
     "hurt": {
@@ -101,8 +101,8 @@
       "frameDurationMs": 100,
       "loop": false,
       "anchor": {
-        "x": 34,
-        "y": 56
+        "x": 62,
+        "y": 112
       }
     },
     "idle": {
@@ -110,8 +110,8 @@
       "frameDurationMs": 180,
       "loop": true,
       "anchor": {
-        "x": 34,
-        "y": 56
+        "x": 62,
+        "y": 112
       }
     },
     "jump": {
@@ -119,8 +119,8 @@
       "frameDurationMs": 120,
       "loop": false,
       "anchor": {
-        "x": 34,
-        "y": 56
+        "x": 62,
+        "y": 112
       }
     },
     "run": {
@@ -128,8 +128,8 @@
       "frameDurationMs": 90,
       "loop": true,
       "anchor": {
-        "x": 34,
-        "y": 56
+        "x": 62,
+        "y": 112
       }
     },
     "walk": {
@@ -137,8 +137,8 @@
       "frameDurationMs": 120,
       "loop": true,
       "anchor": {
-        "x": 34,
-        "y": 56
+        "x": 62,
+        "y": 112
       }
     }
   }

@@ -51,20 +51,20 @@ FRAMECOUNT_AMBIGUOUS_MAP = {
 # Keyed by guild_id, maps folder hash -> AnimationId. Inspect frames visually
 # when the composite step warns about duplicates and add entries here.
 GUILD_OVERRIDES: dict[str, dict[str, str]] = {
-    "leper": {
-        "animating-be67823d": "ability_3",  # pushing (6f) - collides with walk
-        "animating-c3df789f": "ability_4",  # throw-object (7f)
-        "animating-d1f51e59": "walk",       # walking-6-frames (6f)
-    },
     "knight": {
         "animating-8fadff24": "ability_3",  # pushing (6f) - collides with walk
         "animating-b6950d50": "walk",       # walking-6-frames (6f)
         "animating-dec77c7e": "ability_4",  # throw-object (7f)
     },
     "vampire": {
-        "animating-b0fa037f": "walk",       # walking-6-frames (6f)
-        "animating-cf9739d9": "ability_3",  # pushing (6f) - collides with walk
-        "animating-c5fabeb5": "ability_4",  # throw-object (7f)
+        "animating-c6337dcc": "walk",       # walking-6-frames (6f)
+        "animating-078de359": "ability_3",  # pushing (6f) - collides with walk
+        "animating-3d734b9e": "ability_4",  # throw-object (7f)
+    },
+    "leper": {
+        "animating-0d59a394": "walk",       # walking-6-frames (6f)
+        "animating-2da0a2ec": "ability_3",  # pushing (6f) - collides with walk
+        "animating-8d76f323": "ability_4",  # throw-object (7f)
     },
 }
 
