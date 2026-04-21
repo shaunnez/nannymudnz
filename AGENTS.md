@@ -4,7 +4,7 @@ This file provides guidance to Codex (Codex.ai/code) when working with code in t
 
 ## Project
 
-Nannymud — a browser-native, single-player 2.5D side-scrolling beat-'em-up (Little Fighter 2 style). Vite + React + TypeScript. No backend; `@supabase/supabase-js` is a dependency but is not currently wired in. Gameplay is drawn on a `<canvas>`; React is used only for menu screens and mounting the game loop.
+Nannymud — a browser-native, single-player 2.5D side-scrolling beat-'em-up (Little Fighter 2 style). Vite + React + TypeScript + Phaser 3. No backend; `@supabase/supabase-js` is a dependency but is not currently wired in. Gameplay runs inside a `Phaser.Game` mounted into a React host component; React is used only for menu screens, the pause overlay, and mounting/unmounting the Phaser instance.
 
 ## Commands
 
@@ -25,33 +25,45 @@ Tests run via Vitest. `src/simulation/__tests__/golden.test.ts` is the reproduci
 The codebase enforces a one-way dependency flow. Respect it when adding features — crossing these boundaries is the single most important rule in this repo:
 
 ```
-input/  ──►  simulation/  ◄── (read-only) ──  rendering/
-                  ▲
-audio/  ──────────┘ (reads VFX events + phase transitions only)
+input/ (keyBindings) ──►  simulation/  ◄── (read-only) ──  game/ (Phaser)
+                                ▲
+audio/  ────────────────────────┘ (reads vfxEvents + phase transitions)
 ```
 
 - **`src/simulation/`** — pure TypeScript. Combat, AI, physics, wave progression, status effects, HP/MP, combo detection. **No DOM, no canvas, no `window`, no browser APIs.** It must remain portable to a Node server. Nothing non-deterministic is permitted — no `Math.random()`, no `Date.now()`, no `setTimeout`, no module-level mutable counters. Use `state.rng()` for rolls, tick-based countdown fields for timers, and `state.next*Id` counters for IDs. The ESLint override on `src/simulation/**` enforces this.
-- **`src/rendering/`** — Canvas 2D drawing. **Reads** `SimState`; never mutates it. `GameRenderer` delegates per-actor drawing to an `ActorRendererImpl` (see `actorRenderer.ts`). Swapping placeholder art for sprites = implement that interface and inject a new impl in `GameRenderer`. Don't read rendering concepts back into simulation types. Render-only constants (`VIRTUAL_WIDTH`, `VIRTUAL_HEIGHT`, `CANVAS_BUFFER_WIDTH`, `CANVAS_BUFFER_HEIGHT`, `RENDER_SCALE`, `DEPTH_SCALE`) live in `src/rendering/constants.ts` — never in `src/simulation/constants.ts`. The game loop in `GameScreen.tsx` applies `ctx.setTransform(RENDER_SCALE, …)` once per frame so the renderer draws in virtual 900×506 units and the transform upscales to the 1600×900 backing buffer.
-- **`src/input/`** — translates `KeyboardEvent`s into an `InputState` struct. `inputManager.getInputState(timeMs)` is the only thing simulation sees. Double-tap run detection lives here, not in the simulation.
-- **`src/audio/`** — Web Audio API synth. Entirely independent; `GameScreen` inspects `state.vfxEvents` and phase transitions to trigger sounds. Do not call audio from inside `simulation/`.
-- **`src/screens/`** — React screens (`TitleScreen`, `GuildSelect`, `GameScreen`, `GameOverScreen`). Only `GameScreen` runs the loop; the others are menus. `App.tsx` is the screen router (plain `useState`, no router library).
-- **`src/layout/`** — wraps the whole app in a 16:9 letterbox (`ScalingFrame`) and owns the browser Fullscreen API (`F` key, `fullscreenchange` listener). Emits a `FULLSCREEN_EXIT_EVENT` on `window` so `GameScreen` can auto-pause on exit. New screens render inside `ScalingFrame` — don't reach for `minHeight: 100vh`. `useFullscreen()` hook lives in `useFullscreen.ts`; the constant lives in `fullscreenConstants.ts`; the component in `ScalingFrame.tsx`.
+- **`src/game/`** — Phaser 3 layer. `PhaserGame.ts` boots a `Phaser.Game` with three scenes (`Boot`, `Gameplay`, `Hud`). `GameplayScene.update` is the rAF loop: it calls `tickSimulation`, reconciles per-actor/projectile/pickup `*View` objects, consumes `state.vfxEvents`, runs audio dispatch, and drives the camera. It **reads** `SimState` and never mutates it. Render-only constants (`VIRTUAL_WIDTH`, `VIRTUAL_HEIGHT`, `DEPTH_SCALE`, `worldYToScreenY`, `WORLD_Y_MIN/MAX`) live in `src/game/constants.ts` — never in `src/simulation/constants.ts`. Phaser's `Scale.FIT` handles upscaling, so the old `CANVAS_BUFFER_*` / `RENDER_SCALE` concepts are gone.
+- **`src/input/keyBindings.ts`** — localStorage-backed keybinding map. Phaser's `PhaserInputAdapter` (in `src/game/input/`) reads these and translates keyboard events into an `InputState` struct; `inputAdapter.getInputState(timeMs)` is the only thing simulation sees. Double-tap run detection lives in the adapter, not in the simulation.
+- **`src/audio/`** — Web Audio API synth. Entirely independent; `GameplayScene.dispatchAudio` inspects `state.vfxEvents` and phase transitions to trigger sounds. Do not call audio from inside `simulation/`.
+- **`src/screens/`** — React screens (`TitleScreen`, `MainMenu`, `CharSelect`, `GuildDetails`, `GameScreen`, `GameOverScreen`). Only `GameScreen` mounts Phaser; the others are menus. `App.tsx` is the screen router (plain `useState`, no router library).
+- **`src/layout/`** — wraps the whole app in a 16:9 letterbox (`ScalingFrame`) and owns the browser Fullscreen API (`F` key, `fullscreenchange` listener). Emits a `FULLSCREEN_EXIT_EVENT` on `window` so `GameplayScene` can auto-pause on exit. New screens render inside `ScalingFrame` — don't reach for `minHeight: 100vh`. `useFullscreen()` hook lives in `useFullscreen.ts`; the constant lives in `fullscreenConstants.ts`; the component in `ScalingFrame.tsx`.
 
-## Game loop (`src/screens/GameScreen.tsx`)
+## Game loop (`src/game/scenes/GameplayScene.ts`)
 
-One `requestAnimationFrame` loop drives everything:
+Phaser's rAF drives everything. `GameplayScene.update(_, delta)`:
 
-1. Compute `dtMs` (clamped to 50ms to survive tab-switches).
-2. `input.getInputState(simTime + dtMs)` → build `InputState`.
-3. `tickSimulation(state, inputState, dtMs)` → new `SimState` (the simulation treats state as immutable-ish; always reassign `stateRef.current`).
-4. `input.clearJustPressed()` — must happen after the tick, before the next frame.
-5. Inspect `state.vfxEvents` and phase transitions → trigger audio.
-6. `renderer.render(ctx, state, comboBuffer, w, h, dtMs, isFullscreen)`.
-7. Stop looping when `state.phase` leaves `'playing' | 'paused'`.
+1. Compute `dtMs = Math.min(50, delta)` (clamp for tab-switches).
+2. `inputAdapter.getInputState(simTime + dtMs)` → build `InputState`.
+3. `tickSimulation(state, inputState, dtMs)` → new `SimState` (re-assign `this.simState`).
+4. `inputAdapter.clearJustPressed()` — must happen after the tick.
+5. Emit `phase-change` on `this.game.events` when phase transitions; this is how React knows to show `PauseOverlay`.
+6. `dispatchAudio(prevPhase, inputState)` — peeks at `state.vfxEvents` and phase to play SFX/music.
+7. `reconcileActors/Projectiles/Pickups` — maintain Map<id, View> with create/sync/destroy per tick; sprites are depth-sorted by `actor.y`.
+8. `consumeVfxEvents(this, state.vfxEvents)` — spawns tweened particles for hit sparks, damage numbers, blink trails, etc.
+9. Registry `simState` set for the HUD scene to pull.
+10. Phase transitions to `victory`/`defeat` → stop music, play sting, `delayedCall(1500, callback)`.
 
-`resetController(stateRef.current, 'player')` is called on mount and cleanup — actor controller state in `simulation/` is held in module-level maps keyed by actor id, so retries/re-mounts must reset it or stale input bindings leak across runs.
+`resetController(this.simState, 'player')` is called in `create` and on scene shutdown — actor controller state in `simulation/` is held in module-level maps keyed by actor id, so retries/re-mounts must reset it or stale input bindings leak across runs.
 
 Keybinds: movement on arrow keys; `Space` jump; `J` attack; `K` block; `L` grab; `P` pause (previously `Esc`, remapped so browser fullscreen doesn't hijack); `F` fullscreen. Defaults and migration in `src/input/keyBindings.ts`.
+
+## Phaser conventions
+
+- **Scene keys**: `'Boot'`, `'Gameplay'`, `'Hud'`. `HudScene` runs in parallel to `GameplayScene` (launched, not started).
+- **React ↔ Phaser bridge**: `game.registry` for pull-style state (`guildId`, `callbacks`, `simState`, `isFullscreen`); `game.events` / `scene.events` for push-style commands (`phase-change`, `pause-requested`, `resume-requested`, `restart-requested`). React never reaches into `simState` to mutate it.
+- **No simulation in scene code.** Scenes may only call the exported simulation functions (`tickSimulation`, `forcePause`, `forceResume`, `createInitialState`, `resetController`). Keep new rules inside `src/simulation/`.
+- **Animation keys**: `${guildId}:${animId}` (see `AnimationRegistry.ts`); texture keys are `tex:${guildId}:${animId}`. Sprites fall back through `FALLBACK` chains when a guild lacks a specific animation.
+- **Depth sort**: containers set `setDepth(actor.y)` for 2.5D sort; VFX uses `setDepth(y + 1000)` so particles draw above same-plane actors.
+- **No `Date.now()`/`setTimeout`/`requestAnimationFrame` in scene code.** Use `this.time.delayedCall` and `delta` from `update`.
 
 ## Combo / ability system
 
@@ -68,7 +80,7 @@ When adding a guild ability, extend `guildData.ts` using the `makeAbility` helpe
 
 `Actor` in `types.ts` is a flat struct carrying data for every guild/enemy variant (e.g. `chiOrbs`, `sanity`, `bloodtally`, `dishes`, `shapeshiftForm`, `bossPhase`). This is intentional — it keeps the simulation allocation-light and serializable. New per-guild state goes on `Actor` as an optional-ish field, not in a side map.
 
-`SimState.phase` drives top-level flow: `'playing' | 'paused' | 'victory' | 'defeat'`. `vfxEvents` is a per-frame array consumed by both rendering (particles) and audio.
+`SimState.phase` drives top-level flow: `'playing' | 'paused' | 'victory' | 'defeat'`. `vfxEvents` is a per-frame array consumed by both rendering (Phaser tweens) and audio.
 
 ## Coordinate system (2.5D)
 
@@ -77,17 +89,18 @@ When adding a guild ability, extend `guildData.ts` using the `makeAbility` helpe
 - `z` = fake elevation (jumps). `z = 0` is grounded.
 - Hit detection uses `ATTACK_Y_TOLERANCE` on the depth axis — attacks whiff if the depth planes don't overlap.
 
-Don't confuse `y` (depth) with screen-y; `rendering/` applies `DEPTH_SCALE` to project them.
+Don't confuse `y` (depth) with screen-y; `src/game/constants.ts::worldYToScreenY` and `DEPTH_SCALE` project them.
 
 ## Asset / persistence notes
 
-- No art assets — `PlaceholderRenderer` draws colored rectangles with a letter initial. Guild/enemy colors and initials come from `guildData.ts` / `enemyData.ts`.
+- Placeholder art: `ActorView` falls back to a colored rounded rectangle + initial letter for actors without sprite metadata (currently all enemies). Guild/enemy colors and initials come from `guildData.ts` / `enemyData.ts`.
+- Guild sprites: `public/sprites/<guildId>/` contains per-animation PNG strips + `metadata.json` generated by `scripts/composite-pixellab-sprites.py`. Loaded in `BootScene.preload` via `queueGuildSprites`.
 - No audio files — everything synthesized in `audioManager.ts`.
 - Only persistence is `localStorage` (volume settings, key bindings via `input/keyBindings.ts`).
 - `assets-old/` and `lore-old/` are historical; ignore them unless the task is explicitly about reviving that content.
 
 ## Tooling conventions
 
-- `.bolt/prompt` asks for production-quality, non-cookie-cutter UI and restricts new packages to existing ones (React, Tailwind, lucide-react). Honor this when touching menu screens.
+- `.bolt/prompt` asks for production-quality, non-cookie-cutter UI and restricts new packages to existing ones (React, Tailwind, lucide-react, Phaser). Honor this when touching menu screens.
 - Tailwind is configured but most screens use inline styles (see `App.tsx`, `GameScreen.tsx`). Match the surrounding file's style rather than mixing the two.
 - `tsconfig.app.json` has `noUnusedLocals` / `noUnusedParameters` enabled — leftover imports will break `npm run typecheck`.
