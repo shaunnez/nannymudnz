@@ -10,6 +10,7 @@ import { BackgroundView } from '../view/BackgroundView';
 import { ActorView } from '../view/ActorView';
 import { ProjectileView } from '../view/ProjectileView';
 import { PickupView } from '../view/PickupView';
+import { consumeVfxEvents } from '../view/ParticleFX';
 import type { Actor, Projectile, Pickup } from '../../simulation/types';
 import type { GameCallbacks } from '../PhaserGame';
 
@@ -74,6 +75,7 @@ export class GameplayScene extends Phaser.Scene {
     this.reconcileActors();
     this.reconcileProjectiles();
     this.reconcilePickups();
+    consumeVfxEvents(this, this.simState.vfxEvents);
 
     if (this.debugText) {
       const p = this.simState.player;
