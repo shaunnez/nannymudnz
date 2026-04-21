@@ -69,6 +69,11 @@ GUILD_OVERRIDES: dict[str, dict[str, str]] = {
         "animating-bb2f5c21": "ability_3",
         "animating-331eb417": "ability_4",
     },
+    "adventurer": {
+        "animating-41811c0d": "walk",
+        "animating-c4a78727": "ability_3",
+        "animating-77f67db7": "ability_4",
+    },
 }
 
 LOOP_ANIMS = {"idle", "walk", "run", "block", "ability_5"}
