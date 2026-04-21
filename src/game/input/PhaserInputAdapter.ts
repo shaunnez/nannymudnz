@@ -1,44 +1,51 @@
-import type { InputState } from '../simulation/types';
-import type { KeyBindings } from './keyBindings';
+import type Phaser from 'phaser';
+import type { InputState } from '../../simulation/types';
+import { loadKeyBindings, type KeyBindings } from '../../input/keyBindings';
 
-export class InputManager {
-  private keys: Set<string> = new Set();
-  private justPressed: Set<string> = new Set();
+/**
+ * Translates Phaser keyboard events into the simulation's InputState.
+ * Behavioral parity with src/input/inputManager.ts: held set, justPressed set,
+ * double-tap run detection within [30ms, 250ms), fullscreen toggle signal,
+ * clearJustPressed() called after every tickSimulation, and a blur reset.
+ *
+ * Listens via scene.input.keyboard (Phaser's plugin) rather than raw window
+ * events so the listeners auto-detach on scene shutdown.
+ */
+export class PhaserInputAdapter {
   private bindings: KeyBindings;
+
+  private keys = new Set<string>();
+  private justPressed = new Set<string>();
 
   private lastLeftPressMs = 0;
   private lastRightPressMs = 0;
   private runningLeft = false;
   private runningRight = false;
 
-  constructor(bindings: KeyBindings) {
-    this.bindings = bindings;
-    this.attachListeners();
+  private keyboard: Phaser.Input.Keyboard.KeyboardPlugin | undefined;
+  private windowBlurHandler: (() => void) | undefined;
+
+  constructor(scene: Phaser.Scene) {
+    this.bindings = loadKeyBindings();
+
+    this.keyboard = scene.input.keyboard ?? undefined;
+    if (!this.keyboard) return;
+
+    this.keyboard.on('keydown', this.onKeyDown);
+    this.keyboard.on('keyup', this.onKeyUp);
+
+    this.windowBlurHandler = () => this.reset();
+    window.addEventListener('blur', this.windowBlurHandler);
   }
 
   updateBindings(bindings: KeyBindings): void {
     this.bindings = bindings;
   }
 
-  private attachListeners(): void {
-    window.addEventListener('keydown', this.onKeyDown);
-    window.addEventListener('keyup', this.onKeyUp);
-    window.addEventListener('blur', this.onBlur);
-  }
-
-  dispose(): void {
-    window.removeEventListener('keydown', this.onKeyDown);
-    window.removeEventListener('keyup', this.onKeyUp);
-    window.removeEventListener('blur', this.onBlur);
-  }
-
-  private onKeyDown = (e: KeyboardEvent): void => {
-    const key = e.key;
-
-    const isGameKey = Object.values(this.bindings).includes(key);
-    if (isGameKey) {
-      e.preventDefault();
-    }
+  private onKeyDown = (event: KeyboardEvent): void => {
+    const key = event.key;
+    const isBound = Object.values(this.bindings).includes(key);
+    if (isBound) event.preventDefault();
 
     if (!this.keys.has(key)) {
       this.justPressed.add(key);
@@ -46,20 +53,19 @@ export class InputManager {
     this.keys.add(key);
   };
 
-  private onKeyUp = (e: KeyboardEvent): void => {
-    this.keys.delete(e.key);
-    const lb = this.bindings.left;
-    const rb = this.bindings.right;
-    if (e.key === lb) this.runningLeft = false;
-    if (e.key === rb) this.runningRight = false;
+  private onKeyUp = (event: KeyboardEvent): void => {
+    const key = event.key;
+    this.keys.delete(key);
+    if (key === this.bindings.left) this.runningLeft = false;
+    if (key === this.bindings.right) this.runningRight = false;
   };
 
-  private onBlur = (): void => {
+  private reset(): void {
     this.keys.clear();
     this.justPressed.clear();
     this.runningLeft = false;
     this.runningRight = false;
-  };
+  }
 
   getInputState(nowMs: number): InputState {
     const b = this.bindings;
@@ -79,14 +85,12 @@ export class InputManager {
 
     if (leftJustPressed) {
       const dt = nowMs - this.lastLeftPressMs;
-      if (dt < 250 && dt > 30) this.runningLeft = true;
-      else this.runningLeft = false;
+      this.runningLeft = dt < 250 && dt > 30;
       this.lastLeftPressMs = nowMs;
     }
     if (rightJustPressed) {
       const dt = nowMs - this.lastRightPressMs;
-      if (dt < 250 && dt > 30) this.runningRight = true;
-      else this.runningRight = false;
+      this.runningRight = dt < 250 && dt > 30;
       this.lastRightPressMs = nowMs;
     }
 
@@ -123,5 +127,18 @@ export class InputManager {
 
   clearJustPressed(): void {
     this.justPressed.clear();
+  }
+
+  dispose(): void {
+    if (this.keyboard) {
+      this.keyboard.off('keydown', this.onKeyDown);
+      this.keyboard.off('keyup', this.onKeyUp);
+      this.keyboard = undefined;
+    }
+    if (this.windowBlurHandler) {
+      window.removeEventListener('blur', this.windowBlurHandler);
+      this.windowBlurHandler = undefined;
+    }
+    this.reset();
   }
 }
