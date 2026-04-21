@@ -11,8 +11,9 @@ import { ActorView } from '../view/ActorView';
 import { ProjectileView } from '../view/ProjectileView';
 import { PickupView } from '../view/PickupView';
 import { consumeVfxEvents } from '../view/ParticleFX';
-import type { Actor, Projectile, Pickup } from '../../simulation/types';
+import type { Actor, Projectile, Pickup, InputState } from '../../simulation/types';
 import type { GameCallbacks } from '../PhaserGame';
+import { AudioManager } from '../../audio/audioManager';
 
 export class GameplayScene extends Phaser.Scene {
   private simState!: SimState;
@@ -24,6 +25,8 @@ export class GameplayScene extends Phaser.Scene {
   private pickupViews = new Map<string, PickupView>();
   private debugText?: Phaser.GameObjects.Text;
   private phaseHandoffFired = false;
+  private audio!: AudioManager;
+  private bossMusicStarted = false;
 
   constructor() {
     super({ key: 'Gameplay' });
@@ -39,6 +42,10 @@ export class GameplayScene extends Phaser.Scene {
     this.phaseHandoffFired = false;
 
     resetController(this.simState, 'player');
+
+    this.audio = new AudioManager();
+    this.bossMusicStarted = false;
+    this.audio.startStageMusic();
 
     this.background = new BackgroundView(this);
 
@@ -70,6 +77,8 @@ export class GameplayScene extends Phaser.Scene {
     this.simState = tickSimulation(this.simState, inputState, dtMs);
     this.inputAdapter.clearJustPressed();
 
+    this.dispatchAudio(prevPhase, inputState);
+
     this.cameras.main.scrollX = this.simState.cameraX;
     this.background.update(this.simState.cameraX);
     this.reconcileActors();
@@ -93,15 +102,43 @@ export class GameplayScene extends Phaser.Scene {
       if (this.simState.phase === 'victory') {
         this.phaseHandoffFired = true;
         const score = this.simState.score;
+        this.audio.stopMusic();
+        this.audio.playVictory();
         this.time.delayedCall(1500, () => this.callbacks.onVictory(score));
         return;
       }
       if (this.simState.phase === 'defeat') {
         this.phaseHandoffFired = true;
+        this.audio.stopMusic();
+        this.audio.playDefeat();
         this.time.delayedCall(1500, () => this.callbacks.onDefeat());
         return;
       }
     }
+  }
+
+  private dispatchAudio(prevPhase: SimState['phase'], inputState: InputState): void {
+    const state = this.simState;
+
+    if (!this.bossMusicStarted && state.bossSpawned) {
+      this.bossMusicStarted = true;
+      this.audio.startBossMusic();
+    }
+
+    const vfx = state.vfxEvents;
+    if (vfx.some(e => e.type === 'hit_spark')) this.audio.playAttack();
+    if (vfx.some(e => e.type === 'heal_glow')) this.audio.playHeal();
+    if (state.player.state === 'blocking') this.audio.playBlock();
+    if (
+      state.player.state === 'jumping' &&
+      state.player.z < 10 &&
+      inputState.jumpJustPressed
+    ) {
+      this.audio.playJump();
+    }
+
+    // Suppress unused-warning when future use arrives.
+    void prevPhase;
   }
 
   private reconcileActors(): void {
@@ -182,5 +219,6 @@ export class GameplayScene extends Phaser.Scene {
     this.pickupViews.clear();
     this.debugText?.destroy();
     this.debugText = undefined;
+    if (this.audio) this.audio.dispose();
   };
 }
