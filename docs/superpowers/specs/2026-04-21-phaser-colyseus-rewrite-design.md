@@ -16,7 +16,7 @@
 - **Rewriting the simulation.** Combat, AI, combo grammar, guild abilities, status effects, waves, and the `Actor` struct all stay. This doc is about plumbing, not mechanics.
 - **Rewriting menus.** The in-progress screen port (`docs/superpowers/specs/2026-04-20-screen-port-design.md`) continues in React. Phaser only owns the gameplay scene.
 - **Replacing React.** React remains the shell and screen router. Phaser mounts into a `<canvas>` inside `GameScreen.tsx`, the way the current renderer already does.
-- **Replacing Vite or the build system.** Phaser ships ESM; it drops in.
+- **Replacing Vite or the build system.** Phaser 3 ships ESM and is compatible with Vite; expect a small `optimizeDeps.include: ['phaser']` entry and possibly `define: { 'typeof CANVAS_RENDERER': 'true', 'typeof WEBGL_RENDERER': 'true' }` to strip dead renderers from the bundle, but no build-tool replacement.
 - **Client-side prediction / rollback netcode in the first cut.** Phase 4 ships with server-authoritative input dispatch + state reconciliation; prediction is a follow-up.
 - **Godot.** Evaluated and rejected: rewriting ~3k LOC of TS simulation into GDScript/C# to gain tooling wins is net-negative when multiplayer is a hard requirement and Colyseus wants TS on the server.
 - **Mobile/touch input.** Keyboard-first, as today.
@@ -26,21 +26,66 @@
 
 The phases are ordered so each one ships a working game. Nothing is merged half-done.
 
-### Phase 1 — Simulation purity pass (~2–3 days)
+### Phase 1 — Simulation purity pass (~3–5 days)
 
-No visible change. Game plays identically. Typecheck stays green. This is the tax that keeps Phase 4 cheap.
+No externally-visible change. Game plays identically to a human tester. Typecheck stays green. This is the tax that keeps Phase 4 cheap. The estimate is larger than the first draft because the audit below turned up more sites than expected.
 
-**Changes:**
+**1. Kill `setTimeout` inside simulation (2 sites):**
 
-- `src/simulation/simulation.ts:759` — dodge recovery currently uses `setTimeout`. Replace with `dodgeMs` on the `PlayerController` and recover inside `tickSimulation`.
-- `src/simulation/ai.ts:286` — boss lunge uses `setTimeout` to zero `vx`. Replace with a `lungeMs` field on `AIState` and decrement in `tickBossAI`.
-- `src/simulation/simulation.ts:298`, `ai.ts:104` — projectile IDs use `Date.now()` / counter mix. Replace with a `nextProjectileId` counter on `SimState`. IDs must be deterministic from `(tick, seq)`.
-- `src/simulation/simulation.ts:193` — the module-level `controllers: Map<string, PlayerController>` must move. Per-actor controller state belongs on `SimState.controllers: Record<string, PlayerController>` (or on the `Actor` itself for fields that only matter per-actor). `resetController` becomes a function on the state, not a singleton side-effect.
-- **Seeded RNG.** Add `src/simulation/rng.ts` exporting `makeRng(seed: number): () => number`. Replace every `Math.random()` in `src/simulation/` with `state.rng()`. `SimState` gains `rngSeed: number` (serialized) and a non-serialized `rng: () => number` that `tickSimulation` reconstructs at entry each tick from `(rngSeed, tick)` so snapshots are reproducible and Colyseus Schema never has to carry a function.
-- **Non-serializable fields.** `Projectile.hitActorIds: Set<string>` → `hitActorIds: string[]`. Audit any other `Set`/`Map`/`Date` instances in simulation types.
-- **No DOM references.** Grep confirms there are none today; add an ESLint rule (`no-restricted-globals`: `window`, `document`, `localStorage`, `setTimeout`, `setInterval`, `Date`) scoped to `src/simulation/**` so regressions fail lint.
+- `src/simulation/simulation.ts:759` — dodge recovery. Replace with a `dodgeMs` countdown on the `PlayerController` and recover inside `tickSimulation`.
+- `src/simulation/ai.ts:286` — boss lunge zeroes `vx` after 300ms. Replace with a `lungeMs` field on `AIState`, decrement in `tickBossAI`.
 
-**Done when:** `npm run typecheck` passes, gameplay is bit-for-bit equivalent (spot-check), and the ESLint gate is green.
+**2. Deterministic IDs (all `Date.now()` and module-level counters):**
+
+- `src/simulation/simulation.ts:298` (projectile from ability), `:807` (thrown pickup), `:933` (pickup drop) — all use `Date.now()`.
+- `src/simulation/ai.ts:328` (spawned enemy id) uses `Date.now() + Math.random()`.
+- `src/simulation/ai.ts:104` (archer projectile) uses module-level `projIdCounter` — different mechanism, same problem.
+- `src/simulation/simulation.ts:22` — `actorIdCounter` is module-level.
+- `src/simulation/combat.ts:5` — `effectIdCounter` is module-level.
+- `src/simulation/simulation.ts:543` — `state_timeTracker` (champion bloodtally decay) is module-level.
+
+  All of these move to `SimState`: `nextActorId`, `nextProjectileId`, `nextPickupId`, `nextEffectId`, `bloodtallyDecayMs`. IDs get produced as `` `${kind}_${state.nextFooId++}` ``. Any helper that currently takes an id (`spawnEnemyAt`, `addStatusEffect`, etc.) receives the relevant counter or mutates `state` directly.
+
+**3. Lift module-level controller state:**
+
+- `src/simulation/simulation.ts:193` — `const controllers = new Map<string, PlayerController>()`. This breaks for multiple players in the same process (server-side) and leaks across retries (already a bug today, mitigated by `resetController`). Move to `SimState.controllers: Record<string, PlayerController>`. `resetController` becomes `(state: SimState, playerId: string) => void`. `getOrCreateController` takes `state` as its first argument.
+
+**4. Seeded RNG:**
+
+- Add `src/simulation/rng.ts` exporting `makeRng(seed: number): () => number` (simple LCG or mulberry32, ~20 LOC).
+- `SimState` gains `rngSeed: number` (serialized) and a non-serialized `rng: () => number` that `tickSimulation` reconstructs at entry each tick from `(rngSeed, tick)`. Keeps snapshots reproducible; Colyseus Schema never carries a function.
+- Replace every `Math.random()` in `src/simulation/` with `state.rng()`. There are ~15 sites:
+  - `simulation.ts:141, 143` (initial controller — `lastActionMs` jitter, `packRole` coin-flip)
+  - `simulation.ts:454` (basic-attack damage variance)
+  - `simulation.ts:583` (wave spawn-Y scatter)
+  - `simulation.ts:621` (projectile-hit crit roll)
+  - `simulation.ts:908` (leper miasma DoT gate), `:931, :933` (pickup drop roll and id)
+  - `combat.ts:26` (`calcDamage` variance), `:36` (`checkCrit`)
+  - `ai.ts:94` (melee damage jitter), `:284, :293` (boss dash/AoE rolls), `:320` (bandit spawn offset), `:368, :370` (spawn controller init)
+- `checkCrit` and `calcDamage` in `combat.ts` must now accept `rng: () => number` as a parameter (they don't currently see `state`). Callers pass `state.rng`.
+
+**5. Non-serializable fields:**
+
+- `Projectile.hitActorIds: Set<string>` → `hitActorIds: string[]` (use `includes`/`push`; pierce sets are ≤ a handful of entries).
+- Re-audit `src/simulation/types.ts` for any `Set`, `Map`, `Date`, or class instances; plain objects/arrays/primitives only.
+
+**6. Lint gate:**
+
+- Add an `eslint.config.js` override scoped to `src/simulation/**`:
+  - `no-restricted-globals`: ban `window`, `document`, `localStorage`, `setTimeout`, `setInterval`, `Date`, `performance`. (These catch global references; grep confirms DOM names are absent today, but the rule prevents regressions.)
+  - `no-restricted-syntax`: additional selector to ban `Math.random()` — `CallExpression[callee.object.name='Math'][callee.property.name='random']`. Without this selector, the RNG discipline is unenforced, because `Math.random` is a property access, not a restricted global. The existing `no-restricted-globals` list cannot catch it on its own.
+- Lint must fail CI for these rules, not warn.
+
+**7. Golden-state reproducibility test:**
+
+- Add a lightweight test runner (see Decisions) and `src/simulation/__tests__/golden.ts`: tick a scripted `InputState` sequence for N frames with a fixed seed, snapshot `SimState`, assert deep-equality on a second run. This is the only way to keep Phase 1 honest — without it the purity claims rot silently.
+
+**Done when:**
+
+- `npm run typecheck` passes.
+- `npm run lint` passes with the new `src/simulation/**` override.
+- Golden-state test passes (same seed + same inputs → identical `SimState`).
+- A human tester spot-checks a few minutes of play and can't distinguish it from the pre-change build. Note: this is *subjectively* indistinguishable, not byte-identical — swapping `Math.random()` for a seeded stream necessarily produces different specific rolls.
 
 ### Phase 2 — Phaser port (~1–2 weeks)
 
@@ -78,6 +123,7 @@ src/
 - Parallax background becomes a `TileSprite` layer per hill plus a gradient image; camera follows `state.cameraX`.
 - HUD (`src/rendering/hud.ts`) reimplements on `HudScene` using Phaser text + graphics + the existing tween engine for damage-number float-up.
 - `vfxEvents` consumption moves into `GameplayScene` — `hit_spark` / `aoe_pop` / `blink_trail` / `damage_number` each map to a Phaser tween or particle emitter.
+- **Audio triggers move too.** The `audio.playAttack()` / `playHeal()` / `playBlock()` / `playJump()` calls currently living in `GameScreen.tsx`'s rAF loop (which inspect `state.vfxEvents` and `state.player.state`) move into `GameplayScene.update` after the tick runs. React no longer has per-tick state to read, so it cannot drive audio. `AudioManager` itself is unchanged — only the call sites relocate.
 
 **Sprite pipeline:**
 
@@ -133,7 +179,8 @@ Lift the simulation to a shared package. Run it on the server. Client becomes a 
 │   │   │   └── StateSync.ts         applies Schema deltas → local SimState mirror
 │   │   └── scenes/GameplayScene.ts MODIFIED — does not call tickSimulation;
 │   │                                subscribes to room state and renders
-│   └── simulation/             DELETED (re-exported from packages/shared)
+│   └── simulation/             MOVED — every `src/` import migrates to
+│                                `@nannymud/shared/simulation`. No shim.
 └── package.json                workspaces: ["packages/*"]
 ```
 
@@ -145,23 +192,36 @@ Lift the simulation to a shared package. Run it on the server. Client becomes a 
 
 **Client changes:**
 
-- `GameplayScene` swaps its `tickSimulation` call for a subscription: when `room.state` changes, diff actors against the local `ActorView` map (same reconcile code as Phase 2).
-- Input: `PhaserInputAdapter` still produces an `InputState`, but instead of feeding it into a local `tickSimulation`, it ships it over the room socket. The game still runs locally until the first patch arrives, so there's no blank-screen latency on connect.
-- Client-side prediction (reconciling `room.state` against a locally-ticked copy with rollback) is deliberately deferred. First cut is pure server-authoritative; feel is evaluated, and prediction is added only if latency demands it.
+- `GameplayScene` stops calling `tickSimulation`. Instead it subscribes to `room.state`: on every patch it diffs actors against the local `ActorView` map (the same reconcile code written in Phase 2) and interpolates transforms between patches so 20 Hz patches don't look choppy at 60 FPS.
+- `PhaserInputAdapter` still produces an `InputState` each frame, but instead of feeding it into a local `tickSimulation`, it ships it via `room.send('input', InputState)`.
+- Between connect and the first patch there is **no local simulation**. The scene renders a "Connecting…" overlay until `room.onStateChange.once` fires. This is a deliberate choice for the first cut; it keeps the client trivially correct.
+- Client-side prediction (locally ticking a mirror and rolling back on server reconciliation) is explicitly a follow-up. The overlay gets replaced by prediction only when measured latency makes it necessary. This is the single design lever we can pull if the server-authoritative feel is too laggy.
 
 **Done when:** two browsers can connect to a local Colyseus server, pick guilds, and play the same match with server-authoritative combat and state sync.
 
 ## Architecture boundaries (post-rewrite)
 
-Same one-way dep flow as today, one new tier:
+Same one-way dep flow as today, with Colyseus slotted between the authoritative simulation (server) and the rendering client. The client holds a read-only `SimState` mirror populated by `ColyseusClient`; everything on the client reads from that mirror.
 
 ```
-input/  ──►  simulation/  ◄── (read-only) ──  game/ (Phaser views)
-                  ▲                                ▲
-                  │                                │
-           packages/server (Colyseus)    ColyseusClient
-                                                   │
-audio/  ──────────────────────────────────────────┘ (reads VFX events + phase transitions)
+SERVER (packages/server)
+  packages/server ──owns──► packages/shared/simulation
+                                    │
+                                    │ tickSimulation()
+                                    ▼
+                              room.state (Schema)
+                                    │
+                                    │ patches (20 Hz)
+                                    ▼
+─────────────────────────────────────────────────────────
+CLIENT (src/)
+  PhaserInputAdapter ──► ColyseusClient ──► client SimState mirror
+                              ▲                      │
+                              │                      ├──► game/ (Phaser views, read-only)
+                              │                      │
+                              │                      └──► audio/ (reads vfxEvents + phase)
+                              │
+                       InputState over socket
 ```
 
 Rules that stay enforced:
@@ -175,7 +235,11 @@ Rules that stay enforced:
 
 - **Phaser 3 is a large API surface.** Mitigation: start `GameplayScene` as close to a 1:1 port of `gameRenderer.ts` as possible. Don't opportunistically adopt Phaser physics, Phaser cameras' bounds system, or scene transitions in Phase 2. Idioms can land in Phase 3.
 - **Simulation "pure" cleanup is easy to get wrong.** Mitigation: a small golden-state test — tick a scripted input sequence for N frames, snapshot `SimState`, assert byte-equality on re-run with the same seed. Land this with Phase 1.
-- **Colyseus Schema has its own mutation rules (arrays/maps are not plain arrays/maps).** Mitigation: keep the tick function pure over plain types in `packages/shared`; the Schema layer is a serialization mirror, updated from the plain state after each tick. Accept the double-write cost on day one; optimize if it profiles hot.
+- **Colyseus Schema vs. plain `SimState`.** Colyseus emits deltas based on Schema mutations. If the tick function mutates plain TS objects, there are three ways to feed the Schema, each with different costs; we do not pick one in this spec because the right answer depends on profiling and the size of `SimState` after Phase 3:
+  1. **Mutate the Schema in place inside `tickSimulation`.** Purest delta stream, smallest bandwidth. Contaminates the simulation with `@colyseus/schema` runtime types, which is the opposite of why we lifted it to `packages/shared` — this leaks a transport concern into the logic layer.
+  2. **Run tick against plain types, then apply a plain→Schema diff.** Keeps the simulation pure. Needs a diff/applier utility (~200 LOC, not trivial) that understands every collection field. Delta stream is correct; CPU cost is one extra pass per tick.
+  3. **Run tick against plain types, overwrite Schema wholesale each tick.** Simplest code; every tick ships full state. Bandwidth grows with actor count — fine for 2-player small matches, probably unacceptable for 4+ players with many projectiles.
+  Decision deferred to Phase 4 kickoff, when we can measure `SimState` size in bytes with real content. Phase 4 plan-doc owns picking one.
 - **Two-phase gap (Phase 2 rendering regression).** Mitigation: Phase 2 is a single branch merged only when feature-parity is reached. Don't ship a half-ported GameplayScene to main.
 - **React + Phaser lifecycle hazards (double-mount in StrictMode, HMR).** Mitigation: destroy the Phaser instance in the effect cleanup; guard with a ref; disable StrictMode for `GameScreen` if necessary.
 
@@ -186,22 +250,24 @@ Rules that stay enforced:
 - **No ECS framework.** The existing `Actor` struct is already flat and allocation-light, per CLAUDE.md. Dropping an ECS in would be a second rewrite disguised as a refactor.
 - **Keep Web Audio synth.** `audioManager.ts` is 232 LOC and works. Phaser's audio system isn't a strict upgrade for synthesized SFX. Revisit only if sampled audio arrives.
 - **Keep React menus.** The in-progress screen port is the right shape; Phaser gameplay slots under the existing `screen === 'game'` branch.
+- **Adopt Vitest** as the test runner for the golden-state test and whatever follows. CLAUDE.md currently says no test runner is configured; this spec adds one. Vitest chosen over `node --test` because it reuses the existing Vite config for TS transforms, runs in watch mode cleanly, and supports the same `import.meta` / ESM idioms the rest of the codebase uses. Script: `npm run test`. Location: `src/**/__tests__/*.test.ts` initially; may relocate to `packages/shared/test/` in Phase 4.
 
-## What Phase 1 ships in concrete terms
+## Phase 1 file summary
 
-This is the one phase close enough to describe file-by-file:
+Phase 1 above names every site. At the file level the touch-map is:
 
-- `src/simulation/rng.ts` — new, ~20 LOC seeded LCG.
-- `src/simulation/types.ts` — `SimState` gains `rngSeed: number`, `rng: () => number`, `nextProjectileId: number`, `controllers: Record<string, PlayerController>`. `Projectile.hitActorIds: string[]`. `AIState` gains `lungeMs: number`.
-- `src/simulation/simulation.ts` — delete module-level `controllers` map, delete `Date.now()` in projectile id, delete `setTimeout` in dodge recovery, replace `Math.random()` calls with `state.rng()`. `resetController` becomes `(state: SimState, playerId: string) => void`.
-- `src/simulation/ai.ts` — `setTimeout` lunge → `lungeMs` state; `Math.random()` → `state.rng()`.
-- `src/simulation/combat.ts` — `Math.random()` → `state.rng()` (requires passing `rng` in, or moving crit roll out — pick the former for minimal diff).
-- `src/simulation/comboBuffer.ts` — already pure, no changes.
-- `src/screens/GameScreen.tsx` — calls `resetController(stateRef.current, 'player')` instead of `resetController('player')`.
-- `eslint.config.js` — add `no-restricted-globals` block scoped to `src/simulation/**`.
-- `src/simulation/__tests__/golden.ts` (optional this phase, required by end of Phase 2) — scripted-input replay test.
+- `src/simulation/rng.ts` — new.
+- `src/simulation/types.ts` — `SimState` gains `rngSeed`, `rng`, `nextActorId`, `nextProjectileId`, `nextPickupId`, `nextEffectId`, `bloodtallyDecayMs`, `controllers`. `Projectile.hitActorIds` becomes `string[]`. `AIState` gains `lungeMs`.
+- `src/simulation/simulation.ts` — largest diff: module-level `controllers`, `actorIdCounter`, `state_timeTracker` all move to `SimState`; `setTimeout` dodge recovery becomes `dodgeMs`; `Date.now()` ids replaced; all `Math.random()` calls threaded through `state.rng`.
+- `src/simulation/ai.ts` — `projIdCounter` moves to `SimState`; boss-lunge `setTimeout` → `lungeMs`; `Date.now()` in `spawnEnemyAt` replaced; `Math.random()` → `state.rng()`.
+- `src/simulation/combat.ts` — `effectIdCounter` moves to `SimState`; `checkCrit` and `calcDamage` gain an `rng: () => number` parameter.
+- `src/simulation/comboBuffer.ts` — already pure.
+- `src/screens/GameScreen.tsx` — one-line diff: `resetController(stateRef.current, 'player')`.
+- `eslint.config.js` — new override for `src/simulation/**` with `no-restricted-globals` + `no-restricted-syntax`.
+- `package.json` + `vitest.config.ts` — add Vitest and `test` script.
+- `src/simulation/__tests__/golden.test.ts` — new reproducibility test.
 
-Phases 2 and 4 need their own plan docs when it's time to execute them; they're too large to pin at the file level from this distance.
+Phase 2 and Phase 4 each need their own plan document when they come up; they're too large to pin at the file level from this distance.
 
 ## Open questions
 
