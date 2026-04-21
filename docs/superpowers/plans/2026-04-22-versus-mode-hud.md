@@ -270,7 +270,7 @@ describe('vsSimulation: resetActorsForRound', () => {
     s.player.hp = 10;
     s.player.mp = 0;
     s.player.statusEffects = [
-      { id: 1, type: 'burn', magnitude: 1, durationMs: 500, sourceId: 'opponent', tickAccumMs: 0 },
+      { id: 'e1', type: 'stun', magnitude: 1, durationMs: 500, remainingMs: 500, source: 'opponent' },
     ];
     s.opponent!.hp = 5;
     s.opponent!.abilityCooldowns['fireball'] = 9_999_999;
