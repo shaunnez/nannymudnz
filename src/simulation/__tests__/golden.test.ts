@@ -15,8 +15,9 @@ function emptyInput(): InputState {
 }
 
 function stripFunctions(state: SimState): Omit<SimState, 'rng'> {
-  const { rng: _rng, ...rest } = state;
-  return rest;
+  const rest: Partial<SimState> = { ...state };
+  delete rest.rng;
+  return rest as Omit<SimState, 'rng'>;
 }
 
 function scriptedRun(frames: number, seed: number): Omit<SimState, 'rng'> {
