@@ -233,6 +233,16 @@ function consumeResource(player: Actor, cost: number): boolean {
 
 function getAbilityAssetKey(abilityId: string, eventType: VFXEvent['type']): string | undefined {
   switch (abilityId) {
+    case 'holy_rebuke':
+      return eventType === 'aoe_pop' ? 'holy_rebuke_burst' : undefined;
+    case 'valorous_strike':
+      return eventType === 'hit_spark' ? 'valorous_strike_impact' : undefined;
+    case 'taunt':
+      return eventType === 'aoe_pop' ? 'taunt_shout' : undefined;
+    case 'shield_wall':
+      return eventType === 'aura_pulse' ? 'shield_wall_barrier' : undefined;
+    case 'last_stand':
+      return eventType === 'aura_pulse' ? 'last_stand_aura' : undefined;
     case 'plague_vomit':
       return eventType === 'aoe_pop' ? 'plague_vomit_burst' : undefined;
     case 'diseased_claw':
@@ -249,6 +259,15 @@ function getAbilityAssetKey(abilityId: string, eventType: VFXEvent['type']): str
       return eventType === 'aura_pulse' ? 'miasma_aura' : undefined;
     default:
       return undefined;
+  }
+}
+
+function getPrimaryAreaVfxType(abilityId: string): 'aoe_pop' | 'aura_pulse' {
+  switch (abilityId) {
+    case 'shield_wall':
+      return 'aura_pulse';
+    default:
+      return 'aoe_pop';
   }
 }
 
@@ -404,8 +423,9 @@ function fireAbility(player: Actor, ability: AbilityDef, state: SimState, ctrl: 
       : player.guildId === 'leper' && ability.id === 'rotting_tide'
         ? player.z + player.height * 0.82
       : undefined;
+    const areaVfxType = getPrimaryAreaVfxType(ability.id);
     pushAbilityVfx(state.vfxEvents, player, ability, {
-      type: 'aoe_pop',
+      type: areaVfxType,
       x: aoeVfxX,
       y: player.y,
       ...(aoeVfxZ !== undefined ? { z: aoeVfxZ } : {}),
@@ -513,6 +533,16 @@ function fireAbility(player: Actor, ability: AbilityDef, state: SimState, ctrl: 
       y: player.y,
       z: player.z + player.height * 0.62,
       radius: ability.aoeRadius || 90,
+    });
+  }
+
+  if (player.guildId === 'knight' && ability.id === 'last_stand') {
+    pushAbilityVfx(state.vfxEvents, player, ability, {
+      type: 'aura_pulse',
+      x: player.x,
+      y: player.y,
+      z: player.z + player.height * 0.7,
+      radius: 118,
     });
   }
 
