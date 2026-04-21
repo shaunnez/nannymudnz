@@ -7,6 +7,8 @@ import {
 } from '../../simulation/simulation';
 import { PhaserInputAdapter } from '../input/PhaserInputAdapter';
 import { BackgroundView } from '../view/BackgroundView';
+import { ActorView } from '../view/ActorView';
+import type { Actor } from '../../simulation/types';
 import type { GameCallbacks } from '../PhaserGame';
 
 export class GameplayScene extends Phaser.Scene {
@@ -14,6 +16,7 @@ export class GameplayScene extends Phaser.Scene {
   private inputAdapter!: PhaserInputAdapter;
   private callbacks!: GameCallbacks;
   private background!: BackgroundView;
+  private actorViews = new Map<string, ActorView>();
   private debugText?: Phaser.GameObjects.Text;
   private phaseHandoffFired = false;
 
@@ -64,6 +67,7 @@ export class GameplayScene extends Phaser.Scene {
 
     this.cameras.main.scrollX = this.simState.cameraX;
     this.background.update(this.simState.cameraX);
+    this.reconcileActors();
 
     if (this.debugText) {
       const p = this.simState.player;
@@ -91,10 +95,38 @@ export class GameplayScene extends Phaser.Scene {
     }
   }
 
+  private reconcileActors(): void {
+    const live: Actor[] = [
+      this.simState.player,
+      ...this.simState.allies,
+      ...this.simState.enemies,
+    ];
+    const seen = new Set<string>();
+
+    for (const actor of live) {
+      seen.add(actor.id);
+      let view = this.actorViews.get(actor.id);
+      if (!view) {
+        view = new ActorView(this, actor);
+        this.actorViews.set(actor.id, view);
+      }
+      view.syncFrom(actor);
+    }
+
+    for (const [id, view] of this.actorViews) {
+      if (!seen.has(id)) {
+        view.destroy();
+        this.actorViews.delete(id);
+      }
+    }
+  }
+
   private onShutdown = (): void => {
     if (this.simState) resetController(this.simState, 'player');
     if (this.inputAdapter) this.inputAdapter.dispose();
     if (this.background) this.background.destroy();
+    for (const view of this.actorViews.values()) view.destroy();
+    this.actorViews.clear();
     this.debugText?.destroy();
     this.debugText = undefined;
   };
