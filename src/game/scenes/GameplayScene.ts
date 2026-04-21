@@ -6,12 +6,14 @@ import {
   resetController,
 } from '../../simulation/simulation';
 import { PhaserInputAdapter } from '../input/PhaserInputAdapter';
+import { BackgroundView } from '../view/BackgroundView';
 import type { GameCallbacks } from '../PhaserGame';
 
 export class GameplayScene extends Phaser.Scene {
   private simState!: SimState;
   private inputAdapter!: PhaserInputAdapter;
   private callbacks!: GameCallbacks;
+  private background!: BackgroundView;
   private debugText?: Phaser.GameObjects.Text;
   private phaseHandoffFired = false;
 
@@ -29,6 +31,8 @@ export class GameplayScene extends Phaser.Scene {
     this.phaseHandoffFired = false;
 
     resetController(this.simState, 'player');
+
+    this.background = new BackgroundView(this);
 
     this.scene.launch('Hud');
 
@@ -57,6 +61,9 @@ export class GameplayScene extends Phaser.Scene {
     const prevPhase = this.simState.phase;
     this.simState = tickSimulation(this.simState, inputState, dtMs);
     this.inputAdapter.clearJustPressed();
+
+    this.cameras.main.scrollX = this.simState.cameraX;
+    this.background.update(this.simState.cameraX);
 
     if (this.debugText) {
       const p = this.simState.player;
@@ -87,6 +94,7 @@ export class GameplayScene extends Phaser.Scene {
   private onShutdown = (): void => {
     if (this.simState) resetController(this.simState, 'player');
     if (this.inputAdapter) this.inputAdapter.dispose();
+    if (this.background) this.background.destroy();
     this.debugText?.destroy();
     this.debugText = undefined;
   };
