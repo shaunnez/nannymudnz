@@ -1,15 +1,22 @@
 // Render-only constants, owned by the Phaser layer.
-// Re-exports from src/rendering/constants.ts during Phase 2; Task 15 deletes
-// the old file and makes this the canonical home.
+// Never imported by anything under src/simulation/.
 
-export {
-  VIRTUAL_WIDTH,
-  VIRTUAL_HEIGHT,
-  CANVAS_BUFFER_WIDTH,
-  CANVAS_BUFFER_HEIGHT,
-  RENDER_SCALE,
-  DEPTH_SCALE,
-  WORLD_Y_MIN,
-  WORLD_Y_MAX,
-  worldYToScreenY,
-} from '../rendering/constants';
+// The virtual coordinate space Phaser scenes draw into. Phaser.Scale.FIT
+// scales this up to whatever the browser gives us while preserving 16:9.
+export const VIRTUAL_WIDTH = 900;
+export const VIRTUAL_HEIGHT = 506;
+
+// Elevation (world-z → screen-y) falloff factor.
+export const DEPTH_SCALE = 0.6;
+
+// Depth-axis projection. Simulation y is a depth plane in [WORLD_Y_MIN, WORLD_Y_MAX];
+// rendering maps that onto the vertical "stage" band of the canvas.
+export const WORLD_Y_MIN = 60;
+export const WORLD_Y_MAX = 380;
+
+export function worldYToScreenY(worldY: number, canvasHeight: number): number {
+  const screenYMin = canvasHeight * 0.42;
+  const screenYMax = canvasHeight * 0.92;
+  const t = (worldY - WORLD_Y_MIN) / (WORLD_Y_MAX - WORLD_Y_MIN);
+  return screenYMin + t * (screenYMax - screenYMin);
+}
