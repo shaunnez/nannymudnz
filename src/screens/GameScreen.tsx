@@ -1,12 +1,15 @@
-import { useEffect, useRef, type MouseEvent } from 'react';
+import { useCallback, useEffect, useRef, useState, type MouseEvent } from 'react';
 import type { GuildId } from '../simulation/types';
-import { createInitialState, tickSimulation, resetController, forcePause } from '../simulation/simulation';
+import { createInitialState, tickSimulation, resetController, forcePause, forceResume } from '../simulation/simulation';
+import { PauseOverlay } from './PauseOverlay';
+import { GuildDetails } from './GuildDetails';
 import { createComboBuffer } from '../simulation/comboBuffer';
 import { useFullscreen } from '../layout/useFullscreen';
 import { FULLSCREEN_EXIT_EVENT } from '../layout/fullscreenConstants';
 import { GameRenderer } from '../rendering/gameRenderer';
 import { loadGuildSpriteSet } from '../rendering/sprite/spriteLoader';
 import { SpriteActorRenderer } from '../rendering/sprite/spriteActorRenderer';
+import { loadGuildVfxSet } from '../rendering/vfx/vfxLoader';
 import { hitTestHudButton } from '../rendering/hudButtons';
 import {
   CANVAS_BUFFER_WIDTH,
@@ -40,6 +43,12 @@ export function GameScreen({ guildId, onVictory, onDefeat, onQuit }: Props) {
   const onQuitRef = useRef(onQuit);
   const onVictoryRef = useRef(onVictory);
   const onDefeatRef = useRef(onDefeat);
+
+  const [isPaused, setIsPaused] = useState(false);
+  const restartTokenRef = useRef(0);
+  const [restartToken, setRestartToken] = useState(0);
+  const [showMoves, setShowMoves] = useState(false);
+  const pausedByMovesRef = useRef(false);
 
   const { isFullscreen, toggle: toggleFullscreen } = useFullscreen();
   const toggleFullscreenRef = useRef(toggleFullscreen);
@@ -78,9 +87,14 @@ export function GameScreen({ guildId, onVictory, onDefeat, onQuit }: Props) {
     audio.startStageMusic();
 
     let cancelled = false;
+    rendererRef.current.setVfxSet(null);
     loadGuildSpriteSet(guildId).then((set) => {
       if (cancelled || !set) return;
       rendererRef.current.setActorRenderer(new SpriteActorRenderer(set));
+    });
+    loadGuildVfxSet(guildId).then((set) => {
+      if (cancelled) return;
+      rendererRef.current.setVfxSet(set);
     });
 
     const gameLoop = (timestamp: number) => {
@@ -103,6 +117,11 @@ export function GameScreen({ guildId, onVictory, onDefeat, onQuit }: Props) {
       const state = stateRef.current;
 
       input.clearJustPressed();
+
+      if (prevPhase !== state.phase) {
+        if (state.phase === 'paused') setIsPaused(true);
+        else if (state.phase === 'playing') setIsPaused(false);
+      }
 
       if (!bossWasMusicStarted.current && state.bossSpawned) {
         bossWasMusicStarted.current = true;
@@ -157,7 +176,47 @@ export function GameScreen({ guildId, onVictory, onDefeat, onQuit }: Props) {
       audio.dispose();
       resetController(stateRef.current, 'player');
     };
-  }, [guildId]);
+  }, [guildId, restartToken]);
+
+  const handleResume = useCallback(() => {
+    stateRef.current = forceResume(stateRef.current);
+    setIsPaused(false);
+  }, []);
+
+  const handleRestart = useCallback(() => {
+    restartTokenRef.current += 1;
+    setRestartToken(restartTokenRef.current);
+    setIsPaused(false);
+  }, []);
+
+  const closeMoves = useCallback(() => {
+    setShowMoves(false);
+    if (pausedByMovesRef.current) {
+      stateRef.current = forceResume(stateRef.current);
+      setIsPaused(false);
+      pausedByMovesRef.current = false;
+    }
+  }, []);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Tab') return;
+      e.preventDefault();
+      if (showMoves) {
+        closeMoves();
+        return;
+      }
+      if (stateRef.current.phase !== 'playing' && stateRef.current.phase !== 'paused') return;
+      if (stateRef.current.phase === 'playing') {
+        stateRef.current = forcePause(stateRef.current);
+        setIsPaused(true);
+        pausedByMovesRef.current = true;
+      }
+      setShowMoves(true);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [closeMoves, showMoves]);
 
   const handleCanvasClick = (e: MouseEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
@@ -202,6 +261,14 @@ export function GameScreen({ guildId, onVictory, onDefeat, onQuit }: Props) {
         tabIndex={0}
         onClick={handleCanvasClick}
       />
+      {isPaused && !showMoves && (
+        <PauseOverlay
+          onResume={handleResume}
+          onRestart={handleRestart}
+          onQuit={onQuit}
+        />
+      )}
+      {showMoves && <GuildDetails guildId={guildId} onClose={closeMoves} />}
     </div>
   );
 }

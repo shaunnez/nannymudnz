@@ -11,6 +11,7 @@ function emptyInput(): InputState {
     pauseJustPressed: false, fullscreenToggleJustPressed: false,
     lastLeftPressMs: 0, lastRightPressMs: 0,
     runningLeft: false, runningRight: false,
+    testAbilitySlot: null,
   };
 }
 

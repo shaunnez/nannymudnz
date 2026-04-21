@@ -24,3 +24,6 @@ dist-ssr
 
 .worktrees/
 .playwright-mcp
+dist
+assets-old
+.bolt

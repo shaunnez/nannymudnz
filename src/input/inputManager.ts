@@ -66,6 +66,14 @@ export class InputManager {
     const leftKey = b.left;
     const rightKey = b.right;
 
+    let testAbilitySlot: number | null = null;
+    for (let slot = 1; slot <= 6; slot++) {
+      if (this.justPressed.has(String(slot))) {
+        testAbilitySlot = slot;
+        break;
+      }
+    }
+
     const leftJustPressed = this.justPressed.has(leftKey);
     const rightJustPressed = this.justPressed.has(rightKey);
 
@@ -109,6 +117,7 @@ export class InputManager {
       lastRightPressMs: this.lastRightPressMs,
       runningLeft: this.runningLeft,
       runningRight: this.runningRight,
+      testAbilitySlot,
     };
   }
 

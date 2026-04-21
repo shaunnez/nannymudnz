@@ -2,15 +2,16 @@ import { useState } from 'react';
 import { TitleScreen } from './screens/TitleScreen';
 import { MainMenu } from './screens/MainMenu';
 import { CharSelect } from './screens/CharSelect';
+import { StageSelect } from './screens/StageSelect';
+import { LoadingScreen } from './screens/LoadingScreen';
 import { GameScreen } from './screens/GameScreen';
-import { GameOverScreen } from './screens/GameOverScreen';
+import { ResultsScreen } from './screens/ResultsScreen';
 import { ScalingFrame } from './layout/ScalingFrame';
 import { Scanlines, theme } from './ui';
 import { useAppState } from './state/useAppState';
 
 export default function App() {
   const { state, go, set } = useAppState();
-  const [outcome, setOutcome] = useState<'victory' | 'defeat'>('defeat');
   const [finalScore, setFinalScore] = useState(0);
 
   return (
@@ -44,8 +45,29 @@ export default function App() {
             onBack={() => go('menu')}
             onReady={(p1, p2) => {
               set({ p1, p2 });
-              go('game');
+              go('stage');
             }}
+          />
+        )}
+
+        {state.screen === 'stage' && (
+          <StageSelect
+            initialStage={state.stageId}
+            onBack={() => go('charselect')}
+            onReady={(stageId) => {
+              set({ stageId });
+              go('loading');
+            }}
+          />
+        )}
+
+        {state.screen === 'loading' && (
+          <LoadingScreen
+            p1={state.p1}
+            p2={state.p2}
+            stageId={state.stageId}
+            showOpponent={state.mode === 'vs'}
+            onDone={() => go('game')}
           />
         )}
 
@@ -53,12 +75,13 @@ export default function App() {
           <GameScreen
             guildId={state.p1}
             onVictory={(score) => {
-              setOutcome('victory');
               setFinalScore(score);
+              set({ winner: 'P1' });
               go('results');
             }}
             onDefeat={() => {
-              setOutcome('defeat');
+              setFinalScore(0);
+              set({ winner: 'P2' });
               go('results');
             }}
             onQuit={() => go('menu')}
@@ -66,10 +89,12 @@ export default function App() {
         )}
 
         {state.screen === 'results' && (
-          <GameOverScreen
-            outcome={outcome}
+          <ResultsScreen
+            p1={state.p1}
+            p2={state.p2}
+            winner={state.winner ?? 'P2'}
             score={finalScore}
-            onRetry={() => go('game')}
+            onRematch={() => go('loading')}
             onMenu={() => go('menu')}
           />
         )}

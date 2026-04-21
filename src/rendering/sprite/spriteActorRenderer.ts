@@ -2,7 +2,7 @@ import type { ActorRendererImpl, ActorRenderHandle } from '../actorRenderer';
 import type { GuildSpriteSet } from './types';
 import { resolveAnimation } from './animationFallback';
 
-const DISPLAY_SCALE = 2;
+const DISPLAY_SCALE = 1.5;
 
 interface AnimPlayhead {
   animationId: string;

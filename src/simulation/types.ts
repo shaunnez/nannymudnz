@@ -247,8 +247,21 @@ export interface Projectile {
   hitActorIds: string[];
 }
 
+export type VFXEventType =
+  | 'projectile_spawn'
+  | 'aoe_pop'
+  | 'hit_spark'
+  | 'heal_glow'
+  | 'blink_trail'
+  | 'damage_number'
+  | 'status_text'
+  | 'ability_name'
+  | 'status_mark'
+  | 'channel_pulse'
+  | 'aura_pulse';
+
 export interface VFXEvent {
-  type: 'projectile_spawn' | 'aoe_pop' | 'hit_spark' | 'heal_glow' | 'blink_trail' | 'damage_number' | 'status_text';
+  type: VFXEventType;
   color: string;
   x: number;
   y: number;
@@ -262,6 +275,11 @@ export interface VFXEvent {
   text?: string;
   isCrit?: boolean;
   isHeal?: boolean;
+  guildId?: GuildId | null;
+  abilityId?: string;
+  ownerId?: string;
+  targetId?: string;
+  assetKey?: string;
 }
 
 export interface Wave {
@@ -319,6 +337,7 @@ export interface InputState {
   lastRightPressMs: number;
   runningLeft: boolean;
   runningRight: boolean;
+  testAbilitySlot: number | null;
 }
 
 export interface ComboBuffer {

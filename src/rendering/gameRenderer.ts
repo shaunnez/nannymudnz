@@ -8,6 +8,7 @@ import { renderHUD, renderPauseOverlay, renderControlsHint } from './hud';
 import { renderHudButtons } from './hudButtons';
 import type { ComboBuffer } from '../simulation/types';
 import { worldYToScreenY } from './constants';
+import type { GuildVfxSet } from './vfx/types';
 
 const GUILD_COLORS: Record<string, { color: string; initial: string }> = {};
 for (const g of GUILDS) {
@@ -31,6 +32,10 @@ export class GameRenderer {
 
   setActorRenderer(impl: ActorRendererImpl): void {
     this.actorRenderer = impl;
+  }
+
+  setVfxSet(set: GuildVfxSet | null): void {
+    this.particles.setVfxSet(set);
   }
 
   render(

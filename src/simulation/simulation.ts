@@ -1,6 +1,6 @@
 import type {
   SimState, Actor, InputState, GuildId, Projectile,
-  AbilityDef, ActorKind, PlayerController,
+  AbilityDef, ActorKind, PlayerController, StatusEffectType, VFXEvent,
 } from './types';
 import { getGuild } from './guildData';
 import { makeRng } from './rng';
@@ -231,6 +231,43 @@ function consumeResource(player: Actor, cost: number): boolean {
   return true;
 }
 
+function getAbilityAssetKey(abilityId: string, eventType: VFXEvent['type']): string | undefined {
+  switch (abilityId) {
+    case 'plague_vomit':
+      return eventType === 'aoe_pop' ? 'plague_vomit_burst' : undefined;
+    case 'diseased_claw':
+      return eventType === 'hit_spark' ? 'diseased_claw_impact' : undefined;
+    case 'necrotic_embrace':
+      return eventType === 'heal_glow' ? 'necrotic_embrace_drain' : undefined;
+    case 'contagion':
+      return eventType === 'status_mark' ? 'contagion_mark' : undefined;
+    case 'rotting_tide':
+      if (eventType === 'aoe_pop') return 'rotting_tide_burst';
+      if (eventType === 'channel_pulse') return 'rotting_tide_channel';
+      return undefined;
+    case 'miasma':
+      return eventType === 'aura_pulse' ? 'miasma_aura' : undefined;
+    default:
+      return undefined;
+  }
+}
+
+function pushAbilityVfx(
+  events: VFXEvent[],
+  player: Actor,
+  ability: AbilityDef,
+  event: Omit<VFXEvent, 'guildId' | 'abilityId' | 'ownerId' | 'color'> & { color?: string },
+): void {
+  events.push({
+    ...event,
+    color: event.color ?? ability.vfxColor,
+    guildId: player.guildId,
+    abilityId: ability.id,
+    ownerId: player.id,
+    assetKey: event.assetKey ?? getAbilityAssetKey(ability.id, event.type),
+  });
+}
+
 function fireAbility(player: Actor, ability: AbilityDef, state: SimState, ctrl: PlayerController): void {
   if (isSilenced(player)) {
     state.vfxEvents.push({ type: 'status_text', color: '#ef4444', x: player.x, y: player.y - 80, text: 'Silenced!' });
@@ -252,17 +289,38 @@ function fireAbility(player: Actor, ability: AbilityDef, state: SimState, ctrl: 
 
   player.abilityCooldowns[cdKey] = now + ability.cooldownMs;
 
+  state.vfxEvents.push({
+    type: 'ability_name',
+    color: '#fef3c7',
+    x: player.x,
+    y: player.y - player.height - 30,
+    text: ability.name,
+    abilityId: ability.id,
+  });
+
   const dmgMult = getDamageMultiplier(player);
 
   if (ability.isHeal) {
     const healAmt = Math.round((ability.baseDamage + ability.scaleAmount * (ability.scaleStat ? player.stats[ability.scaleStat] : 0)) * dmgMult);
     applyHeal(player, healAmt, state.vfxEvents);
-    state.vfxEvents.push({ type: 'heal_glow', color: ability.vfxColor, x: player.x, y: player.y, z: player.z });
+    pushAbilityVfx(state.vfxEvents, player, ability, {
+      type: 'heal_glow',
+      x: player.x - 10,
+      y: player.y,
+      z: player.z + player.height * 0.6,
+    });
   }
 
   if (ability.isTeleport) {
     const tx = player.x + player.facing * ability.teleportDist;
-    state.vfxEvents.push({ type: 'blink_trail', color: ability.vfxColor, x: player.x, y: player.y, z: player.z, x2: tx, y2: player.y });
+    pushAbilityVfx(state.vfxEvents, player, ability, {
+      type: 'blink_trail',
+      x: player.x,
+      y: player.y,
+      z: player.z,
+      x2: tx,
+      y2: player.y,
+    });
     player.x = Math.max(20, Math.min(3980, tx));
     if (ability.effects.stealth) {
       addStatusEffect(state, player, 'stealth', 1, ability.effects.stealth.durationMs, player.id);
@@ -309,7 +367,14 @@ function fireAbility(player: Actor, ability: AbilityDef, state: SimState, ctrl: 
       };
       state.projectiles.push(proj);
     }
-    state.vfxEvents.push({ type: 'projectile_spawn', color: ability.vfxColor, x: player.x, y: player.y, z: player.z, vx: dir * ability.projectileSpeed, vy: 0 });
+    pushAbilityVfx(state.vfxEvents, player, ability, {
+      type: 'projectile_spawn',
+      x: player.x,
+      y: player.y,
+      z: player.z,
+      vx: dir * ability.projectileSpeed,
+      vy: 0,
+    });
   }
 
   if (ability.aoeRadius > 0 && !ability.isGroundTarget) {
@@ -326,7 +391,13 @@ function fireAbility(player: Actor, ability: AbilityDef, state: SimState, ctrl: 
         applyKnockback(target, ability.knockbackForce || 150, player.facing, true, state.vfxEvents);
       }
     }
-    state.vfxEvents.push({ type: 'aoe_pop', color: ability.vfxColor, x: player.x, y: player.y, z: player.z, radius: ability.aoeRadius });
+    pushAbilityVfx(state.vfxEvents, player, ability, {
+      type: 'aoe_pop',
+      x: player.x - 12,
+      y: player.y,
+      z: player.z + (player.guildId === 'leper' ? player.height * 0.45 : 0),
+      radius: ability.aoeRadius,
+    });
   }
 
   if (!ability.isProjectile && !ability.isHeal && !ability.isTeleport && ability.baseDamage > 0 && !ability.isGroundTarget && ability.aoeRadius === 0) {
@@ -342,13 +413,42 @@ function fireAbility(player: Actor, ability: AbilityDef, state: SimState, ctrl: 
         applyKnockback(target, ability.knockbackForce || 100, player.facing, ability.knockdown, state.vfxEvents);
       }
     }
-    state.vfxEvents.push({ type: 'hit_spark', color: ability.vfxColor, x: player.x + player.facing * 30, y: player.y, z: player.z });
+    pushAbilityVfx(state.vfxEvents, player, ability, {
+      type: 'hit_spark',
+      x: player.x + player.facing * 18 - 6,
+      y: player.y,
+      z: player.z + (player.guildId === 'leper' ? player.height * 0.52 : 0),
+    });
+  }
+
+  if (player.guildId === 'leper' && ability.id === 'contagion') {
+    const targets = state.enemies.filter(e =>
+      e.isAlive &&
+      Math.hypot(e.x - player.x, e.y - player.y) <= (ability.range || 300),
+    );
+    const target = targets.reduce<Actor | null>((best, enemy) => {
+      if (!best) return enemy;
+      return Math.hypot(enemy.x - player.x, enemy.y - player.y) < Math.hypot(best.x - player.x, best.y - player.y)
+        ? enemy
+        : best;
+    }, null);
+    if (target) {
+      applyEffects(ability, target, player, state);
+      pushAbilityVfx(state.vfxEvents, player, ability, {
+        type: 'status_mark',
+        x: target.x,
+        y: target.y,
+        z: target.z + target.height * 0.6,
+        radius: 18,
+        targetId: target.id,
+      });
+    }
   }
 
   if (ability.effects) {
     for (const [etype, edata] of Object.entries(ability.effects)) {
       if (edata && (etype === 'speed_boost' || etype === 'damage_boost' || etype === 'attack_speed_boost' || etype === 'shield' || etype === 'damage_reduction' || etype === 'lifesteal')) {
-        addStatusEffect(state, player, etype as any, edata.magnitude, edata.durationMs, player.id);
+        addStatusEffect(state, player, etype as StatusEffectType, edata.magnitude, edata.durationMs, player.id);
       }
     }
   }
@@ -388,6 +488,13 @@ function fireAbility(player: Actor, ability: AbilityDef, state: SimState, ctrl: 
 
   if (ability.id === 'miasma' && player.guildId === 'leper') {
     player.miasmaActive = !player.miasmaActive;
+    pushAbilityVfx(state.vfxEvents, player, ability, {
+      type: 'aura_pulse',
+      x: player.x - 10,
+      y: player.y,
+      z: player.z + player.height * 0.33,
+      radius: ability.aoeRadius || 90,
+    });
   }
 
   clearCombo(ctrl.comboBuffer);
@@ -396,7 +503,7 @@ function fireAbility(player: Actor, ability: AbilityDef, state: SimState, ctrl: 
 function applyEffects(ability: AbilityDef, target: Actor, source: Actor, state: SimState): void {
   for (const [etype, edata] of Object.entries(ability.effects)) {
     if (!edata) continue;
-    const effectType = etype as any;
+    const effectType = etype as StatusEffectType;
     if (effectType === 'speed_boost' || effectType === 'damage_boost' || effectType === 'shield' || effectType === 'lifesteal' || effectType === 'damage_reduction') continue;
     addStatusEffect(state, target, effectType, edata.magnitude, edata.durationMs, source.id);
   }
@@ -574,7 +681,7 @@ function tickWaves(state: SimState): void {
             state.bossSpawned = true;
           }
 
-          const enemy = createEnemyActor(spawn.kind as string, spawnX, spawnY, state);
+          const enemy = createEnemyActor(spawn.kind, spawnX, spawnY, state);
           if (spawn.kind === 'bandit_king') {
             enemy.stats = { STR: 14, DEX: 10, CON: 18, INT: 8, WIS: 8, CHA: 8 };
           }
@@ -611,7 +718,7 @@ function tickProjectiles(state: SimState, dtSec: number): void {
         state.vfxEvents.push({ type: 'hit_spark', color: proj.color, x: proj.x, y: proj.y, z: proj.z });
 
         for (const [etype, edata] of Object.entries(proj.effects)) {
-          if (edata) addStatusEffect(state, target, etype as any, edata.magnitude, edata.durationMs, proj.ownerId);
+          if (edata) addStatusEffect(state, target, etype as StatusEffectType, edata.magnitude, edata.durationMs, proj.ownerId);
         }
 
         if (proj.knockdown) {
@@ -676,9 +783,22 @@ function handlePlayerInput(state: SimState, input: InputState, ctrl: PlayerContr
   }
 
   if (player.state === 'channeling') {
+    const prevChannelMs = ctrl.channelMs;
     ctrl.channelMs += dtMs;
     const guild = getGuild(player.guildId!);
     const ability = guild.abilities.find(a => a.id === ctrl.channelingAbility) || guild.rmb;
+    if (player.guildId === 'leper' && ability?.id === 'rotting_tide') {
+      const pulseEveryMs = 250;
+      if (Math.floor(prevChannelMs / pulseEveryMs) !== Math.floor(ctrl.channelMs / pulseEveryMs)) {
+        pushAbilityVfx(state.vfxEvents, player, ability, {
+          type: 'channel_pulse',
+          x: player.x - 12,
+          y: player.y,
+          z: player.z + player.height * 0.38,
+          radius: ability.aoeRadius || 180,
+        });
+      }
+    }
     if (ctrl.channelMs >= (ability?.channelDurationMs || 2000)) {
       player.state = 'idle';
       ctrl.channelingAbility = null;
@@ -763,6 +883,16 @@ function handlePlayerInput(state: SimState, input: InputState, ctrl: PlayerContr
     player.vx = 0;
     player.vy = 0;
     return;
+  }
+
+  if (input.testAbilitySlot != null && !isSilenced(player)) {
+    const guild = getGuild(player.guildId!);
+    const slot = input.testAbilitySlot;
+    const ability = slot <= 5 ? guild.abilities[slot - 1] : guild.rmb;
+    if (ability) {
+      fireAbility(player, ability, state, ctrl);
+      return;
+    }
   }
 
   const comboResult = detectComboFromInput(ctrl.comboBuffer, input, now);
@@ -894,6 +1024,17 @@ function handlePlayerInput(state: SimState, input: InputState, ctrl: PlayerContr
   }
 
   if (player.guildId === 'leper' && player.miasmaActive) {
+    const leperRmb = getGuild(player.guildId).rmb;
+    const pulseEveryMs = 350;
+    if (Math.floor((now - dtMs) / pulseEveryMs) !== Math.floor(now / pulseEveryMs)) {
+      pushAbilityVfx(state.vfxEvents, player, leperRmb, {
+        type: 'aura_pulse',
+        x: player.x - 10,
+        y: player.y,
+        z: player.z + player.height * 0.33,
+        radius: leperRmb.aoeRadius || 90,
+      });
+    }
     const miasmaTargets = state.enemies.filter(e => e.isAlive && Math.hypot(e.x - player.x, e.y - player.y) < 90);
     for (const t of miasmaTargets) {
       const dotDmg = (5 + player.stats.CON * 0.2) * dtSec;
@@ -1023,4 +1164,9 @@ export function tickSimulation(state: SimState, input: InputState, dtMs: number)
 export function forcePause(state: SimState): SimState {
   if (state.phase !== 'playing') return state;
   return { ...state, phase: 'paused' };
+}
+
+export function forceResume(state: SimState): SimState {
+  if (state.phase !== 'paused') return state;
+  return { ...state, phase: 'playing' };
 }
