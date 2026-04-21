@@ -1,8 +1,9 @@
 import type {
   SimState, Actor, InputState, GuildId, Projectile,
-  AbilityDef, ActorKind
+  AbilityDef, ActorKind, PlayerController,
 } from './types';
 import { getGuild } from './guildData';
+import { makeRng } from './rng';
 import { ENEMY_DEFS, STAGE_WAVES } from './enemyData';
 import {
   PLAYER_SPAWN_X, PLAYER_SPAWN_Y, ENEMY_SPAWN_Y_RANGE,
@@ -76,6 +77,7 @@ export function createPlayerActor(guildId: GuildId): Actor {
       leapCooldown: 0,
       windupActive: false,
       windupTimeMs: 0,
+      lungeMs: 0,
     },
     bossPhase: 0,
     summonedByPlayer: false,
@@ -146,6 +148,7 @@ function createEnemyActor(kind: string, x: number, y: number): Actor {
       leapCooldown: 0,
       windupActive: false,
       windupTimeMs: 0,
+      lungeMs: 0,
     },
     bossPhase: 0,
     summonedByPlayer: false,
@@ -155,7 +158,7 @@ function createEnemyActor(kind: string, x: number, y: number): Actor {
   };
 }
 
-export function createInitialState(guildId: GuildId): SimState {
+export function createInitialState(guildId: GuildId, seed: number = Date.now()): SimState {
   return {
     tick: 0,
     timeMs: 0,
@@ -172,22 +175,15 @@ export function createInitialState(guildId: GuildId): SimState {
     phase: 'playing',
     bossSpawned: false,
     score: 0,
+    rngSeed: seed,
+    rng: makeRng(seed),
+    nextActorId: 1,
+    nextProjectileId: 1000,
+    nextPickupId: 1,
+    nextEffectId: 1,
+    bloodtallyDecayMs: 0,
+    controllers: {},
   };
-}
-
-interface PlayerController {
-  input: InputState;
-  comboBuffer: ReturnType<typeof createComboBuffer>;
-  lastAttackMs: number;
-  blockingMs: number;
-  dodgeMs: number;
-  parryWindowMs: number;
-  channelMs: number;
-  channelingAbility: string | null;
-  groundTargetX: number;
-  groundTargetY: number;
-  attackChain: number;
-  runningDir: number;
 }
 
 const controllers = new Map<string, PlayerController>();
@@ -315,7 +311,7 @@ function fireAbility(player: Actor, ability: AbilityDef, state: SimState, ctrl: 
         piercing: ability.id === 'arcane_shard',
         color: ability.vfxColor,
         type: ability.id,
-        hitActorIds: new Set(),
+        hitActorIds: [],
       };
       state.projectiles.push(proj);
     }
@@ -614,7 +610,7 @@ function tickProjectiles(state: SimState, dtSec: number): void {
 
     let hit = false;
     for (const target of checkTargets) {
-      if (proj.hitActorIds.has(target.id)) continue;
+      if (proj.hitActorIds.includes(target.id)) continue;
       const dx = Math.abs(target.x - proj.x);
       const dy = Math.abs(target.y - proj.y);
       if (dx <= target.width / 2 + proj.radius && dy <= 30) {
@@ -631,7 +627,7 @@ function tickProjectiles(state: SimState, dtSec: number): void {
         }
 
         if (proj.piercing) {
-          proj.hitActorIds.add(target.id);
+          proj.hitActorIds.push(target.id);
         } else {
           hit = true;
           break;
@@ -824,7 +820,7 @@ function handlePlayerInput(state: SimState, input: InputState, ctrl: PlayerContr
         piercing: false,
         color: pickup.type === 'rock' ? '#9ca3af' : '#92400e',
         type: `thrown_${pickup.type}`,
-        hitActorIds: new Set(),
+        hitActorIds: [],
       };
       state.projectiles.push(proj);
       player.heldPickup = null;

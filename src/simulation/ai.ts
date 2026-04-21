@@ -121,7 +121,7 @@ function spawnProjectile(state: SimState, actor: Actor, target: Actor, damage: n
     piercing: false,
     color: '#d97706',
     type: 'arrow',
-    hitActorIds: new Set(),
+    hitActorIds: [],
   };
   state.projectiles.push(proj);
 }
@@ -373,6 +373,7 @@ function spawnEnemyAt(state: SimState, kind: string, x: number, y: number): void
       leapCooldown: 0,
       windupActive: false,
       windupTimeMs: 0,
+      lungeMs: 0,
     },
     bossPhase: 0,
     summonedByPlayer: false,

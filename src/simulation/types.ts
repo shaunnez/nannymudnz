@@ -210,6 +210,7 @@ export interface AIState {
   leapCooldown: number;
   windupActive: boolean;
   windupTimeMs: number;
+  lungeMs: number;
 }
 
 export interface Pickup {
@@ -243,7 +244,7 @@ export interface Projectile {
   piercing: boolean;
   color: string;
   type: string;
-  hitActorIds: Set<string>;
+  hitActorIds: string[];
 }
 
 export interface VFXEvent {
@@ -286,6 +287,14 @@ export interface SimState {
   phase: 'playing' | 'victory' | 'defeat' | 'paused';
   bossSpawned: boolean;
   score: number;
+  rngSeed: number;
+  rng: () => number;
+  nextActorId: number;
+  nextProjectileId: number;
+  nextPickupId: number;
+  nextEffectId: number;
+  bloodtallyDecayMs: number;
+  controllers: Record<string, PlayerController>;
 }
 
 export interface InputState {
@@ -315,4 +324,19 @@ export interface InputState {
 export interface ComboBuffer {
   entries: { key: string; timeMs: number }[];
   lastKeyMs: number;
+}
+
+export interface PlayerController {
+  input: InputState;
+  comboBuffer: ComboBuffer;
+  lastAttackMs: number;
+  blockingMs: number;
+  dodgeMs: number;
+  parryWindowMs: number;
+  channelMs: number;
+  channelingAbility: string | null;
+  groundTargetX: number;
+  groundTargetY: number;
+  attackChain: number;
+  runningDir: number;
 }
