@@ -1,4 +1,4 @@
-import type { CSSProperties } from 'react';
+import { useState, type CSSProperties } from 'react';
 import type { GuildId } from '../simulation/types';
 import { GUILD_META } from '../data/guildMeta';
 import { theme, guildAccent, guildAccentSoft, guildAccentDim } from './theme';
@@ -20,6 +20,7 @@ export function GuildMonogram({
   const accent = guildAccent(meta.hue);
   const accentSoft = guildAccentSoft(meta.hue);
   const accentDim = guildAccentDim(meta.hue);
+  const [portraitFailed, setPortraitFailed] = useState(false);
 
   return (
     <div
@@ -51,7 +52,25 @@ export function GuildMonogram({
           <span style={cornerStyle(accent, { bottom: 3, right: 3 }, 'br')} />
         </>
       )}
-      <span style={{ position: 'relative', zIndex: 1 }}>{meta.glyph}</span>
+      {portraitFailed ? (
+        <span style={{ position: 'relative', zIndex: 1 }}>{meta.glyph}</span>
+      ) : (
+        <img
+          src={`/sprites/${guildId}/portrait.png`}
+          alt={guildId}
+          onError={() => setPortraitFailed(true)}
+          style={{
+            position: 'absolute',
+            inset: 0,
+            width: '100%',
+            height: '100%',
+            objectFit: 'contain',
+            imageRendering: 'pixelated',
+            zIndex: 1,
+            opacity: dim ? 0.6 : 1,
+          }}
+        />
+      )}
       <div
         style={{
           position: 'absolute',

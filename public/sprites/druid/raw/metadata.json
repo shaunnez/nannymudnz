@@ -1,0 +1,184 @@
+{
+  "character": {
+    "id": "d194d264-b999-4172-9b87-d5da6d490b7a",
+    "name": "Druid LF2-R",
+    "prompt": "druid guild shifter, nature healer-shifter, green and earth-brown hooded robes with leaf and antler motifs, gnarled wooden staff, small animal pelts at shoulders, leather belt with pouches, calm nature-spirit stance, LF2-remastered arcade beat-em-up pixel art style, crisp clean pixel art with flat shading and bold black outlines, side-view fighting game sprite, readable silhouette, no background",
+    "size": {
+      "width": 136,
+      "height": 136
+    },
+    "template_id": "mannequin",
+    "directions": 8,
+    "view": "side",
+    "created_at": "2026-04-21T13:55:42.235114+00:00"
+  },
+  "frames": {
+    "rotations": {
+      "south": "rotations/south.png",
+      "south-east": "rotations/south-east.png",
+      "east": "rotations/east.png",
+      "north-east": "rotations/north-east.png",
+      "north": "rotations/north.png",
+      "north-west": "rotations/north-west.png",
+      "west": "rotations/west.png",
+      "south-west": "rotations/south-west.png"
+    },
+    "animations": {
+      "animating-6f79cae1": {
+        "east": [
+          "animations/animating-6f79cae1/east/frame_000.png",
+          "animations/animating-6f79cae1/east/frame_001.png",
+          "animations/animating-6f79cae1/east/frame_002.png",
+          "animations/animating-6f79cae1/east/frame_003.png"
+        ]
+      },
+      "running-7037c0e0": {
+        "east": [
+          "animations/running-7037c0e0/east/frame_000.png",
+          "animations/running-7037c0e0/east/frame_001.png",
+          "animations/running-7037c0e0/east/frame_002.png",
+          "animations/running-7037c0e0/east/frame_003.png",
+          "animations/running-7037c0e0/east/frame_004.png",
+          "animations/running-7037c0e0/east/frame_005.png"
+        ]
+      },
+      "animating-cbd248e4": {
+        "east": [
+          "animations/animating-cbd248e4/east/frame_000.png",
+          "animations/animating-cbd248e4/east/frame_001.png",
+          "animations/animating-cbd248e4/east/frame_002.png",
+          "animations/animating-cbd248e4/east/frame_003.png",
+          "animations/animating-cbd248e4/east/frame_004.png",
+          "animations/animating-cbd248e4/east/frame_005.png"
+        ]
+      },
+      "animating-f3f8dbad": {
+        "east": [
+          "animations/animating-f3f8dbad/east/frame_000.png",
+          "animations/animating-f3f8dbad/east/frame_001.png",
+          "animations/animating-f3f8dbad/east/frame_002.png",
+          "animations/animating-f3f8dbad/east/frame_003.png",
+          "animations/animating-f3f8dbad/east/frame_004.png",
+          "animations/animating-f3f8dbad/east/frame_005.png",
+          "animations/animating-f3f8dbad/east/frame_006.png",
+          "animations/animating-f3f8dbad/east/frame_007.png"
+        ]
+      },
+      "animating-bb2f5c21": {
+        "east": [
+          "animations/animating-bb2f5c21/east/frame_000.png",
+          "animations/animating-bb2f5c21/east/frame_001.png",
+          "animations/animating-bb2f5c21/east/frame_002.png",
+          "animations/animating-bb2f5c21/east/frame_003.png",
+          "animations/animating-bb2f5c21/east/frame_004.png",
+          "animations/animating-bb2f5c21/east/frame_005.png"
+        ]
+      },
+      "animating-f04533be": {
+        "east": [
+          "animations/animating-f04533be/east/frame_000.png",
+          "animations/animating-f04533be/east/frame_001.png",
+          "animations/animating-f04533be/east/frame_002.png",
+          "animations/animating-f04533be/east/frame_003.png",
+          "animations/animating-f04533be/east/frame_004.png",
+          "animations/animating-f04533be/east/frame_005.png",
+          "animations/animating-f04533be/east/frame_006.png",
+          "animations/animating-f04533be/east/frame_007.png",
+          "animations/animating-f04533be/east/frame_008.png"
+        ]
+      },
+      "animating-331eb417": {
+        "east": [
+          "animations/animating-331eb417/east/frame_000.png",
+          "animations/animating-331eb417/east/frame_001.png",
+          "animations/animating-331eb417/east/frame_002.png",
+          "animations/animating-331eb417/east/frame_003.png",
+          "animations/animating-331eb417/east/frame_004.png",
+          "animations/animating-331eb417/east/frame_005.png",
+          "animations/animating-331eb417/east/frame_006.png"
+        ]
+      },
+      "jab_attack-2d954712": {
+        "east": [
+          "animations/jab_attack-2d954712/east/frame_000.png",
+          "animations/jab_attack-2d954712/east/frame_001.png",
+          "animations/jab_attack-2d954712/east/frame_002.png"
+        ]
+      },
+      "falling_backward-9da0928b": {
+        "east": [
+          "animations/falling_backward-9da0928b/east/frame_000.png",
+          "animations/falling_backward-9da0928b/east/frame_001.png",
+          "animations/falling_backward-9da0928b/east/frame_002.png",
+          "animations/falling_backward-9da0928b/east/frame_003.png",
+          "animations/falling_backward-9da0928b/east/frame_004.png",
+          "animations/falling_backward-9da0928b/east/frame_005.png",
+          "animations/falling_backward-9da0928b/east/frame_006.png"
+        ]
+      },
+      "high_kick-6a4c1afb": {
+        "east": [
+          "animations/high_kick-6a4c1afb/east/frame_000.png",
+          "animations/high_kick-6a4c1afb/east/frame_001.png",
+          "animations/high_kick-6a4c1afb/east/frame_002.png",
+          "animations/high_kick-6a4c1afb/east/frame_003.png",
+          "animations/high_kick-6a4c1afb/east/frame_004.png",
+          "animations/high_kick-6a4c1afb/east/frame_005.png",
+          "animations/high_kick-6a4c1afb/east/frame_006.png"
+        ]
+      },
+      "cross_punch_attack-2cedc121": {
+        "east": [
+          "animations/cross_punch_attack-2cedc121/east/frame_000.png",
+          "animations/cross_punch_attack-2cedc121/east/frame_001.png",
+          "animations/cross_punch_attack-2cedc121/east/frame_002.png",
+          "animations/cross_punch_attack-2cedc121/east/frame_003.png",
+          "animations/cross_punch_attack-2cedc121/east/frame_004.png",
+          "animations/cross_punch_attack-2cedc121/east/frame_005.png"
+        ]
+      },
+      "crouching-ae065983": {
+        "east": [
+          "animations/crouching-ae065983/east/frame_000.png",
+          "animations/crouching-ae065983/east/frame_001.png",
+          "animations/crouching-ae065983/east/frame_002.png",
+          "animations/crouching-ae065983/east/frame_003.png",
+          "animations/crouching-ae065983/east/frame_004.png"
+        ]
+      },
+      "uppercut-f6591a53": {
+        "east": [
+          "animations/uppercut-f6591a53/east/frame_000.png",
+          "animations/uppercut-f6591a53/east/frame_001.png",
+          "animations/uppercut-f6591a53/east/frame_002.png",
+          "animations/uppercut-f6591a53/east/frame_003.png",
+          "animations/uppercut-f6591a53/east/frame_004.png",
+          "animations/uppercut-f6591a53/east/frame_005.png",
+          "animations/uppercut-f6591a53/east/frame_006.png"
+        ]
+      },
+      "taking_a_punch-22554cdd": {
+        "east": [
+          "animations/taking_a_punch-22554cdd/east/frame_000.png",
+          "animations/taking_a_punch-22554cdd/east/frame_001.png",
+          "animations/taking_a_punch-22554cdd/east/frame_002.png",
+          "animations/taking_a_punch-22554cdd/east/frame_003.png",
+          "animations/taking_a_punch-22554cdd/east/frame_004.png",
+          "animations/taking_a_punch-22554cdd/east/frame_005.png"
+        ]
+      },
+      "casting_a_fireball-c56002f9": {
+        "east": [
+          "animations/casting_a_fireball-c56002f9/east/frame_000.png",
+          "animations/casting_a_fireball-c56002f9/east/frame_001.png",
+          "animations/casting_a_fireball-c56002f9/east/frame_002.png",
+          "animations/casting_a_fireball-c56002f9/east/frame_003.png",
+          "animations/casting_a_fireball-c56002f9/east/frame_004.png",
+          "animations/casting_a_fireball-c56002f9/east/frame_005.png"
+        ]
+      }
+    }
+  },
+  "export_version": "2.0",
+  "export_date": "2026-04-21T21:09:39.081420"
+}
