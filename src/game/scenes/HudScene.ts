@@ -3,6 +3,7 @@ import type { SimState, Actor } from '../../simulation/types';
 import { GUILDS } from '../../simulation/guildData';
 import { getComboHints } from '../../simulation/comboBuffer';
 import { VIRTUAL_WIDTH } from '../constants';
+import type { GameCallbacks } from '../PhaserGame';
 
 const COMBO_DISPLAY: Record<string, string> = {
   'down,down,attack': '↓↓J',
@@ -141,6 +142,8 @@ export class HudScene extends Phaser.Scene {
       })
       .setOrigin(0.5, 1);
 
+    this.createHudButtons();
+
     // HUD scene's camera ignores world. Since HudScene is launched as a
     // sibling scene, it draws to the same canvas but runs on the same main
     // camera — our setScrollFactor(0) + depth layering gives us the overlay
@@ -231,6 +234,51 @@ export class HudScene extends Phaser.Scene {
 
   private drawPauseDim(state: SimState): void {
     this.pauseDim.setVisible(state.phase === 'paused');
+  }
+
+  private createHudButtons(): void {
+    const y = 14;
+    const spacing = 34;
+    const rightEdge = VIRTUAL_WIDTH - 12;
+
+    const quit = this.makeButton(rightEdge - spacing * 2, y, 'Q', '#fca5a5');
+    quit.container.on('pointerdown', () => {
+      const callbacks = this.game.registry.get('callbacks') as GameCallbacks | undefined;
+      callbacks?.onQuit();
+    });
+
+    const fs = this.makeButton(rightEdge - spacing, y, 'F', '#d1d5db');
+    fs.container.on('pointerdown', () => {
+      const callbacks = this.game.registry.get('callbacks') as GameCallbacks | undefined;
+      callbacks?.toggleFullscreen();
+    });
+
+    const pause = this.makeButton(rightEdge, y, 'P', '#fde68a');
+    pause.container.on('pointerdown', () => {
+      const gameplay = this.scene.get('Gameplay');
+      gameplay.events.emit('pause-requested');
+    });
+  }
+
+  private makeButton(x: number, y: number, letter: string, tint: string): {
+    container: Phaser.GameObjects.Container;
+  } {
+    const size = 26;
+    const bg = this.add.graphics();
+    bg.fillStyle(0x000000, 0.55);
+    bg.lineStyle(1, 0x4b5563, 1);
+    bg.fillRoundedRect(-size / 2, -size / 2, size, size, 5);
+    bg.strokeRoundedRect(-size / 2, -size / 2, size, size, 5);
+    const label = this.add
+      .text(0, 0, letter, {
+        fontFamily: 'monospace', fontStyle: 'bold', fontSize: '14px', color: tint,
+      })
+      .setOrigin(0.5);
+    const container = this.add.container(x, y, [bg, label]);
+    container.setSize(size, size);
+    container.setInteractive({ useHandCursor: true });
+    container.setDepth(50);
+    return { container };
   }
 
   private drawPortrait(guild: typeof GUILDS[0]): void {

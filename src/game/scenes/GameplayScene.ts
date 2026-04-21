@@ -4,7 +4,9 @@ import {
   createInitialState,
   tickSimulation,
   resetController,
+  forcePause,
 } from '../../simulation/simulation';
+import { FULLSCREEN_EXIT_EVENT } from '../../layout/fullscreenConstants';
 import { PhaserInputAdapter } from '../input/PhaserInputAdapter';
 import { BackgroundView } from '../view/BackgroundView';
 import { ActorView } from '../view/ActorView';
@@ -27,6 +29,9 @@ export class GameplayScene extends Phaser.Scene {
   private phaseHandoffFired = false;
   private audio!: AudioManager;
   private bossMusicStarted = false;
+  private onFullscreenExit = (): void => {
+    if (this.simState) this.simState = forcePause(this.simState);
+  };
 
   constructor() {
     super({ key: 'Gameplay' });
@@ -62,6 +67,12 @@ export class GameplayScene extends Phaser.Scene {
       .setScrollFactor(0)
       .setDepth(10000);
 
+    window.addEventListener(FULLSCREEN_EXIT_EVENT, this.onFullscreenExit);
+
+    this.events.on('pause-requested', () => {
+      if (this.simState) this.simState = forcePause(this.simState);
+    });
+
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, this.onShutdown, this);
     this.events.once(Phaser.Scenes.Events.DESTROY, this.onShutdown, this);
   }
@@ -72,6 +83,10 @@ export class GameplayScene extends Phaser.Scene {
     const dtMs = Math.min(50, delta);
     const nowMs = this.simState.timeMs + dtMs;
     const inputState = this.inputAdapter.getInputState(nowMs);
+
+    if (inputState.fullscreenToggleJustPressed) {
+      this.callbacks.toggleFullscreen();
+    }
 
     const prevPhase = this.simState.phase;
     this.simState = tickSimulation(this.simState, inputState, dtMs);
@@ -220,5 +235,6 @@ export class GameplayScene extends Phaser.Scene {
     this.debugText?.destroy();
     this.debugText = undefined;
     if (this.audio) this.audio.dispose();
+    window.removeEventListener(FULLSCREEN_EXIT_EVENT, this.onFullscreenExit);
   };
 }
