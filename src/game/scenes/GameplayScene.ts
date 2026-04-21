@@ -8,7 +8,9 @@ import {
 import { PhaserInputAdapter } from '../input/PhaserInputAdapter';
 import { BackgroundView } from '../view/BackgroundView';
 import { ActorView } from '../view/ActorView';
-import type { Actor } from '../../simulation/types';
+import { ProjectileView } from '../view/ProjectileView';
+import { PickupView } from '../view/PickupView';
+import type { Actor, Projectile, Pickup } from '../../simulation/types';
 import type { GameCallbacks } from '../PhaserGame';
 
 export class GameplayScene extends Phaser.Scene {
@@ -17,6 +19,8 @@ export class GameplayScene extends Phaser.Scene {
   private callbacks!: GameCallbacks;
   private background!: BackgroundView;
   private actorViews = new Map<string, ActorView>();
+  private projectileViews = new Map<string, ProjectileView>();
+  private pickupViews = new Map<string, PickupView>();
   private debugText?: Phaser.GameObjects.Text;
   private phaseHandoffFired = false;
 
@@ -68,6 +72,8 @@ export class GameplayScene extends Phaser.Scene {
     this.cameras.main.scrollX = this.simState.cameraX;
     this.background.update(this.simState.cameraX);
     this.reconcileActors();
+    this.reconcileProjectiles();
+    this.reconcilePickups();
 
     if (this.debugText) {
       const p = this.simState.player;
@@ -121,12 +127,56 @@ export class GameplayScene extends Phaser.Scene {
     }
   }
 
+  private reconcileProjectiles(): void {
+    const live: Projectile[] = this.simState.projectiles;
+    const seen = new Set<string>();
+    for (const proj of live) {
+      seen.add(proj.id);
+      let view = this.projectileViews.get(proj.id);
+      if (!view) {
+        view = new ProjectileView(this, proj);
+        this.projectileViews.set(proj.id, view);
+      }
+      view.syncFrom(proj);
+    }
+    for (const [id, view] of this.projectileViews) {
+      if (!seen.has(id)) {
+        view.destroy();
+        this.projectileViews.delete(id);
+      }
+    }
+  }
+
+  private reconcilePickups(): void {
+    const live: Pickup[] = this.simState.pickups;
+    const seen = new Set<string>();
+    for (const pickup of live) {
+      seen.add(pickup.id);
+      let view = this.pickupViews.get(pickup.id);
+      if (!view) {
+        view = new PickupView(this, pickup);
+        this.pickupViews.set(pickup.id, view);
+      }
+      view.syncFrom(pickup);
+    }
+    for (const [id, view] of this.pickupViews) {
+      if (!seen.has(id)) {
+        view.destroy();
+        this.pickupViews.delete(id);
+      }
+    }
+  }
+
   private onShutdown = (): void => {
     if (this.simState) resetController(this.simState, 'player');
     if (this.inputAdapter) this.inputAdapter.dispose();
     if (this.background) this.background.destroy();
     for (const view of this.actorViews.values()) view.destroy();
     this.actorViews.clear();
+    for (const view of this.projectileViews.values()) view.destroy();
+    this.projectileViews.clear();
+    for (const view of this.pickupViews.values()) view.destroy();
+    this.pickupViews.clear();
     this.debugText?.destroy();
     this.debugText = undefined;
   };
