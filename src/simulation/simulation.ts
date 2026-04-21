@@ -95,7 +95,7 @@ export function createPlayerActor(guildId: GuildId): Actor {
   };
 }
 
-function createEnemyActor(kind: string, x: number, y: number): Actor {
+function createEnemyActor(kind: string, x: number, y: number, rng: () => number): Actor {
   const def = ENEMY_DEFS[kind];
   if (!def) throw new Error(`Unknown enemy: ${kind}`);
 
@@ -140,9 +140,9 @@ function createEnemyActor(kind: string, x: number, y: number): Actor {
     aiState: {
       behavior: def.ai,
       targetId: null,
-      lastActionMs: Math.random() * 600,
+      lastActionMs: rng() * 600,
       retreating: false,
-      packRole: kind === 'wolf' ? (Math.random() > 0.5 ? 'leader' : 'circler') : null,
+      packRole: kind === 'wolf' ? (rng() > 0.5 ? 'leader' : 'circler') : null,
       phase: 0,
       patrolDir: 1,
       leapCooldown: 0,
@@ -447,7 +447,7 @@ function performBasicAttack(player: Actor, state: SimState, ctrl: PlayerControll
 
   const guild = getGuild(player.guildId!);
   const baseStr = player.stats.STR;
-  const baseDmg = Math.round((10 + baseStr * 0.5) * dmgMult * (0.95 + Math.random() * 0.1));
+  const baseDmg = Math.round((10 + baseStr * 0.5) * dmgMult * (0.95 + state.rng() * 0.1));
   const range = (player.heldPickup?.type === 'club' ? 70 : 55) * (isJumpAttack ? 1.2 : 1);
 
   const animId = ctrl.attackChain === 1 ? 'attack_1' : ctrl.attackChain === 2 ? 'attack_2' : 'attack_3';
@@ -576,13 +576,13 @@ function tickWaves(state: SimState): void {
       for (const spawn of wave.enemies) {
         for (let j = 0; j < spawn.count; j++) {
           const spawnX = state.player.x + 300 + j * 80;
-          const spawnY = ENEMY_SPAWN_Y_RANGE[0] + Math.random() * (ENEMY_SPAWN_Y_RANGE[1] - ENEMY_SPAWN_Y_RANGE[0]);
+          const spawnY = ENEMY_SPAWN_Y_RANGE[0] + state.rng() * (ENEMY_SPAWN_Y_RANGE[1] - ENEMY_SPAWN_Y_RANGE[0]);
 
           if (spawn.kind === 'bandit_king') {
             state.bossSpawned = true;
           }
 
-          const enemy = createEnemyActor(spawn.kind as string, spawnX, spawnY);
+          const enemy = createEnemyActor(spawn.kind as string, spawnX, spawnY, state.rng);
           if (spawn.kind === 'bandit_king') {
             enemy.stats = { STR: 14, DEX: 10, CON: 18, INT: 8, WIS: 8, CHA: 8 };
           }
@@ -614,7 +614,7 @@ function tickProjectiles(state: SimState, dtSec: number): void {
       const dx = Math.abs(target.x - proj.x);
       const dy = Math.abs(target.y - proj.y);
       if (dx <= target.width / 2 + proj.radius && dy <= 30) {
-        const isCrit = Math.random() < 0.05;
+        const isCrit = state.rng() < 0.05;
         applyDamage(target, proj.damage * (isCrit ? 1.5 : 1), state.vfxEvents, isCrit);
         state.vfxEvents.push({ type: 'hit_spark', color: proj.color, x: proj.x, y: proj.y, z: proj.z });
 
@@ -901,7 +901,7 @@ function handlePlayerInput(state: SimState, input: InputState, ctrl: PlayerContr
     for (const t of miasmaTargets) {
       const dotDmg = (5 + player.stats.CON * 0.2) * dtSec;
       if (dotDmg > 0.01) {
-        applyDamage(t, Math.max(1, Math.round(dotDmg * (Math.random() > 0.9 ? 1 : 0))), state.vfxEvents, false);
+        applyDamage(t, Math.max(1, Math.round(dotDmg * (state.rng() > 0.9 ? 1 : 0))), state.vfxEvents, false);
       }
     }
     player.mp = Math.max(0, player.mp - dtSec * 2);
@@ -924,7 +924,7 @@ function handlePlayerInput(state: SimState, input: InputState, ctrl: PlayerContr
 function spawnPickup(state: SimState, enemy: Actor): void {
   const def = ENEMY_DEFS[enemy.kind];
   if (!def) return;
-  if (def.dropWeapon && Math.random() < def.dropWeaponChance) {
+  if (def.dropWeapon && state.rng() < def.dropWeaponChance) {
     state.pickups.push({
       id: `pickup_${Date.now()}_${Math.random()}`,
       type: def.dropWeapon as 'rock' | 'club',
