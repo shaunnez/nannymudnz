@@ -1,0 +1,184 @@
+{
+  "character": {
+    "id": "acdf3fe9-9dec-454c-9a83-badf488a12b7",
+    "name": "Viking LF2-R",
+    "prompt": "viking guild berserker, rage-fueled warrior with bloody double-bladed axe, furred pauldrons, horned helm, braided red beard, rusted iron chest plate over wolf-fur tunic, leather boots, aggressive readying stance, LF2-remastered arcade beat-em-up pixel art style, crisp clean pixel art with flat shading and bold black outlines, side-view fighting game sprite, readable silhouette, no background",
+    "size": {
+      "width": 156,
+      "height": 156
+    },
+    "template_id": "mannequin",
+    "directions": 8,
+    "view": "side",
+    "created_at": "2026-04-21T13:55:57.440577+00:00"
+  },
+  "frames": {
+    "rotations": {
+      "south": "rotations/south.png",
+      "south-east": "rotations/south-east.png",
+      "east": "rotations/east.png",
+      "north-east": "rotations/north-east.png",
+      "north": "rotations/north.png",
+      "north-west": "rotations/north-west.png",
+      "west": "rotations/west.png",
+      "south-west": "rotations/south-west.png"
+    },
+    "animations": {
+      "animating-c3a0d047": {
+        "east": [
+          "animations/animating-c3a0d047/east/frame_000.png",
+          "animations/animating-c3a0d047/east/frame_001.png",
+          "animations/animating-c3a0d047/east/frame_002.png",
+          "animations/animating-c3a0d047/east/frame_003.png",
+          "animations/animating-c3a0d047/east/frame_004.png",
+          "animations/animating-c3a0d047/east/frame_005.png",
+          "animations/animating-c3a0d047/east/frame_006.png",
+          "animations/animating-c3a0d047/east/frame_007.png"
+        ]
+      },
+      "animating-fc32aa19": {
+        "east": [
+          "animations/animating-fc32aa19/east/frame_000.png",
+          "animations/animating-fc32aa19/east/frame_001.png",
+          "animations/animating-fc32aa19/east/frame_002.png",
+          "animations/animating-fc32aa19/east/frame_003.png"
+        ]
+      },
+      "animating-5d26023a": {
+        "east": [
+          "animations/animating-5d26023a/east/frame_000.png",
+          "animations/animating-5d26023a/east/frame_001.png",
+          "animations/animating-5d26023a/east/frame_002.png",
+          "animations/animating-5d26023a/east/frame_003.png",
+          "animations/animating-5d26023a/east/frame_004.png",
+          "animations/animating-5d26023a/east/frame_005.png",
+          "animations/animating-5d26023a/east/frame_006.png",
+          "animations/animating-5d26023a/east/frame_007.png",
+          "animations/animating-5d26023a/east/frame_008.png"
+        ]
+      },
+      "running-0dd143da": {
+        "east": [
+          "animations/running-0dd143da/east/frame_000.png",
+          "animations/running-0dd143da/east/frame_001.png",
+          "animations/running-0dd143da/east/frame_002.png",
+          "animations/running-0dd143da/east/frame_003.png",
+          "animations/running-0dd143da/east/frame_004.png",
+          "animations/running-0dd143da/east/frame_005.png"
+        ]
+      },
+      "animating-35755180": {
+        "east": [
+          "animations/animating-35755180/east/frame_000.png",
+          "animations/animating-35755180/east/frame_001.png",
+          "animations/animating-35755180/east/frame_002.png",
+          "animations/animating-35755180/east/frame_003.png",
+          "animations/animating-35755180/east/frame_004.png",
+          "animations/animating-35755180/east/frame_005.png"
+        ]
+      },
+      "uppercut-055867d6": {
+        "east": [
+          "animations/uppercut-055867d6/east/frame_000.png",
+          "animations/uppercut-055867d6/east/frame_001.png",
+          "animations/uppercut-055867d6/east/frame_002.png",
+          "animations/uppercut-055867d6/east/frame_003.png",
+          "animations/uppercut-055867d6/east/frame_004.png",
+          "animations/uppercut-055867d6/east/frame_005.png",
+          "animations/uppercut-055867d6/east/frame_006.png"
+        ]
+      },
+      "animating-aefa3149": {
+        "east": [
+          "animations/animating-aefa3149/east/frame_000.png",
+          "animations/animating-aefa3149/east/frame_001.png",
+          "animations/animating-aefa3149/east/frame_002.png",
+          "animations/animating-aefa3149/east/frame_003.png",
+          "animations/animating-aefa3149/east/frame_004.png",
+          "animations/animating-aefa3149/east/frame_005.png"
+        ]
+      },
+      "animating-1635b0a1": {
+        "east": [
+          "animations/animating-1635b0a1/east/frame_000.png",
+          "animations/animating-1635b0a1/east/frame_001.png",
+          "animations/animating-1635b0a1/east/frame_002.png",
+          "animations/animating-1635b0a1/east/frame_003.png",
+          "animations/animating-1635b0a1/east/frame_004.png",
+          "animations/animating-1635b0a1/east/frame_005.png",
+          "animations/animating-1635b0a1/east/frame_006.png"
+        ]
+      },
+      "crouching-a19a1787": {
+        "east": [
+          "animations/crouching-a19a1787/east/frame_000.png",
+          "animations/crouching-a19a1787/east/frame_001.png",
+          "animations/crouching-a19a1787/east/frame_002.png",
+          "animations/crouching-a19a1787/east/frame_003.png",
+          "animations/crouching-a19a1787/east/frame_004.png"
+        ]
+      },
+      "cross_punch_attack-7949a360": {
+        "east": [
+          "animations/cross_punch_attack-7949a360/east/frame_000.png",
+          "animations/cross_punch_attack-7949a360/east/frame_001.png",
+          "animations/cross_punch_attack-7949a360/east/frame_002.png",
+          "animations/cross_punch_attack-7949a360/east/frame_003.png",
+          "animations/cross_punch_attack-7949a360/east/frame_004.png",
+          "animations/cross_punch_attack-7949a360/east/frame_005.png"
+        ]
+      },
+      "high_kick-e8e0ffc2": {
+        "east": [
+          "animations/high_kick-e8e0ffc2/east/frame_000.png",
+          "animations/high_kick-e8e0ffc2/east/frame_001.png",
+          "animations/high_kick-e8e0ffc2/east/frame_002.png",
+          "animations/high_kick-e8e0ffc2/east/frame_003.png",
+          "animations/high_kick-e8e0ffc2/east/frame_004.png",
+          "animations/high_kick-e8e0ffc2/east/frame_005.png",
+          "animations/high_kick-e8e0ffc2/east/frame_006.png"
+        ]
+      },
+      "jab_attack-895019bb": {
+        "east": [
+          "animations/jab_attack-895019bb/east/frame_000.png",
+          "animations/jab_attack-895019bb/east/frame_001.png",
+          "animations/jab_attack-895019bb/east/frame_002.png"
+        ]
+      },
+      "taking_a_punch-553ff4f2": {
+        "east": [
+          "animations/taking_a_punch-553ff4f2/east/frame_000.png",
+          "animations/taking_a_punch-553ff4f2/east/frame_001.png",
+          "animations/taking_a_punch-553ff4f2/east/frame_002.png",
+          "animations/taking_a_punch-553ff4f2/east/frame_003.png",
+          "animations/taking_a_punch-553ff4f2/east/frame_004.png",
+          "animations/taking_a_punch-553ff4f2/east/frame_005.png"
+        ]
+      },
+      "casting_a_fireball-d564b6ec": {
+        "east": [
+          "animations/casting_a_fireball-d564b6ec/east/frame_000.png",
+          "animations/casting_a_fireball-d564b6ec/east/frame_001.png",
+          "animations/casting_a_fireball-d564b6ec/east/frame_002.png",
+          "animations/casting_a_fireball-d564b6ec/east/frame_003.png",
+          "animations/casting_a_fireball-d564b6ec/east/frame_004.png",
+          "animations/casting_a_fireball-d564b6ec/east/frame_005.png"
+        ]
+      },
+      "falling_backward-5f622fbf": {
+        "east": [
+          "animations/falling_backward-5f622fbf/east/frame_000.png",
+          "animations/falling_backward-5f622fbf/east/frame_001.png",
+          "animations/falling_backward-5f622fbf/east/frame_002.png",
+          "animations/falling_backward-5f622fbf/east/frame_003.png",
+          "animations/falling_backward-5f622fbf/east/frame_004.png",
+          "animations/falling_backward-5f622fbf/east/frame_005.png",
+          "animations/falling_backward-5f622fbf/east/frame_006.png"
+        ]
+      }
+    }
+  },
+  "export_version": "2.0",
+  "export_date": "2026-04-21T23:25:59.388751"
+}
