@@ -19,6 +19,7 @@ import {
 import { tickPhysics, tickKnockdown, tickGetup, tickProjectile, updateCamera, getEffectiveMoveSpeed } from './physics';
 import { createComboBuffer, pushComboKey, detectComboFromInput, clearCombo } from './comboBuffer';
 import { tickAI, spawnEnemyAt } from './ai';
+import { tickRound } from './vsSimulation';
 
 export function createPlayerActor(guildId: GuildId): Actor {
   const guild = getGuild(guildId);
@@ -1142,6 +1143,10 @@ export function tickSimulation(state: SimState, input: InputState, dtMs: number)
     return state;
   }
 
+  if (state.mode === 'vs') {
+    return tickVsSimulation(state, input, dtMs);
+  }
+
   const dtSec = dtMs / 1000;
   state.timeMs += dtMs;
   state.tick++;
@@ -1229,4 +1234,41 @@ export function forcePause(state: SimState): SimState {
 export function forceResume(state: SimState): SimState {
   if (state.phase !== 'paused') return state;
   return { ...state, phase: 'playing' };
+}
+
+function tickVsSimulation(state: SimState, input: InputState, dtMs: number): SimState {
+  const dtSec = dtMs / 1000;
+  state.timeMs += dtMs;
+  state.tick++;
+  state.vfxEvents = [];
+
+  const ctrl = getOrCreateController(state, 'player', input);
+
+  const fighting = state.round?.phase === 'fighting';
+
+  if (state.player.isAlive) {
+    if (fighting) handlePlayerInput(state, input, ctrl, dtMs);
+    tickPhysics(state.player, dtSec);
+    tickKnockdown(state.player, dtSec);
+    tickGetup(state.player, dtSec);
+    tickStatusEffects(state.player, dtMs, state.vfxEvents);
+    tickHPRegen(state.player, dtMs, true);
+    tickPlayerResourceRegen(state.player, dtMs, true, state);
+  }
+
+  const opp = state.opponent;
+  if (opp && opp.isAlive) {
+    if (fighting) tickAI(opp, state, dtSec, state.vfxEvents);
+    tickPhysics(opp, dtSec);
+    tickKnockdown(opp, dtSec);
+    tickGetup(opp, dtSec);
+    tickStatusEffects(opp, dtMs, state.vfxEvents);
+    tickHPRegen(opp, dtMs, true);
+  }
+
+  tickProjectiles(state, dtSec);
+  updateCamera(state);
+  tickRound(state, dtMs);
+
+  return state;
 }

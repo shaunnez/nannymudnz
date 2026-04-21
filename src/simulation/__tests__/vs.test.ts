@@ -1,5 +1,44 @@
 import { describe, it, expect } from 'vitest';
 import { createVsState, resetActorsForRound, tickRound } from '../vsSimulation';
+import { tickSimulation } from '../simulation';
+import type { InputState } from '../types';
+
+function idleInput(): InputState {
+  return {
+    left: false, right: false, up: false, down: false,
+    jump: false, attack: false, block: false, grab: false, pause: false,
+    leftJustPressed: false, rightJustPressed: false,
+    jumpJustPressed: false, attackJustPressed: false, blockJustPressed: false,
+    grabJustPressed: false, pauseJustPressed: false,
+    fullscreenToggleJustPressed: false,
+    lastLeftPressMs: 0, lastRightPressMs: 0,
+    runningLeft: false, runningRight: false,
+    testAbilitySlot: null,
+  };
+}
+
+describe('vsSimulation: integrated tick', () => {
+  it('ticks opponent AI and does not treat VS as story', () => {
+    const s = createVsState('knight', 'mage', 'assembly', 1);
+    // advance past intro
+    let st = s;
+    for (let i = 0; i < 150; i++) {
+      st = tickSimulation(st, idleInput(), 16);
+    }
+    expect(st.round!.phase === 'fighting' || st.round!.phase === 'resolved' || st.round!.phase === 'matchOver').toBe(true);
+    // sanity: VS never triggers story wave spawns
+    expect(st.waves).toEqual([]);
+  });
+
+  it('caps combat log at 64 entries across a full match', () => {
+    let st = createVsState('knight', 'mage', 'assembly', 1);
+    for (let i = 0; i < 4000; i++) {
+      st = tickSimulation(st, idleInput(), 16);
+      if (st.phase === 'victory' || st.phase === 'defeat') break;
+    }
+    expect(st.combatLog.length).toBeLessThanOrEqual(64);
+  });
+});
 
 describe('vsSimulation: createVsState', () => {
   it('creates a VS state with player, opponent, and round intro phase', () => {
