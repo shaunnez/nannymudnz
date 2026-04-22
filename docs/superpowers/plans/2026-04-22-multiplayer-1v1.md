@@ -16,9 +16,12 @@
 
 ## Current status
 
-Last completed: **Phase A** — A1 workspace skeleton (`edd26c7` + `b26f23b`) + A2 simulation migration (`29f8726` + `7ce425a` CLAUDE.md paths). 27 client files / 42 imports rewritten. Golden test green. Pushed to `origin/feat/vs-mode-hud`.
+Last completed: **Phase B** — B1 SimStateSchema + kin (`ce7aa6c` + `db3f756` abilityCooldowns MapSchema fixup + `d0819d2` WaveEnemy extraction), B2 MatchState + PlayerSlot (`25d68b4`), B3 protocol messages (`b3a016d`). 31 tests green incl. structural + golden + matchState. `@nannymud/shared` barrel now re-exports schema + protocol (simulation consumers continue to use deep paths).
 
-Next: Task B1 (SimStateSchema — Colyseus Schema classes that structurally satisfy the SimState interface).
+Next: Parallel Phase C/D/E (server, client net, client screens). Can run in three worktrees concurrently after pushing B to origin.
+
+Deferred follow-ups (address when room wiring goes live in C):
+- `RoundStateSchema.winnerOfRound` / `matchWinner` and `AIStateSchema.packRole` / `targetId` are `'...' | null` interfaces decorated `@type('string')`. Colyseus serializes `null` as `""` on the wire. Either add a `'none'` sentinel or document that clients must treat `""` as null. Same concern on `ActorSchema.guildId` but lower risk (render layer already handles null).
 
 Branch: `feat/vs-mode-hud` (stacking MP work on top of unmerged VS HUD branch).
 
