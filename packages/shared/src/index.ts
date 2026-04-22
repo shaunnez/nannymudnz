@@ -1,2 +1,2 @@
-// Shared package barrel. Populated in later tasks.
-export {};
+export * from './schema';
+export * from './protocol/messages';
