@@ -18,20 +18,20 @@ npm test           # Vitest run (src/**/*.test.ts)
 npm run test:watch # Vitest watch mode
 ```
 
-Tests run via Vitest. `src/simulation/__tests__/golden.test.ts` is the reproducibility gate — if it fails after a change in `src/simulation/**`, you have introduced non-determinism and the Colyseus rewrite (see `docs/superpowers/specs/2026-04-21-phaser-colyseus-rewrite-design.md`) will be harder. Keep it green.
+Tests run via Vitest. `packages/shared/src/simulation/__tests__/golden.test.ts` is the reproducibility gate — if it fails after a change in `packages/shared/src/simulation/**`, you have introduced non-determinism and the Colyseus rewrite (see `docs/superpowers/specs/2026-04-21-phaser-colyseus-rewrite-design.md`) will be harder. Keep it green.
 
 ## Architecture: strict layer separation
 
 The codebase enforces a one-way dependency flow. Respect it when adding features — crossing these boundaries is the single most important rule in this repo:
 
 ```
-input/ (keyBindings) ──►  simulation/  ◄── (read-only) ──  game/ (Phaser)
-                                ▲
-audio/  ────────────────────────┘ (reads vfxEvents + phase transitions)
+input/ (keyBindings) ──►  @nannymud/shared/simulation  ◄── (read-only) ──  game/ (Phaser)
+                                      ▲
+audio/  ──────────────────────────────┘ (reads vfxEvents + phase transitions)
 ```
 
-- **`src/simulation/`** — pure TypeScript. Combat, AI, physics, wave progression, status effects, HP/MP, combo detection. **No DOM, no canvas, no `window`, no browser APIs.** It must remain portable to a Node server. Nothing non-deterministic is permitted — no `Math.random()`, no `Date.now()`, no `setTimeout`, no module-level mutable counters. Use `state.rng()` for rolls, tick-based countdown fields for timers, and `state.next*Id` counters for IDs. The ESLint override on `src/simulation/**` enforces this.
-- **`src/game/`** — Phaser 3 layer. `PhaserGame.ts` boots a `Phaser.Game` with three scenes (`Boot`, `Gameplay`, `Hud`). `GameplayScene.update` is the rAF loop: it calls `tickSimulation`, reconciles per-actor/projectile/pickup `*View` objects, consumes `state.vfxEvents`, runs audio dispatch, and drives the camera. It **reads** `SimState` and never mutates it. Render-only constants (`VIRTUAL_WIDTH`, `VIRTUAL_HEIGHT`, `DEPTH_SCALE`, `worldYToScreenY`, `WORLD_Y_MIN/MAX`) live in `src/game/constants.ts` — never in `src/simulation/constants.ts`. Phaser's `Scale.FIT` handles upscaling, so the old `CANVAS_BUFFER_*` / `RENDER_SCALE` concepts are gone.
+- **`packages/shared/src/simulation/`** — pure TypeScript. Combat, AI, physics, wave progression, status effects, HP/MP, combo detection. **No DOM, no canvas, no `window`, no browser APIs.** It must remain portable to a Node server. Nothing non-deterministic is permitted — no `Math.random()`, no `Date.now()`, no `setTimeout`, no module-level mutable counters. Use `state.rng()` for rolls, tick-based countdown fields for timers, and `state.next*Id` counters for IDs. The ESLint override on `packages/shared/src/simulation/**` enforces this.
+- **`src/game/`** — Phaser 3 layer. `PhaserGame.ts` boots a `Phaser.Game` with three scenes (`Boot`, `Gameplay`, `Hud`). `GameplayScene.update` is the rAF loop: it calls `tickSimulation`, reconciles per-actor/projectile/pickup `*View` objects, consumes `state.vfxEvents`, runs audio dispatch, and drives the camera. It **reads** `SimState` and never mutates it. Render-only constants (`VIRTUAL_WIDTH`, `VIRTUAL_HEIGHT`, `DEPTH_SCALE`, `worldYToScreenY`, `WORLD_Y_MIN/MAX`) live in `src/game/constants.ts` — never in `packages/shared/src/simulation/constants.ts`. Phaser's `Scale.FIT` handles upscaling, so the old `CANVAS_BUFFER_*` / `RENDER_SCALE` concepts are gone.
 - **`src/input/keyBindings.ts`** — localStorage-backed keybinding map. Phaser's `PhaserInputAdapter` (in `src/game/input/`) reads these and translates keyboard events into an `InputState` struct; `inputAdapter.getInputState(timeMs)` is the only thing simulation sees. Double-tap run detection lives in the adapter, not in the simulation.
 - **`src/audio/`** — Web Audio API synth. Entirely independent; `GameplayScene.dispatchAudio` inspects `state.vfxEvents` and phase transitions to trigger sounds. Do not call audio from inside `simulation/`.
 - **`src/screens/`** — React screens (`TitleScreen`, `MainMenu`, `CharSelect`, `GuildDetails`, `GameScreen`, `GameOverScreen`). Only `GameScreen` mounts Phaser; the others are menus. `App.tsx` is the screen router (plain `useState`, no router library).
@@ -60,7 +60,7 @@ Keybinds: movement on arrow keys; `Space` jump; `J` attack; `K` block; `L` grab;
 
 - **Scene keys**: `'Boot'`, `'Gameplay'`, `'Hud'`. `HudScene` runs in parallel to `GameplayScene` (launched, not started).
 - **React ↔ Phaser bridge**: `game.registry` for pull-style state (`guildId`, `callbacks`, `simState`, `isFullscreen`); `game.events` / `scene.events` for push-style commands (`phase-change`, `pause-requested`, `resume-requested`, `restart-requested`). React never reaches into `simState` to mutate it.
-- **No simulation in scene code.** Scenes may only call the exported simulation functions (`tickSimulation`, `forcePause`, `forceResume`, `createInitialState`, `resetController`). Keep new rules inside `src/simulation/`.
+- **No simulation in scene code.** Scenes may only call the exported simulation functions (`tickSimulation`, `forcePause`, `forceResume`, `createInitialState`, `resetController`). Keep new rules inside `packages/shared/src/simulation/`.
 - **Animation keys**: `${guildId}:${animId}` (see `AnimationRegistry.ts`); texture keys are `tex:${guildId}:${animId}`. Sprites fall back through `FALLBACK` chains when a guild lacks a specific animation.
 - **Depth sort**: containers set `setDepth(actor.y)` for 2.5D sort; VFX uses `setDepth(y + 1000)` so particles draw above same-plane actors.
 - **No `Date.now()`/`setTimeout`/`requestAnimationFrame` in scene code.** Use `this.time.delayedCall` and `delta` from `update`.
