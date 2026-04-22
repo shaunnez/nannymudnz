@@ -10,8 +10,10 @@ interface Props {
   p1: GuildId;
   p2: GuildId;
   stageId: StageId;
-  onDone: () => void;
   showOpponent?: boolean;
+  /** When provided, used instead of a cosmetic timer for the fill animation.
+   *  0..1. Parent is responsible for unmounting this component on completion. */
+  progress?: number;
 }
 
 const TIPS = [
@@ -28,7 +30,7 @@ const TIPS = [
 const P1_DURATION = 2200;
 const PER_PLAYER = 450;
 
-export function LoadingScreen({ p1, p2, stageId, onDone, showOpponent = true }: Props) {
+export function LoadingScreen({ p1, p2, stageId, showOpponent = true, progress }: Props) {
   const stage = STAGES_BY_ID[stageId];
   const accent = `oklch(0.72 0.18 ${stage.hue})`;
   const p1Meta = GUILD_META[p1];
@@ -43,6 +45,17 @@ export function LoadingScreen({ p1, p2, stageId, onDone, showOpponent = true }: 
   const [tipIdx, setTipIdx] = useState(() => Math.floor(Math.random() * TIPS.length));
 
   useEffect(() => {
+    // If the parent is driving progress directly, mirror it on both bars.
+    if (progress !== undefined) {
+      const v = Math.max(0, Math.min(1, progress));
+      setP1Progress(v);
+      setP2Progress(showOpponent ? v : 0);
+      return;
+    }
+    // Otherwise run a cosmetic animation that loops forever — the parent is
+    // expected to unmount us when its underlying work is done (e.g. Phaser
+    // BootScene fires 'preload-done'). If it takes longer than the cosmetic
+    // animation, we just hold at 100% until dismissed.
     const start = performance.now();
     let raf = 0;
     const tick = () => {
@@ -52,16 +65,13 @@ export function LoadingScreen({ p1, p2, stageId, onDone, showOpponent = true }: 
       const p2Pct = showOpponent ? Math.min(1, Math.max(0, elapsed - p2Delay) / P1_DURATION) : 0;
       setP1Progress(p1Pct);
       setP2Progress(p2Pct);
-      const done = p1Pct >= 1 && (!showOpponent || p2Pct >= 1);
-      if (done) {
-        onDone();
-        return;
+      if (p1Pct < 1 || (showOpponent && p2Pct < 1)) {
+        raf = requestAnimationFrame(tick);
       }
-      raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [onDone, showOpponent]);
+  }, [showOpponent, progress]);
 
   useEffect(() => {
     const id = window.setInterval(() => {

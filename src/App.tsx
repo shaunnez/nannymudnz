@@ -4,7 +4,6 @@ import { TitleScreen } from './screens/TitleScreen';
 import { MainMenu } from './screens/MainMenu';
 import { CharSelect } from './screens/CharSelect';
 import { StageSelect } from './screens/StageSelect';
-import { LoadingScreen } from './screens/LoadingScreen';
 import { GameScreen } from './screens/GameScreen';
 import { ResultsScreen } from './screens/ResultsScreen';
 import { MoveList } from './screens/MoveList';
@@ -132,18 +131,8 @@ export default function App() {
             onBack={() => go('charselect')}
             onReady={(stageId) => {
               set({ stageId });
-              go('loading');
+              go('game');
             }}
-          />
-        )}
-
-        {state.screen === 'loading' && (
-          <LoadingScreen
-            p1={state.p1}
-            p2={state.p2}
-            stageId={state.stageId}
-            showOpponent={state.mode === 'vs'}
-            onDone={() => go('game')}
           />
         )}
 
@@ -210,7 +199,7 @@ export default function App() {
             p2={state.p2}
             winner={state.winner ?? 'P2'}
             score={finalScore}
-            onRematch={() => go('loading')}
+            onRematch={() => go('game')}
             onMenu={() => go('menu')}
           />
         )}

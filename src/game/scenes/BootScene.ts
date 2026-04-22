@@ -41,6 +41,9 @@ export class BootScene extends Phaser.Scene {
 
   create(): void {
     registerGuildAnimations(this);
+    // Tell any React overlay that preload + animation registration is done.
+    // GameScreen listens and hides its LoadingScreen overlay on this event.
+    this.game.events.emit('preload-done');
     this.scene.start('Gameplay');
   }
 }

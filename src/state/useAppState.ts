@@ -12,7 +12,6 @@ export type AppScreen =
   | 'charselect'
   | 'team'
   | 'stage'
-  | 'loading'
   | 'game'
   | 'pause'
   | 'results'

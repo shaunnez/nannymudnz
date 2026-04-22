@@ -5,10 +5,12 @@ import type { GuildId, SimMode, SimState } from '@nannymud/shared/simulation/typ
 import type { MatchState } from '@nannymud/shared';
 import { PauseOverlay } from './PauseOverlay';
 import { GuildDetails } from './GuildDetails';
+import { LoadingScreen } from './LoadingScreen';
 import { useFullscreen } from '../layout/useFullscreen';
 import { makePhaserGame, type GameCallbacks } from '../game/PhaserGame';
 import { HudOverlay } from './hud/HudOverlay';
 import { STAGES } from '../data/stages';
+import type { StageId } from '../data/stages';
 
 interface Props {
   mode: SimMode;
@@ -32,6 +34,7 @@ export function GameScreen({
   const parentRef = useRef<HTMLDivElement>(null);
   const gameRef = useRef<Phaser.Game | null>(null);
   const [gameReady, setGameReady] = useState(false);
+  const [preloading, setPreloading] = useState(true);
   const [isPaused, setIsPaused] = useState(false);
   const [showMoves, setShowMoves] = useState(false);
   const pausedByMovesRef = useRef(false);
@@ -78,11 +81,16 @@ export function GameScreen({
     };
     game.events.on('phase-change', onPhaseChange);
 
+    const onPreloadDone = () => setPreloading(false);
+    game.events.on('preload-done', onPreloadDone);
+
     return () => {
       game.events.off('phase-change', onPhaseChange);
+      game.events.off('preload-done', onPreloadDone);
       game.destroy(true);
       gameRef.current = null;
       setGameReady(false);
+      setPreloading(true);
     };
   }, [mode, p1, p2, stageId, netMode, matchRoom]);
 
@@ -171,6 +179,16 @@ export function GameScreen({
         />
       )}
       {netMode !== 'mp' && showMoves && <GuildDetails guildId={p1} onClose={closeMoves} />}
+      {preloading && (
+        <div style={{ position: 'absolute', inset: 0 }}>
+          <LoadingScreen
+            p1={p1}
+            p2={p2 ?? 'knight'}
+            stageId={stageId as StageId}
+            showOpponent={mode === 'vs'}
+          />
+        </div>
+      )}
     </div>
   );
 }
