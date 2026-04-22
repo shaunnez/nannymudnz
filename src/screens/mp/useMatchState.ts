@@ -11,9 +11,10 @@ export function useMatchState(room: Room<MatchState>): MatchState {
   const [, setVersion] = useState(0);
 
   useEffect(() => {
-    const off = room.onStateChange(() => setVersion((v) => v + 1));
+    const handler = () => setVersion((v) => v + 1);
+    room.onStateChange(handler);
     return () => {
-      off();
+      room.onStateChange.remove(handler);
     };
   }, [room]);
 

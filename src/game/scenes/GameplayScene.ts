@@ -45,6 +45,7 @@ export class GameplayScene extends Phaser.Scene {
   private room: Room<MatchState> | null = null;
   private inputSender: InputSender | null = null;
   private stateSync: StateSync | null = null;
+  private onMpStateChange: (() => void) | null = null;
 
   private onFullscreenExit = (): void => {
     if (!this.simState || this.netMode === 'mp') return;
@@ -80,17 +81,24 @@ export class GameplayScene extends Phaser.Scene {
       this.inputSender = new InputSender(this.room);
       this.stateSync = new StateSync();
 
-      // Capture a position snapshot whenever the server state changes so
-      // StateSync can interpolate between the two most recent frames.
-      this.room.onStateChange(() => {
+      // onStateChange fires on every server tick. Two jobs:
+      //  1) push a position snapshot into StateSync for per-frame interp;
+      //  2) consume vfxEvents here (not in update()) so particle/audio effects
+      //     fire once per server tick rather than once per render frame.
+      this.onMpStateChange = () => {
         if (!this.room || !this.stateSync) return;
         const s = this.room.state.sim;
         if (!s) return;
+        const sAsSim = s as unknown as SimState;
         this.stateSync.onSnapshot({
           tMs: performance.now(),
-          actors: collectActorSnapshots(s as unknown as SimState),
+          actors: collectActorSnapshots(sAsSim),
         });
-      });
+        if (sAsSim.vfxEvents && sAsSim.vfxEvents.length > 0) {
+          consumeVfxEvents(this, sAsSim.vfxEvents);
+        }
+      };
+      this.room.onStateChange(this.onMpStateChange);
     } else if (mode === 'vs') {
       if (!p2) throw new Error('VS mode requires a p2 guild');
       this.simState = createVsState(guildId, p2, stageId, seed);
@@ -264,7 +272,9 @@ export class GameplayScene extends Phaser.Scene {
     this.reconcileActors(interp);
     this.reconcileProjectiles();
     this.reconcilePickups();
-    consumeVfxEvents(this, sim.vfxEvents);
+    // VFX consumption moved to onMpStateChange so it fires per server tick,
+    // not per render frame — otherwise the same hit_spark would replay until
+    // the next state sync arrived.
     this.game.registry.set('simState', sim);
     this.events.emit('sim-tick', sim);
 
@@ -403,6 +413,10 @@ export class GameplayScene extends Phaser.Scene {
     this.debugText = undefined;
     if (this.audio) this.audio.dispose();
     window.removeEventListener(FULLSCREEN_EXIT_EVENT, this.onFullscreenExit);
+    if (this.room && this.onMpStateChange) {
+      this.room.onStateChange.remove(this.onMpStateChange);
+    }
+    this.onMpStateChange = null;
     this.room = null;
     this.inputSender = null;
     this.stateSync = null;
