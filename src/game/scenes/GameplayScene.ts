@@ -1,13 +1,13 @@
 import Phaser from 'phaser';
-import type { GuildId, SimState } from '../../simulation/types';
+import type { GuildId, SimState } from '@nannymud/shared/simulation/types';
 import {
   createInitialState,
   tickSimulation,
   resetController,
   forcePause,
   forceResume,
-} from '../../simulation/simulation';
-import { createVsState } from '../../simulation/vsSimulation';
+} from '@nannymud/shared/simulation/simulation';
+import { createVsState } from '@nannymud/shared/simulation/vsSimulation';
 import { FULLSCREEN_EXIT_EVENT } from '../../layout/fullscreenConstants';
 import { PhaserInputAdapter } from '../input/PhaserInputAdapter';
 import { BackgroundView } from '../view/BackgroundView';
@@ -15,7 +15,7 @@ import { ActorView } from '../view/ActorView';
 import { ProjectileView } from '../view/ProjectileView';
 import { PickupView } from '../view/PickupView';
 import { consumeVfxEvents } from '../view/ParticleFX';
-import type { Actor, Projectile, Pickup, InputState } from '../../simulation/types';
+import type { Actor, Projectile, Pickup, InputState } from '@nannymud/shared/simulation/types';
 import type { GameCallbacks } from '../PhaserGame';
 import { AudioManager } from '../../audio/audioManager';
 import { VIRTUAL_HEIGHT, VIRTUAL_WIDTH, HUD_TOP_PX, HUD_BOTTOM_PX } from '../constants';

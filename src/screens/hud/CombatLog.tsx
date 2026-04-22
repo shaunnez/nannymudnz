@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import type { LogEntry } from '../../simulation/types';
+import type { LogEntry } from '@nannymud/shared/simulation/types';
 import { theme } from '../../ui';
 
 interface Props {

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
-import { GUILDS } from '../simulation/guildData';
-import type { GuildId, Stats } from '../simulation/types';
+import { GUILDS } from '@nannymud/shared/simulation/guildData';
+import type { GuildId, Stats } from '@nannymud/shared/simulation/types';
 import { GUILD_META } from '../data/guildMeta';
 import { theme, guildAccent, Btn, Chip, GuildMonogram, ComboDisplay } from '../ui';
 import { GuildDetails } from './GuildDetails';

@@ -1,4 +1,4 @@
-import type { Actor, LogEntry } from '../../simulation/types';
+import type { Actor, LogEntry } from '@nannymud/shared/simulation/types';
 import { theme } from '../../ui';
 import { CombatLog } from './CombatLog';
 import { AbilityStrip } from './AbilityStrip';

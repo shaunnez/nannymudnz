@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Phaser from 'phaser';
-import type { GuildId, SimMode, SimState } from '../simulation/types';
+import type { GuildId, SimMode, SimState } from '@nannymud/shared/simulation/types';
 import { PauseOverlay } from './PauseOverlay';
 import { GuildDetails } from './GuildDetails';
 import { useFullscreen } from '../layout/useFullscreen';

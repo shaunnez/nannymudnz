@@ -9,7 +9,7 @@ import { ResultsScreen } from './screens/ResultsScreen';
 import { MoveList } from './screens/MoveList';
 import { GuildDossier } from './screens/GuildDossier';
 import { SettingsScreen } from './screens/SettingsScreen';
-import { GUILDS } from './simulation/guildData';
+import { GUILDS } from '@nannymud/shared/simulation/guildData';
 import { ScalingFrame } from './layout/ScalingFrame';
 import { Scanlines, theme } from './ui';
 import { useAppState } from './state/useAppState';

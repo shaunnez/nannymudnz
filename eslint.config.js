@@ -26,8 +26,8 @@ export default tseslint.config(
     },
   },
   {
-    files: ['src/simulation/**/*.ts'],
-    ignores: ['src/simulation/**/__tests__/**'],
+    files: ['packages/shared/src/simulation/**/*.ts'],
+    ignores: ['packages/shared/src/simulation/**/__tests__/**'],
     rules: {
       'no-restricted-globals': [
         'error',

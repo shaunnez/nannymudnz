@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import type { GuildId } from '../simulation/types';
+import type { GuildId } from '@nannymud/shared/simulation/types';
 import type { StageId } from '../data/stages';
 
 export type GameMode = 'vs' | 'stage' | 'surv' | 'batt' | 'champ';

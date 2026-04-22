@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
-import type { Actor, AnimationId, GuildId } from '../../simulation/types';
-import { GUILDS } from '../../simulation/guildData';
-import { ENEMY_DEFS } from '../../simulation/enemyData';
+import type { Actor, AnimationId, GuildId } from '@nannymud/shared/simulation/types';
+import { GUILDS } from '@nannymud/shared/simulation/guildData';
+import { ENEMY_DEFS } from '@nannymud/shared/simulation/enemyData';
 import { worldYToScreenY } from '../constants';
 import { VIRTUAL_HEIGHT } from '../constants';
 import {

@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
-import type { SimState, Actor } from '../../simulation/types';
-import { GUILDS } from '../../simulation/guildData';
-import { getComboHints } from '../../simulation/comboBuffer';
+import type { SimState, Actor } from '@nannymud/shared/simulation/types';
+import { GUILDS } from '@nannymud/shared/simulation/guildData';
+import { getComboHints } from '@nannymud/shared/simulation/comboBuffer';
 import { VIRTUAL_WIDTH } from '../constants';
 import type { GameCallbacks } from '../PhaserGame';
 

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { GUILDS } from '../simulation/guildData';
-import type { GuildId } from '../simulation/types';
+import { GUILDS } from '@nannymud/shared/simulation/guildData';
+import type { GuildId } from '@nannymud/shared/simulation/types';
 import { GUILD_META } from '../data/guildMeta';
 import { STAGES_BY_ID } from '../data/stages';
 import type { StageId } from '../data/stages';

@@ -1,5 +1,5 @@
 import { useState, type CSSProperties } from 'react';
-import type { GuildId } from '../simulation/types';
+import type { GuildId } from '@nannymud/shared/simulation/types';
 import { GUILD_META } from '../data/guildMeta';
 import { theme, guildAccent, guildAccentSoft, guildAccentDim } from './theme';
 

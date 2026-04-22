@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import type { Pickup } from '../../simulation/types';
+import type { Pickup } from '@nannymud/shared/simulation/types';
 import { VIRTUAL_HEIGHT, worldYToScreenY } from '../constants';
 
 /**

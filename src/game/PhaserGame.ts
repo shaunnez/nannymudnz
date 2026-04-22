@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import type { GuildId, SimMode } from '../simulation/types';
+import type { GuildId, SimMode } from '@nannymud/shared/simulation/types';
 import { VIRTUAL_WIDTH, VIRTUAL_HEIGHT } from './constants';
 import { BootScene } from './scenes/BootScene';
 import { GameplayScene } from './scenes/GameplayScene';

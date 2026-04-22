@@ -1,4 +1,4 @@
-import type { GuildId } from '../simulation/types';
+import type { GuildId } from '@nannymud/shared/simulation/types';
 
 export interface GuildMeta {
   id: GuildId;

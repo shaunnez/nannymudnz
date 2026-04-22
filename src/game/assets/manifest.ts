@@ -2,7 +2,7 @@
 // Populated incrementally: atlases in Task 9, procedural VFX needs nothing loaded,
 // image-based VFX (public/vfx/<guild>/*.png) in Task 9.
 
-import type { GuildId } from '../../simulation/types';
+import type { GuildId } from '@nannymud/shared/simulation/types';
 
 export interface AtlasDecl {
   key: string;

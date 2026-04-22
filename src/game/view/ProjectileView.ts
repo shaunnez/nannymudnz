@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import type { Projectile } from '../../simulation/types';
+import type { Projectile } from '@nannymud/shared/simulation/types';
 import { VIRTUAL_HEIGHT, worldYToScreenY } from '../constants';
 
 function hexToInt(hex: string): number {

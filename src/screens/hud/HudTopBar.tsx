@@ -1,5 +1,5 @@
-import type { Actor, RoundState } from '../../simulation/types';
-import { getGuild } from '../../simulation/guildData';
+import type { Actor, RoundState } from '@nannymud/shared/simulation/types';
+import { getGuild } from '@nannymud/shared/simulation/guildData';
 import { GUILD_META } from '../../data/guildMeta';
 import { theme, guildAccent } from '../../ui';
 import { MeterBar } from '../../ui/MeterBar';

@@ -1,4 +1,4 @@
-import type { RoundState } from '../../simulation/types';
+import type { RoundState } from '@nannymud/shared/simulation/types';
 import { theme } from '../../ui';
 
 interface Props {

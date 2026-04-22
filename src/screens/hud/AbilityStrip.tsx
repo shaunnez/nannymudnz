@@ -1,5 +1,5 @@
-import type { Actor } from '../../simulation/types';
-import { getGuild } from '../../simulation/guildData';
+import type { Actor } from '@nannymud/shared/simulation/types';
+import { getGuild } from '@nannymud/shared/simulation/guildData';
 import { theme } from '../../ui';
 
 interface Props {

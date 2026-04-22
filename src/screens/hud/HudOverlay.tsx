@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type Phaser from 'phaser';
-import type { SimState } from '../../simulation/types';
+import type { SimState } from '@nannymud/shared/simulation/types';
 import { HudTopBar } from './HudTopBar';
 import { HudFooter } from './HudFooter';
 

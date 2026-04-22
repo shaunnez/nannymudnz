@@ -1,6 +1,6 @@
-import { GUILDS } from '../simulation/guildData';
+import { GUILDS } from '@nannymud/shared/simulation/guildData';
 import { GUILD_META } from '../data/guildMeta';
-import type { GuildId, AbilityDef } from '../simulation/types';
+import type { GuildId, AbilityDef } from '@nannymud/shared/simulation/types';
 import { theme, guildAccent, ModalShell, SpriteStrip, ComboDisplay } from '../ui';
 
 interface Props {
