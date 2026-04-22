@@ -9,3 +9,5 @@ export * from './LogEntrySchema';
 export * from './RoundStateSchema';
 export * from './WaveSchema';
 export * from './SimStateSchema';
+export * from './PlayerSlot';
+export * from './MatchState';
