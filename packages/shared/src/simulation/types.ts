@@ -306,9 +306,16 @@ export interface RoundState {
 
 export type SimMode = 'story' | 'vs';
 
+export interface WaveEnemy {
+  kind: ActorKind;
+  count: number;
+  offsetX?: number;
+  offsetY?: number;
+}
+
 export interface Wave {
   triggerX: number;
-  enemies: { kind: ActorKind; count: number; offsetX?: number; offsetY?: number }[];
+  enemies: WaveEnemy[];
   triggered: boolean;
   cleared: boolean;
 }
