@@ -11,6 +11,7 @@ export function createVsState(
   p2: GuildId,
   _stageId: string,
   seed: number,
+  humanOpponent = false,
 ): SimState {
   const state = createInitialState(p1, seed);
   state.mode = 'vs';
@@ -18,7 +19,7 @@ export function createVsState(
   state.currentWave = -1;
   state.bossSpawned = false;
 
-  const opponent = buildOpponent(p2, state.player.x + OPPONENT_SPAWN_X_OFFSET);
+  const opponent = buildOpponent(p2, state.player.x + OPPONENT_SPAWN_X_OFFSET, humanOpponent);
   state.opponent = opponent;
   state.enemies = [opponent];
 
@@ -41,19 +42,52 @@ export function createVsState(
   return state;
 }
 
-function buildOpponent(guildId: GuildId, x: number): Actor {
+function buildOpponent(guildId: GuildId, x: number, humanOpponent = false): Actor {
   const a = createPlayerActor(guildId);
   a.id = 'opponent';
   a.team = 'enemy';
-  a.isPlayer = false;
+  // MP: both combatants are human; story/single VS: only p1 is human.
+  a.isPlayer = humanOpponent;
   a.x = x;
   a.facing = -1;
-  a.aiState = {
-    ...a.aiState,
-    behavior: 'chaser',
-    targetId: 'player',
-  };
+  a.aiState = humanOpponent
+    ? {
+        // Neutralised: no target, no behavior drives. handlePlayerInput
+        // will take the wheel each tick.
+        ...a.aiState,
+        behavior: 'chaser',
+        targetId: null,
+      }
+    : {
+        ...a.aiState,
+        behavior: 'chaser',
+        targetId: 'player',
+      };
   return a;
+}
+
+/**
+ * Multiplayer 1v1 VS-state factory. Produces a SimState structurally identical
+ * to `createVsState(...)` but flags the opponent as human-controlled so that
+ * MatchRoom routes them through `handlePlayerInput` (via the `opponentInput`
+ * parameter on `tickSimulation`) instead of AI.
+ *
+ * Team policy per multiplayer spec:
+ *   - host (slot 0) → `state.player`, team `player`
+ *   - joiner (slot 1) → `state.opponent`, team `enemy`
+ * Both actors are marked `isPlayer = true`.
+ *
+ * Note: we return a plain SimState. The caller (MatchRoom) is responsible for
+ * copying these fields into the Colyseus SimStateSchema instance so that
+ * Colyseus's state-sync can track mutations.
+ */
+export function createMpVsState(
+  p1Guild: GuildId,
+  p2Guild: GuildId,
+  seed: number,
+  stageId: string,
+): SimState {
+  return createVsState(p1Guild, p2Guild, stageId, seed, true);
 }
 
 const INTRO_MS = 1500;

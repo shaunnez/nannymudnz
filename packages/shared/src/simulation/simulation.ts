@@ -215,6 +215,25 @@ export function resetController(state: SimState, playerId: string): void {
   delete state.controllers[playerId];
 }
 
+/**
+ * Neutral InputState — no keys held, no just-pressed edges. Used by the server
+ * as a baseline when a client hasn't yet sent its first `InputMsg` (e.g. the
+ * joiner seat before they've pressed anything, or a disconnected slot).
+ */
+export function makeEmptyInputState(): InputState {
+  return {
+    left: false, right: false, up: false, down: false,
+    jump: false, attack: false, block: false, grab: false, pause: false,
+    leftJustPressed: false, rightJustPressed: false,
+    jumpJustPressed: false, attackJustPressed: false, blockJustPressed: false,
+    grabJustPressed: false, pauseJustPressed: false,
+    fullscreenToggleJustPressed: false,
+    lastLeftPressMs: 0, lastRightPressMs: 0,
+    runningLeft: false, runningRight: false,
+    testAbilitySlot: null,
+  };
+}
+
 function consumeResource(player: Actor, cost: number): boolean {
   const guild = getGuild(player.guildId!);
   const isSanityGuild = player.guildId === 'cultist';
@@ -296,6 +315,26 @@ function pushAbilityVfx(
   });
 }
 
+/**
+ * Enemies from the perspective of `actor`. In VS mode both the player and the
+ * opponent are human-controlled; story mode uses the existing team-based
+ * enemy lookup. Keeps the subject-actor abstraction out of every call site.
+ */
+function getEnemiesOf(state: SimState, actor: Actor): Actor[] {
+  if (state.mode === 'vs') {
+    if (actor.id === 'player') {
+      return state.opponent ? [state.opponent] : [];
+    }
+    if (actor.id === 'opponent') {
+      return [state.player];
+    }
+  }
+  if (actor.team === 'enemy') {
+    return [state.player, ...state.allies];
+  }
+  return state.enemies;
+}
+
 function fireAbility(player: Actor, ability: AbilityDef, state: SimState, ctrl: PlayerController): void {
   if (isSilenced(player)) {
     state.vfxEvents.push({ type: 'status_text', color: '#ef4444', x: player.x, y: player.y - 80, text: 'Silenced!' });
@@ -372,7 +411,8 @@ function fireAbility(player: Actor, ability: AbilityDef, state: SimState, ctrl: 
   }
 
   if (ability.isProjectile) {
-    const targets = state.enemies.filter(e => e.isAlive);
+    const enemies = getEnemiesOf(state, player);
+    const targets = enemies.filter(e => e.isAlive);
     const nearest = targets.reduce<Actor | null>((b, e) => {
       if (!b) return e;
       return Math.abs(e.x - player.x) < Math.abs(b.x - player.x) ? e : b;
@@ -394,7 +434,7 @@ function fireAbility(player: Actor, ability: AbilityDef, state: SimState, ctrl: 
         vx: dir * (ability.projectileSpeed + delay * 0),
         vy: spread * 0.5,
         vz: 0,
-        damage: Math.round(calcDamage(ability, player.stats, state.enemies[0] || player, false, state.rng) * dmgMult),
+        damage: Math.round(calcDamage(ability, player.stats, enemies[0] || player, false, state.rng) * dmgMult),
         damageType: ability.damageType,
         range: ability.range || 400,
         traveled: 0,
@@ -419,7 +459,7 @@ function fireAbility(player: Actor, ability: AbilityDef, state: SimState, ctrl: 
   }
 
   if (ability.aoeRadius > 0 && !ability.isGroundTarget) {
-    const aoeTargets = state.enemies.filter(e =>
+    const aoeTargets = getEnemiesOf(state, player).filter(e =>
       e.isAlive &&
       Math.hypot(e.x - player.x, e.y - player.y) <= ability.aoeRadius
     );
@@ -451,7 +491,7 @@ function fireAbility(player: Actor, ability: AbilityDef, state: SimState, ctrl: 
   }
 
   if (!ability.isProjectile && !ability.isHeal && !ability.isTeleport && ability.baseDamage > 0 && !ability.isGroundTarget && ability.aoeRadius === 0) {
-    const targets = state.enemies.filter(e =>
+    const targets = getEnemiesOf(state, player).filter(e =>
       e.isAlive && isInRange(player, e, ability.range || 60)
     );
     for (const target of targets) {
@@ -478,7 +518,7 @@ function fireAbility(player: Actor, ability: AbilityDef, state: SimState, ctrl: 
   }
 
   if (player.guildId === 'leper' && ability.id === 'contagion') {
-    const targets = state.enemies.filter(e =>
+    const targets = getEnemiesOf(state, player).filter(e =>
       e.isAlive &&
       Math.hypot(e.x - player.x, e.y - player.y) <= (ability.range || 300),
     );
@@ -621,7 +661,7 @@ function performBasicAttack(player: Actor, state: SimState, ctrl: PlayerControll
   player.animationId = animId;
   player.state = 'attacking';
 
-  const targets = state.enemies.filter(e => e.isAlive && isInRange(player, e, range));
+  const targets = getEnemiesOf(state, player).filter(e => e.isAlive && isInRange(player, e, range));
 
   if (player.heldPickup?.type === 'club') {
     player.heldPickup.hitsLeft--;
@@ -813,8 +853,8 @@ function tickProjectiles(state: SimState, dtSec: number): void {
   state.projectiles = state.projectiles.filter(p => !toRemove.includes(p.id));
 }
 
-function handlePlayerInput(state: SimState, input: InputState, ctrl: PlayerController, dtMs: number): void {
-  const player = state.player;
+function handlePlayerInput(state: SimState, input: InputState, ctrl: PlayerController, dtMs: number, actor?: Actor): void {
+  const player = actor ?? state.player;
   const now = state.timeMs;
   const dtSec = dtMs / 1000;
 
@@ -846,7 +886,7 @@ function handlePlayerInput(state: SimState, input: InputState, ctrl: PlayerContr
   if (player.state === 'knockdown') {
     if (input.attackJustPressed) {
       applyKnockback(player, 0, 1, false, state.vfxEvents);
-      const aoeTargets = state.enemies.filter(e => e.isAlive && Math.hypot(e.x - player.x, e.y - player.y) < 80);
+      const aoeTargets = getEnemiesOf(state, player).filter(e => e.isAlive && Math.hypot(e.x - player.x, e.y - player.y) < 80);
       for (const t of aoeTargets) {
         applyDamage(t, Math.round(15 + player.stats.STR * 0.3), state.vfxEvents, false);
       }
@@ -921,7 +961,7 @@ function handlePlayerInput(state: SimState, input: InputState, ctrl: PlayerContr
           player.chiOrbs = Math.min(5, (player.chiOrbs || 0) + 1);
           player.mp = player.chiOrbs;
         }
-        const nearbyEnemies = state.enemies.filter(e => e.isAlive && Math.abs(e.x - player.x) < 80);
+        const nearbyEnemies = getEnemiesOf(state, player).filter(e => e.isAlive && Math.abs(e.x - player.x) < 80);
         for (const e of nearbyEnemies) {
           addStatusEffect(state, e, 'stun', 1, 500, player.id);
         }
@@ -1077,7 +1117,7 @@ function handlePlayerInput(state: SimState, input: InputState, ctrl: PlayerContr
   }
 
   if (player.guildId === 'champion') {
-    const nearestEnemy = state.enemies.filter(e => e.isAlive)
+    const nearestEnemy = getEnemiesOf(state, player).filter(e => e.isAlive)
       .reduce<Actor | null>((b, e) => {
         if (!b) return e;
         return Math.hypot(e.x - player.x, e.y - player.y) < Math.hypot(b.x - player.x, b.y - player.y) ? e : b;
@@ -1107,7 +1147,7 @@ function handlePlayerInput(state: SimState, input: InputState, ctrl: PlayerContr
         radius: leperRmb.aoeRadius || 90,
       });
     }
-    const miasmaTargets = state.enemies.filter(e => e.isAlive && Math.hypot(e.x - player.x, e.y - player.y) < 90);
+    const miasmaTargets = getEnemiesOf(state, player).filter(e => e.isAlive && Math.hypot(e.x - player.x, e.y - player.y) < 90);
     for (const t of miasmaTargets) {
       const dotDmg = (5 + player.stats.CON * 0.2) * dtSec;
       if (dotDmg > 0.01) {
@@ -1147,7 +1187,12 @@ function spawnPickup(state: SimState, enemy: Actor): void {
   }
 }
 
-export function tickSimulation(state: SimState, input: InputState, dtMs: number): SimState {
+export function tickSimulation(
+  state: SimState,
+  input: InputState,
+  dtMs: number,
+  opponentInput?: InputState,
+): SimState {
   if (state.phase === 'victory' || state.phase === 'defeat') return state;
   if (state.phase === 'paused') {
     if (input.pauseJustPressed) state.phase = 'playing';
@@ -1155,7 +1200,7 @@ export function tickSimulation(state: SimState, input: InputState, dtMs: number)
   }
 
   if (state.mode === 'vs') {
-    return tickVsSimulation(state, input, dtMs);
+    return tickVsSimulation(state, input, dtMs, opponentInput);
   }
 
   const dtSec = dtMs / 1000;
@@ -1247,7 +1292,12 @@ export function forceResume(state: SimState): SimState {
   return { ...state, phase: 'playing' };
 }
 
-function tickVsSimulation(state: SimState, input: InputState, dtMs: number): SimState {
+function tickVsSimulation(
+  state: SimState,
+  input: InputState,
+  dtMs: number,
+  opponentInput?: InputState,
+): SimState {
   const dtSec = dtMs / 1000;
   state.timeMs += dtMs;
   state.tick++;
@@ -1258,7 +1308,7 @@ function tickVsSimulation(state: SimState, input: InputState, dtMs: number): Sim
   const fighting = state.round?.phase === 'fighting';
 
   if (state.player.isAlive) {
-    if (fighting) handlePlayerInput(state, input, ctrl, dtMs);
+    if (fighting) handlePlayerInput(state, input, ctrl, dtMs, state.player);
     tickPhysics(state.player, dtSec);
     tickKnockdown(state.player, dtSec);
     tickGetup(state.player, dtSec);
@@ -1269,12 +1319,25 @@ function tickVsSimulation(state: SimState, input: InputState, dtMs: number): Sim
 
   const opp = state.opponent;
   if (opp && opp.isAlive) {
-    if (fighting) tickAI(opp, state, dtSec, state.vfxEvents);
+    if (fighting) {
+      if (opponentInput) {
+        // MP 1v1: opponent is a human player. Route them through the same
+        // input pipeline as the primary player so facing, combos, abilities,
+        // and run-detection behave symmetrically.
+        const oppCtrl = getOrCreateController(state, opp.id, opponentInput);
+        handlePlayerInput(state, opponentInput, oppCtrl, dtMs, opp);
+      } else {
+        tickAI(opp, state, dtSec, state.vfxEvents);
+      }
+    }
     tickPhysics(opp, dtSec);
     tickKnockdown(opp, dtSec);
     tickGetup(opp, dtSec);
     tickStatusEffects(opp, dtMs, state.vfxEvents);
     tickHPRegen(opp, dtMs, true);
+    if (opponentInput) {
+      tickPlayerResourceRegen(opp, dtMs, true, state);
+    }
   }
 
   tickProjectiles(state, dtSec);
