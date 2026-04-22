@@ -1,5 +1,7 @@
 import Phaser from 'phaser';
+import type { Room } from 'colyseus.js';
 import type { GuildId, SimState } from '@nannymud/shared/simulation/types';
+import type { MatchState } from '@nannymud/shared';
 import {
   createInitialState,
   tickSimulation,
@@ -16,9 +18,14 @@ import { ProjectileView } from '../view/ProjectileView';
 import { PickupView } from '../view/PickupView';
 import { consumeVfxEvents } from '../view/ParticleFX';
 import type { Actor, Projectile, Pickup, InputState } from '@nannymud/shared/simulation/types';
-import type { GameCallbacks } from '../PhaserGame';
+import type { GameCallbacks, NetMode } from '../PhaserGame';
+import { InputSender } from '../net/InputSender';
+import { StateSync, type ActorSnapshot } from '../net/StateSync';
 import { AudioManager } from '../../audio/audioManager';
 import { VIRTUAL_HEIGHT, VIRTUAL_WIDTH, HUD_TOP_PX, HUD_BOTTOM_PX } from '../constants';
+
+/** Client-side render delay for two-snapshot linear interpolation (ms). */
+const MP_INTERP_DELAY_MS = 50;
 
 export class GameplayScene extends Phaser.Scene {
   private simState!: SimState;
@@ -32,8 +39,15 @@ export class GameplayScene extends Phaser.Scene {
   private phaseHandoffFired = false;
   private audio!: AudioManager;
   private bossMusicStarted = false;
+
+  // MP-only net state
+  private netMode: NetMode = 'sp';
+  private room: Room<MatchState> | null = null;
+  private inputSender: InputSender | null = null;
+  private stateSync: StateSync | null = null;
+
   private onFullscreenExit = (): void => {
-    if (!this.simState) return;
+    if (!this.simState || this.netMode === 'mp') return;
     const prev = this.simState.phase;
     this.simState = forcePause(this.simState);
     if (prev !== this.simState.phase) {
@@ -47,14 +61,37 @@ export class GameplayScene extends Phaser.Scene {
 
   create(): void {
     const guildId = this.game.registry.get('guildId') as GuildId;
-    const mode = (this.game.registry.get('mode') as 'story' | 'vs' | null) ?? 'story';
+    const mode = (this.game.registry.get('mode') as 'story' | 'vs' | 'mp' | null) ?? 'story';
     const p2 = this.game.registry.get('p2') as GuildId | null;
     const stageId = (this.game.registry.get('stageId') as string | null) ?? 'assembly';
     const seedOverride = this.game.registry.get('seed') as number | null;
     this.callbacks = this.game.registry.get('callbacks') as GameCallbacks;
+    this.netMode = (this.game.registry.get('netMode') as NetMode | null) ?? 'sp';
+    this.room = this.game.registry.get('matchRoom') as Room<MatchState> | null;
 
     const seed = seedOverride ?? Date.now();
-    if (mode === 'vs') {
+    if (this.netMode === 'mp') {
+      if (!this.room) throw new Error('MP mode requires matchRoom in registry');
+      const sim = this.room.state.sim;
+      if (!sim) throw new Error('MP mode requires room.state.sim to be populated');
+      // ActorSchema/SimStateSchema implement the Actor/SimState shapes structurally,
+      // so a direct alias lets the existing render path work unchanged.
+      this.simState = sim as unknown as SimState;
+      this.inputSender = new InputSender(this.room);
+      this.stateSync = new StateSync();
+
+      // Capture a position snapshot whenever the server state changes so
+      // StateSync can interpolate between the two most recent frames.
+      this.room.onStateChange(() => {
+        if (!this.room || !this.stateSync) return;
+        const s = this.room.state.sim;
+        if (!s) return;
+        this.stateSync.onSnapshot({
+          tMs: performance.now(),
+          actors: collectActorSnapshots(s as unknown as SimState),
+        });
+      });
+    } else if (mode === 'vs') {
       if (!p2) throw new Error('VS mode requires a p2 guild');
       this.simState = createVsState(guildId, p2, stageId, seed);
     } else {
@@ -63,7 +100,9 @@ export class GameplayScene extends Phaser.Scene {
     this.inputAdapter = new PhaserInputAdapter(this);
     this.phaseHandoffFired = false;
 
-    resetController(this.simState, 'player');
+    if (this.netMode !== 'mp') {
+      resetController(this.simState, 'player');
+    }
 
     this.audio = new AudioManager();
     this.bossMusicStarted = false;
@@ -74,7 +113,8 @@ export class GameplayScene extends Phaser.Scene {
     if (mode === 'story') {
       this.scene.launch('Hud');
     } else {
-      // VS: React HUD overlays the canvas; shrink camera viewport to the un-covered band.
+      // VS / MP: React HUD overlays the canvas; shrink camera viewport to the
+      // un-covered band.
       this.cameras.main.setViewport(
         0,
         HUD_TOP_PX,
@@ -98,33 +138,37 @@ export class GameplayScene extends Phaser.Scene {
 
     window.addEventListener(FULLSCREEN_EXIT_EVENT, this.onFullscreenExit);
 
-    this.events.on('pause-requested', () => {
-      if (!this.simState) return;
-      const prev = this.simState.phase;
-      this.simState = forcePause(this.simState);
-      if (prev !== this.simState.phase) {
+    // Pause/resume/restart only apply in SP. MP pause is server-authoritative
+    // and is not wired in F1.
+    if (this.netMode !== 'mp') {
+      this.events.on('pause-requested', () => {
+        if (!this.simState) return;
+        const prev = this.simState.phase;
+        this.simState = forcePause(this.simState);
+        if (prev !== this.simState.phase) {
+          this.game.events.emit('phase-change', this.simState.phase);
+        }
+      });
+      this.events.on('resume-requested', () => {
+        if (!this.simState) return;
+        const prev = this.simState.phase;
+        this.simState = forceResume(this.simState);
+        if (prev !== this.simState.phase) {
+          this.game.events.emit('phase-change', this.simState.phase);
+        }
+      });
+      this.events.on('restart-requested', () => {
+        const currentGuild = this.game.registry.get('guildId') as GuildId;
+        resetController(this.simState, 'player');
+        this.simState = createInitialState(currentGuild, Date.now());
+        resetController(this.simState, 'player');
+        this.phaseHandoffFired = false;
+        this.bossMusicStarted = false;
+        this.audio.stopMusic();
+        this.audio.startStageMusic();
         this.game.events.emit('phase-change', this.simState.phase);
-      }
-    });
-    this.events.on('resume-requested', () => {
-      if (!this.simState) return;
-      const prev = this.simState.phase;
-      this.simState = forceResume(this.simState);
-      if (prev !== this.simState.phase) {
-        this.game.events.emit('phase-change', this.simState.phase);
-      }
-    });
-    this.events.on('restart-requested', () => {
-      const currentGuild = this.game.registry.get('guildId') as GuildId;
-      resetController(this.simState, 'player');
-      this.simState = createInitialState(currentGuild, Date.now());
-      resetController(this.simState, 'player');
-      this.phaseHandoffFired = false;
-      this.bossMusicStarted = false;
-      this.audio.stopMusic();
-      this.audio.startStageMusic();
-      this.game.events.emit('phase-change', this.simState.phase);
-    });
+      });
+    }
 
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, this.onShutdown, this);
     this.events.once(Phaser.Scenes.Events.DESTROY, this.onShutdown, this);
@@ -132,7 +176,14 @@ export class GameplayScene extends Phaser.Scene {
 
   update(_time: number, delta: number): void {
     if (this.phaseHandoffFired) return;
+    if (this.netMode === 'mp') {
+      this.updateMp(delta);
+      return;
+    }
+    this.updateSp(delta);
+  }
 
+  private updateSp(delta: number): void {
     const dtMs = Math.min(50, delta);
     const nowMs = this.simState.timeMs + dtMs;
     const inputState = this.inputAdapter.getInputState(nowMs);
@@ -153,7 +204,7 @@ export class GameplayScene extends Phaser.Scene {
 
     this.cameras.main.scrollX = this.simState.cameraX;
     this.background.update(this.simState.cameraX);
-    this.reconcileActors();
+    this.reconcileActors(null);
     this.reconcileProjectiles();
     this.reconcilePickups();
     consumeVfxEvents(this, this.simState.vfxEvents);
@@ -162,16 +213,7 @@ export class GameplayScene extends Phaser.Scene {
       this.events.emit('sim-tick', this.simState);
     }
 
-    if (this.debugText) {
-      const p = this.simState.player;
-      this.debugText.setText([
-        `phase: ${this.simState.phase}`,
-        `wave:  ${this.simState.currentWave + 1}/${this.simState.waves.length}`,
-        `score: ${this.simState.score}`,
-        `hp/mp: ${Math.round(p.hp)}/${Math.round(p.mp)}`,
-        `x/y/z: ${Math.round(p.x)}/${Math.round(p.y)}/${Math.round(p.z)}`,
-      ].join('\n'));
-    }
+    this.updateDebugText();
 
     if (prevPhase === 'playing') {
       if (this.simState.phase === 'victory') {
@@ -190,6 +232,62 @@ export class GameplayScene extends Phaser.Scene {
         return;
       }
     }
+  }
+
+  private updateMp(delta: number): void {
+    if (!this.room || !this.inputSender || !this.stateSync) return;
+    const sim = this.room.state.sim as unknown as SimState | undefined;
+    if (!sim) return;
+    this.simState = sim;
+
+    // Local input capture + diff-based event emission. Server owns the sim.
+    const dtMs = Math.min(50, delta);
+    const nowMs = performance.now();
+    const inputState = this.inputAdapter.getInputState(sim.timeMs + dtMs);
+
+    if (inputState.fullscreenToggleJustPressed) {
+      this.callbacks.toggleFullscreen();
+    }
+
+    this.inputSender.update(inputState, nowMs);
+    this.inputSender.send(inputState);
+    this.inputAdapter.clearJustPressed();
+
+    // Sample interpolated positions 50ms behind real time so the two-snapshot
+    // buffer always has something to lerp between.
+    const sampled = this.stateSync.sample(nowMs - MP_INTERP_DELAY_MS);
+    const interp = new Map<string, ActorSnapshot>();
+    for (const s of sampled) interp.set(s.id, s);
+
+    this.cameras.main.scrollX = sim.cameraX;
+    this.background.update(sim.cameraX);
+    this.reconcileActors(interp);
+    this.reconcileProjectiles();
+    this.reconcilePickups();
+    consumeVfxEvents(this, sim.vfxEvents);
+    this.game.registry.set('simState', sim);
+    this.events.emit('sim-tick', sim);
+
+    this.updateDebugText();
+
+    // Victory/defeat is driven by match phase, not sim phase. App.tsx owns
+    // the screen transition via PHASE_TO_SCREEN; we just stop updating.
+    if (this.room.state.phase === 'results') {
+      this.phaseHandoffFired = true;
+      this.audio.stopMusic();
+    }
+  }
+
+  private updateDebugText(): void {
+    if (!this.debugText) return;
+    const p = this.simState.player;
+    this.debugText.setText([
+      `phase: ${this.simState.phase}`,
+      this.netMode === 'mp' ? `match: ${this.room?.state.phase ?? '?'}` : `wave:  ${this.simState.currentWave + 1}/${this.simState.waves.length}`,
+      `score: ${this.simState.score}`,
+      `hp/mp: ${Math.round(p.hp)}/${Math.round(p.mp)}`,
+      `x/y/z: ${Math.round(p.x)}/${Math.round(p.y)}/${Math.round(p.z)}`,
+    ].join('\n'));
   }
 
   private dispatchAudio(prevPhase: SimState['phase'], inputState: InputState): void {
@@ -216,7 +314,7 @@ export class GameplayScene extends Phaser.Scene {
     void prevPhase;
   }
 
-  private reconcileActors(): void {
+  private reconcileActors(interp: Map<string, ActorSnapshot> | null): void {
     const live: Actor[] = [
       this.simState.player,
       ...this.simState.allies,
@@ -231,7 +329,16 @@ export class GameplayScene extends Phaser.Scene {
         view = new ActorView(this, actor);
         this.actorViews.set(actor.id, view);
       }
-      view.syncFrom(actor);
+      const snap = interp?.get(actor.id);
+      // In MP, override transform fields with the interpolated sample so
+      // motion stays smooth between 20Hz server snapshots. Everything else
+      // (hp, animationId, facing, status) reads live from the schema.
+      // Clone via spread rather than mutating the schema object.
+      if (snap) {
+        view.syncFrom({ ...actor, x: snap.x, y: snap.y, z: snap.z } as Actor);
+      } else {
+        view.syncFrom(actor);
+      }
     }
 
     for (const [id, view] of this.actorViews) {
@@ -283,7 +390,7 @@ export class GameplayScene extends Phaser.Scene {
   }
 
   private onShutdown = (): void => {
-    if (this.simState) resetController(this.simState, 'player');
+    if (this.simState && this.netMode !== 'mp') resetController(this.simState, 'player');
     if (this.inputAdapter) this.inputAdapter.dispose();
     if (this.background) this.background.destroy();
     for (const view of this.actorViews.values()) view.destroy();
@@ -296,5 +403,19 @@ export class GameplayScene extends Phaser.Scene {
     this.debugText = undefined;
     if (this.audio) this.audio.dispose();
     window.removeEventListener(FULLSCREEN_EXIT_EVENT, this.onFullscreenExit);
+    this.room = null;
+    this.inputSender = null;
+    this.stateSync = null;
   };
+}
+
+function collectActorSnapshots(sim: SimState): ActorSnapshot[] {
+  const out: ActorSnapshot[] = [];
+  const push = (a: Actor): void => {
+    out.push({ id: a.id, x: a.x, y: a.y, z: a.z, facing: a.facing });
+  };
+  push(sim.player);
+  for (const a of sim.allies) push(a);
+  for (const a of sim.enemies) push(a);
+  return out;
 }
