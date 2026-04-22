@@ -122,10 +122,10 @@ export class MatchRoom extends Room<MatchState> {
     });
   }
 
-  onJoin(client: Client, opts: { name?: string }) {
+  onJoin(client: Client, opts: { name?: string; playerName?: string }) {
     const slot = new PlayerSlot();
     slot.sessionId = client.sessionId;
-    slot.name = opts?.name ?? 'Player';
+    slot.name = opts?.playerName ?? opts?.name ?? 'Player';
     this.state.players.set(client.sessionId, slot);
     if (!this.state.hostSessionId) this.state.hostSessionId = client.sessionId;
   }
