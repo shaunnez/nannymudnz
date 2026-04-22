@@ -8,7 +8,7 @@
   ],
   "scripts": {
     "dev:client": "vite",
-    "dev:server": "tsx watch packages/server/src/index.ts",
+    "dev:server": "node --watch --watch-path=packages/server/src --watch-path=packages/shared/src --import @swc-node/register/esm-register packages/server/src/index.ts",
     "dev": "concurrently -n client,server -c blue,green \"npm:dev:client\" \"npm:dev:server\"",
     "build": "vite build",
     "lint": "eslint .",
@@ -31,6 +31,8 @@
     "@colyseus/sdk": "^0.17.41",
     "@colyseus/testing": "^0.17.11",
     "@eslint/js": "^9.9.1",
+    "@swc-node/register": "^1.11.1",
+    "@swc/core": "^1.15.30",
     "@types/react": "^18.3.5",
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react": "^4.3.1",
