@@ -9,9 +9,21 @@ interface Props {
   stageName: string;
   animate: boolean;
   showLog: boolean;
+  /** MP-only: local client's sessionId. Used to pick which actor is rendered
+   *  on the left side of the HUD. Undefined in SP VS. */
+  localSessionId?: string;
+  /** MP-only: the server's host sessionId. Host's actor is `state.player`. */
+  hostSessionId?: string;
 }
 
-export function HudOverlay({ game, stageName, animate, showLog }: Props) {
+export function HudOverlay({
+  game,
+  stageName,
+  animate,
+  showLog,
+  localSessionId,
+  hostSessionId,
+}: Props) {
   const stateRef = useRef<SimState | null>(null);
   const [, setTick] = useState(0);
 
@@ -32,6 +44,15 @@ export function HudOverlay({ game, stageName, animate, showLog }: Props) {
   const state = stateRef.current;
   if (!state || state.mode !== 'vs' || !state.opponent) return null;
 
+  // Server convention: host's char is state.player, guest's is state.opponent.
+  // In SP VS, local is always state.player. In MP, show the local player on
+  // the left regardless of which schema slot they occupy.
+  const localIsHost =
+    !!localSessionId && !!hostSessionId && localSessionId === hostSessionId;
+  const inMp = !!localSessionId && !!hostSessionId;
+  const p1 = inMp && !localIsHost ? state.opponent : state.player;
+  const p2 = inMp && !localIsHost ? state.player : state.opponent;
+
   return (
     <div
       style={{
@@ -41,15 +62,15 @@ export function HudOverlay({ game, stageName, animate, showLog }: Props) {
       }}
     >
       <HudTopBar
-        p1={state.player}
-        p2={state.opponent}
+        p1={p1}
+        p2={p2}
         round={state.round}
         stageName={stageName}
         animate={animate}
       />
       <HudFooter
-        p1={state.player}
-        p2={state.opponent}
+        p1={p1}
+        p2={p2}
         log={state.combatLog}
         showLog={showLog}
         simTimeMs={state.timeMs}

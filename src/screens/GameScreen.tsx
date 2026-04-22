@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Phaser from 'phaser';
+import type { Room } from 'colyseus.js';
 import type { GuildId, SimMode, SimState } from '@nannymud/shared/simulation/types';
+import type { MatchState } from '@nannymud/shared';
 import { PauseOverlay } from './PauseOverlay';
 import { GuildDetails } from './GuildDetails';
 import { useFullscreen } from '../layout/useFullscreen';
@@ -15,15 +17,18 @@ interface Props {
   stageId: string;
   animateHud: boolean;
   showLog: boolean;
+  /** When present, GameScreen runs in multiplayer mode and mirrors server state. */
+  matchRoom?: Room<MatchState>;
   onVictory: (score: number) => void;
   onDefeat: () => void;
   onQuit: () => void;
 }
 
 export function GameScreen({
-  mode, p1, p2, stageId, animateHud, showLog,
+  mode, p1, p2, stageId, animateHud, showLog, matchRoom,
   onVictory, onDefeat, onQuit,
 }: Props) {
+  const netMode = matchRoom ? 'mp' : 'sp';
   const parentRef = useRef<HTMLDivElement>(null);
   const gameRef = useRef<Phaser.Game | null>(null);
   const [gameReady, setGameReady] = useState(false);
@@ -62,6 +67,8 @@ export function GameScreen({
       p2,
       stageId,
       callbacks,
+      netMode,
+      matchRoom,
     });
     gameRef.current = game;
     setGameReady(true);
@@ -77,7 +84,7 @@ export function GameScreen({
       gameRef.current = null;
       setGameReady(false);
     };
-  }, [mode, p1, p2, stageId]);
+  }, [mode, p1, p2, stageId, netMode, matchRoom]);
 
   useEffect(() => {
     const game = gameRef.current;
@@ -109,6 +116,8 @@ export function GameScreen({
   }, [emitToGameplay]);
 
   useEffect(() => {
+    // Tab-to-moves popup uses local pause, which the server doesn't honour in MP.
+    if (netMode === 'mp') return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== 'Tab') return;
       e.preventDefault();
@@ -129,7 +138,7 @@ export function GameScreen({
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [closeMoves, emitToGameplay, showMoves]);
+  }, [closeMoves, emitToGameplay, showMoves, netMode]);
 
   const stage = STAGES.find((s) => s.id === stageId);
   const stageName = stage?.name ?? 'Arena';
@@ -150,16 +159,18 @@ export function GameScreen({
           stageName={stageName}
           animate={animateHud}
           showLog={showLog}
+          localSessionId={matchRoom?.sessionId}
+          hostSessionId={matchRoom?.state.hostSessionId}
         />
       )}
-      {isPaused && !showMoves && (
+      {netMode !== 'mp' && isPaused && !showMoves && (
         <PauseOverlay
           onResume={handleResume}
           onRestart={handleRestart}
           onQuit={onQuit}
         />
       )}
-      {showMoves && <GuildDetails guildId={p1} onClose={closeMoves} />}
+      {netMode !== 'mp' && showMoves && <GuildDetails guildId={p1} onClose={closeMoves} />}
     </div>
   );
 }
