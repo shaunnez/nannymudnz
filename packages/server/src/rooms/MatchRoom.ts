@@ -30,6 +30,12 @@ export class MatchRoom extends Room<MatchState> {
   /** Session IDs that signalled `ready_to_start`. Cleared when the match starts. */
   private readyToStart = new Set<string>();
 
+  /**
+   * Session ID of the player who sent `rematch_offer`, or null.
+   * Only valid while phase === 'results'. Cleared whenever we leave results.
+   */
+  private pendingRematchOffer: string | null = null;
+
   onCreate(opts: CreateOpts) {
     this.setState(new MatchState());
     this.state.code = generateCode();
@@ -86,6 +92,34 @@ export class MatchRoom extends Room<MatchState> {
       }
       this.pendingEvents.set(client.sessionId, prior);
     });
+
+    this.onMessage('rematch_offer', (client: Client) => {
+      if (this.state.phase !== 'results') return;
+      // Only a known slot may offer
+      if (!this.state.players.has(client.sessionId)) return;
+      this.pendingRematchOffer = client.sessionId;
+    });
+
+    this.onMessage('rematch_accept', (client: Client, msg: { accept: boolean }) => {
+      if (this.state.phase !== 'results') return;
+      if (!this.state.players.has(client.sessionId)) return;
+      // Must have a pending offer from the OTHER player
+      if (!this.pendingRematchOffer || this.pendingRematchOffer === client.sessionId) return;
+      if (!msg.accept) return; // decline — stay in results, no state change
+
+      // Both agree — reset for a new char_select round
+      this.pendingRematchOffer = null;
+      this.state.matchWinnerSessionId = '';
+      this.state.stageId = '';
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (this.state as any).sim = undefined;
+      for (const slot of this.state.players.values()) {
+        slot.ready = false;
+        slot.locked = false;
+        slot.guildId = '';
+      }
+      this.state.phase = 'char_select';
+    });
   }
 
   onJoin(client: Client, opts: { name?: string }) {
@@ -99,7 +133,63 @@ export class MatchRoom extends Room<MatchState> {
   onLeave(client: Client) {
     const slot = this.state.players.get(client.sessionId);
     if (slot) slot.connected = false;
-    // full disconnect handling lands in C3
+
+    const phase = this.state.phase;
+
+    if (phase === 'in_game') {
+      // Award the win to whoever is still connected
+      let winnerId = '';
+      for (const [sid, s] of this.state.players) {
+        if (sid !== client.sessionId && s.connected) {
+          winnerId = sid;
+          break;
+        }
+      }
+      this.state.matchWinnerSessionId = winnerId;
+      this.state.phase = 'results';
+      // pendingRematchOffer is already null at this point (set during results only)
+    } else if (phase === 'lobby' || phase === 'char_select' ||
+               phase === 'stage_select' || phase === 'loading') {
+      this.pendingRematchOffer = null;
+
+      // Find any remaining connected player BEFORE removing the departing slot
+      const remainingId = [...this.state.players.keys()]
+        .find(sid => sid !== client.sessionId) as string | undefined;
+
+      if (remainingId) {
+        // Another player exists — remove the departing slot and reset the room
+        this.state.players.delete(client.sessionId);
+        const remaining = this.state.players.get(remainingId)!;
+        remaining.ready = false;
+        remaining.locked = false;
+        remaining.guildId = '';
+        // Promote to host if needed
+        if (this.state.hostSessionId === client.sessionId) {
+          this.state.hostSessionId = remainingId;
+        }
+        this.state.phase = 'lobby';
+      }
+      // If no remaining player, just leave the (now-disconnected) slot in place
+      // so callers can inspect `connected=false`; the room will close below.
+    } else if (phase === 'results') {
+      // Just remove the slot; don't change phase (match is already decided)
+      this.state.players.delete(client.sessionId);
+      if (this.pendingRematchOffer === client.sessionId) {
+        this.pendingRematchOffer = null;
+      }
+    }
+
+    // If no connected slots remain, close the room
+    const connectedCount = [...this.state.players.values()].filter(s => s.connected).length;
+    if (connectedCount === 0) {
+      try {
+        this.disconnect();
+      } catch {
+        // Colyseus throws if disconnect() is called before the room is fully
+        // initialised (e.g. in tests that don't boot the full server).
+        // Safe to ignore — the room has no connected clients at this point.
+      }
+    }
   }
 
   // -------------------------------------------------------------------------
