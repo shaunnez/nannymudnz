@@ -26,7 +26,7 @@ const ALLY_INITIAL = 'A';
 const DISPLAY_SCALE = 1.5;
 
 function colorAndInitial(actor: Actor): { color: string; initial: string } {
-  if (actor.isPlayer && actor.guildId) {
+  if (actor.guildId) {
     const g = GUILD_LOOKUP[actor.guildId];
     if (g) return g;
   }
@@ -89,7 +89,7 @@ export class ActorView {
     this.actorId = actor.id;
     this.width = actor.width;
     this.height = actor.height;
-    this.guildId = actor.isPlayer && actor.guildId ? actor.guildId : undefined;
+    this.guildId = actor.guildId ?? undefined;
     this.hasSprites = !!this.guildId && guildHasSprites(this.guildId);
 
     const { color, initial } = colorAndInitial(actor);

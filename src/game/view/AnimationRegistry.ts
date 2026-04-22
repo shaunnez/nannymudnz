@@ -20,7 +20,10 @@ interface GuildMetadata {
   }>>;
 }
 
-const SPRITE_GUILDS: GuildId[] = ['knight', 'leper', 'vampire'];
+const SPRITE_GUILDS: GuildId[] = [
+  'adventurer', 'cultist', 'druid', 'hunter', 'knight',
+  'leper', 'mage', 'monk', 'prophet', 'vampire', 'viking',
+];
 
 // Populated as metadata loads complete. ActorView reads from here to pick an
 // anchor offset and to check whether a guild has sprite coverage.
