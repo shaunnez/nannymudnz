@@ -9,6 +9,8 @@ interface Props {
   stageName: string;
   animate: boolean;
   showLog: boolean;
+  /** True in multiplayer. Gates the p1/p2 swap below. */
+  inMp?: boolean;
   /** MP-only: local client's sessionId. Used to pick which actor is rendered
    *  on the left side of the HUD. Undefined in SP VS. */
   localSessionId?: string;
@@ -21,6 +23,7 @@ export function HudOverlay({
   stageName,
   animate,
   showLog,
+  inMp = false,
   localSessionId,
   hostSessionId,
 }: Props) {
@@ -44,12 +47,14 @@ export function HudOverlay({
   const state = stateRef.current;
   if (!state || state.mode !== 'vs' || !state.opponent) return null;
 
+  // In MP, defer the first HUD render until both sessionIds are known so we
+  // don't flicker guests onto the host's side of the bar for one frame.
+  if (inMp && (!localSessionId || !hostSessionId)) return null;
+
   // Server convention: host's char is state.player, guest's is state.opponent.
   // In SP VS, local is always state.player. In MP, show the local player on
   // the left regardless of which schema slot they occupy.
-  const localIsHost =
-    !!localSessionId && !!hostSessionId && localSessionId === hostSessionId;
-  const inMp = !!localSessionId && !!hostSessionId;
+  const localIsHost = inMp && localSessionId === hostSessionId;
   const p1 = inMp && !localIsHost ? state.opponent : state.player;
   const p2 = inMp && !localIsHost ? state.player : state.opponent;
 

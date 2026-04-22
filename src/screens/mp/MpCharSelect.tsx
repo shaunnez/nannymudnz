@@ -5,7 +5,8 @@ import { GUILDS } from '@nannymud/shared/simulation/guildData';
 import type { GuildId } from '@nannymud/shared/simulation/types';
 import { theme, guildAccent, GuildMonogram, Btn } from '../../ui';
 import { GUILD_META } from '../../data/guildMeta';
-import { useMatchState } from './useMatchState';
+import { useMatchState, getMatchSlots } from './useMatchState';
+import { usePhaseBounce } from './usePhaseBounce';
 import { RoomCodeBadge } from './RoomCodeBadge';
 
 interface Props {
@@ -23,12 +24,7 @@ export function MpCharSelect({ room, onLeave, onPhaseChange }: Props) {
   const state = useMatchState(room);
   const ids = useMemo(() => GUILDS.map((g) => g.id), []);
 
-  const localSlot = Array.from(state.players.values()).find(
-    (s) => s.sessionId === room.sessionId,
-  );
-  const opponentSlot = Array.from(state.players.values()).find(
-    (s) => s.sessionId !== room.sessionId,
-  );
+  const { localSlot, opponentSlot } = getMatchSlots(state, room.sessionId);
 
   const isLocked = localSlot?.locked ?? false;
 
@@ -46,12 +42,7 @@ export function MpCharSelect({ room, onLeave, onPhaseChange }: Props) {
   const hoveredMeta = GUILD_META[cursorGuildId];
   const hoveredGuild = GUILDS.find((g) => g.id === cursorGuildId)!;
 
-  // Watch for phase transitions.
-  useEffect(() => {
-    if (state.phase !== 'char_select') {
-      onPhaseChange(state.phase);
-    }
-  }, [state.phase, onPhaseChange]);
+  usePhaseBounce(state.phase, 'char_select', onPhaseChange);
 
   const move = useCallback(
     (dx: number, dy: number) => {

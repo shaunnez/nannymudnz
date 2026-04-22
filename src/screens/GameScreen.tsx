@@ -83,6 +83,9 @@ export function GameScreen({
 
     const onPreloadDone = () => setPreloading(false);
     game.events.on('preload-done', onPreloadDone);
+    // If Boot already ran by the time this listener is attached (HMR, slow
+    // commit), the sticky registry flag saves us from hanging on the overlay.
+    if (game.registry.get('preloadDone')) setPreloading(false);
 
     return () => {
       game.events.off('phase-change', onPhaseChange);
@@ -167,6 +170,7 @@ export function GameScreen({
           stageName={stageName}
           animate={animateHud}
           showLog={showLog}
+          inMp={netMode === 'mp'}
           localSessionId={matchRoom?.sessionId}
           hostSessionId={matchRoom?.state.hostSessionId}
         />

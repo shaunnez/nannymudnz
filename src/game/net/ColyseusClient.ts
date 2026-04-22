@@ -1,7 +1,7 @@
 import { Client, Room } from 'colyseus.js';
 import type { MatchState } from '@nannymud/shared';
 
-const WS_URL = (import.meta as Record<string, unknown> & { env?: Record<string, string> }).env?.VITE_COLYSEUS_URL ?? 'ws://localhost:2567';
+const WS_URL = import.meta.env.VITE_COLYSEUS_URL ?? 'ws://localhost:2567';
 
 let client: Client | null = null;
 

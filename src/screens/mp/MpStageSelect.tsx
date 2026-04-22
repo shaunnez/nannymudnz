@@ -4,6 +4,7 @@ import type { MatchState, MatchPhase } from '@nannymud/shared';
 import { theme, Btn } from '../../ui';
 import { STAGES } from '../../data/stages';
 import { useMatchState } from './useMatchState';
+import { usePhaseBounce } from './usePhaseBounce';
 import { RoomCodeBadge } from './RoomCodeBadge';
 
 interface Props {
@@ -21,12 +22,7 @@ export function MpStageSelect({ room, onLeave, onPhaseChange }: Props) {
 
   const [cursor, setCursor] = useState<number>(0);
 
-  // Watch for phase transitions.
-  useEffect(() => {
-    if (state.phase !== 'stage_select') {
-      onPhaseChange(state.phase);
-    }
-  }, [state.phase, onPhaseChange]);
+  usePhaseBounce(state.phase, 'stage_select', onPhaseChange);
 
   const move = useCallback(
     (dx: number, dy: number) => {

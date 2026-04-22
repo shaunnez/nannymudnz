@@ -1,8 +1,8 @@
-import { useEffect } from 'react';
 import type { Room } from 'colyseus.js';
 import type { MatchState, MatchPhase } from '@nannymud/shared';
 import { theme, Btn } from '../../ui';
-import { useMatchState } from './useMatchState';
+import { useMatchState, getMatchSlots } from './useMatchState';
+import { usePhaseBounce } from './usePhaseBounce';
 import { RoomCodeBadge } from './RoomCodeBadge';
 
 interface Props {
@@ -14,16 +14,9 @@ interface Props {
 export function MpLobby({ room, onLeave, onPhaseChange }: Props) {
   const state = useMatchState(room);
 
-  // Watch for phase transitions — parent will swap screens.
-  useEffect(() => {
-    if (state.phase !== 'lobby') {
-      onPhaseChange(state.phase);
-    }
-  }, [state.phase, onPhaseChange]);
+  usePhaseBounce(state.phase, 'lobby', onPhaseChange);
 
-  const slots = Array.from(state.players.values());
-  const localSlot = slots.find((s) => s.sessionId === room.sessionId);
-  const opponentSlot = slots.find((s) => s.sessionId !== room.sessionId);
+  const { slots, localSlot, opponentSlot } = getMatchSlots(state, room.sessionId);
 
   const isHost = room.sessionId === state.hostSessionId;
   const currentReady = localSlot?.ready ?? false;

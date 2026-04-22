@@ -25,7 +25,7 @@ export class AudioManager {
 
   saveVolume(v: number): void {
     this.volume = v;
-    try { localStorage.setItem(STORAGE_KEY, String(v)); } catch { }
+    try { localStorage.setItem(STORAGE_KEY, String(v)); } catch { /* storage disabled */ }
     if (this.masterGain) this.masterGain.gain.value = v;
   }
 
@@ -68,7 +68,7 @@ export class AudioManager {
       g.connect(this.sfxGain);
       osc.start(ctx.currentTime);
       osc.stop(ctx.currentTime + duration);
-    } catch { }
+    } catch { /* audio context unavailable — fail silent */ }
   }
 
   playAttack(): void {
@@ -111,7 +111,7 @@ export class AudioManager {
       g.connect(this.sfxGain);
       osc.start(ctx.currentTime);
       osc.stop(ctx.currentTime + 0.2);
-    } catch { }
+    } catch { /* audio context unavailable — fail silent */ }
   }
 
   playLand(): void {
@@ -137,7 +137,7 @@ export class AudioManager {
       g.connect(this.sfxGain);
       osc.start(ctx.currentTime);
       osc.stop(ctx.currentTime + 0.5);
-    } catch { }
+    } catch { /* audio context unavailable — fail silent */ }
   }
 
   playCast(): void {
@@ -203,7 +203,7 @@ export class AudioManager {
         g.connect(this.musicGain);
         osc.start(ctx.currentTime);
         osc.stop(ctx.currentTime + 0.35);
-      } catch { }
+      } catch { /* audio context unavailable — fail silent */ }
     };
 
     play();
@@ -217,7 +217,7 @@ export class AudioManager {
     }
     this.isBossMusic = false;
     for (const osc of this.musicOscillators) {
-      try { osc.stop(); } catch { }
+      try { osc.stop(); } catch { /* already stopped */ }
     }
     this.musicOscillators = [];
   }

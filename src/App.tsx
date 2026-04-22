@@ -70,7 +70,7 @@ export default function App() {
     };
     room.onLeave(handler);
     return () => {
-      // colyseus.js doesn't expose a remove listener; rely on room destruction.
+      room.onLeave.remove(handler);
     };
   }, [state.mpRoom, set, go]);
 
