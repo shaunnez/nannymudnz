@@ -360,7 +360,7 @@ function spawnEnemyAt(state: SimState, kind: string, x: number, y: number): void
     stateTimeMs: 0,
     isPlayer: false,
     guildId: null,
-    abilityCooldowns: {},
+    abilityCooldowns: new Map(),
     rmbCooldown: 0,
     comboHits: 0,
     lastAttackTimeMs: 0,

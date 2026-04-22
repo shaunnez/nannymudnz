@@ -18,7 +18,7 @@ export function AbilityStrip({ actor, side, showKeys, simTimeMs }: Props) {
   return (
     <div style={{ display: 'flex', gap: 4 }}>
       {cards.map((a, i) => {
-        const cdUntil = actor.abilityCooldowns[a.id] || 0;
+        const cdUntil = actor.abilityCooldowns.get(a.id) ?? 0;
         const cdRemaining = Math.max(0, cdUntil - simTimeMs);
         const onCd = cdRemaining > 0;
         const cdFrac = onCd ? cdRemaining / a.cooldownMs : 0;

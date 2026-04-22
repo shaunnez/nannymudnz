@@ -1,4 +1,4 @@
-import { Schema, type, ArraySchema } from '@colyseus/schema';
+import { Schema, type, ArraySchema, MapSchema } from '@colyseus/schema';
 import type {
   ActorKind,
   ActorState,
@@ -49,10 +49,8 @@ export class ActorSchema extends Schema {
   @type('boolean') isPlayer!: boolean;
   @type('string') guildId!: GuildId | null;
 
-  // Untracked: Record<string, number> cannot be a MapSchema without widening
-  // the interface. This field is server-local state; clients recompute
-  // cooldown visuals from (timeMs vs cooldown-until) when needed.
-  abilityCooldowns: Record<string, number> = {};
+  @type({ map: 'number' }) abilityCooldowns: Map<string, number> =
+    new MapSchema<number>() as unknown as Map<string, number>;
 
   @type('number') rmbCooldown!: number;
   @type('number') comboHits!: number;

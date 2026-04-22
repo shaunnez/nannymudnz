@@ -169,7 +169,7 @@ export interface Actor {
   stateTimeMs: number;
   isPlayer: boolean;
   guildId: GuildId | null;
-  abilityCooldowns: Record<string, number>;
+  abilityCooldowns: Map<string, number>;
   rmbCooldown: number;
   comboHits: number;
   lastAttackTimeMs: number;

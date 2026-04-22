@@ -85,14 +85,14 @@ describe('vsSimulation: resetActorsForRound', () => {
       { id: 'e1', type: 'stun', magnitude: 1, durationMs: 500, remainingMs: 500, source: 'opponent' },
     ];
     s.opponent!.hp = 5;
-    s.opponent!.abilityCooldowns['fireball'] = 9_999_999;
+    s.opponent!.abilityCooldowns.set('fireball', 9_999_999);
 
     resetActorsForRound(s);
 
     expect(s.player.hp).toBe(s.player.hpMax);
     expect(s.player.statusEffects).toEqual([]);
     expect(s.opponent!.hp).toBe(s.opponent!.hpMax);
-    expect(s.opponent!.abilityCooldowns).toEqual({});
+    expect(s.opponent!.abilityCooldowns.size).toBe(0);
   });
 });
 

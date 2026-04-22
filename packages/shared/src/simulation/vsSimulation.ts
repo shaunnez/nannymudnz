@@ -144,7 +144,7 @@ function resetActorState(a: Actor): void {
   a.mp = getGuild(a.guildId!).resource.startValue;
   a.mpMax = getGuild(a.guildId!).resource.max;
   a.statusEffects = [];
-  a.abilityCooldowns = {};
+  a.abilityCooldowns.clear();
   a.rmbCooldown = 0;
   a.comboHits = 0;
   a.knockdownTimeMs = 0;

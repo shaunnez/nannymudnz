@@ -54,7 +54,7 @@ export function createPlayerActor(guildId: GuildId): Actor {
     stateTimeMs: 0,
     isPlayer: true,
     guildId,
-    abilityCooldowns: {},
+    abilityCooldowns: new Map(),
     rmbCooldown: 0,
     comboHits: 0,
     lastAttackTimeMs: 0,
@@ -125,7 +125,7 @@ function createEnemyActor(kind: string, x: number, y: number, state: SimState): 
     stateTimeMs: 0,
     isPlayer: false,
     guildId: null,
-    abilityCooldowns: {},
+    abilityCooldowns: new Map(),
     rmbCooldown: 0,
     comboHits: 0,
     lastAttackTimeMs: 0,
@@ -304,7 +304,7 @@ function fireAbility(player: Actor, ability: AbilityDef, state: SimState, ctrl: 
 
   const now = state.timeMs;
   const cdKey = ability.id;
-  const cdRemaining = (player.abilityCooldowns[cdKey] || 0) - now;
+  const cdRemaining = (player.abilityCooldowns.get(cdKey) ?? 0) - now;
   if (cdRemaining > 0) {
     state.vfxEvents.push({ type: 'status_text', color: '#f97316', x: player.x, y: player.y - 80, text: `${Math.ceil(cdRemaining / 1000)}s` });
     return;
@@ -315,7 +315,7 @@ function fireAbility(player: Actor, ability: AbilityDef, state: SimState, ctrl: 
     return;
   }
 
-  player.abilityCooldowns[cdKey] = now + ability.cooldownMs;
+  player.abilityCooldowns.set(cdKey, now + ability.cooldownMs);
 
   state.vfxEvents.push({
     type: 'ability_name',
