@@ -1,5 +1,5 @@
 import type Phaser from 'phaser';
-import type { InputState } from '../../simulation/types';
+import type { InputState } from '@nannymud/shared/simulation/types';
 import { loadKeyBindings, type KeyBindings } from '../../input/keyBindings';
 
 /**

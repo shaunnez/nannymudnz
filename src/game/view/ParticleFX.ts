@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import type { VFXEvent } from '../../simulation/types';
+import type { VFXEvent } from '@nannymud/shared/simulation/types';
 import { VIRTUAL_HEIGHT, DEPTH_SCALE, worldYToScreenY } from '../constants';
 
 /**

@@ -9,7 +9,7 @@ import { ResultsScreen } from './screens/ResultsScreen';
 import { MoveList } from './screens/MoveList';
 import { GuildDossier } from './screens/GuildDossier';
 import { SettingsScreen } from './screens/SettingsScreen';
-import { GUILDS } from './simulation/guildData';
+import { GUILDS } from '@nannymud/shared/simulation/guildData';
 import { ScalingFrame } from './layout/ScalingFrame';
 import { Scanlines, theme } from './ui';
 import { useAppState } from './state/useAppState';
@@ -77,7 +77,12 @@ export default function App() {
 
         {state.screen === 'game' && (
           <GameScreen
-            guildId={state.p1}
+            mode={state.mode === 'vs' ? 'vs' : 'story'}
+            p1={state.p1}
+            p2={state.p2}
+            stageId={state.stageId}
+            animateHud={state.animateHud}
+            showLog={state.showLog}
             onVictory={(score) => {
               setFinalScore(score);
               set({ winner: 'P1' });

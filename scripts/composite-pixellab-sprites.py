@@ -45,9 +45,9 @@ FRAMECOUNT_AMBIGUOUS_MAP = {
 # Per-guild override for ambiguous PixelLab folder names.
 GUILD_OVERRIDES: dict[str, dict[str, str]] = {
     "knight": {
-        "animating-8fadff24": "ability_3",
-        "animating-b6950d50": "walk",
-        "animating-dec77c7e": "ability_4",
+        "animating-c13fc2a3": "walk",
+        "animating-33580548": "ability_3",
+        "animating-24c53603": "ability_4",
     },
     "vampire": {
         "animating-c6337dcc": "walk",
@@ -58,6 +58,46 @@ GUILD_OVERRIDES: dict[str, dict[str, str]] = {
         "animating-0d59a394": "walk",
         "animating-2da0a2ec": "ability_3",
         "animating-8d76f323": "ability_4",
+    },
+    "mage": {
+        "animating-be5348b8": "walk",
+        "animating-9f346683": "ability_3",
+        "animating-c3b52b88": "ability_4",
+    },
+    "druid": {
+        "animating-cbd248e4": "walk",
+        "animating-bb2f5c21": "ability_3",
+        "animating-331eb417": "ability_4",
+    },
+    "adventurer": {
+        "animating-41811c0d": "walk",
+        "animating-c4a78727": "ability_3",
+        "animating-77f67db7": "ability_4",
+    },
+    "hunter": {
+        "animating-886435a8": "walk",
+        "animating-ecb531e9": "ability_3",
+        "animating-d786c030": "ability_4",
+    },
+    "monk": {
+        "animating-7fdfdbaf": "walk",
+        "animating-d155b963": "ability_3",
+        "animating-f43c8fcf": "ability_4",
+    },
+    "viking": {
+        "animating-35755180": "walk",
+        "animating-aefa3149": "ability_3",
+        "animating-1635b0a1": "ability_4",
+    },
+    "prophet": {
+        "animating-890dead4": "walk",
+        "animating-fe0e21e0": "ability_3",
+        "animating-f8b4bb5c": "ability_4",
+    },
+    "cultist": {
+        "animating-09c48b04": "walk",
+        "animating-b032c96f": "ability_3",
+        "animating-dd84aa95": "ability_4",
     },
 }
 

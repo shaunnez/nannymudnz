@@ -1,21 +1,32 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Phaser from 'phaser';
-import type { GuildId, SimState } from '../simulation/types';
+import type { GuildId, SimMode, SimState } from '@nannymud/shared/simulation/types';
 import { PauseOverlay } from './PauseOverlay';
 import { GuildDetails } from './GuildDetails';
 import { useFullscreen } from '../layout/useFullscreen';
 import { makePhaserGame, type GameCallbacks } from '../game/PhaserGame';
+import { HudOverlay } from './hud/HudOverlay';
+import { STAGES } from '../data/stages';
 
 interface Props {
-  guildId: GuildId;
+  mode: SimMode;
+  p1: GuildId;
+  p2?: GuildId;
+  stageId: string;
+  animateHud: boolean;
+  showLog: boolean;
   onVictory: (score: number) => void;
   onDefeat: () => void;
   onQuit: () => void;
 }
 
-export function GameScreen({ guildId, onVictory, onDefeat, onQuit }: Props) {
+export function GameScreen({
+  mode, p1, p2, stageId, animateHud, showLog,
+  onVictory, onDefeat, onQuit,
+}: Props) {
   const parentRef = useRef<HTMLDivElement>(null);
   const gameRef = useRef<Phaser.Game | null>(null);
+  const [gameReady, setGameReady] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [showMoves, setShowMoves] = useState(false);
   const pausedByMovesRef = useRef(false);
@@ -45,8 +56,15 @@ export function GameScreen({ guildId, onVictory, onDefeat, onQuit }: Props) {
       getIsFullscreen: () => isFullscreenRef.current,
     };
 
-    const game = makePhaserGame(parent, { guildId, callbacks });
+    const game = makePhaserGame(parent, {
+      guildId: p1,
+      mode,
+      p2,
+      stageId,
+      callbacks,
+    });
     gameRef.current = game;
+    setGameReady(true);
 
     const onPhaseChange = (phase: SimState['phase']) => {
       setIsPaused(phase === 'paused');
@@ -57,8 +75,9 @@ export function GameScreen({ guildId, onVictory, onDefeat, onQuit }: Props) {
       game.events.off('phase-change', onPhaseChange);
       game.destroy(true);
       gameRef.current = null;
+      setGameReady(false);
     };
-  }, [guildId]);
+  }, [mode, p1, p2, stageId]);
 
   useEffect(() => {
     const game = gameRef.current;
@@ -112,6 +131,9 @@ export function GameScreen({ guildId, onVictory, onDefeat, onQuit }: Props) {
     return () => window.removeEventListener('keydown', onKey);
   }, [closeMoves, emitToGameplay, showMoves]);
 
+  const stage = STAGES.find((s) => s.id === stageId);
+  const stageName = stage?.name ?? 'Arena';
+
   return (
     <div
       style={{
@@ -122,6 +144,14 @@ export function GameScreen({ guildId, onVictory, onDefeat, onQuit }: Props) {
       }}
     >
       <div ref={parentRef} style={{ width: '100%', height: '100%' }} />
+      {mode === 'vs' && gameReady && (
+        <HudOverlay
+          game={gameRef.current}
+          stageName={stageName}
+          animate={animateHud}
+          showLog={showLog}
+        />
+      )}
       {isPaused && !showMoves && (
         <PauseOverlay
           onResume={handleResume}
@@ -129,7 +159,7 @@ export function GameScreen({ guildId, onVictory, onDefeat, onQuit }: Props) {
           onQuit={onQuit}
         />
       )}
-      {showMoves && <GuildDetails guildId={guildId} onClose={closeMoves} />}
+      {showMoves && <GuildDetails guildId={p1} onClose={closeMoves} />}
     </div>
   );
 }

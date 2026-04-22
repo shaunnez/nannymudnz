@@ -1,6 +1,6 @@
 import { useEffect, useMemo } from 'react';
-import { GUILDS } from '../simulation/guildData';
-import type { GuildId } from '../simulation/types';
+import { GUILDS } from '@nannymud/shared/simulation/guildData';
+import type { GuildId } from '@nannymud/shared/simulation/types';
 import { GUILD_META } from '../data/guildMeta';
 import { theme, guildAccent, Btn, Chip, GuildMonogram, SectionLabel } from '../ui';
 

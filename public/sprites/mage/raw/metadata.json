@@ -1,0 +1,184 @@
+{
+  "character": {
+    "id": "1c1292d8-a316-4c76-a201-b6a2d2996efe",
+    "name": "Mage LF2-R",
+    "prompt": "mage guild caster, ranged burst frost wizard, long flowing violet and indigo robes with arcane trim, pointed wizard hat, wooden staff crowned with a glowing crystal, white beard, casting posture, LF2-remastered arcade beat-em-up pixel art style, crisp clean pixel art with flat shading and bold black outlines, side-view fighting game sprite, readable silhouette, no background",
+    "size": {
+      "width": 140,
+      "height": 140
+    },
+    "template_id": "mannequin",
+    "directions": 8,
+    "view": "side",
+    "created_at": "2026-04-21T13:55:40.011659+00:00"
+  },
+  "frames": {
+    "rotations": {
+      "south": "rotations/south.png",
+      "south-east": "rotations/south-east.png",
+      "east": "rotations/east.png",
+      "north-east": "rotations/north-east.png",
+      "north": "rotations/north.png",
+      "north-west": "rotations/north-west.png",
+      "west": "rotations/west.png",
+      "south-west": "rotations/south-west.png"
+    },
+    "animations": {
+      "animating-9f346683": {
+        "east": [
+          "animations/animating-9f346683/east/frame_000.png",
+          "animations/animating-9f346683/east/frame_001.png",
+          "animations/animating-9f346683/east/frame_002.png",
+          "animations/animating-9f346683/east/frame_003.png",
+          "animations/animating-9f346683/east/frame_004.png",
+          "animations/animating-9f346683/east/frame_005.png"
+        ]
+      },
+      "animating-f576ee0a": {
+        "east": [
+          "animations/animating-f576ee0a/east/frame_000.png",
+          "animations/animating-f576ee0a/east/frame_001.png",
+          "animations/animating-f576ee0a/east/frame_002.png",
+          "animations/animating-f576ee0a/east/frame_003.png"
+        ]
+      },
+      "running-b03d41f0": {
+        "east": [
+          "animations/running-b03d41f0/east/frame_000.png",
+          "animations/running-b03d41f0/east/frame_001.png",
+          "animations/running-b03d41f0/east/frame_002.png",
+          "animations/running-b03d41f0/east/frame_003.png",
+          "animations/running-b03d41f0/east/frame_004.png",
+          "animations/running-b03d41f0/east/frame_005.png"
+        ]
+      },
+      "animating-df3ca091": {
+        "east": [
+          "animations/animating-df3ca091/east/frame_000.png",
+          "animations/animating-df3ca091/east/frame_001.png",
+          "animations/animating-df3ca091/east/frame_002.png",
+          "animations/animating-df3ca091/east/frame_003.png",
+          "animations/animating-df3ca091/east/frame_004.png",
+          "animations/animating-df3ca091/east/frame_005.png",
+          "animations/animating-df3ca091/east/frame_006.png",
+          "animations/animating-df3ca091/east/frame_007.png"
+        ]
+      },
+      "animating-acf47c95": {
+        "east": [
+          "animations/animating-acf47c95/east/frame_000.png",
+          "animations/animating-acf47c95/east/frame_001.png",
+          "animations/animating-acf47c95/east/frame_002.png",
+          "animations/animating-acf47c95/east/frame_003.png",
+          "animations/animating-acf47c95/east/frame_004.png",
+          "animations/animating-acf47c95/east/frame_005.png",
+          "animations/animating-acf47c95/east/frame_006.png",
+          "animations/animating-acf47c95/east/frame_007.png",
+          "animations/animating-acf47c95/east/frame_008.png"
+        ]
+      },
+      "high_kick-9f002527": {
+        "east": [
+          "animations/high_kick-9f002527/east/frame_000.png",
+          "animations/high_kick-9f002527/east/frame_001.png",
+          "animations/high_kick-9f002527/east/frame_002.png",
+          "animations/high_kick-9f002527/east/frame_003.png",
+          "animations/high_kick-9f002527/east/frame_004.png",
+          "animations/high_kick-9f002527/east/frame_005.png",
+          "animations/high_kick-9f002527/east/frame_006.png"
+        ]
+      },
+      "cross_punch_attack-86a11e85": {
+        "east": [
+          "animations/cross_punch_attack-86a11e85/east/frame_000.png",
+          "animations/cross_punch_attack-86a11e85/east/frame_001.png",
+          "animations/cross_punch_attack-86a11e85/east/frame_002.png",
+          "animations/cross_punch_attack-86a11e85/east/frame_003.png",
+          "animations/cross_punch_attack-86a11e85/east/frame_004.png",
+          "animations/cross_punch_attack-86a11e85/east/frame_005.png"
+        ]
+      },
+      "animating-c3b52b88": {
+        "east": [
+          "animations/animating-c3b52b88/east/frame_000.png",
+          "animations/animating-c3b52b88/east/frame_001.png",
+          "animations/animating-c3b52b88/east/frame_002.png",
+          "animations/animating-c3b52b88/east/frame_003.png",
+          "animations/animating-c3b52b88/east/frame_004.png",
+          "animations/animating-c3b52b88/east/frame_005.png",
+          "animations/animating-c3b52b88/east/frame_006.png"
+        ]
+      },
+      "jab_attack-0ef87428": {
+        "east": [
+          "animations/jab_attack-0ef87428/east/frame_000.png",
+          "animations/jab_attack-0ef87428/east/frame_001.png",
+          "animations/jab_attack-0ef87428/east/frame_002.png"
+        ]
+      },
+      "uppercut-60b6ad20": {
+        "east": [
+          "animations/uppercut-60b6ad20/east/frame_000.png",
+          "animations/uppercut-60b6ad20/east/frame_001.png",
+          "animations/uppercut-60b6ad20/east/frame_002.png",
+          "animations/uppercut-60b6ad20/east/frame_003.png",
+          "animations/uppercut-60b6ad20/east/frame_004.png",
+          "animations/uppercut-60b6ad20/east/frame_005.png",
+          "animations/uppercut-60b6ad20/east/frame_006.png"
+        ]
+      },
+      "animating-be5348b8": {
+        "east": [
+          "animations/animating-be5348b8/east/frame_000.png",
+          "animations/animating-be5348b8/east/frame_001.png",
+          "animations/animating-be5348b8/east/frame_002.png",
+          "animations/animating-be5348b8/east/frame_003.png",
+          "animations/animating-be5348b8/east/frame_004.png",
+          "animations/animating-be5348b8/east/frame_005.png"
+        ]
+      },
+      "crouching-38031cbc": {
+        "east": [
+          "animations/crouching-38031cbc/east/frame_000.png",
+          "animations/crouching-38031cbc/east/frame_001.png",
+          "animations/crouching-38031cbc/east/frame_002.png",
+          "animations/crouching-38031cbc/east/frame_003.png",
+          "animations/crouching-38031cbc/east/frame_004.png"
+        ]
+      },
+      "falling_backward-7cd527d4": {
+        "east": [
+          "animations/falling_backward-7cd527d4/east/frame_000.png",
+          "animations/falling_backward-7cd527d4/east/frame_001.png",
+          "animations/falling_backward-7cd527d4/east/frame_002.png",
+          "animations/falling_backward-7cd527d4/east/frame_003.png",
+          "animations/falling_backward-7cd527d4/east/frame_004.png",
+          "animations/falling_backward-7cd527d4/east/frame_005.png",
+          "animations/falling_backward-7cd527d4/east/frame_006.png"
+        ]
+      },
+      "taking_a_punch-44977c8d": {
+        "east": [
+          "animations/taking_a_punch-44977c8d/east/frame_000.png",
+          "animations/taking_a_punch-44977c8d/east/frame_001.png",
+          "animations/taking_a_punch-44977c8d/east/frame_002.png",
+          "animations/taking_a_punch-44977c8d/east/frame_003.png",
+          "animations/taking_a_punch-44977c8d/east/frame_004.png",
+          "animations/taking_a_punch-44977c8d/east/frame_005.png"
+        ]
+      },
+      "casting_a_fireball-6c7be254": {
+        "east": [
+          "animations/casting_a_fireball-6c7be254/east/frame_000.png",
+          "animations/casting_a_fireball-6c7be254/east/frame_001.png",
+          "animations/casting_a_fireball-6c7be254/east/frame_002.png",
+          "animations/casting_a_fireball-6c7be254/east/frame_003.png",
+          "animations/casting_a_fireball-6c7be254/east/frame_004.png",
+          "animations/casting_a_fireball-6c7be254/east/frame_005.png"
+        ]
+      }
+    }
+  },
+  "export_version": "2.0",
+  "export_date": "2026-04-21T20:55:32.309857"
+}

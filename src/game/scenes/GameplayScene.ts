@@ -1,12 +1,13 @@
 import Phaser from 'phaser';
-import type { GuildId, SimState } from '../../simulation/types';
+import type { GuildId, SimState } from '@nannymud/shared/simulation/types';
 import {
   createInitialState,
   tickSimulation,
   resetController,
   forcePause,
   forceResume,
-} from '../../simulation/simulation';
+} from '@nannymud/shared/simulation/simulation';
+import { createVsState } from '@nannymud/shared/simulation/vsSimulation';
 import { FULLSCREEN_EXIT_EVENT } from '../../layout/fullscreenConstants';
 import { PhaserInputAdapter } from '../input/PhaserInputAdapter';
 import { BackgroundView } from '../view/BackgroundView';
@@ -14,10 +15,10 @@ import { ActorView } from '../view/ActorView';
 import { ProjectileView } from '../view/ProjectileView';
 import { PickupView } from '../view/PickupView';
 import { consumeVfxEvents } from '../view/ParticleFX';
-import type { Actor, Projectile, Pickup, InputState } from '../../simulation/types';
+import type { Actor, Projectile, Pickup, InputState } from '@nannymud/shared/simulation/types';
 import type { GameCallbacks } from '../PhaserGame';
 import { AudioManager } from '../../audio/audioManager';
-import { VIRTUAL_HEIGHT } from '../constants';
+import { VIRTUAL_HEIGHT, VIRTUAL_WIDTH, HUD_TOP_PX, HUD_BOTTOM_PX } from '../constants';
 
 export class GameplayScene extends Phaser.Scene {
   private simState!: SimState;
@@ -46,10 +47,19 @@ export class GameplayScene extends Phaser.Scene {
 
   create(): void {
     const guildId = this.game.registry.get('guildId') as GuildId;
+    const mode = (this.game.registry.get('mode') as 'story' | 'vs' | null) ?? 'story';
+    const p2 = this.game.registry.get('p2') as GuildId | null;
+    const stageId = (this.game.registry.get('stageId') as string | null) ?? 'assembly';
+    const seedOverride = this.game.registry.get('seed') as number | null;
     this.callbacks = this.game.registry.get('callbacks') as GameCallbacks;
 
-    const seed = Date.now();
-    this.simState = createInitialState(guildId, seed);
+    const seed = seedOverride ?? Date.now();
+    if (mode === 'vs') {
+      if (!p2) throw new Error('VS mode requires a p2 guild');
+      this.simState = createVsState(guildId, p2, stageId, seed);
+    } else {
+      this.simState = createInitialState(guildId, seed);
+    }
     this.inputAdapter = new PhaserInputAdapter(this);
     this.phaseHandoffFired = false;
 
@@ -61,7 +71,17 @@ export class GameplayScene extends Phaser.Scene {
 
     this.background = new BackgroundView(this);
 
-    this.scene.launch('Hud');
+    if (mode === 'story') {
+      this.scene.launch('Hud');
+    } else {
+      // VS: React HUD overlays the canvas; shrink camera viewport to the un-covered band.
+      this.cameras.main.setViewport(
+        0,
+        HUD_TOP_PX,
+        VIRTUAL_WIDTH,
+        VIRTUAL_HEIGHT - HUD_TOP_PX - HUD_BOTTOM_PX,
+      );
+    }
 
     if (import.meta.env.DEV) {
       this.debugText = this.add
@@ -138,6 +158,9 @@ export class GameplayScene extends Phaser.Scene {
     this.reconcilePickups();
     consumeVfxEvents(this, this.simState.vfxEvents);
     this.game.registry.set('simState', this.simState);
+    if (this.simState.mode === 'vs') {
+      this.events.emit('sim-tick', this.simState);
+    }
 
     if (this.debugText) {
       const p = this.simState.player;

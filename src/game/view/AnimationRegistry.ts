@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import type { AnimationId, GuildId } from '../../simulation/types';
+import type { AnimationId, GuildId } from '@nannymud/shared/simulation/types';
 
 /**
  * Per-guild sprite metadata as emitted by scripts/composite-pixellab-sprites.py.

@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
-import type { SimState, Actor } from '../../simulation/types';
-import { GUILDS } from '../../simulation/guildData';
-import { getComboHints } from '../../simulation/comboBuffer';
+import type { SimState, Actor } from '@nannymud/shared/simulation/types';
+import { GUILDS } from '@nannymud/shared/simulation/guildData';
+import { getComboHints } from '@nannymud/shared/simulation/comboBuffer';
 import { VIRTUAL_WIDTH } from '../constants';
 import type { GameCallbacks } from '../PhaserGame';
 
@@ -197,7 +197,7 @@ export class HudScene extends Phaser.Scene {
     hints.slice(0, 5).forEach((hint, i) => {
       const ability = guild.abilities.find(a => a.combo === hint);
       if (!ability) return;
-      const cdRemaining = Math.max(0, (player.abilityCooldowns[ability.id] || 0) - state.timeMs);
+      const cdRemaining = Math.max(0, (player.abilityCooldowns.get(ability.id) ?? 0) - state.timeMs);
       const onCd = cdRemaining > 0;
       const comboColor = onCd ? '#6b7280' : '#e5e7eb';
       const nameColor = onCd ? '#6b7280' : guild.color;
