@@ -5,7 +5,8 @@ describe('ColyseusClient', () => {
   const mockRoom = {};
   const mockCreate = vi.fn().mockResolvedValue(mockRoom);
   const mockJoinById = vi.fn().mockResolvedValue(mockRoom);
-  const mockClient = { create: mockCreate, joinById: mockJoinById } as unknown as import('colyseus.js').Client;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const mockClient = { create: mockCreate, joinById: mockJoinById } as any;
 
   beforeEach(() => {
     vi.clearAllMocks();

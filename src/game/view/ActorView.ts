@@ -2,8 +2,7 @@ import Phaser from 'phaser';
 import type { Actor, AnimationId, GuildId } from '@nannymud/shared/simulation/types';
 import { GUILDS } from '@nannymud/shared/simulation/guildData';
 import { ENEMY_DEFS } from '@nannymud/shared/simulation/enemyData';
-import { worldYToScreenY } from '../constants';
-import { VIRTUAL_HEIGHT } from '../constants';
+import { worldYToScreenY, getScreenYBand, type ScreenYBand } from '../constants';
 import {
   animationKey,
   getGuildMetadata,
@@ -84,8 +83,10 @@ export class ActorView {
   private readonly initialColor: string;
   private readonly guildId?: GuildId;
   private readonly hasSprites: boolean;
+  private readonly band: ScreenYBand;
 
   constructor(scene: Phaser.Scene, actor: Actor) {
+    this.band = getScreenYBand(scene);
     this.actorId = actor.id;
     this.width = actor.width;
     this.height = actor.height;
@@ -164,7 +165,7 @@ export class ActorView {
   }
 
   syncFrom(actor: Actor): void {
-    const groundScreenY = worldYToScreenY(actor.y, VIRTUAL_HEIGHT);
+    const groundScreenY = worldYToScreenY(actor.y, this.band.min, this.band.max);
     const screenY = groundScreenY - actor.z * 0.6;
 
     this.container.setPosition(actor.x, screenY);

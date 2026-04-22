@@ -1,10 +1,11 @@
 import { Room, Client } from 'colyseus';
-import { MatchState, PlayerSlot, SimStateSchema } from '@nannymud/shared';
+import { MatchState, PlayerSlot } from '@nannymud/shared';
 import type { InputMsg, InputEvent } from '@nannymud/shared';
 import type { InputState, SimState, GuildId } from '@nannymud/shared/simulation/types';
 import { tickSimulation, makeEmptyInputState } from '@nannymud/shared/simulation/simulation';
 import { createMpVsState } from '@nannymud/shared/simulation/vsSimulation';
 import { generateCode } from '../util/roomCode.js';
+import { createSimSchema, mirrorSimToSchema } from './simMirror.js';
 
 interface CreateOpts {
   name?: string;
@@ -31,6 +32,15 @@ export class MatchRoom extends Room<MatchState> {
   private readyToStart = new Set<string>();
 
   /**
+   * Authoritative simulation state. Kept as a plain object so the simulation
+   * can mutate it freely (push to arrays, assign fields). We mirror the
+   * relevant parts into `this.state.sim` each tick for wire-sync — schema v4
+   * enforces instanceof setters at runtime, so we can't feed plain objects
+   * to the schema directly.
+   */
+  private plainSim: SimState | null = null;
+
+  /**
    * Session ID of the player who sent `rematch_offer`, or null.
    * Only valid while phase === 'results'. Cleared whenever we leave results.
    */
@@ -44,6 +54,7 @@ export class MatchRoom extends Room<MatchState> {
     this.state.visibility = opts.visibility ?? 'private';
     this.state.createdAtMs = Date.now();
     this.roomId = this.state.code;
+    console.log(`[MatchRoom] created code=${this.state.code} name="${this.state.name}" rounds=${this.state.rounds}`);
 
     this.onMessage('ready_toggle', (client: Client, msg: { ready: boolean }) => {
       const slot = this.state.players.get(client.sessionId);
@@ -113,6 +124,7 @@ export class MatchRoom extends Room<MatchState> {
       this.state.stageId = '';
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (this.state as any).sim = undefined;
+      this.plainSim = null;
       for (const slot of this.state.players.values()) {
         slot.ready = false;
         slot.locked = false;
@@ -128,6 +140,8 @@ export class MatchRoom extends Room<MatchState> {
     slot.name = opts?.playerName ?? opts?.name ?? 'Player';
     this.state.players.set(client.sessionId, slot);
     if (!this.state.hostSessionId) this.state.hostSessionId = client.sessionId;
+    const isHost = this.state.hostSessionId === client.sessionId;
+    console.log(`[MatchRoom ${this.state.code}] join sid=${client.sessionId} name="${slot.name}" host=${isHost} (${this.state.players.size}/${this.maxClients})`);
   }
 
   onLeave(client: Client) {
@@ -135,6 +149,7 @@ export class MatchRoom extends Room<MatchState> {
     if (slot) slot.connected = false;
 
     const phase = this.state.phase;
+    console.log(`[MatchRoom ${this.state.code}] leave sid=${client.sessionId} phase=${phase}`);
 
     if (phase === 'in_game') {
       // Award the win to whoever is still connected
@@ -213,19 +228,18 @@ export class MatchRoom extends Room<MatchState> {
     const seed = Math.floor(Math.random() * 2 ** 31);
     this.state.seed = seed;
 
-    const sim = createMpVsState(
+    this.plainSim = createMpVsState(
       hostSlot.guildId as GuildId,
       joinerSlot.guildId as GuildId,
       seed,
       this.state.stageId,
     );
 
-    // Copy the plain SimState into a SimStateSchema instance so Colyseus
-    // tracks mutations over the wire. ActorSchema / SimStateSchema are
-    // structurally assignable to Actor / SimState (see structural.test.ts),
-    // so the simulation code continues to operate on schema instances
-    // without casts inside the tick loop.
-    this.state.sim = simToSchema(sim);
+    // Build a fresh schema snapshot of the plain sim for wire-sync. The
+    // simulation keeps mutating `plainSim` each tick; we mirror into
+    // `this.state.sim` after the tick returns so Colyseus sees a schema
+    // instance it can diff-encode.
+    this.state.sim = createSimSchema(this.plainSim);
 
     this.state.phase = 'in_game';
 
@@ -312,74 +326,12 @@ export class MatchRoom extends Room<MatchState> {
    * without relying on Colyseus's setSimulationInterval timer.
    */
   tick(dtMs: number) {
-    if (!this.state.sim) return;
+    if (!this.plainSim || !this.state.sim) return;
     if (this.state.phase !== 'in_game') return;
     const p1 = this.coalesceInput(this.state.hostSessionId);
     const joinerId = this.getJoinerId();
     const p2 = joinerId ? this.coalesceInput(joinerId) : makeEmptyInputState();
-    tickSimulation(this.state.sim as unknown as SimState, p1, dtMs, p2);
+    tickSimulation(this.plainSim, p1, dtMs, p2);
+    mirrorSimToSchema(this.plainSim, this.state.sim);
   }
-}
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-/**
- * Shallow-copy a plain SimState produced by createMpVsState into a fresh
- * SimStateSchema instance. Only the top-level fields and the two named
- * actors (player, opponent) are required at match-start — arrays of enemies
- * / projectiles / pickups / effects start empty in VS mode.
- *
- * We keep this helper local to MatchRoom to avoid leaking schema classes into
- * the pure simulation layer.
- */
-function simToSchema(plain: SimState): SimStateSchema {
-  const s = new SimStateSchema();
-
-  s.tick = plain.tick;
-  s.timeMs = plain.timeMs;
-  s.currentWave = plain.currentWave;
-  s.cameraX = plain.cameraX;
-  s.cameraLocked = plain.cameraLocked;
-  s.phase = plain.phase;
-  s.bossSpawned = plain.bossSpawned;
-  s.score = plain.score;
-  s.rngSeed = plain.rngSeed;
-  s.rng = plain.rng;
-  s.nextActorId = plain.nextActorId;
-  s.nextProjectileId = plain.nextProjectileId;
-  s.nextPickupId = plain.nextPickupId;
-  s.nextEffectId = plain.nextEffectId;
-  s.bloodtallyDecayMs = plain.bloodtallyDecayMs;
-  s.mode = plain.mode;
-  s.nextLogId = plain.nextLogId;
-  s.controllers = plain.controllers;
-
-  // Top-level referenced actors: assign the plain Actor objects through the
-  // structural-typing escape hatch. Colyseus Schema will box them on write
-  // via their @type decorators; for VS mode we only need enough shape to run
-  // the tick — wire-sync granularity is a follow-up concern.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  (s as any).player = plain.player;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  (s as any).opponent = plain.opponent;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  (s as any).round = plain.round;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  (s as any).enemies = plain.enemies;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  (s as any).allies = plain.allies;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  (s as any).pickups = plain.pickups;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  (s as any).projectiles = plain.projectiles;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  (s as any).vfxEvents = plain.vfxEvents;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  (s as any).waves = plain.waves;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  (s as any).combatLog = plain.combatLog;
-
-  return s;
 }

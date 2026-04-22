@@ -14,6 +14,7 @@ import { MpLobby } from './screens/mp/MpLobby';
 import { MpCharSelect } from './screens/mp/MpCharSelect';
 import { MpStageSelect } from './screens/mp/MpStageSelect';
 import { MpBattle } from './screens/mp/MpBattle';
+import { MpLoadingScreen } from './screens/mp/MpLoadingScreen';
 import { GUILDS } from '@nannymud/shared/simulation/guildData';
 import { ScalingFrame } from './layout/ScalingFrame';
 import { Scanlines, theme } from './ui';
@@ -252,14 +253,22 @@ export default function App() {
           />
         )}
 
-        {/* mp_load / mp_results still stubbed until Phase F wraps.
+        {state.screen === 'mp_load' && state.mpRoom && (
+          <MpLoadingScreen
+            room={state.mpRoom}
+            onPhaseChange={onPhaseChange}
+          />
+        )}
+
+        {/* mp_results still stubbed until Phase F wraps.
             Also catches any orphaned MP screen (no room after a refresh)
             and offers a back-to-hub affordance. */}
         {isMpScreen &&
           state.screen !== 'mp_hub' &&
-          (state.screen === 'mp_load' ||
-            state.screen === 'mp_results' ||
-            (state.screen !== 'mp_battle' && !state.mpRoom)) && (
+          (state.screen === 'mp_results' ||
+            (state.screen !== 'mp_battle' &&
+              state.screen !== 'mp_load' &&
+              !state.mpRoom)) && (
             <MpStub screen={state.screen} onLeave={leaveMp} />
           )}
 

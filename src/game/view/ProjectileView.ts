@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import type { Projectile } from '@nannymud/shared/simulation/types';
-import { VIRTUAL_HEIGHT, worldYToScreenY } from '../constants';
+import { worldYToScreenY, getScreenYBand, type ScreenYBand } from '../constants';
 
 function hexToInt(hex: string): number {
   const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
@@ -27,6 +27,7 @@ export class ProjectileView {
   private readonly shape: 'arrow' | 'throw' | 'orb';
   private readonly rawColor: string;
   private readonly radius: number;
+  private readonly band: ScreenYBand;
 
   constructor(scene: Phaser.Scene, proj: Projectile) {
     this.projectileId = proj.id;
@@ -34,12 +35,13 @@ export class ProjectileView {
     this.fillColor = hexToInt(proj.color);
     this.radius = proj.radius;
     this.shape = isArrowLike(proj.type) ? 'arrow' : proj.type.includes('throw') ? 'throw' : 'orb';
+    this.band = getScreenYBand(scene);
 
     this.graphics = scene.add.graphics();
   }
 
   syncFrom(proj: Projectile): void {
-    const screenY = worldYToScreenY(proj.y, VIRTUAL_HEIGHT) - proj.z * 0.5;
+    const screenY = worldYToScreenY(proj.y, this.band.min, this.band.max) - proj.z * 0.5;
     this.graphics.setPosition(proj.x, screenY);
     this.graphics.setDepth(proj.y + 0.5); // draw above same-plane actors (matches canvas order)
     this.redraw(proj);

@@ -21,8 +21,9 @@ interface GuildMetadata {
 }
 
 const SPRITE_GUILDS: GuildId[] = [
-  'adventurer', 'cultist', 'druid', 'hunter', 'knight',
-  'leper', 'mage', 'monk', 'prophet', 'vampire', 'viking',
+  'adventurer', 'champion', 'chef', 'cultist', 'darkmage',
+  'druid', 'hunter', 'knight', 'leper', 'mage', 'master',
+  'monk', 'prophet', 'vampire', 'viking',
 ];
 
 // Populated as metadata loads complete. ActorView reads from here to pick an

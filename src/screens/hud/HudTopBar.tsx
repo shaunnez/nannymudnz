@@ -99,7 +99,7 @@ function PlayerSlot({ actor, side }: { actor: Actor; side: 'left' | 'right' }) {
             letterSpacing: 1,
           }}
         >
-          {guild.name}
+          {guild?.name}
         </div>
         <div style={{ fontFamily: theme.fontMono, fontSize: 9, color: theme.inkDim, marginBottom: 4 }}>
           {meta.tag.toUpperCase()}
@@ -115,7 +115,7 @@ function PlayerSlot({ actor, side }: { actor: Actor; side: 'left' | 'right' }) {
             marginTop: 2,
           }}
         >
-          HP {Math.round(actor.hp)}/{actor.hpMax} · {guild.resource.name.toUpperCase()}{' '}
+          HP {Math.round(actor.hp)}/{actor.hpMax} · {guild?.resource?.name?.toUpperCase()}{' '}
           {Math.round(actor.mp)}/{actor.mpMax}
         </div>
       </div>

@@ -2,8 +2,11 @@ import type { SimState, GuildId, Actor, RoundState } from './types';
 import { createInitialState, createPlayerActor } from './simulation';
 import { appendLog } from './combatLog';
 import { getGuild } from './guildData';
+import { WORLD_WIDTH, GROUND_Y_MIN, GROUND_Y_MAX } from './constants';
 
-const OPPONENT_SPAWN_X_OFFSET = 160;
+// LF2-style spacing: fighters start at opposite quarters of the ~900px view so
+// the match opens with room to approach instead of already in melee range.
+const OPPONENT_SPAWN_X_OFFSET = 500;
 const ROUND_TIME_MS = 60_000;
 
 export function createVsState(
@@ -170,6 +173,45 @@ export function resetActorsForRound(state: SimState): void {
   if (!state.opponent) return;
   resetActorState(state.player);
   resetActorState(state.opponent);
+  randomizeRespawnPositions(state, state.player, state.opponent);
+}
+
+const RESPAWN_HALF_SPAN = 250;  // half the nominal gap between respawn points
+const RESPAWN_JITTER_X = 120;   // ± wiggle on each x
+const RESPAWN_DEPTH_MARGIN = 30;
+const MIN_X_FROM_EDGE = 40;
+
+/**
+ * Scatter both fighters around the centre of the previous encounter rather
+ * than leaving them at their KO positions — prevents the "one fighter spawns
+ * in the corner next round" feel and keeps rematches interesting. Determinism
+ * is preserved via state.rng().
+ */
+function randomizeRespawnPositions(state: SimState, p1: Actor, p2: Actor): void {
+  const center = Math.max(
+    MIN_X_FROM_EDGE + RESPAWN_HALF_SPAN,
+    Math.min(WORLD_WIDTH - MIN_X_FROM_EDGE - RESPAWN_HALF_SPAN, (p1.x + p2.x) / 2),
+  );
+
+  // Random side assignment so the "left fighter" isn't always P1.
+  const p1OnLeft = state.rng() < 0.5;
+  const p1Side = p1OnLeft ? -1 : 1;
+  const p2Side = -p1Side;
+
+  const jitter = (): number => (state.rng() - 0.5) * 2 * RESPAWN_JITTER_X;
+
+  const depthRange = GROUND_Y_MAX - GROUND_Y_MIN - 2 * RESPAWN_DEPTH_MARGIN;
+
+  p1.x = clampX(center + p1Side * RESPAWN_HALF_SPAN + jitter());
+  p2.x = clampX(center + p2Side * RESPAWN_HALF_SPAN + jitter());
+  p1.y = GROUND_Y_MIN + RESPAWN_DEPTH_MARGIN + state.rng() * depthRange;
+  p2.y = GROUND_Y_MIN + RESPAWN_DEPTH_MARGIN + state.rng() * depthRange;
+  p1.facing = p2.x >= p1.x ? 1 : -1;
+  p2.facing = p1.facing === 1 ? -1 : 1;
+}
+
+function clampX(x: number): number {
+  return Math.max(MIN_X_FROM_EDGE, Math.min(WORLD_WIDTH - MIN_X_FROM_EDGE, x));
 }
 
 function resetActorState(a: Actor): void {

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import type { Room } from 'colyseus.js';
+import type { Room } from '@colyseus/sdk';
 import type { MatchState, MatchPhase } from '@nannymud/shared';
 import { GUILDS } from '@nannymud/shared/simulation/guildData';
 import type { GuildId } from '@nannymud/shared/simulation/types';
@@ -8,6 +8,7 @@ import { GUILD_META } from '../../data/guildMeta';
 import { useMatchState, getMatchSlots } from './useMatchState';
 import { usePhaseBounce } from './usePhaseBounce';
 import { RoomCodeBadge } from './RoomCodeBadge';
+import { MpLoading } from './MpLoading';
 
 interface Props {
   room: Room<MatchState>;
@@ -42,7 +43,7 @@ export function MpCharSelect({ room, onLeave, onPhaseChange }: Props) {
   const hoveredMeta = GUILD_META[cursorGuildId];
   const hoveredGuild = GUILDS.find((g) => g.id === cursorGuildId)!;
 
-  usePhaseBounce(state.phase, 'char_select', onPhaseChange);
+  usePhaseBounce(state?.phase ?? 'char_select', 'char_select', onPhaseChange);
 
   const move = useCallback(
     (dx: number, dy: number) => {
@@ -78,6 +79,8 @@ export function MpCharSelect({ room, onLeave, onPhaseChange }: Props) {
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [lockIn, move, onLeave]);
+
+  if (!state) return <MpLoading />;
 
   const opponentGuildId = opponentSlot?.locked ? opponentSlot.guildId : null;
   const opponentGuildName = opponentGuildId
@@ -198,7 +201,7 @@ export function MpCharSelect({ room, onLeave, onPhaseChange }: Props) {
                   color: theme.ink,
                 }}
               >
-                {hoveredGuild.name}
+                {hoveredGuild?.name}
               </div>
               <div
                 style={{
@@ -284,7 +287,7 @@ export function MpCharSelect({ room, onLeave, onPhaseChange }: Props) {
                       letterSpacing: 2,
                     }}
                   >
-                    {g.name.toUpperCase()}
+                    {g?.name?.toUpperCase()}
                   </div>
                   {localLockedHere && (
                     <div
@@ -350,7 +353,7 @@ export function MpCharSelect({ room, onLeave, onPhaseChange }: Props) {
                     color: guildAccent(hoveredMeta.hue),
                   }}
                 >
-                  {hoveredGuild.name}
+                  {hoveredGuild?.name}
                 </span>
                 <span
                   style={{
@@ -398,7 +401,7 @@ export function MpCharSelect({ room, onLeave, onPhaseChange }: Props) {
               color: theme.inkMuted,
             }}
           >
-            {opponentSlot ? `OPP · ${opponentSlot.name}` : 'OPP · EMPTY'}
+            {opponentSlot ? `OPP · ${opponentSlot?.name}` : 'OPP · EMPTY'}
           </div>
 
           {!opponentSlot ? (

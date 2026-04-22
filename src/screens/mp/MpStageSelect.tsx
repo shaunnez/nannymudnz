@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useState } from 'react';
-import type { Room } from 'colyseus.js';
+import type { Room } from '@colyseus/sdk';
 import type { MatchState, MatchPhase } from '@nannymud/shared';
 import { theme, Btn } from '../../ui';
 import { STAGES } from '../../data/stages';
 import { useMatchState } from './useMatchState';
 import { usePhaseBounce } from './usePhaseBounce';
 import { RoomCodeBadge } from './RoomCodeBadge';
+import { MpLoading } from './MpLoading';
 
 interface Props {
   room: Room<MatchState>;
@@ -18,11 +19,11 @@ const ROWS = 3;
 
 export function MpStageSelect({ room, onLeave, onPhaseChange }: Props) {
   const state = useMatchState(room);
-  const isHost = room.sessionId === state.hostSessionId;
+  const isHost = room.sessionId === (state?.hostSessionId ?? '');
 
   const [cursor, setCursor] = useState<number>(0);
 
-  usePhaseBounce(state.phase, 'stage_select', onPhaseChange);
+  usePhaseBounce(state?.phase ?? 'stage_select', 'stage_select', onPhaseChange);
 
   const move = useCallback(
     (dx: number, dy: number) => {
@@ -60,6 +61,8 @@ export function MpStageSelect({ room, onLeave, onPhaseChange }: Props) {
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [commit, move, onLeave]);
+
+  if (!state) return <MpLoading />;
 
   const cur = STAGES[cursor];
   const accent = `oklch(0.70 0.16 ${cur.hue})`;
@@ -191,7 +194,7 @@ export function MpStageSelect({ room, onLeave, onPhaseChange }: Props) {
                         lineHeight: 1.05,
                       }}
                     >
-                      {s.name}
+                      {s?.name}
                     </div>
                     <div
                       style={{
@@ -242,7 +245,7 @@ export function MpStageSelect({ room, onLeave, onPhaseChange }: Props) {
                   marginTop: 6,
                 }}
               >
-                {cur.name}
+                {cur?.name}
               </div>
             </div>
 
@@ -319,7 +322,7 @@ export function MpStageSelect({ room, onLeave, onPhaseChange }: Props) {
                         color: act ? accent : s.enabled ? theme.ink : theme.inkMuted,
                       }}
                     >
-                      {s.name}
+                      {s?.name}
                     </span>
                     <span style={{ fontFamily: theme.fontMono, fontSize: 9, color: theme.inkMuted, letterSpacing: 2 }}>
                       {s.enabled ? (act ? '◆' : '') : 'SOON'}
@@ -382,7 +385,7 @@ export function MpStageSelect({ room, onLeave, onPhaseChange }: Props) {
                   color: theme.ink,
                 }}
               >
-                {hostPickedStage.name}
+                {hostPickedStage?.name}
               </div>
               <div
                 style={{

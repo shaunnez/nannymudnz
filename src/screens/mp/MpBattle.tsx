@@ -1,9 +1,10 @@
-import type { Room } from 'colyseus.js';
+import type { Room } from '@colyseus/sdk';
 import type { MatchState, MatchPhase } from '@nannymud/shared';
 import type { GuildId } from '@nannymud/shared/simulation/types';
 import { GameScreen } from '../GameScreen';
 import { useMatchState, getMatchSlots } from './useMatchState';
 import { usePhaseBounce } from './usePhaseBounce';
+import { MpLoading } from './MpLoading';
 
 interface Props {
   room: Room<MatchState>;
@@ -22,7 +23,9 @@ interface Props {
 export function MpBattle({ room, animateHud, showLog, onLeave, onPhaseChange }: Props) {
   const state = useMatchState(room);
 
-  usePhaseBounce(state.phase, 'in_game', onPhaseChange);
+  usePhaseBounce(state?.phase ?? 'in_game', 'in_game', onPhaseChange);
+
+  if (!state) return <MpLoading />;
 
   const { localSlot, opponentSlot } = getMatchSlots(state, room.sessionId);
 

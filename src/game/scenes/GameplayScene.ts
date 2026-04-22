@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import type { Room } from 'colyseus.js';
+import type { Room } from '@colyseus/sdk';
 import type { GuildId, SimState } from '@nannymud/shared/simulation/types';
 import type { MatchState } from '@nannymud/shared';
 import {
@@ -18,11 +18,20 @@ import { ProjectileView } from '../view/ProjectileView';
 import { PickupView } from '../view/PickupView';
 import { consumeVfxEvents } from '../view/ParticleFX';
 import type { Actor, Projectile, Pickup, InputState } from '@nannymud/shared/simulation/types';
+import { WORLD_WIDTH } from '@nannymud/shared/simulation/constants';
 import type { GameCallbacks, NetMode } from '../PhaserGame';
 import { InputSender } from '../net/InputSender';
 import { StateSync, type ActorSnapshot } from '../net/StateSync';
 import { AudioManager } from '../../audio/audioManager';
-import { VIRTUAL_HEIGHT, VIRTUAL_WIDTH, HUD_TOP_PX, HUD_BOTTOM_PX } from '../constants';
+import {
+  VIRTUAL_HEIGHT,
+  VIRTUAL_WIDTH,
+  HUD_TOP_PX,
+  HUD_BOTTOM_PX,
+  SCREEN_Y_BAND_KEY,
+  SCREEN_Y_BAND_STORY,
+  SCREEN_Y_BAND_VS,
+} from '../constants';
 
 /** Client-side render delay for two-snapshot linear interpolation (ms). */
 const MP_INTERP_DELAY_MS = 50;
@@ -46,6 +55,14 @@ export class GameplayScene extends Phaser.Scene {
   private inputSender: InputSender | null = null;
   private stateSync: StateSync | null = null;
   private onMpStateChange: (() => void) | null = null;
+  /**
+   * Per-client camera. In MP, `sim.cameraX` tracks whichever actor the server
+   * calls `state.player` (always the host), so reading it on the joiner would
+   * lock the camera to the host. We run the same lerp/clamp locally against
+   * whichever actor belongs to this session.
+   */
+  private localCameraX = 0;
+  private localCameraInitialized = false;
 
   private onFullscreenExit = (): void => {
     if (!this.simState || this.netMode === 'mp') return;
@@ -107,6 +124,7 @@ export class GameplayScene extends Phaser.Scene {
     }
     this.inputAdapter = new PhaserInputAdapter(this);
     this.phaseHandoffFired = false;
+    this.localCameraInitialized = false;
 
     if (this.netMode !== 'mp') {
       resetController(this.simState, 'player');
@@ -120,15 +138,19 @@ export class GameplayScene extends Phaser.Scene {
 
     if (mode === 'story') {
       this.scene.launch('Hud');
+      this.game.registry.set(SCREEN_Y_BAND_KEY, SCREEN_Y_BAND_STORY);
     } else {
       // VS / MP: React HUD overlays the canvas; shrink camera viewport to the
-      // un-covered band.
+      // un-covered band. The camera's local (0,0) is the top of the visible
+      // strip, so the sprite projection band is relative to that strip, not
+      // the full canvas — publish SCREEN_Y_BAND_VS so views project correctly.
       this.cameras.main.setViewport(
         0,
         HUD_TOP_PX,
         VIRTUAL_WIDTH,
         VIRTUAL_HEIGHT - HUD_TOP_PX - HUD_BOTTOM_PX,
       );
+      this.game.registry.set(SCREEN_Y_BAND_KEY, SCREEN_Y_BAND_VS);
     }
 
     if (import.meta.env.DEV) {
@@ -267,8 +289,9 @@ export class GameplayScene extends Phaser.Scene {
     const interp = new Map<string, ActorSnapshot>();
     for (const s of sampled) interp.set(s.id, s);
 
-    this.cameras.main.scrollX = sim.cameraX;
-    this.background.update(sim.cameraX);
+    const localCamX = this.computeLocalCameraX(sim, interp);
+    this.cameras.main.scrollX = localCamX;
+    this.background.update(localCamX);
     this.reconcileActors(interp);
     this.reconcileProjectiles();
     this.reconcilePickups();
@@ -286,6 +309,30 @@ export class GameplayScene extends Phaser.Scene {
       this.phaseHandoffFired = true;
       this.audio.stopMusic();
     }
+  }
+
+  /**
+   * MP camera tracks whichever actor belongs to this client (host → player,
+   * joiner → opponent). Mirrors the server's lerp/clamp in physics.ts so
+   * movement feels consistent. Prefers interpolated x when available so the
+   * camera rides the smoothed position, not the 50ms-late raw server x.
+   */
+  private computeLocalCameraX(sim: SimState, interp: Map<string, ActorSnapshot>): number {
+    if (!this.room) return this.localCameraX;
+    const isHost = this.room.sessionId === this.room.state.hostSessionId;
+    const localActor: Actor | null = isHost ? sim.player : (sim.opponent ?? null);
+    if (!localActor) return this.localCameraX;
+
+    const lx = interp.get(localActor.id)?.x ?? localActor.x;
+    const targetCamX = lx - 300;
+    if (!this.localCameraInitialized) {
+      this.localCameraX = targetCamX;
+      this.localCameraInitialized = true;
+    } else {
+      this.localCameraX += (targetCamX - this.localCameraX) * 0.08;
+    }
+    this.localCameraX = Math.max(0, Math.min(WORLD_WIDTH - 900, this.localCameraX));
+    return this.localCameraX;
   }
 
   private updateDebugText(): void {

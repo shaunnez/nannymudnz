@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import type { Room } from 'colyseus.js';
+import type { Room } from '@colyseus/sdk';
 import type { MatchState } from '@nannymud/shared';
 import type { GuildId } from '@nannymud/shared/simulation/types';
 import type { StageId } from '../data/stages';

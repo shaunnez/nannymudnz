@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import type { VFXEvent } from '@nannymud/shared/simulation/types';
-import { VIRTUAL_HEIGHT, DEPTH_SCALE, worldYToScreenY } from '../constants';
+import { DEPTH_SCALE, worldYToScreenY, getScreenYBand, type ScreenYBand } from '../constants';
 
 /**
  * Consumes per-tick VFXEvents emitted by the simulation and spawns short-lived
@@ -22,10 +22,10 @@ function hexToInt(hex: string): number {
   return (parseInt(m[1], 16) << 16) | (parseInt(m[2], 16) << 8) | parseInt(m[3], 16);
 }
 
-function worldCoords(event: VFXEvent): { x: number; y: number } {
+function worldCoords(event: VFXEvent, band: ScreenYBand): { x: number; y: number } {
   return {
     x: event.x,
-    y: worldYToScreenY(event.y, VIRTUAL_HEIGHT) - (event.z ?? 0) * DEPTH_SCALE,
+    y: worldYToScreenY(event.y, band.min, band.max) - (event.z ?? 0) * DEPTH_SCALE,
   };
 }
 
@@ -202,8 +202,9 @@ function spawnBlinkTrail(
 }
 
 export function consumeVfxEvents(scene: Phaser.Scene, events: VFXEvent[]): void {
+  const band = getScreenYBand(scene);
   for (const event of events) {
-    const { x, y } = worldCoords(event);
+    const { x, y } = worldCoords(event, band);
     const colorInt = hexToInt(event.color);
 
     switch (event.type) {
@@ -261,7 +262,7 @@ export function consumeVfxEvents(scene: Phaser.Scene, events: VFXEvent[]): void 
 
       case 'blink_trail': {
         const x2 = event.x2 ?? event.x;
-        const y2End = worldYToScreenY(event.y2 ?? event.y, VIRTUAL_HEIGHT)
+        const y2End = worldYToScreenY(event.y2 ?? event.y, band.min, band.max)
           - (event.z ?? 0) * DEPTH_SCALE;
         spawnBlinkTrail(scene, x, y, x2, y2End, colorInt, 400);
         break;

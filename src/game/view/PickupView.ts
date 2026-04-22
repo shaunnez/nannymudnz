@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import type { Pickup } from '@nannymud/shared/simulation/types';
-import { VIRTUAL_HEIGHT, worldYToScreenY } from '../constants';
+import { worldYToScreenY, getScreenYBand, type ScreenYBand } from '../constants';
 
 /**
  * Per-pickup view: rock or club shape with a yellow 'L' hint letter above.
@@ -14,9 +14,11 @@ export class PickupView {
   private container: Phaser.GameObjects.Container;
   private body: Phaser.GameObjects.Graphics;
   private hint: Phaser.GameObjects.Text;
+  private readonly band: ScreenYBand;
 
   constructor(scene: Phaser.Scene, pickup: Pickup) {
     this.pickupId = pickup.id;
+    this.band = getScreenYBand(scene);
 
     this.body = scene.add.graphics();
     this.hint = scene.add.text(0, -20, 'L', {
@@ -54,7 +56,7 @@ export class PickupView {
       return;
     }
     this.container.setVisible(true);
-    const screenY = worldYToScreenY(pickup.y, VIRTUAL_HEIGHT);
+    const screenY = worldYToScreenY(pickup.y, this.band.min, this.band.max);
     this.container.setPosition(pickup.x, screenY);
     this.container.setDepth(pickup.y - 0.5);
   }

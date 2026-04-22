@@ -1,9 +1,10 @@
-import type { Room } from 'colyseus.js';
+import type { Room } from '@colyseus/sdk';
 import type { MatchState, MatchPhase } from '@nannymud/shared';
 import { theme, Btn } from '../../ui';
 import { useMatchState, getMatchSlots } from './useMatchState';
 import { usePhaseBounce } from './usePhaseBounce';
 import { RoomCodeBadge } from './RoomCodeBadge';
+import { MpLoading } from './MpLoading';
 
 interface Props {
   room: Room<MatchState>;
@@ -14,7 +15,9 @@ interface Props {
 export function MpLobby({ room, onLeave, onPhaseChange }: Props) {
   const state = useMatchState(room);
 
-  usePhaseBounce(state.phase, 'lobby', onPhaseChange);
+  usePhaseBounce(state?.phase ?? 'lobby', 'lobby', onPhaseChange);
+
+  if (!state) return <MpLoading />;
 
   const { slots, localSlot, opponentSlot } = getMatchSlots(state, room.sessionId);
 
@@ -66,7 +69,7 @@ export function MpLobby({ room, onLeave, onPhaseChange }: Props) {
               textAlign: 'center',
             }}
           >
-            {state.name || 'Waiting Room'}
+            {state?.name || 'Waiting Room'}
           </span>
         </div>
         <div style={{ justifySelf: 'end' }}>

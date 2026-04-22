@@ -1,0 +1,52 @@
+{
+  "all_chars": {
+    "knight": "6e524e28-17fb-40c2-becf-37c02d4fd2fd",
+    "adventurer": "9d21910c-9fdc-4070-8839-2154a365b988",
+    "mage": "1c1292d8-a316-4c76-a201-b6a2d2996efe",
+    "druid": "d194d264-b999-4172-9b87-d5da6d490b7a",
+    "hunter": "aaf95d1a-a4cc-4a3b-8286-66ae7a5237b6",
+    "monk": "5aae16bc-cdaf-4d32-897d-9335c1aaf1d6",
+    "viking": "acdf3fe9-9dec-454c-9a83-badf488a12b7",
+    "prophet": "9efb638d-29fb-4be6-8067-48ade0674c3a",
+    "cultist": "e79ccd2e-7107-40bd-ae8e-479c307d4768",
+    "champion": "321aed45-e3b7-4e97-b750-3f5e2ada89e7",
+    "darkmage": "56b08069-4d55-4579-92ee-147aa003039b",
+    "chef": "abde910b-df7e-4a62-b087-9cf97efd2a1b",
+    "master": "34a1ec42-5d5f-406c-ba08-1ba57c4f67f0"
+  },
+  "composited": ["knight", "mage", "druid", "adventurer"],
+  "portraits_done": [
+    "knight", "leper", "vampire",
+    "adventurer", "mage", "druid", "hunter", "monk", "viking",
+    "prophet", "cultist", "champion", "darkmage", "chef", "master"
+  ],
+  "anims_all_done": ["knight", "mage", "druid", "adventurer"],
+  "pending_chars_by_progress": {
+    "hunter": {"done": 3, "in_flight": 8, "remaining_to_queue": ["surprise-uppercut", "taking-punch", "falling-back-death", "fireball"]},
+    "monk": {"done": 0, "in_flight": 0},
+    "viking": {"done": 0, "in_flight": 0},
+    "prophet": {"done": 0, "in_flight": 0},
+    "cultist": {"done": 0, "in_flight": 0},
+    "champion": {"done": 0, "in_flight": 0},
+    "darkmage": {"done": 0, "in_flight": 0},
+    "chef": {"done": 0, "in_flight": 0},
+    "master": {"done": 0, "in_flight": 0}
+  },
+  "all_15_anims": [
+    "breathing-idle",
+    "walking-6-frames",
+    "running-6-frames",
+    "jumping-1",
+    "fight-stance-idle-8-frames",
+    "pushing",
+    "throw-object",
+    "high-kick",
+    "crouching",
+    "lead-jab",
+    "cross-punch",
+    "surprise-uppercut",
+    "taking-punch",
+    "falling-back-death",
+    "fireball"
+  ]
+}

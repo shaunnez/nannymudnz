@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import type { Room } from 'colyseus.js';
+import type { Room } from '@colyseus/sdk';
 import type { MatchState } from '@nannymud/shared';
 import { theme, ModalShell } from '../../ui';
 import { hostRoom } from '../../game/net/ColyseusClient';
@@ -39,6 +39,7 @@ export function CreateRoomModal({ playerName, onCancel, onCreated }: Props) {
       });
       onCreated(room);
     } catch (err) {
+      console.log(err)
       setError(err instanceof Error ? err.message : 'Failed to create room. Check your connection.');
       setLoading(false);
     }

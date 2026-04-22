@@ -1,4 +1,4 @@
-import { Client, Room } from 'colyseus.js';
+import { Client, Room } from '@colyseus/sdk';
 import type { MatchState } from '@nannymud/shared';
 
 const WS_URL = import.meta.env.VITE_COLYSEUS_URL ?? 'ws://localhost:2567';

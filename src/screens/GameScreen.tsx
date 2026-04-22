@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Phaser from 'phaser';
-import type { Room } from 'colyseus.js';
+import type { Room } from '@colyseus/sdk';
 import type { GuildId, SimMode, SimState } from '@nannymud/shared/simulation/types';
 import type { MatchState } from '@nannymud/shared';
 import { PauseOverlay } from './PauseOverlay';

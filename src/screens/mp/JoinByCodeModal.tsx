@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import type { Room } from 'colyseus.js';
+import type { Room } from '@colyseus/sdk';
 import type { MatchState } from '@nannymud/shared';
 import { theme, ModalShell } from '../../ui';
 import { joinByCode } from '../../game/net/ColyseusClient';

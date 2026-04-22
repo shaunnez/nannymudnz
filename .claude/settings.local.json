@@ -1,0 +1,32 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__pixellab__get_character",
+      "Bash(mkdir -p public/sprites/viking/raw)",
+      "Bash(curl --fail -sS -L -o public/sprites/viking/raw.zip \"https://api.pixellab.ai/mcp/characters/acdf3fe9-9dec-454c-9a83-badf488a12b7/download\")",
+      "Bash(unzip -q -o public/sprites/viking/raw.zip -d public/sprites/viking/raw/)",
+      "Bash(rm public/sprites/viking/raw.zip)",
+      "Bash(python -c ' *)",
+      "mcp__pixellab__animate_character",
+      "Bash(python scripts/composite-pixellab-sprites.py viking --target-size 124)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(curl --fail -sS -L -o public/sprites/prophet/raw.zip \"https://api.pixellab.ai/mcp/characters/9efb638d-29fb-4be6-8067-48ade0674c3a/download\")",
+      "Bash(unzip -q -o public/sprites/prophet/raw.zip -d public/sprites/prophet/raw/)",
+      "Bash(python scripts/composite-pixellab-sprites.py prophet --target-size 124)",
+      "Bash(curl --fail -sS -L -o public/sprites/cultist/raw.zip \"https://api.pixellab.ai/mcp/characters/e79ccd2e-7107-40bd-ae8e-479c307d4768/download\")",
+      "Bash(unzip -q -o public/sprites/cultist/raw.zip -d public/sprites/cultist/raw/)",
+      "Bash(python scripts/composite-pixellab-sprites.py cultist --target-size 124)",
+      "Bash(python scripts/composite-pixellab-sprites.py champion --target-size 124)",
+      "Bash(curl --fail -sS -L -o public/sprites/darkmage/raw.zip \"https://api.pixellab.ai/mcp/characters/56b08069-4d55-4579-92ee-147aa003039b/download\")",
+      "Bash(unzip -q -o public/sprites/darkmage/raw.zip -d public/sprites/darkmage/raw/)",
+      "Bash(python *)",
+      "Bash(mkdir -p /c/Users/nimbl/projects/nannymud/public/sprites/chef/raw)",
+      "Bash(curl --fail -L \"https://api.pixellab.ai/mcp/characters/abde910b-df7e-4a62-b087-9cf97efd2a1b/download\" -o /c/Users/nimbl/projects/nannymud/public/sprites/chef/chef.zip)",
+      "Bash(mkdir -p /c/Users/nimbl/projects/nannymud/public/sprites/master/raw)",
+      "Bash(curl --fail -L \"https://api.pixellab.ai/mcp/characters/34a1ec42-5d5f-406c-ba08-1ba57c4f67f0/download\" -o /c/Users/nimbl/projects/nannymud/public/sprites/master/master.zip)",
+      "Bash(unzip -q /c/Users/nimbl/projects/nannymud/public/sprites/master/master.zip -d /c/Users/nimbl/projects/nannymud/public/sprites/master/raw)",
+      "Bash(rm /c/Users/nimbl/projects/nannymud/public/sprites/master/master.zip)"
+    ]
+  }
+}
