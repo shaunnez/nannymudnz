@@ -16,11 +16,16 @@
 
 ## Current status
 
-Last completed: Task A1 (commits `edd26c7` workspace skeleton + `b26f23b` drop emitDecoratorMetadata)
-Next: Task A2 (migrate src/simulation → packages/shared/src/simulation)
-Branch: `feat/vs-mode-hud` (stacking MP work on top of unmerged VS HUD branch)
+Last completed: **Phase A** — A1 workspace skeleton (`edd26c7` + `b26f23b`) + A2 simulation migration (`29f8726` + `7ce425a` CLAUDE.md paths). 27 client files / 42 imports rewritten. Golden test green. Pushed to `origin/feat/vs-mode-hud`.
 
-Deferred from A1 review: root `typecheck` script currently only covers `tsconfig.app.json`; expand during A2 to typecheck `packages/shared` + `packages/server` too (so the simulation move is actually checked).
+Next: Task B1 (SimStateSchema — Colyseus Schema classes that structurally satisfy the SimState interface).
+
+Branch: `feat/vs-mode-hud` (stacking MP work on top of unmerged VS HUD branch).
+
+Deferred follow-ups (low priority):
+- `typecheck` script will want `tsc -b` with project references once `packages/server` has real TS (currently the script does a serial `&&` chain — fine today)
+- ESLint walks `.worktrees/**` producing noise; add `.worktrees/**` to ignores in a future cleanup
+- `packages/server/src/index.ts` has a pre-existing unused `gameServer` var — will self-resolve in Phase C when rooms are registered
 
 Update this block after each task. Format: `Last completed: Task X (commit: <subject>) · Next: Task Y`.
 
