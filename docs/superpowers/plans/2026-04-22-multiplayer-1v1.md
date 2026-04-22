@@ -16,12 +16,14 @@
 
 ## Current status
 
-Last completed: **Phase B** — B1 SimStateSchema + kin (`ce7aa6c` + `db3f756` abilityCooldowns MapSchema fixup + `d0819d2` WaveEnemy extraction), B2 MatchState + PlayerSlot (`25d68b4`), B3 protocol messages (`b3a016d`). 31 tests green incl. structural + golden + matchState. `@nannymud/shared` barrel now re-exports schema + protocol (simulation consumers continue to use deep paths).
+Last completed: **Phase D** — D1 ColyseusClient (`914bd82`), D2 InputSender (`1be753e`), D3 StateSync interpolation (`d360460`). Phase C done earlier: C1 MatchRoom phases (`b8682b5`), C2 sim tick + input coalescing (`7a8a7d5`), C3 disconnect + rematch (`76ffdbc`). 105 tests green (from 35 at Phase B end). Server MatchRoom is authoritative and test-proven; client net modules ready for Phase E screens to wire.
 
-Next: Parallel Phase C/D/E (server, client net, client screens). Can run in three worktrees concurrently after pushing B to origin.
+Next: Phase E (client screens) — E1 MP hub + modals, E2 lobby/char/stage screens, E3 App.tsx MP state tree.
 
-Deferred follow-ups (address when room wiring goes live in C):
-- `RoundStateSchema.winnerOfRound` / `matchWinner` and `AIStateSchema.packRole` / `targetId` are `'...' | null` interfaces decorated `@type('string')`. Colyseus serializes `null` as `""` on the wire. Either add a `'none'` sentinel or document that clients must treat `""` as null. Same concern on `ActorSchema.guildId` but lower risk (render layer already handles null).
+Deferred follow-ups:
+- `RoundStateSchema.winnerOfRound` / `matchWinner`, `AIStateSchema.packRole` / `targetId` and `ActorSchema.guildId` serialize `null` as `""` on the wire. Address in Phase F integration if observable.
+- `packages/server/tsconfig.json` lacks `paths` for `@nannymud/shared/*` deep imports — 6 type-only errors visible only via `cd packages/server && npx tsc --noEmit`. Runtime (tsx) and vitest resolve fine. Fix during Phase F integration cleanup.
+- `simToSchema` in MatchRoom uses structural casts (`as any`) for nested schema fields. Works today because ArraySchema/MapSchema are structurally compatible for reads; nested mutation tracking may need explicit schema instances if Phase F reveals wire-sync gaps.
 
 Branch: `feat/vs-mode-hud` (stacking MP work on top of unmerged VS HUD branch).
 
