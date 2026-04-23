@@ -106,17 +106,42 @@ export function spawnGuildVfx(scene: Phaser.Scene, event: VFXEvent, x: number, y
     .setScale(asset.scale)
     .setDepth(y + 1000);
 
-  if (event.facing === -1) {
-    sprite.setFlipX(true);
-  }
+  if (event.facing === -1) sprite.setFlipX(true);
 
-  const lifetimeMs = Math.max(asset.frames * asset.frameDurationMs, 100);
-  if (asset.loop || asset.frames <= 1) {
-    scene.time.delayedCall(lifetimeMs, () => sprite.destroy());
+  if (asset.frames <= 1) {
+    // Single-frame PixelLab assets: scale-in → hold → fade-out
+    const totalMs = Math.max(asset.frameDurationMs, 200);
+    const rampMs = totalMs * 0.35;
+    const holdMs = totalMs * 0.25;
+    const fadeMs = totalMs - rampMs - holdMs;
+    sprite.setScale(asset.scale * 0.25);
+    scene.tweens.add({
+      targets: sprite,
+      scaleX: asset.scale,
+      scaleY: asset.scale,
+      duration: rampMs,
+      ease: 'Back.Out',
+      onComplete: () => {
+        scene.time.delayedCall(holdMs, () => {
+          scene.tweens.add({
+            targets: sprite,
+            alpha: 0,
+            duration: fadeMs,
+            ease: 'Sine.In',
+            onComplete: () => sprite.destroy(),
+          });
+        });
+      },
+    });
   } else {
-    sprite.once(Phaser.Animations.Events.ANIMATION_COMPLETE, () => sprite.destroy());
+    const lifetimeMs = Math.max(asset.frames * asset.frameDurationMs, 100);
+    if (asset.loop) {
+      scene.time.delayedCall(lifetimeMs, () => sprite.destroy());
+    } else {
+      sprite.once(Phaser.Animations.Events.ANIMATION_COMPLETE, () => sprite.destroy());
+    }
+    sprite.play(animKey);
   }
 
-  sprite.play(animKey);
   return true;
 }
