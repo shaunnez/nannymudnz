@@ -3,6 +3,7 @@ import { GUILDS } from '@nannymud/shared/simulation/guildData';
 import { GUILD_META } from '../data/guildMeta';
 import type { GuildId, AbilityDef } from '@nannymud/shared/simulation/types';
 import { theme, guildAccent, Btn, Chip, SectionLabel, GuildMonogram, ComboDisplay } from '../ui';
+import { AbilityPreview } from '../ui/AbilityPreview';
 
 interface Props {
   initialGuild?: GuildId;
@@ -137,9 +138,9 @@ export function MoveList({ initialGuild, onBack, onDossier }: Props) {
           <div style={{ display: 'flex', flexDirection: 'column' }}>
             <MoveHeader />
             {guild.abilities.map((a, i) => (
-              <MoveRow key={a.id} slot={SLOT_LABELS[i]} ability={a} accent={accent} />
+              <MoveRow key={a.id} slot={SLOT_LABELS[i]} ability={a} accent={accent} guildId={sel} abilityIndex={i} />
             ))}
-            <MoveRow slot="R" ability={guild.rmb} accent={accent} />
+            <MoveRow slot="R" ability={guild.rmb} accent={accent} guildId={sel} abilityIndex={-1} />
           </div>
         </div>
       </div>
@@ -164,7 +165,7 @@ export function MoveList({ initialGuild, onBack, onDossier }: Props) {
   );
 }
 
-const TABLE_COLS = '72px 180px 1fr 240px 110px 110px';
+const TABLE_COLS = '100px 72px 180px 1fr 240px 110px 110px';
 
 function MoveHeader() {
   const cell: React.CSSProperties = {
@@ -183,6 +184,7 @@ function MoveHeader() {
         borderBottom: `1px solid ${theme.lineSoft}`,
       }}
     >
+      <span style={cell} />
       <span style={cell}>SLOT</span>
       <span style={cell}>COMBO</span>
       <span style={cell}>NAME / EFFECT</span>
@@ -193,7 +195,22 @@ function MoveHeader() {
   );
 }
 
-function MoveRow({ slot, ability, accent }: { slot: string; ability: AbilityDef; accent: string }) {
+function MoveRow({
+  slot,
+  ability,
+  accent,
+  guildId,
+  abilityIndex,
+}: {
+  slot: string;
+  ability: AbilityDef;
+  accent: string;
+  guildId: GuildId;
+  abilityIndex: number;
+}) {
+  const animationId = abilityIndex >= 0
+    ? `ability_${abilityIndex + 1}`
+    : 'basic_attack';
   const cdLabel = ability.cooldownMs > 0
     ? `${(ability.cooldownMs / 1000).toFixed(ability.cooldownMs < 10000 ? 1 : 0)}s`
     : '—';
@@ -205,11 +222,20 @@ function MoveRow({ slot, ability, accent }: { slot: string; ability: AbilityDef;
         display: 'grid',
         gridTemplateColumns: TABLE_COLS,
         gap: 14,
-        padding:'14px 6px',
+        padding: '14px 6px',
         borderBottom: `1px solid ${theme.lineSoft}`,
         alignItems: 'start',
       }}
     >
+      <div style={{ width: 96, height: 96, flexShrink: 0 }}>
+        <AbilityPreview
+          guildId={guildId}
+          abilityId={ability.id}
+          animationId={animationId}
+          spriteScale={0.9}
+          vfxScale={1.1}
+        />
+      </div>
       <span style={{ fontFamily: theme.fontMono, fontSize: 22, color: accent, letterSpacing: 2, lineHeight: 1 }}>
         {slot}
       </span>
