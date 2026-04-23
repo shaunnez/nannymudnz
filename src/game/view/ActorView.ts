@@ -788,6 +788,90 @@ export class ActorView {
     this.attackFx.setVisible(true);
   }
 
+  private drawCultistGateChannel(bodyHeight: number, visualTime: number): void {
+    this.auraFx.clear();
+    const pulse = 0.5 + Math.sin(visualTime * 4) * 0.3;
+    this.auraFx.fillStyle(0x000000, 0.32 + pulse * 0.12);
+    this.auraFx.fillEllipse(0, -bodyHeight * 0.52, this.width * 1.45, bodyHeight * 1.05);
+    this.auraFx.lineStyle(4, 0x134e4a, 0.75 + pulse * 0.2);
+    this.auraFx.strokeEllipse(0, -bodyHeight * 0.52, this.width * 1.38, bodyHeight * 0.98);
+    this.auraFx.lineStyle(2, 0x065f46, 0.5);
+    this.auraFx.strokeEllipse(0, -bodyHeight * 0.52, this.width * 1.12, bodyHeight * 0.76);
+    for (let i = 0; i < 4; i++) {
+      const a = -visualTime * 5 + i * (Math.PI / 2);
+      this.auraFx.fillStyle(0x4ade80, 0.72);
+      this.auraFx.fillCircle(
+        Math.cos(a) * this.width * 0.7,
+        -bodyHeight * 0.52 + Math.sin(a) * bodyHeight * 0.48,
+        2.5,
+      );
+    }
+    this.auraFx.setVisible(true);
+  }
+
+  private drawCultistGazeAura(bodyHeight: number, visualTime: number): void {
+    this.auraFx.clear();
+    const pulse = 0.58 + Math.sin(visualTime * 2.5) * 0.25;
+    this.auraFx.lineStyle(3, 0x2e4c3a, 0.7 + pulse * 0.22);
+    this.auraFx.strokeEllipse(0, -bodyHeight * 0.52, this.width * 1.32, bodyHeight * 0.94);
+    this.auraFx.lineStyle(1.5, 0x065f46, 0.45);
+    this.auraFx.strokeEllipse(0, -bodyHeight * 0.52, this.width * 1.1, bodyHeight * 0.72);
+    for (let i = 0; i < 3; i++) {
+      const a = visualTime * 2 + i * (Math.PI * 2 / 3);
+      this.auraFx.fillStyle(0x4ade80, 0.65);
+      this.auraFx.fillCircle(
+        Math.cos(a) * this.width * 0.68,
+        -bodyHeight * 0.52 + Math.sin(a) * bodyHeight * 0.46,
+        2,
+      );
+    }
+    this.auraFx.setVisible(true);
+  }
+
+  private drawChefFeast(bodyHeight: number, visualTime: number): void {
+    this.attackFx.clear();
+    this.attackFx.lineStyle(4, 0xf48fb1, 0.88);
+    this.attackFx.strokeCircle(0, -bodyHeight * 0.5, 34);
+    this.attackFx.lineStyle(2, 0xfde68a, 0.7);
+    this.attackFx.strokeCircle(0, -bodyHeight * 0.5, 22);
+    for (let i = 0; i < 4; i++) {
+      const a = visualTime * 3 + i * (Math.PI / 2);
+      this.attackFx.fillStyle(0xf9a8d4, 0.88);
+      this.attackFx.fillCircle(Math.cos(a) * 30, -bodyHeight * 0.5 + Math.sin(a) * 30, 3);
+    }
+    this.attackFx.setVisible(true);
+  }
+
+  private drawChefSignatureDish(bodyHeight: number, visualTime: number): void {
+    this.auraFx.clear();
+    const pulse = 0.58 + Math.sin(visualTime * 5) * 0.28;
+    this.auraFx.lineStyle(3, 0xf48fb1, 0.72 + pulse * 0.2);
+    this.auraFx.strokeEllipse(0, -bodyHeight * 0.52, this.width * 1.35, bodyHeight * 0.96);
+    this.auraFx.lineStyle(2, 0xfde68a, 0.55);
+    this.auraFx.strokeEllipse(0, -bodyHeight * 0.52, this.width * 1.12, bodyHeight * 0.74);
+    for (let i = 0; i < 5; i++) {
+      const a = visualTime * 4 + i * (Math.PI * 2 / 5);
+      this.auraFx.fillStyle(0xfbbf24, 0.82);
+      this.auraFx.fillCircle(
+        Math.cos(a) * this.width * 0.68,
+        -bodyHeight * 0.52 + Math.sin(a) * bodyHeight * 0.46,
+        2.5,
+      );
+    }
+    this.auraFx.setVisible(true);
+  }
+
+  private drawChefLadleBash(bodyHeight: number): void {
+    this.attackFx.clear();
+    this.attackFx.lineStyle(5, 0xf48fb1, 0.9);
+    this.attackFx.beginPath();
+    this.attackFx.arc(8, -bodyHeight * 0.52, 28, -1.0, 0.8, false);
+    this.attackFx.strokePath();
+    this.attackFx.fillStyle(0xfde68a, 0.92);
+    this.attackFx.fillCircle(26, -bodyHeight * 0.56, 3.5);
+    this.attackFx.setVisible(true);
+  }
+
   syncFrom(actor: Actor): void {
     const groundScreenY = worldYToScreenY(actor.y, this.band.min, this.band.max);
     const screenY = groundScreenY - actor.z * 0.6;
@@ -1033,6 +1117,22 @@ export class ActorView {
     if (isDarkmageEternalNight) this.drawDarkmageEternalNight(bodyHeight, visualTime);
     if (isDarkmageCloak) this.drawDarkmageCloak(bodyHeight, visualTime);
     if (isDarkmageSoulLeech) this.drawDarkmageSoulLeech(bodyHeight, visualTime);
+
+    const isCultist = actor.guildId === 'cultist';
+    const isCultistGate = isCultist && actor.state === 'channeling';
+    const isCultistGaze = isCultist && actor.statusEffects.some(e => e.type === 'damage_boost');
+
+    if (isCultistGate) this.drawCultistGateChannel(bodyHeight, visualTime);
+    if (isCultistGaze) this.drawCultistGazeAura(bodyHeight, visualTime);
+
+    const isChef = actor.guildId === 'chef';
+    const isChefFeast = isChef && actor.state === 'attacking' && actor.animationId === 'ability_1';
+    const isChefSignatureDish = isChef && actor.state === 'channeling';
+    const isChefLadle = isChef && actor.state === 'attacking' && actor.animationId === 'ability_2';
+
+    if (isChefFeast) this.drawChefFeast(bodyHeight, visualTime);
+    if (isChefSignatureDish) this.drawChefSignatureDish(bodyHeight, visualTime);
+    if (isChefLadle) this.drawChefLadleBash(bodyHeight);
 
     // Status alpha overlays.
     let alpha = 1;

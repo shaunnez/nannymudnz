@@ -56,7 +56,16 @@ type PreviewEffect =
   | 'darkmage_darkness'
   | 'darkmage_soul_leech'
   | 'darkmage_eternal_night'
-  | 'darkmage_shadow_cloak';
+  | 'darkmage_shadow_cloak'
+  | 'cultist_madness'
+  | 'cultist_gate'
+  | 'cultist_gaze'
+  | 'cultist_summon'
+  | 'cultist_tendril'
+  | 'chef_feast'
+  | 'chef_ladle'
+  | 'chef_soup'
+  | 'chef_signature';
 
 interface AbilityPreviewSpec {
   effect?: PreviewEffect;
@@ -154,6 +163,23 @@ function getAbilityPreviewSpec(guildId: GuildId, abilityId: string): AbilityPrev
         case 'eternal_night': return { effect: 'darkmage_eternal_night' };
         case 'shadow_cloak':  return { effect: 'darkmage_shadow_cloak' };
         default:              return {};
+      }
+    case 'cultist':
+      switch (abilityId) {
+        case 'summon_spawn':  return { effect: 'cultist_summon' };
+        case 'madness':       return { effect: 'cultist_madness' };
+        case 'tendril_grasp': return { effect: 'cultist_tendril' };
+        case 'open_the_gate': return { effect: 'cultist_gate' };
+        case 'gaze_abyss':    return { effect: 'cultist_gaze' };
+        default:              return {};
+      }
+    case 'chef':
+      switch (abilityId) {
+        case 'feast':          return { effect: 'chef_feast' };
+        case 'ladle_bash':     return { effect: 'chef_ladle' };
+        case 'hot_soup':       return { effect: 'chef_soup' };
+        case 'signature_dish': return { effect: 'chef_signature' };
+        default:               return {};
       }
     default:
       return {};
@@ -290,6 +316,24 @@ function getSpriteTransform(
       scale *= 1.06 + Math.sin(progress * TAU) * 0.025; y += 2; break;
     case 'darkmage_shadow_cloak':
       scale *= 1.04 + Math.sin(progress * TAU) * 0.02; y += 2; break;
+    case 'cultist_summon':
+      scale *= 1.04 + Math.sin(progress * TAU) * 0.02; y += 2; break;
+    case 'cultist_madness':
+      scale *= 1.0 + Math.sin(progress * TAU * 1.5) * 0.025; y += 2; break;
+    case 'cultist_tendril':
+      y += 6; break;
+    case 'cultist_gate':
+      scale *= 1.06 + Math.sin(progress * TAU) * 0.025; y += 2; break;
+    case 'cultist_gaze':
+      scale *= 1.02 + Math.sin(progress * TAU) * 0.018; y += 4; break;
+    case 'chef_feast':
+      scale *= 1.02 + Math.sin(progress * TAU) * 0.02; y += 4; break;
+    case 'chef_ladle':
+      x = 2 + Math.sin(progress * TAU) * 3; y += 4; break;
+    case 'chef_soup':
+      scale *= 1.0 + Math.sin(progress * TAU * 2) * 0.018; y += 4; break;
+    case 'chef_signature':
+      scale *= 1.04 + Math.sin(progress * TAU) * 0.025; y += 2; break;
     default:
       break;
   }
@@ -894,6 +938,113 @@ function PreviewOverlay({
         </>
       );
       break;
+    case 'cultist_summon':
+      content = (
+        <>
+          <circle cx="60" cy="60" r="36" fill="#000000" opacity={0.28 + pulse * 0.1} />
+          <circle cx="60" cy="60" r="38" fill="none" stroke="#134e4a" strokeWidth={4} opacity={0.82 + pulse * 0.14} />
+          <circle cx="60" cy="60" r="28" fill="none" stroke="#065f46" strokeWidth={2} opacity={0.58} />
+          {[0,1,2,3,4,5].map(i => {
+            const a = orbit * 0.6 + i * TAU / 6;
+            return <circle key={i} cx={60+Math.cos(a)*40} cy={60+Math.sin(a)*20} r="2.5" fill="#4ade80" opacity={0.78} />;
+          })}
+        </>
+      );
+      break;
+    case 'cultist_madness':
+      content = (
+        <>
+          <ellipse cx="60" cy="60" rx="32" ry="36" fill="#0a1a12" opacity={0.22 + pulse * 0.1} />
+          <ellipse cx="60" cy="60" rx="36" ry="40" fill="none" stroke="#2e4c3a" strokeWidth={4} opacity={0.78 + pulse * 0.18} />
+          <ellipse cx="60" cy="60" rx="24" ry="28" fill="none" stroke="#065f46" strokeWidth={2} opacity={0.52} />
+          {[0,1,2,3,4].map(i => {
+            const a = orbit * 1.2 + i * TAU / 5;
+            return <circle key={i} cx={60+Math.cos(a)*34} cy={60+Math.sin(a)*17} r="2.5" fill="#d1fae5" opacity={0.72} />;
+          })}
+        </>
+      );
+      break;
+    case 'cultist_tendril':
+      content = (
+        <>
+          {[0,1,2,3].map(i => {
+            const x = 36 + i * 14;
+            return <line key={i} x1={x} y1="40" x2={x + (i%2)*4 - 2} y2={72 + pulse * 8} stroke="#065f46" strokeWidth={4} strokeLinecap="round" opacity={0.82 + pulse * 0.14} />;
+          })}
+          <ellipse cx="60" cy="74" rx="22" ry="8" fill="none" stroke="#134e4a" strokeWidth={2} opacity={0.65} />
+        </>
+      );
+      break;
+    case 'cultist_gate':
+      content = (
+        <>
+          <circle cx="60" cy="60" r="38" fill="#000000" opacity={0.38 + pulse * 0.14} />
+          <circle cx="60" cy="60" r="40" fill="none" stroke="#134e4a" strokeWidth={5} opacity={0.88} />
+          <circle cx="60" cy="60" r="28" fill="none" stroke="#065f46" strokeWidth={2.5} opacity={0.65} />
+          {[0,1,2,3].map(i => {
+            const a = -orbit * 1.5 + i * TAU / 4;
+            return <circle key={i} cx={60+Math.cos(a)*32} cy={60+Math.sin(a)*16} r="3" fill="#4ade80" opacity={0.82} />;
+          })}
+        </>
+      );
+      break;
+    case 'cultist_gaze':
+      content = (
+        <>
+          <ellipse cx="60" cy="60" rx="28" ry="32" fill="none" stroke="#2e4c3a" strokeWidth={3.5} opacity={0.72 + pulse * 0.2} />
+          <ellipse cx="60" cy="60" rx="20" ry="24" fill="none" stroke="#065f46" strokeWidth={1.5} opacity={0.5} />
+          {[0,1,2].map(i => {
+            const a = orbit + i * TAU / 3;
+            return <circle key={i} cx={60+Math.cos(a)*32} cy={60+Math.sin(a)*16} r="2.5" fill="#4ade80" opacity={0.75} />;
+          })}
+        </>
+      );
+      break;
+    case 'chef_feast':
+      content = (
+        <>
+          <circle cx="60" cy="60" r="34" fill="none" stroke="#f48fb1" strokeWidth={4} opacity={0.8 + pulse * 0.16} />
+          <circle cx="60" cy="60" r="24" fill="none" stroke="#fde68a" strokeWidth={2} opacity={0.62} />
+          {[0,1,2,3].map(i => {
+            const a = orbit * 0.8 + i * TAU / 4;
+            return <circle key={i} cx={60+Math.cos(a)*36} cy={60+Math.sin(a)*18} r="3" fill="#f9a8d4" opacity={0.88} />;
+          })}
+        </>
+      );
+      break;
+    case 'chef_ladle':
+      content = (
+        <>
+          <path d={`M48 ${72-sweep*3} A22 22 0 0 1 84 48`} fill="none" stroke="#f48fb1" strokeWidth={7} strokeLinecap="round" opacity="0.92" />
+          <circle cx={82} cy={48} r="4" fill="#fde68a" opacity="0.9" />
+        </>
+      );
+      break;
+    case 'chef_soup':
+      content = (
+        <>
+          <ellipse cx="60" cy="60" rx="26" ry="30" fill="#78350f" opacity={0.12 + pulse * 0.08} />
+          <ellipse cx="60" cy="60" rx="30" ry="34" fill="none" stroke="#fde68a" strokeWidth={3.5} opacity={0.72 + pulse * 0.22} />
+          <ellipse cx="60" cy="60" rx="20" ry="24" fill="none" stroke="#86efac" strokeWidth={1.5} opacity={0.55} />
+          {[0,1,2,3].map(i => {
+            const t = (progress * 1.4 + i * 0.28) % 1;
+            return <circle key={i} cx={52+(i%2)*16} cy={70-t*30} r="2" fill="#fbbf24" opacity={1-t} />;
+          })}
+        </>
+      );
+      break;
+    case 'chef_signature':
+      content = (
+        <>
+          <ellipse cx="60" cy="60" rx="32" ry="36" fill="none" stroke="#f48fb1" strokeWidth={4} opacity={0.78 + pulse * 0.18} />
+          <ellipse cx="60" cy="60" rx="22" ry="26" fill="none" stroke="#fbbf24" strokeWidth={2.5} opacity={0.62} />
+          {[0,1,2,3,4].map(i => {
+            const a = orbit * 1.2 + i * TAU / 5;
+            return <circle key={i} cx={60+Math.cos(a)*34} cy={60+Math.sin(a)*17} r="2.5" fill="#fde68a" opacity={0.85} />;
+          })}
+        </>
+      );
+      break;
     default:
       break;
   }
@@ -958,7 +1109,9 @@ export function AbilityPreview({
                               ? 'drop-shadow(0 0 18px rgba(109,40,217,0.6)) sepia(0.6) saturate(4) hue-rotate(220deg) brightness(0.82)'
                               : preview.effect === 'darkmage_shadow_cloak'
                                 ? 'drop-shadow(0 0 12px rgba(74,20,88,0.55)) sepia(0.5) saturate(3) hue-rotate(210deg) brightness(0.78)'
-                                : 'none';
+                                : preview.effect === 'cultist_gate'
+                                  ? 'drop-shadow(0 0 18px rgba(0,0,0,0.8)) sepia(0.7) saturate(3) hue-rotate(120deg) brightness(0.75)'
+                                  : 'none';
 
   return (
     <div

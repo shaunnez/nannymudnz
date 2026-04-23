@@ -336,6 +336,15 @@ function getAbilityAssetKey(abilityId: string, eventType: VFXEvent['type']): str
     case 'soul_leech':    return eventType === 'heal_glow'  ? 'soul_leech_drain'    : undefined;
     case 'eternal_night': return eventType === 'aoe_pop'    ? 'eternal_night_burst' : undefined;
     case 'shadow_cloak':  return eventType === 'aura_pulse' ? 'shadow_cloak_aura'   : undefined;
+    case 'summon_spawn':  return eventType === 'aoe_pop'       ? 'summon_burst'  : undefined;
+    case 'madness':       return eventType === 'aoe_pop'       ? 'madness_burst' : undefined;
+    case 'tendril_grasp': return eventType === 'aoe_pop'       ? 'tendril_burst' : undefined;
+    case 'open_the_gate': return eventType === 'channel_pulse' ? 'gate_pulse'    : undefined;
+    case 'gaze_abyss':    return eventType === 'aura_pulse'    ? 'gaze_aura'     : undefined;
+    case 'feast':          return eventType === 'aoe_pop'       ? 'feast_burst'          : undefined;
+    case 'ladle_bash':     return eventType === 'hit_spark'     ? 'ladle_impact'         : undefined;
+    case 'hot_soup':       return eventType === 'heal_glow'     ? 'hot_soup_glow'        : undefined;
+    case 'signature_dish': return eventType === 'channel_pulse' ? 'signature_dish_pulse' : undefined;
     default:
       return undefined;
   }
