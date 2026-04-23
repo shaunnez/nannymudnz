@@ -333,7 +333,7 @@ function getAbilityAssetKey(abilityId: string, eventType: VFXEvent['type']): str
     case 'fang_strike':  return eventType === 'hit_spark'  ? 'fang_strike_impact' : undefined;
     case 'nocturne':     return eventType === 'aura_pulse' ? 'nocturne_aura'      : undefined;
     case 'darkness':      return eventType === 'aoe_pop'    ? 'darkness_burst'      : undefined;
-    case 'soul_leech':    return eventType === 'heal_glow'  ? 'soul_leech_drain'    : undefined;
+    case 'soul_leech':    return eventType === 'hit_spark'  ? 'soul_leech_drain'    : undefined;
     case 'eternal_night': return eventType === 'aoe_pop'    ? 'eternal_night_burst' : undefined;
     case 'shadow_cloak':  return eventType === 'aura_pulse' ? 'shadow_cloak_aura'   : undefined;
     case 'summon_spawn':  return eventType === 'aoe_pop'       ? 'summon_burst'  : undefined;
@@ -357,6 +357,7 @@ function getAbilityAssetKey(abilityId: string, eventType: VFXEvent['type']): str
 function getPrimaryAreaVfxType(abilityId: string): 'aoe_pop' | 'aura_pulse' {
   switch (abilityId) {
     case 'shield_wall':
+    case 'rallying_cry':
       return 'aura_pulse';
     default:
       return 'aoe_pop';
@@ -596,11 +597,34 @@ function fireAbility(player: Actor, ability: AbilityDef, state: SimState, ctrl: 
     }
   }
 
+  // Pure buff abilities (effects only, no area/damage/heal/projectile/teleport dispatch above)
+  // emit an aura_pulse so VFX assets wired to aura_pulse actually fire.
+  if (
+    !ability.isProjectile &&
+    !ability.isHeal &&
+    !ability.isTeleport &&
+    ability.aoeRadius === 0 &&
+    ability.baseDamage === 0 &&
+    Object.keys(ability.effects).length > 0
+  ) {
+    pushAbilityVfx(state.vfxEvents, player, ability, {
+      type: 'aura_pulse',
+      x: player.x,
+      y: player.y,
+    });
+  }
+
   if (ability.isChannel) {
     ctrl.channelingAbility = ability.id;
     ctrl.channelMs = 0;
     player.state = 'channeling';
     player.animationId = 'channel';
+    pushAbilityVfx(state.vfxEvents, player, ability, {
+      type: 'channel_pulse',
+      x: player.x,
+      y: player.y,
+      radius: ability.aoeRadius || ability.range || 60,
+    });
   }
 
   if (ability.isSummon) {
