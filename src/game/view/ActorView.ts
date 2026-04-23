@@ -512,6 +512,87 @@ export class ActorView {
     this.attackFx.setVisible(true);
   }
 
+  private drawChampionChargeImpact(bodyHeight: number): void {
+    this.attackFx.clear();
+    this.attackFx.lineStyle(7, 0xdc2626, 0.92);
+    this.attackFx.beginPath();
+    this.attackFx.arc(12, -bodyHeight * 0.5, 36, -1.0, 0.8, false);
+    this.attackFx.strokePath();
+    this.attackFx.lineStyle(3, 0xfca5a5, 0.7);
+    this.attackFx.beginPath();
+    this.attackFx.arc(12, -bodyHeight * 0.5, 24, -0.8, 0.6, false);
+    this.attackFx.strokePath();
+    this.attackFx.fillStyle(0xfef2f2, 0.9);
+    this.attackFx.fillCircle(38, -bodyHeight * 0.56, 3.5);
+    this.attackFx.setVisible(true);
+  }
+
+  private drawChampionExecute(bodyHeight: number): void {
+    this.attackFx.clear();
+    this.attackFx.lineStyle(6, 0x7f1d1d, 0.95);
+    this.attackFx.beginPath();
+    this.attackFx.moveTo(-8, -bodyHeight * 0.8);
+    this.attackFx.lineTo(16, -bodyHeight * 0.25);
+    this.attackFx.strokePath();
+    this.attackFx.lineStyle(3, 0xdc2626, 0.8);
+    this.attackFx.beginPath();
+    this.attackFx.moveTo(0, -bodyHeight * 0.78);
+    this.attackFx.lineTo(20, -bodyHeight * 0.26);
+    this.attackFx.strokePath();
+    for (let i = 0; i < 3; i++) {
+      this.attackFx.fillStyle(0xdc2626, 0.85);
+      this.attackFx.fillCircle(8 + i * 6, -bodyHeight * 0.3 + i * 8, 2.5);
+    }
+    this.attackFx.setVisible(true);
+  }
+
+  private drawChampionCleaver(bodyHeight: number): void {
+    this.attackFx.clear();
+    this.attackFx.lineStyle(5, 0xa71d2a, 0.9);
+    this.attackFx.beginPath();
+    this.attackFx.arc(8, -bodyHeight * 0.52, 30, -1.05, 0.85, false);
+    this.attackFx.strokePath();
+    for (const [ox, oy] of [[24, -bodyHeight * 0.72], [32, -bodyHeight * 0.52], [26, -bodyHeight * 0.32]] as [number, number][]) {
+      this.attackFx.fillStyle(0xfca5a5, 0.88);
+      this.attackFx.fillCircle(ox, oy, 2.5);
+    }
+    this.attackFx.setVisible(true);
+  }
+
+  private drawChampionSkullsplitter(bodyHeight: number): void {
+    this.attackFx.clear();
+    this.attackFx.lineStyle(8, 0x450a0a, 0.95);
+    this.attackFx.beginPath();
+    this.attackFx.arc(10, -bodyHeight * 0.5, 40, -1.15, 0.95, false);
+    this.attackFx.strokePath();
+    this.attackFx.lineStyle(4, 0xdc2626, 0.85);
+    this.attackFx.beginPath();
+    this.attackFx.arc(10, -bodyHeight * 0.5, 28, -1.0, 0.8, false);
+    this.attackFx.strokePath();
+    this.attackFx.fillStyle(0xfbbf24, 0.95);
+    this.attackFx.fillCircle(38, -bodyHeight * 0.58, 4);
+    this.attackFx.fillCircle(28, -bodyHeight * 0.76, 3);
+    this.attackFx.setVisible(true);
+  }
+
+  private drawChampionTitheFx(bodyHeight: number, visualTime: number, tally: number): void {
+    if (tally === 0) return;
+    this.auraFx.clear();
+    const pulse = 0.55 + Math.sin(visualTime * 5) * 0.28;
+    this.auraFx.lineStyle(3, 0xdc2626, 0.65 + pulse * 0.2);
+    this.auraFx.strokeEllipse(0, -bodyHeight * 0.52, this.width * 1.32, bodyHeight * 0.94);
+    for (let i = 0; i < 10; i++) {
+      const a = visualTime * 3 + i * (Math.PI * 2 / 10);
+      this.auraFx.fillStyle(i < tally ? 0xdc2626 : 0x44403c, i < tally ? 0.85 : 0.3);
+      this.auraFx.fillCircle(
+        Math.cos(a) * this.width * 0.68,
+        -bodyHeight * 0.52 + Math.sin(a) * bodyHeight * 0.46,
+        2.5,
+      );
+    }
+    this.auraFx.setVisible(true);
+  }
+
   syncFrom(actor: Actor): void {
     const groundScreenY = worldYToScreenY(actor.y, this.band.min, this.band.max);
     const screenY = groundScreenY - actor.z * 0.6;
@@ -707,6 +788,19 @@ export class ActorView {
     if (isMonkJab) this.drawMonkJab(bodyHeight);
     if (isMonkFivePoint) this.drawMonkFivePoint(bodyHeight);
 
+    const isChampion = actor.guildId === 'champion';
+    const isChargeAttack = isChampion && actor.state === 'attacking' && actor.animationId === 'ability_2';
+    const isExecuteAttack = isChampion && actor.state === 'attacking' && actor.animationId === 'ability_3';
+    const isCleaverAttack = isChampion && actor.state === 'attacking' && actor.animationId === 'ability_4';
+    const isSkullsplitter = isChampion && actor.state === 'attacking' && actor.animationId === 'ability_5';
+    const isChampionBuff = isChampion && actor.statusEffects.some(e => e.type === 'attack_speed_boost');
+
+    if (isChargeAttack) this.drawChampionChargeImpact(bodyHeight);
+    if (isExecuteAttack) this.drawChampionExecute(bodyHeight);
+    if (isCleaverAttack) this.drawChampionCleaver(bodyHeight);
+    if (isSkullsplitter) this.drawChampionSkullsplitter(bodyHeight);
+    if (isChampionBuff) this.drawChampionTitheFx(bodyHeight, visualTime, actor.mp);
+
     // Status alpha overlays.
     let alpha = 1;
     if (actor.statusEffects.some(e => e.type === 'stun')) alpha = Math.min(alpha, 0.7);
@@ -726,6 +820,7 @@ export class ActorView {
     const buffTint = isUndyingRage ? 0x7f1d1d
       : isBloodlust ? 0xb91c1c
       : isAdrenalineRush ? 0xc2410c
+      : isChampionBuff ? 0x991b1b
       : null;
     if (this.sprite) {
       if (isHit) {

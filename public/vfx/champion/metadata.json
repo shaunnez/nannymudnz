@@ -1,0 +1,12 @@
+{
+  "guildId": "champion",
+  "frameSize": { "w": 96, "h": 96 },
+  "assets": {
+    "charge_impact":       { "frames": 5, "frameDurationMs": 90,  "loop": false, "anchor": {"x":28,"y":68}, "scale": 1.2 },
+    "execute_impact":      { "frames": 5, "frameDurationMs": 95,  "loop": false, "anchor": {"x":48,"y":72}, "scale": 1.25 },
+    "cleaver_impact":      { "frames": 5, "frameDurationMs": 90,  "loop": false, "anchor": {"x":28,"y":68}, "scale": 1.2 },
+    "skullsplitter_burst": { "frames": 8, "frameDurationMs": 125, "loop": false, "frameSize": {"w":160,"h":160}, "anchor": {"x":80,"y":80}, "scale": 1.6 },
+    "tithe_glow":          { "frames": 6, "frameDurationMs": 110, "loop": false, "anchor": {"x":48,"y":72}, "scale": 1.3 },
+    "challenge_mark":      { "frames": 5, "frameDurationMs": 100, "loop": false, "anchor": {"x":48,"y":72}, "scale": 1.35 }
+  }
+}

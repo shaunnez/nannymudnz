@@ -33,7 +33,13 @@ type PreviewEffect =
   | 'monk_five_point'
   | 'monk_serenity'
   | 'monk_dragons_fury'
-  | 'monk_parry';
+  | 'monk_parry'
+  | 'champion_charge'
+  | 'champion_execute'
+  | 'champion_cleaver'
+  | 'champion_skullsplitter'
+  | 'champion_tithe'
+  | 'champion_challenge';
 
 interface AbilityPreviewSpec {
   effect?: PreviewEffect;
@@ -87,6 +93,16 @@ function getAbilityPreviewSpec(guildId: GuildId, abilityId: string): AbilityPrev
         case 'dragons_fury':    return { effect: 'monk_dragons_fury' };
         case 'monk_parry':      return { effect: 'monk_parry' };
         default:                return {};
+      }
+    case 'champion':
+      switch (abilityId) {
+        case 'tithe_of_blood':   return { effect: 'champion_tithe' };
+        case 'berserker_charge': return { effect: 'champion_charge' };
+        case 'execute':          return { effect: 'champion_execute' };
+        case 'cleaver':          return { effect: 'champion_cleaver' };
+        case 'skullsplitter':    return { effect: 'champion_skullsplitter' };
+        case 'challenge':        return { effect: 'champion_challenge' };
+        default:                 return {};
       }
     default:
       return {};
@@ -176,6 +192,18 @@ function getSpriteTransform(
     case 'monk_dragons_fury':
       scale *= 1.0 + Math.sin(progress * TAU * 3) * 0.03; y += 2; break;
     case 'monk_parry':
+      y += 4; break;
+    case 'champion_charge':
+      x = 3 + Math.sin(progress * TAU) * 2; y += 4; break;
+    case 'champion_execute':
+      scale *= 1.04 + Math.sin(progress * TAU) * 0.02; y += 2; break;
+    case 'champion_cleaver':
+      x = 2 + Math.sin(progress * TAU) * 2; y += 4; break;
+    case 'champion_skullsplitter':
+      scale *= 1.08 + Math.sin(progress * TAU) * 0.03; y += 2; break;
+    case 'champion_tithe':
+      scale *= 1.0 + Math.sin(progress * TAU * 2) * 0.02; y += 4; break;
+    case 'champion_challenge':
       y += 4; break;
     default:
       break;
@@ -510,6 +538,69 @@ function PreviewOverlay({
         </>
       );
       break;
+    case 'champion_charge':
+      content = (
+        <>
+          <path d={`M42 ${76-sweep*4} A28 28 0 0 1 90 44`} fill="none" stroke="#dc2626" strokeWidth={9} strokeLinecap="round" opacity="0.94" />
+          <path d={`M48 ${70-sweep*3} A20 20 0 0 1 84 50`} fill="none" stroke="#fca5a5" strokeWidth={4} strokeLinecap="round" opacity="0.85" />
+          <circle cx={88} cy={44} r="4" fill="#fef2f2" opacity="0.9" />
+        </>
+      );
+      break;
+    case 'champion_execute':
+      content = (
+        <>
+          <line x1="52" y1="30" x2="72" y2="88" stroke="#7f1d1d" strokeWidth={8} strokeLinecap="round" opacity="0.95" />
+          <line x1="58" y1="30" x2="78" y2="88" stroke="#dc2626" strokeWidth={4} strokeLinecap="round" opacity="0.88" />
+          {[0,1,2].map(i => (
+            <circle key={i} cx={62+i*6} cy={68+i*8} r="2.5" fill="#dc2626" opacity="0.82" />
+          ))}
+        </>
+      );
+      break;
+    case 'champion_cleaver':
+      content = (
+        <>
+          <path d={`M46 ${72-sweep*3} A24 24 0 0 1 88 46`} fill="none" stroke="#a71d2a" strokeWidth={7} strokeLinecap="round" opacity="0.92" />
+          <circle cx={86} cy={46} r="3" fill="#fca5a5" opacity="0.88" />
+          <circle cx={76} cy={34} r="2.5" fill="#fca5a5" opacity="0.78" />
+        </>
+      );
+      break;
+    case 'champion_skullsplitter':
+      content = (
+        <>
+          <ellipse cx="60" cy="60" rx="36" ry="40" fill="#450a0a" opacity={0.22 + pulse * 0.1} />
+          <ellipse cx="60" cy="60" rx="40" ry="44" fill="none" stroke="#dc2626" strokeWidth={6} opacity={0.9} />
+          <ellipse cx="60" cy="60" rx="28" ry="32" fill="none" stroke="#fca5a5" strokeWidth={3} opacity={0.7} />
+          {[0,1,2,3].map(i => {
+            const a = i * TAU / 4 + orbit;
+            return <circle key={i} cx={60+Math.cos(a)*34} cy={60+Math.sin(a)*17} r="3.5" fill="#fbbf24" opacity="0.88" />;
+          })}
+        </>
+      );
+      break;
+    case 'champion_tithe':
+      content = (
+        <>
+          <ellipse cx="60" cy="60" rx="26" ry="30" fill="#7f1d1d" opacity={0.16 + pulse * 0.1} />
+          <ellipse cx="60" cy="60" rx="32" ry="36" fill="none" stroke="#dc2626" strokeWidth={4} opacity={0.7 + pulse * 0.22} />
+          {[0,1,2,3,4,5,6,7,8,9].map(i => {
+            const a = i * TAU / 10 + orbit * 0.5;
+            return <circle key={i} cx={60+Math.cos(a)*34} cy={60+Math.sin(a)*17} r="2" fill={i < 5 ? '#dc2626' : '#44403c'} opacity={i < 5 ? 0.85 : 0.3} />;
+          })}
+        </>
+      );
+      break;
+    case 'champion_challenge':
+      content = (
+        <>
+          <ellipse cx="60" cy="60" rx="28" ry="32" fill="none" stroke="#a71d2a" strokeWidth={4} opacity={0.78 + pulse * 0.18} />
+          <ellipse cx="60" cy="60" rx="20" ry="24" fill="none" stroke="#fbbf24" strokeWidth={2} opacity={0.65} />
+          <line x1="60" y1="28" x2="60" y2="92" stroke="#fca5a5" strokeWidth={2.5} opacity={0.72} />
+        </>
+      );
+      break;
     default:
       break;
   }
@@ -558,7 +649,11 @@ export function AbilityPreview({
               ? 'drop-shadow(0 0 12px rgba(147,197,253,0.6)) sepia(0.3) saturate(2) hue-rotate(160deg) brightness(1.08)'
               : preview.effect === 'druid_shapeshift'
                 ? 'drop-shadow(0 0 12px rgba(76,175,80,0.55)) sepia(0.3) saturate(2) hue-rotate(80deg) brightness(1.06)'
-                : 'none';
+                : preview.effect === 'champion_skullsplitter'
+                  ? 'drop-shadow(0 0 16px rgba(220,38,38,0.6)) sepia(0.8) saturate(4) hue-rotate(-20deg) brightness(0.88)'
+                  : preview.effect === 'champion_tithe'
+                    ? 'drop-shadow(0 0 10px rgba(220,38,38,0.45)) sepia(0.4) saturate(2) hue-rotate(-15deg) brightness(0.95)'
+                    : 'none';
 
   return (
     <div

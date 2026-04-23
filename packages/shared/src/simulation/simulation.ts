@@ -315,6 +315,12 @@ function getAbilityAssetKey(abilityId: string, eventType: VFXEvent['type']): str
     case 'five_point_palm': return eventType === 'hit_spark'     ? 'five_point_impact'  : undefined;
     case 'dragons_fury':    return eventType === 'channel_pulse' ? 'dragons_fury_pulse' : undefined;
     case 'monk_parry':      return eventType === 'aoe_pop'       ? 'parry_flash'        : undefined;
+    case 'berserker_charge': return eventType === 'hit_spark' ? 'charge_impact'       : undefined;
+    case 'execute':          return eventType === 'hit_spark' ? 'execute_impact'       : undefined;
+    case 'cleaver':          return eventType === 'hit_spark' ? 'cleaver_impact'       : undefined;
+    case 'skullsplitter':    return eventType === 'aoe_pop'   ? 'skullsplitter_burst'  : undefined;
+    case 'tithe_of_blood':   return eventType === 'heal_glow' ? 'tithe_glow'           : undefined;
+    case 'challenge':        return eventType === 'aoe_pop'   ? 'challenge_mark'       : undefined;
     default:
       return undefined;
   }
