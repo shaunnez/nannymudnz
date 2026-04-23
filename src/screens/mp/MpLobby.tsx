@@ -51,24 +51,23 @@ export function MpLobby({ room, onLeave, onPhaseChange }: Props) {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chatMessages]);
 
-  if (!state) return <MpLoading />;
-
-  const { localSlot, opponentSlot } = getMatchSlots(state, room.sessionId);
-
-  const isHost = room.sessionId === state.hostSessionId;
+  // Derived state — null-safe so hooks below can use them unconditionally.
+  const { localSlot, opponentSlot } = state
+    ? getMatchSlots(state, room.sessionId)
+    : { localSlot: null, opponentSlot: null };
+  const isHost = !!state && room.sessionId === state.hostSessionId;
   const currentReady = localSlot?.ready ?? false;
   const bothPresent = !!localSlot && !!opponentSlot;
-  const allReady = bothPresent && (localSlot?.ready ?? false) && (opponentSlot?.ready ?? false);
+  const allReady = bothPresent && !!localSlot?.ready && !!opponentSlot?.ready;
   const canLaunch = isHost && bothPresent && allReady;
   const notReadyCount = [localSlot, opponentSlot].filter((s) => s && !s.ready).length;
   const filledCount = [localSlot, opponentSlot].filter(Boolean).length;
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   const copyCode = useCallback(() => {
-    if (state.code) navigator.clipboard?.writeText(state.code);
+    if (state?.code) navigator.clipboard?.writeText(state.code);
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
-  }, [state.code]);
+  }, [state?.code]);
 
   const sendChat = useCallback(
     (e: React.FormEvent) => {
@@ -97,6 +96,8 @@ export function MpLobby({ room, onLeave, onPhaseChange }: Props) {
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [canLaunch, currentReady, onLeave, room]);
+
+  if (!state) return <MpLoading />;
 
   return (
     <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
