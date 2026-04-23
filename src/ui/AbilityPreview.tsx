@@ -48,7 +48,11 @@ type PreviewEffect =
   | 'prophet_bless'
   | 'prophet_curse'
   | 'prophet_divine'
-  | 'prophet_insight';
+  | 'prophet_insight'
+  | 'vampire_blood_drain'
+  | 'vampire_nocturne'
+  | 'vampire_fang_strike'
+  | 'vampire_shadow_step';
 
 interface AbilityPreviewSpec {
   effect?: PreviewEffect;
@@ -129,6 +133,15 @@ function getAbilityPreviewSpec(guildId: GuildId, abilityId: string): AbilityPrev
         case 'divine_intervention': return { effect: 'prophet_divine' };
         case 'divine_insight':      return { effect: 'prophet_insight' };
         default:                    return {};
+      }
+    case 'vampire':
+      switch (abilityId) {
+        case 'blood_drain':  return { effect: 'vampire_blood_drain' };
+        case 'fang_strike':  return { effect: 'vampire_fang_strike' };
+        case 'nocturne':     return { effect: 'vampire_nocturne' };
+        case 'shadow_step':  return { effect: 'vampire_shadow_step' };
+        case 'mist_step':    return { effect: 'vampire_shadow_step' };
+        default:             return {};
       }
     default:
       return {};
@@ -249,6 +262,14 @@ function getSpriteTransform(
       scale *= 1.08 + Math.sin(progress * TAU) * 0.03; y += 2; break;
     case 'prophet_insight':
       scale *= 1.04 + Math.sin(progress * TAU) * 0.02; y += 2; break;
+    case 'vampire_blood_drain':
+      scale *= 1.0 + Math.sin(progress * TAU * 2) * 0.02; y += 4; break;
+    case 'vampire_nocturne':
+      scale *= 1.06 + Math.sin(progress * TAU) * 0.025; y += 2; break;
+    case 'vampire_fang_strike':
+      x = 2 + Math.sin(progress * TAU) * 2; y += 4; break;
+    case 'vampire_shadow_step':
+      x = -3 + Math.sin(progress * TAU) * 3; y += 4; break;
     default:
       break;
   }
@@ -749,6 +770,57 @@ function PreviewOverlay({
         </>
       );
       break;
+    case 'vampire_blood_drain':
+      content = (
+        <>
+          <ellipse cx="60" cy="60" rx="28" ry="32" fill="#7f1d1d" opacity={0.16 + pulse * 0.1} />
+          <ellipse cx="60" cy="60" rx="34" ry="38" fill="none" stroke="#dc2626" strokeWidth={3} opacity={0.7 + pulse * 0.22} />
+          {[0,1,2,3,4,5].map(i => {
+            const t = (progress * 1.8 + i * 0.22) % 1;
+            const a = i * TAU / 6;
+            const r = (1 - t) * 34;
+            return <circle key={i} cx={60+Math.cos(a)*r} cy={60+Math.sin(a)*r*0.65} r="2" fill="#fca5a5" opacity={1-t} />;
+          })}
+        </>
+      );
+      break;
+    case 'vampire_fang_strike':
+      content = (
+        <>
+          <line x1="50" y1="38" x2="60" y2="76" stroke="#7a1935" strokeWidth={5} strokeLinecap="round" opacity="0.9" />
+          <line x1="62" y1="38" x2="72" y2="76" stroke="#dc2626" strokeWidth={5} strokeLinecap="round" opacity="0.88" />
+          <circle cx="60" cy="78" r="3.5" fill="#fca5a5" opacity="0.9" />
+          <circle cx="72" cy="78" r="3" fill="#fca5a5" opacity="0.85" />
+        </>
+      );
+      break;
+    case 'vampire_nocturne':
+      content = (
+        <>
+          <ellipse cx="60" cy="60" rx="36" ry="40" fill="#0f0a1e" opacity={0.3 + pulse * 0.12} />
+          <ellipse cx="60" cy="60" rx="40" ry="44" fill="none" stroke="#7a1935" strokeWidth={5} opacity={0.82 + pulse * 0.14} />
+          <ellipse cx="60" cy="60" rx="28" ry="32" fill="none" stroke="#dc2626" strokeWidth={2} opacity={0.55} />
+          {[0,1,2].map(i => {
+            const a = orbit * 0.8 + i * TAU / 3;
+            return <circle key={i} cx={60+Math.cos(a)*36} cy={60+Math.sin(a)*18} r="2.5" fill="#fca5a5" opacity={0.8} />;
+          })}
+        </>
+      );
+      break;
+    case 'vampire_shadow_step':
+      content = (
+        <>
+          {[0,1,2,3,4].map(i => {
+            const t = (progress + i * 0.22) % 1;
+            return (
+              <ellipse key={i} cx={60 - i * 10} cy="62" rx={12 * (1-t*0.5)} ry={20 * (1-t*0.5)}
+                fill="#7a1935" opacity={(1-t) * 0.55} />
+            );
+          })}
+          <circle cx="36" cy="62" r="5" fill="#dc2626" opacity={0.5 + pulse * 0.3} />
+        </>
+      );
+      break;
     default:
       break;
   }
@@ -805,7 +877,11 @@ export function AbilityPreview({
                       ? 'drop-shadow(0 0 18px rgba(255,255,255,0.7)) brightness(1.15) saturate(0.4)'
                       : preview.effect === 'prophet_curse'
                         ? 'drop-shadow(0 0 12px rgba(124,58,237,0.55)) sepia(0.5) saturate(3) hue-rotate(200deg) brightness(0.9)'
-                        : 'none';
+                        : preview.effect === 'vampire_nocturne'
+                          ? 'drop-shadow(0 0 16px rgba(122,25,53,0.65)) sepia(0.8) saturate(4) hue-rotate(-25deg) brightness(0.82)'
+                          : preview.effect === 'vampire_blood_drain'
+                            ? 'drop-shadow(0 0 10px rgba(220,38,38,0.5)) sepia(0.5) saturate(3) hue-rotate(-20deg) brightness(0.9)'
+                            : 'none';
 
   return (
     <div

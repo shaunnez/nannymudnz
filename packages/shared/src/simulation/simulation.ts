@@ -329,6 +329,9 @@ function getAbilityAssetKey(abilityId: string, eventType: VFXEvent['type']): str
     case 'curse':               return eventType === 'aoe_pop'    ? 'curse_mark'               : undefined;
     case 'divine_insight':      return eventType === 'aoe_pop'    ? 'divine_insight_burst'      : undefined;
     case 'divine_intervention': return eventType === 'aura_pulse' ? 'divine_intervention_aura' : undefined;
+    case 'blood_drain':  return eventType === 'heal_glow'  ? 'blood_drain_glow'   : undefined;
+    case 'fang_strike':  return eventType === 'hit_spark'  ? 'fang_strike_impact' : undefined;
+    case 'nocturne':     return eventType === 'aura_pulse' ? 'nocturne_aura'      : undefined;
     default:
       return undefined;
   }

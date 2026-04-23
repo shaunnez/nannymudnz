@@ -682,6 +682,71 @@ export class ActorView {
     if (this.sprite) this.sprite.setTint(0xfffde7);
   }
 
+  private drawVampireBloodDrain(bodyHeight: number, visualTime: number): void {
+    this.auraFx.clear();
+    const pulse = 0.55 + Math.sin(visualTime * 5) * 0.3;
+    this.auraFx.lineStyle(3, 0xdc2626, 0.72 + pulse * 0.2);
+    this.auraFx.strokeEllipse(0, -bodyHeight * 0.52, this.width * 1.28, bodyHeight * 0.92);
+    for (let i = 0; i < 6; i++) {
+      const t = (visualTime * 1.8 + i * 0.22) % 1;
+      const angle = i * (Math.PI * 2 / 6);
+      const r = (1 - t) * this.width * 0.72;
+      this.auraFx.fillStyle(0xfca5a5, (1 - t) * 0.88);
+      this.auraFx.fillCircle(
+        Math.cos(angle) * r,
+        -bodyHeight * 0.52 + Math.sin(angle) * r * 0.65,
+        2.5,
+      );
+    }
+    this.auraFx.setVisible(true);
+  }
+
+  private drawVampireFangStrike(bodyHeight: number): void {
+    this.attackFx.clear();
+    this.attackFx.lineStyle(5, 0x7a1935, 0.9);
+    this.attackFx.beginPath();
+    this.attackFx.moveTo(4, -bodyHeight * 0.62);
+    this.attackFx.lineTo(18, -bodyHeight * 0.38);
+    this.attackFx.strokePath();
+    this.attackFx.lineStyle(5, 0xdc2626, 0.88);
+    this.attackFx.beginPath();
+    this.attackFx.moveTo(14, -bodyHeight * 0.62);
+    this.attackFx.lineTo(28, -bodyHeight * 0.38);
+    this.attackFx.strokePath();
+    this.attackFx.fillStyle(0xfca5a5, 0.9);
+    this.attackFx.fillCircle(18, -bodyHeight * 0.38, 3);
+    this.attackFx.fillCircle(28, -bodyHeight * 0.38, 2.5);
+    this.attackFx.setVisible(true);
+  }
+
+  private drawVampireNocturne(bodyHeight: number, visualTime: number): void {
+    this.auraFx.clear();
+    const pulse = 0.5 + Math.sin(visualTime * 3) * 0.3;
+    this.auraFx.fillStyle(0x0f0a1e, 0.28 + pulse * 0.1);
+    this.auraFx.fillEllipse(0, -bodyHeight * 0.52, this.width * 1.5, bodyHeight * 1.08);
+    this.auraFx.lineStyle(4, 0x7a1935, 0.7 + pulse * 0.22);
+    this.auraFx.strokeEllipse(0, -bodyHeight * 0.52, this.width * 1.4, bodyHeight * 0.98);
+    this.auraFx.lineStyle(2, 0xdc2626, 0.5);
+    this.auraFx.strokeEllipse(0, -bodyHeight * 0.52, this.width * 1.18, bodyHeight * 0.76);
+    this.auraFx.setVisible(true);
+    if (this.sprite) this.sprite.setAlpha(0.55);
+  }
+
+  private drawVampireShadowStep(bodyHeight: number, visualTime: number): void {
+    this.attackFx.clear();
+    for (let i = 0; i < 5; i++) {
+      const t = (visualTime * 3 + i * 0.25) % 1;
+      this.attackFx.fillStyle(0x7a1935, (1 - t) * 0.7);
+      this.attackFx.fillEllipse(
+        -(i * this.width * 0.18),
+        -bodyHeight * 0.5,
+        this.width * (0.7 - i * 0.1),
+        bodyHeight * (0.6 - i * 0.08),
+      );
+    }
+    this.attackFx.setVisible(true);
+  }
+
   syncFrom(actor: Actor): void {
     const groundScreenY = worldYToScreenY(actor.y, this.band.min, this.band.max);
     const screenY = groundScreenY - actor.z * 0.6;
@@ -908,6 +973,17 @@ export class ActorView {
     if (isProphetBless) this.drawProphetBlessAura(bodyHeight, visualTime);
     if (isProphetDivine) this.drawProphetDivineIntervention(bodyHeight);
 
+    const isVampire = actor.guildId === 'vampire';
+    const isVampireBloodDrain = isVampire && actor.state === 'channeling';
+    const isVampireFangStrike = isVampire && actor.state === 'attacking' && actor.animationId === 'ability_4';
+    const isVampireNocturne = isVampire && actor.nocturneActive === true;
+    const isVampireShadowStep = isVampire && actor.state === 'attacking' && actor.animationId === 'ability_2';
+
+    if (isVampireBloodDrain) this.drawVampireBloodDrain(bodyHeight, visualTime);
+    if (isVampireFangStrike) this.drawVampireFangStrike(bodyHeight);
+    if (isVampireNocturne) this.drawVampireNocturne(bodyHeight, visualTime);
+    if (isVampireShadowStep) this.drawVampireShadowStep(bodyHeight, visualTime);
+
     // Status alpha overlays.
     let alpha = 1;
     if (actor.statusEffects.some(e => e.type === 'stun')) alpha = Math.min(alpha, 0.7);
@@ -929,6 +1005,7 @@ export class ActorView {
       : isAdrenalineRush ? 0xc2410c
       : isChampionBuff ? 0x991b1b
       : isProphetDivine ? 0xfffde7
+      : isVampireNocturne ? 0x1e0a2e
       : null;
     if (this.sprite) {
       if (isHit) {
