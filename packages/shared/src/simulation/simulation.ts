@@ -304,6 +304,11 @@ function getAbilityAssetKey(abilityId: string, eventType: VFXEvent['type']): str
     case 'second_wind':     return eventType === 'aura_pulse' ? 'second_wind_glow'     : undefined;
     case 'ice_nova': return eventType === 'aoe_pop' ? 'ice_nova_burst' : undefined;
     case 'meteor':   return eventType === 'aoe_pop' ? 'meteor_impact'  : undefined;
+    case 'wild_growth':  return eventType === 'heal_glow'     ? 'wild_growth_bloom'  : undefined;
+    case 'rejuvenate':   return eventType === 'heal_glow'     ? 'rejuvenate_glow'    : undefined;
+    case 'cleanse':      return eventType === 'heal_glow'     ? 'cleanse_glow'       : undefined;
+    case 'tranquility':  return eventType === 'channel_pulse' ? 'tranquility_pulse'  : undefined;
+    case 'shapeshift':   return eventType === 'aoe_pop'       ? 'shapeshift_burst'   : undefined;
     default:
       return undefined;
   }

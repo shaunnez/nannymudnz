@@ -397,6 +397,47 @@ export class ActorView {
     this.auraFx.setVisible(true);
   }
 
+  private drawDruidWildGrowth(bodyHeight: number): void {
+    this.attackFx.clear();
+    this.attackFx.lineStyle(4, 0x4caf50, 0.88);
+    this.attackFx.strokeCircle(0, -bodyHeight * 0.5, 34);
+    this.attackFx.lineStyle(2, 0x86efac, 0.7);
+    this.attackFx.strokeCircle(0, -bodyHeight * 0.5, 22);
+    for (let i = 0; i < 4; i++) {
+      const a = (Math.PI / 2) * i;
+      this.attackFx.fillStyle(0x4ade80, 0.9);
+      this.attackFx.fillCircle(Math.cos(a) * 30, -bodyHeight * 0.5 + Math.sin(a) * 30, 3);
+    }
+    this.attackFx.setVisible(true);
+  }
+
+  private drawDruidChanneling(bodyHeight: number, visualTime: number): void {
+    this.auraFx.clear();
+    const pulse = 0.55 + Math.sin(visualTime * 5) * 0.28;
+    this.auraFx.lineStyle(3, 0x4caf50, 0.68 + pulse * 0.22);
+    this.auraFx.strokeEllipse(0, -bodyHeight * 0.52, this.width * 1.35, bodyHeight * 0.96);
+    this.auraFx.lineStyle(1.5, 0x86efac, 0.5);
+    this.auraFx.strokeEllipse(0, -bodyHeight * 0.52, this.width * 1.12, bodyHeight * 0.76);
+    for (let i = 0; i < 5; i++) {
+      const t = (visualTime * 1.2 + i * 0.28) % 1;
+      const x = (i % 2 === 0 ? 1 : -1) * this.width * 0.24;
+      this.auraFx.fillStyle(0x4ade80, (1 - t) * 0.85);
+      this.auraFx.fillCircle(x, -bodyHeight * 0.08 - t * bodyHeight * 0.78, 2.5);
+    }
+    this.auraFx.setVisible(true);
+  }
+
+  private drawDruidShapeshift(bodyHeight: number, visualTime: number): void {
+    this.auraFx.clear();
+    const pulse = 0.6 + Math.sin(visualTime * 3) * 0.25;
+    this.auraFx.lineStyle(4, 0x65a30d, 0.7 + pulse * 0.2);
+    this.auraFx.strokeEllipse(0, -bodyHeight * 0.52, this.width * 1.42, bodyHeight * 1.02);
+    this.auraFx.lineStyle(2, 0x4caf50, 0.55);
+    this.auraFx.strokeEllipse(0, -bodyHeight * 0.52, this.width * 1.2, bodyHeight * 0.82);
+    this.auraFx.setVisible(true);
+    if (this.sprite) this.sprite.setScale(this.spriteScale * 1.08);
+  }
+
   syncFrom(actor: Actor): void {
     const groundScreenY = worldYToScreenY(actor.y, this.band.min, this.band.max);
     const screenY = groundScreenY - actor.z * 0.6;
@@ -569,6 +610,15 @@ export class ActorView {
 
     if (isMageIcenova) this.drawMageIceNova(bodyHeight);
     if (isMageMeteorCast) this.drawMageMeteorCast(bodyHeight, visualTime);
+
+    const isDruid = actor.guildId === 'druid';
+    const isDruidWildGrowth = isDruid && actor.state === 'attacking' && actor.animationId === 'ability_1';
+    const isDruidChanneling = isDruid && actor.state === 'channeling';
+    const isDruidShapeshift = isDruid && (actor as any).shapeshiftForm != null && (actor as any).shapeshiftForm !== 'none';
+
+    if (isDruidWildGrowth) this.drawDruidWildGrowth(bodyHeight);
+    if (isDruidChanneling) this.drawDruidChanneling(bodyHeight, visualTime);
+    if (isDruidShapeshift) this.drawDruidShapeshift(bodyHeight, visualTime);
 
     // Status alpha overlays.
     let alpha = 1;

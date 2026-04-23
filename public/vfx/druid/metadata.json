@@ -1,0 +1,11 @@
+{
+  "guildId": "druid",
+  "frameSize": { "w": 96, "h": 96 },
+  "assets": {
+    "wild_growth_bloom": { "frames": 7, "frameDurationMs": 120, "loop": false, "frameSize": {"w":160,"h":160}, "anchor": {"x":80,"y":80}, "scale": 1.5 },
+    "rejuvenate_glow":   { "frames": 6, "frameDurationMs": 110, "loop": false, "anchor": {"x":48,"y":72}, "scale": 1.3 },
+    "cleanse_glow":      { "frames": 6, "frameDurationMs": 110, "loop": false, "anchor": {"x":48,"y":72}, "scale": 1.3 },
+    "tranquility_pulse": { "frames": 8, "frameDurationMs": 130, "loop": false, "frameSize": {"w":160,"h":160}, "anchor": {"x":80,"y":80}, "scale": 1.55 },
+    "shapeshift_burst":  { "frames": 5, "frameDurationMs": 95,  "loop": false, "anchor": {"x":48,"y":68}, "scale": 1.25 }
+  }
+}

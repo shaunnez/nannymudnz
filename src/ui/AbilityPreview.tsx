@@ -24,7 +24,10 @@ type PreviewEffect =
   | 'adventurer_second_wind'
   | 'mage_ice_nova'
   | 'mage_blink'
-  | 'mage_meteor';
+  | 'mage_meteor'
+  | 'druid_wild_growth'
+  | 'druid_channeling'
+  | 'druid_shapeshift';
 
 interface AbilityPreviewSpec {
   effect?: PreviewEffect;
@@ -59,6 +62,15 @@ function getAbilityPreviewSpec(guildId: GuildId, abilityId: string): AbilityPrev
         case 'blink':    return { effect: 'mage_blink' };
         case 'meteor':   return { effect: 'mage_meteor' };
         default:         return {};
+      }
+    case 'druid':
+      switch (abilityId) {
+        case 'wild_growth':  return { effect: 'druid_wild_growth' };
+        case 'rejuvenate':   return { effect: 'druid_channeling' };
+        case 'cleanse':      return { effect: 'druid_channeling' };
+        case 'tranquility':  return { effect: 'druid_channeling' };
+        case 'shapeshift':   return { effect: 'druid_shapeshift' };
+        default:             return {};
       }
     default:
       return {};
@@ -130,6 +142,12 @@ function getSpriteTransform(
     case 'mage_blink':
       x = -4 + Math.sin(progress * TAU) * 3; y += 4; break;
     case 'mage_meteor':
+      scale *= 1.06 + Math.sin(progress * TAU) * 0.025; y += 2; break;
+    case 'druid_wild_growth':
+      scale *= 1.02 + Math.sin(progress * TAU) * 0.02; y += 4; break;
+    case 'druid_channeling':
+      scale *= 1.0 + Math.sin(progress * TAU * 2) * 0.015; y += 4; break;
+    case 'druid_shapeshift':
       scale *= 1.06 + Math.sin(progress * TAU) * 0.025; y += 2; break;
     default:
       break;
@@ -359,6 +377,46 @@ function PreviewOverlay({
         </>
       );
       break;
+    case 'druid_wild_growth':
+      content = (
+        <>
+          <circle cx="60" cy="60" r="34" fill="none" stroke="#4caf50" strokeWidth={4} opacity={0.82 + pulse * 0.14} />
+          <circle cx="60" cy="60" r="22" fill="none" stroke="#86efac" strokeWidth={2} opacity={0.6} />
+          <line x1="60" y1="26" x2="60" y2="94" stroke="#86efac" strokeWidth={2.5} opacity={0.7} />
+          <line x1="26" y1="60" x2="94" y2="60" stroke="#86efac" strokeWidth={2.5} opacity={0.7} />
+          {[0,1,2,3].map(i => {
+            const a = Math.PI / 2 * i + orbit * 0.3;
+            return <circle key={i} cx={60+Math.cos(a)*36} cy={60+Math.sin(a)*36} r="3" fill="#4ade80" opacity={0.9} />;
+          })}
+        </>
+      );
+      break;
+    case 'druid_channeling':
+      content = (
+        <>
+          <ellipse cx="60" cy="60" rx="30" ry="34" fill="#14532d" opacity={0.14 + pulse * 0.08} />
+          <ellipse cx="60" cy="60" rx="34" ry="38" fill="none" stroke="#4caf50" strokeWidth={3} opacity={0.65 + pulse * 0.25} />
+          <ellipse cx="60" cy="60" rx="24" ry="28" fill="none" stroke="#86efac" strokeWidth={1.5} opacity={0.5} />
+          {[0,1,2,3,4].map(i => {
+            const t = (progress * 1.2 + i * 0.28) % 1;
+            return <circle key={i} cx={52+(i%2)*16} cy={72-t*34} r="2" fill="#4ade80" opacity={1-t} />;
+          })}
+        </>
+      );
+      break;
+    case 'druid_shapeshift':
+      content = (
+        <>
+          <ellipse cx="60" cy="60" rx="32" ry="36" fill="#14532d" opacity={0.18 + pulse * 0.1} />
+          <ellipse cx="60" cy="60" rx="38" ry="42" fill="none" stroke="#65a30d" strokeWidth={5} opacity={0.82 + pulse * 0.14} />
+          <ellipse cx="60" cy="60" rx="28" ry="32" fill="none" stroke="#4caf50" strokeWidth={2.5} opacity={0.65} />
+          {[0,1,2,3,4,5].map(i => {
+            const a = orbit * 0.8 + i * TAU / 6;
+            return <circle key={i} cx={60+Math.cos(a)*34} cy={60+Math.sin(a)*17} r="2.5" fill="#4ade80" opacity={0.85} />;
+          })}
+        </>
+      );
+      break;
     default:
       break;
   }
@@ -405,7 +463,9 @@ export function AbilityPreview({
             ? 'drop-shadow(0 0 16px rgba(239,68,68,0.55)) sepia(0.6) saturate(3) hue-rotate(-15deg) brightness(0.92)'
             : preview.effect === 'mage_ice_nova'
               ? 'drop-shadow(0 0 12px rgba(147,197,253,0.6)) sepia(0.3) saturate(2) hue-rotate(160deg) brightness(1.08)'
-              : 'none';
+              : preview.effect === 'druid_shapeshift'
+                ? 'drop-shadow(0 0 12px rgba(76,175,80,0.55)) sepia(0.3) saturate(2) hue-rotate(80deg) brightness(1.06)'
+                : 'none';
 
   return (
     <div
