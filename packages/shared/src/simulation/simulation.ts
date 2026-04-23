@@ -351,7 +351,7 @@ function getAbilityAssetKey(abilityId: string, eventType: VFXEvent['type']): str
     case 'apotheosis':     return eventType === 'aura_pulse' ? 'apotheosis_aura'      : undefined;
     case 'frostbolt':      return eventType === 'hit_spark'  ? 'frostbolt_impact'     : undefined;
     case 'arcane_shard':   return eventType === 'hit_spark'  ? 'arcane_shard_impact'  : undefined;
-    case 'piercing_volley': return eventType === 'hit_spark' ? 'arrow_impact'         : undefined;
+    case 'piercing_volley': return eventType === 'hit_spark' ? 'piercing_volley_impact' : undefined;
     default:
       return undefined;
   }
