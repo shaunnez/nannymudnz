@@ -16,6 +16,7 @@ export class BackgroundView {
   private hills: Phaser.GameObjects.Graphics;
   private ground: Phaser.GameObjects.Graphics;
   private stageProps: Phaser.GameObjects.Image[] = [];
+  private backdropTiles: Phaser.GameObjects.TileSprite[] = [];
   private readonly stageId: string;
   private readonly width: number;
   private readonly height: number;
@@ -220,10 +221,10 @@ export class BackgroundView {
 
   private createMarketProps(): void {
     const g = this.groundTopScreen;
-    for (let wx = -280; wx <= 3920; wx += 280) this.sp('stage:market:lantern', wx, g + 14, 0.55, -600, 0.72);
-    for (let wx = -140; wx <= 3780; wx += 280) this.sp('stage:market:stall',   wx, g + 14, 0.48, -620, 0.52, 0.90);
-    for (let wx =  -70; wx <= 3850; wx += 280) this.sp('stage:market:crates',  wx, g + 18, 0.62, -580, 0.46);
-    for (let wx =  -80; wx <= 3840; wx += 280) this.sp('stage:market:sign',    wx, g - 18, 0.50, -610, 0.42, 0.85);
+    // Backdrop: continuous shopfront wall tiled across full width, sits above the ground
+    this.addBackdropTile('stage:market:backdrop', 0, g, 0.30, -700);
+    // Horizon strip: cobblestone kerb at the ground seam
+    this.addBackdropTile('stage:market:horizon', g - 16, 32, 0.50, -699);
   }
 
   // ── Rot-Kitchen ───────────────────────────────────────────────────────────
@@ -636,10 +637,26 @@ export class BackgroundView {
       const par = prop.getData('parallax') as number;
       prop.x = wx - cameraX * par + this.width * 0.5;
     }
+    for (const tile of this.backdropTiles) {
+      const par = tile.getData('parallax') as number;
+      tile.tilePositionX = cameraX * par;
+    }
+  }
+
+  // Creates a TileSprite that covers the full width and scrolls with parallax
+  private addBackdropTile(key: string, y: number, h: number, parallax: number, depth: number): void {
+    const tile = this.scene.add.tileSprite(0, y, this.width, h, key)
+      .setOrigin(0, 0)
+      .setScrollFactor(0)
+      .setDepth(depth);
+    tile.setDataEnabled();
+    tile.data.set('parallax', parallax);
+    this.backdropTiles.push(tile);
   }
 
   destroy(): void {
     for (const prop of this.stageProps) prop.destroy();
+    for (const tile of this.backdropTiles) tile.destroy();
     this.sky.destroy();
     this.hills.destroy();
     this.ground.destroy();

@@ -43,10 +43,8 @@ export const MANIFEST: AssetManifest = {
       { key: 'stage:assembly:weapon_rack', url: '/world/assembly/raw/weapon_rack_shields_spears.png' },
     ],
     market: [
-      { key: 'stage:market:lantern', url: '/world/market/raw/lantern_post_paper.png' },
-      { key: 'stage:market:stall',   url: '/world/market/raw/market_stall_wooden.png' },
-      { key: 'stage:market:crates',  url: '/world/market/raw/barrel_crate_stack.png' },
-      { key: 'stage:market:sign',    url: '/world/market/raw/hanging_sign_lantern.png' },
+      { key: 'stage:market:backdrop', url: '/world/market/backdrop.png' },
+      { key: 'stage:market:horizon',  url: '/world/market/horizon.png' },
     ],
     kitchen: [
       { key: 'stage:kitchen:cauldron', url: '/world/kitchen/raw/cauldron_iron_bubbling.png' },
