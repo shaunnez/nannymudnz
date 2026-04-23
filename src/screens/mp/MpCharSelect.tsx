@@ -127,7 +127,7 @@ export function MpCharSelect({ room, onLeave, onPhaseChange }: Props) {
             Choose your guild
           </span>
         </div>
-        <div style={{ justifySelf: 'end', display: 'flex', gap: 8, alignItems: 'center' }}>
+        <div style={{ justifySelf: 'end', display: 'flex', gap: 8, alignItems: 'flex-end' }}>
           <RoomCodeBadge code={state.code} />
           <Btn size="md" primary disabled={isLocked} onClick={lockIn}>
             {isLocked ? 'LOCKED ✓' : 'LOCK IN →'}
@@ -186,7 +186,6 @@ export function MpCharSelect({ room, onLeave, onPhaseChange }: Props) {
                   onClick={() => {
                     if (isLocked) return;
                     setCursorIdx(i);
-                    room.send('lock_guild', { guildId: g.id });
                   }}
                   style={{
                     position: 'relative',
@@ -341,7 +340,7 @@ export function MpCharSelect({ room, onLeave, onPhaseChange }: Props) {
       >
         <span>◀▶▲▼ MOVE</span>
         <span>↵ LOCK IN</span>
-        <span>CLICK INSTANT LOCK</span>
+        <span>CLICK PREVIEW</span>
         <span>ESC LEAVE</span>
       </div>
     </div>
