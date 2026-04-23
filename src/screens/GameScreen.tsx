@@ -36,6 +36,7 @@ export function GameScreen({
   const gameRef = useRef<Phaser.Game | null>(null);
   const [gameReady, setGameReady] = useState(false);
   const [preloading, setPreloading] = useState(true);
+  const [loadProgress, setLoadProgress] = useState<number | undefined>(undefined);
   const [isPaused, setIsPaused] = useState(false);
   const [showMoves, setShowMoves] = useState(false);
   const [showStoryGameOver, setShowStoryGameOver] = useState(false);
@@ -92,6 +93,7 @@ export function GameScreen({
 
     const onPreloadDone = () => setPreloading(false);
     game.events.on('preload-done', onPreloadDone);
+    game.events.on('preload-progress', setLoadProgress);
     // If Boot already ran by the time this listener is attached (HMR, slow
     // commit), the sticky registry flag saves us from hanging on the overlay.
     if (game.registry.get('preloadDone')) setPreloading(false);
@@ -99,6 +101,7 @@ export function GameScreen({
     return () => {
       game.events.off('phase-change', onPhaseChange);
       game.events.off('preload-done', onPreloadDone);
+      game.events.off('preload-progress', setLoadProgress);
       game.destroy(true);
       gameRef.current = null;
       setGameReady(false);
@@ -215,6 +218,7 @@ export function GameScreen({
             p2={p2 ?? 'knight'}
             stageId={stageId as StageId}
             showOpponent={mode === 'vs'}
+            progress={loadProgress}
           />
         </div>
       )}
