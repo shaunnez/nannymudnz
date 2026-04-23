@@ -2,13 +2,15 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { Room } from '@colyseus/sdk';
 import type { MatchState, MatchPhase } from '@nannymud/shared';
 import { GUILDS } from '@nannymud/shared/simulation/guildData';
-import type { GuildId } from '@nannymud/shared/simulation/types';
-import { theme, guildAccent, GuildMonogram, Btn } from '../../ui';
+import type { GuildId, Stats } from '@nannymud/shared/simulation/types';
+import { theme, guildAccent, Btn, Chip, GuildMonogram } from '../../ui';
 import { GUILD_META } from '../../data/guildMeta';
 import { useMatchState, getMatchSlots } from './useMatchState';
 import { usePhaseBounce } from './usePhaseBounce';
 import { RoomCodeBadge } from './RoomCodeBadge';
 import { MpLoading } from './MpLoading';
+import { SidePanel, StatBar } from '../CharSelectPanels';
+import { GuildDetails } from '../GuildDetails';
 
 interface Props {
   room: Room<MatchState>;
@@ -18,8 +20,8 @@ interface Props {
 
 const COLS = 5;
 const ROWS = 3;
-const TILE_SIZE = 175;
-const TILE_GAP = 16;
+const TILE_SIZE = 190;
+const TILE_GAP = 20;
 
 export function MpCharSelect({ room, onLeave, onPhaseChange }: Props) {
   const state = useMatchState(room);
@@ -29,7 +31,6 @@ export function MpCharSelect({ room, onLeave, onPhaseChange }: Props) {
 
   const isLocked = localSlot?.locked ?? false;
 
-  // Cursor starts on the current guild if already chosen, otherwise index 0.
   const [cursorIdx, setCursorIdx] = useState<number>(() => {
     const gid = localSlot?.guildId;
     if (gid) {
@@ -38,6 +39,8 @@ export function MpCharSelect({ room, onLeave, onPhaseChange }: Props) {
     }
     return 0;
   });
+
+  const [detailsFor, setDetailsFor] = useState<GuildId | null>(null);
 
   const cursorGuildId = ids[cursorIdx];
   const hoveredMeta = GUILD_META[cursorGuildId];
@@ -65,6 +68,7 @@ export function MpCharSelect({ room, onLeave, onPhaseChange }: Props) {
   }, [isLocked, room, cursorGuildId]);
 
   useEffect(() => {
+    if (detailsFor) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'ArrowLeft') { e.preventDefault(); move(-1, 0); }
       else if (e.key === 'ArrowRight') { e.preventDefault(); move(1, 0); }
@@ -78,18 +82,12 @@ export function MpCharSelect({ room, onLeave, onPhaseChange }: Props) {
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [lockIn, move, onLeave]);
+  }, [detailsFor, lockIn, move, onLeave]);
 
   if (!state) return <MpLoading />;
 
   const opponentGuildId = opponentSlot?.locked ? opponentSlot.guildId : null;
-  const opponentGuildName = opponentGuildId
-    ? (GUILDS.find((g) => g.id === opponentGuildId)?.name ?? opponentGuildId)
-    : null;
-
-  const localGuildName = isLocked && localSlot?.guildId
-    ? (GUILDS.find((g) => g.id === localSlot.guildId)?.name ?? localSlot.guildId)
-    : null;
+  const localGuildId = isLocked ? (localSlot!.guildId as GuildId) : cursorGuildId;
 
   return (
     <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
@@ -129,8 +127,11 @@ export function MpCharSelect({ room, onLeave, onPhaseChange }: Props) {
             Choose your guild
           </span>
         </div>
-        <div style={{ justifySelf: 'end' }}>
+        <div style={{ justifySelf: 'end', display: 'flex', gap: 8, alignItems: 'center' }}>
           <RoomCodeBadge code={state.code} />
+          <Btn size="md" primary disabled={isLocked} onClick={lockIn}>
+            {isLocked ? 'LOCKED ✓' : 'LOCK IN →'}
+          </Btn>
         </div>
       </div>
 
@@ -144,95 +145,14 @@ export function MpCharSelect({ room, onLeave, onPhaseChange }: Props) {
         }}
       >
         {/* Left panel — local player */}
-        <div
-          style={{
-            padding: 24,
-            borderRight: `1px solid ${theme.lineSoft}`,
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 16,
-            background: theme.panel,
-          }}
-        >
-          <div
-            style={{
-              fontFamily: theme.fontMono,
-              fontSize: 11,
-              letterSpacing: 3,
-              color: theme.accent,
-            }}
-          >
-            P1 · YOU {isLocked ? '✓ LOCKED' : '◆'}
-          </div>
-
-          {isLocked && localSlot?.guildId ? (
-            <>
-              <GuildMonogram guildId={localSlot.guildId as GuildId} size={180} selected />
-              <div
-                style={{
-                  fontFamily: theme.fontDisplay,
-                  fontSize: 24,
-                  color: theme.ink,
-                }}
-              >
-                {localGuildName}
-              </div>
-              <div
-                style={{
-                  fontFamily: theme.fontMono,
-                  fontSize: 12,
-                  color: theme.good,
-                  letterSpacing: 2,
-                  padding: '6px 12px',
-                  border: `1px solid ${theme.good}55`,
-                  background: `${theme.good}12`,
-                }}
-              >
-                ✓ LOCKED IN
-              </div>
-            </>
-          ) : (
-            <>
-              <GuildMonogram guildId={cursorGuildId} size={180} selected={false} />
-              <div
-                style={{
-                  fontFamily: theme.fontDisplay,
-                  fontSize: 24,
-                  color: theme.ink,
-                }}
-              >
-                {hoveredGuild?.name}
-              </div>
-              <div
-                style={{
-                  fontFamily: theme.fontMono,
-                  fontSize: 10,
-                  color: theme.warn,
-                  letterSpacing: 2,
-                }}
-              >
-                SELECTING…
-              </div>
-              <button
-                onClick={lockIn}
-                style={{
-                  marginTop: 'auto',
-                  padding: '12px 20px',
-                  background: theme.accent,
-                  color: theme.bgDeep,
-                  border: 'none',
-                  fontFamily: theme.fontMono,
-                  fontSize: 13,
-                  letterSpacing: 2,
-                  cursor: 'pointer',
-                  borderRadius: 2,
-                }}
-              >
-                LOCK IN ↵
-              </button>
-            </>
-          )}
-        </div>
+        <SidePanel
+          role="P1"
+          roleLabel="P1 · YOU"
+          guildId={localGuildId}
+          locked={isLocked}
+          active={true}
+          onView={() => setDetailsFor(localGuildId)}
+        />
 
         {/* Center — guild grid */}
         <div
@@ -282,7 +202,7 @@ export function MpCharSelect({ room, onLeave, onPhaseChange }: Props) {
                       textAlign: 'center',
                       marginTop: 8,
                       fontFamily: theme.fontMono,
-                      fontSize: 14,
+                      fontSize: 20,
                       color: isActive ? acc : theme.inkDim,
                       letterSpacing: 2,
                     }}
@@ -296,14 +216,14 @@ export function MpCharSelect({ room, onLeave, onPhaseChange }: Props) {
                         top: 4,
                         left: 4,
                         fontFamily: theme.fontMono,
-                        fontSize: 10,
+                        fontSize: 20,
                         color: theme.accent,
                         letterSpacing: 2,
                         textShadow: `0 0 4px ${theme.bgDeep}`,
                         zIndex: 2,
                       }}
                     >
-                      ✓ P1
+                      ◆ P1
                     </div>
                   )}
                   {oppLockedHere && (
@@ -313,14 +233,14 @@ export function MpCharSelect({ room, onLeave, onPhaseChange }: Props) {
                         top: 4,
                         right: 4,
                         fontFamily: theme.fontMono,
-                        fontSize: 10,
+                        fontSize: 20,
                         color: theme.warn,
                         letterSpacing: 2,
                         textShadow: `0 0 4px ${theme.bgDeep}`,
                         zIndex: 2,
                       }}
                     >
-                      ✓ OPP
+                      ◆ OPP
                     </div>
                   )}
                 </div>
@@ -328,135 +248,85 @@ export function MpCharSelect({ room, onLeave, onPhaseChange }: Props) {
             })}
           </div>
 
-          {/* Hovered guild quick-stats */}
-          {!isLocked && (
-            <div
-              style={{
-                marginTop: 'auto',
-                padding: '16px 18px',
-                border: `1px solid ${theme.lineSoft}`,
-                background: theme.panel,
-              }}
-            >
-              <div
+          {/* Stat strip — always visible, matches SP center strip */}
+          <div
+            style={{
+              marginTop: 'auto',
+              padding: '16px 18px',
+              border: `1px solid ${theme.lineSoft}`,
+              background: theme.panel,
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 10 }}>
+              <span
                 style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 14,
-                  marginBottom: 8,
+                  fontFamily: theme.fontDisplay,
+                  fontSize: 20,
+                  color: guildAccent(hoveredMeta.hue),
                 }}
               >
-                <span
-                  style={{
-                    fontFamily: theme.fontDisplay,
-                    fontSize: 20,
-                    color: guildAccent(hoveredMeta.hue),
-                  }}
-                >
-                  {hoveredGuild?.name}
-                </span>
-                <span
-                  style={{
-                    fontFamily: theme.fontMono,
-                    fontSize: 9,
-                    color: theme.inkMuted,
-                    letterSpacing: 2,
-                    marginLeft: 'auto',
-                  }}
-                >
-                  {hoveredMeta.tag}
-                </span>
-              </div>
-              <div
-                style={{
-                  fontFamily: theme.fontBody,
-                  fontSize: 12,
-                  color: theme.inkDim,
-                  lineHeight: 1.5,
-                  fontStyle: 'italic',
-                }}
-              >
-                {hoveredMeta.bio}
-              </div>
+                {hoveredGuild.name}
+              </span>
+              <span style={{ marginLeft: 'auto' }}>
+                <Chip tone="accent" mono>{hoveredMeta.tag}</Chip>
+              </span>
             </div>
-          )}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 30 }}>
+              {(Object.entries(hoveredGuild.stats) as [keyof Stats, number][]).map(([k, v]) => (
+                <StatBar key={k} label={k} value={v} max={20} hue={hoveredMeta.hue} />
+              ))}
+            </div>
+          </div>
         </div>
 
         {/* Right panel — opponent */}
-        <div
-          style={{
-            padding: 24,
-            borderLeft: `1px solid ${theme.lineSoft}`,
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 16,
-            background: 'transparent',
-          }}
-        >
+        {opponentSlot?.locked && opponentGuildId ? (
+          <SidePanel
+            role="CPU"
+            roleLabel={`P2 · ${opponentSlot.name || 'OPPONENT'}`}
+            guildId={opponentGuildId as GuildId}
+            locked={true}
+            active={false}
+            onView={() => setDetailsFor(opponentGuildId as GuildId)}
+          />
+        ) : (
           <div
             style={{
-              fontFamily: theme.fontMono,
-              fontSize: 11,
-              letterSpacing: 3,
-              color: theme.inkMuted,
+              padding: 24,
+              borderLeft: `1px solid ${theme.lineSoft}`,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 12,
+              overflow: 'auto',
             }}
           >
-            {opponentSlot ? `OPP · ${opponentSlot?.name}` : 'OPP · EMPTY'}
-          </div>
-
-          {!opponentSlot ? (
+            <div
+              style={{
+                fontFamily: theme.fontMono,
+                fontSize: 14,
+                letterSpacing: 3,
+                color: theme.inkMuted,
+              }}
+            >
+              {opponentSlot ? 'P2 · OPPONENT' : 'OPP · EMPTY'}
+            </div>
             <div
               style={{
                 fontFamily: theme.fontBody,
-                fontSize: 13,
+                fontSize: 15,
                 color: theme.inkMuted,
                 fontStyle: 'italic',
               }}
             >
-              Waiting for opponent to join…
+              {opponentSlot ? 'Opponent is selecting…' : 'Waiting for opponent to join…'}
             </div>
-          ) : opponentGuildId ? (
-            <>
-              <GuildMonogram guildId={opponentGuildId as GuildId} size={180} selected />
-              <div
-                style={{
-                  fontFamily: theme.fontDisplay,
-                  fontSize: 24,
-                  color: theme.ink,
-                }}
-              >
-                {opponentGuildName}
-              </div>
-              <div
-                style={{
-                  fontFamily: theme.fontMono,
-                  fontSize: 12,
-                  color: theme.warn,
-                  letterSpacing: 2,
-                  padding: '6px 12px',
-                  border: `1px solid ${theme.warn}55`,
-                  background: `${theme.warn}12`,
-                }}
-              >
-                ✓ LOCKED IN
-              </div>
-            </>
-          ) : (
-            <div
-              style={{
-                fontFamily: theme.fontMono,
-                fontSize: 11,
-                color: theme.inkMuted,
-                letterSpacing: 2,
-              }}
-            >
-              Selecting…
-            </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
 
-      {/* Keyboard hints */}
+      {detailsFor && <GuildDetails guildId={detailsFor} onClose={() => setDetailsFor(null)} />}
+
+      {/* Footer */}
       <div
         style={{
           padding: '10px 36px',
