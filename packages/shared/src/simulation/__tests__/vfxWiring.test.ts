@@ -64,3 +64,24 @@ describe('blink fires aoe_pop flash at destination', () => {
     expect(flash.length).toBeGreaterThan(0);
   });
 });
+
+describe('class_swap fires aoe_pop burst', () => {
+  it('class_swap aoe_pop has assetKey=class_swap_burst', () => {
+    let state = createVsState('master', 'knight', 'assembly', 1);
+    state.player.mp = state.player.mpMax;
+
+    // advance past VS intro
+    for (let i = 0; i < 150; i++) {
+      state = tickSimulation(state, idleInput(), 16);
+    }
+
+    // class_swap is master rmb → slot > 5 (e.g., 6)
+    const fireInput: InputState = { ...idleInput(), testAbilitySlot: 6 };
+    state = tickSimulation(state, fireInput, 16);
+
+    const burst = state.vfxEvents.filter(
+      e => e.type === 'aoe_pop' && e.guildId === 'master' && e.assetKey === 'class_swap_burst',
+    );
+    expect(burst.length).toBeGreaterThan(0);
+  });
+});

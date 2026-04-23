@@ -202,6 +202,8 @@ export function getOrCreateController(state: SimState, playerId: string, input: 
       parryWindowMs: 0,
       channelMs: 0,
       channelingAbility: null,
+      castingAbility: null,
+      castMs: 0,
       groundTargetX: 500,
       groundTargetY: 220,
       attackChain: 0,
@@ -371,6 +373,7 @@ function getAbilityAssetKey(abilityId: string, eventType: VFXEvent['type']): str
     case 'spice_toss':       return eventType === 'hit_spark'  ? 'spice_toss_impact'       : undefined;
     // Master teleport flash
     case 'chosen_utility':   return eventType === 'aoe_pop'    ? 'chosen_utility_glow'     : undefined;
+    case 'class_swap':       return eventType === 'aoe_pop'    ? 'class_swap_burst'        : undefined;
     // Darkmage projectile impacts
     case 'grasping_shadow':  return eventType === 'hit_spark'  ? 'grasping_shadow_burst'   : undefined;
     case 'shadow_bolt':      return eventType === 'hit_spark'  ? 'shadow_bolt_impact'      : undefined;
@@ -425,6 +428,30 @@ function getEnemiesOf(state: SimState, actor: Actor): Actor[] {
     return [state.player, ...state.allies];
   }
   return state.enemies;
+}
+
+function detonateGroundTarget(player: Actor, ability: AbilityDef, state: SimState, ctrl: PlayerController): void {
+  const cx = ctrl.groundTargetX;
+  const cy = ctrl.groundTargetY;
+  const dmgMult = getDamageMultiplier(player);
+  const enemies = getEnemiesOf(state, player).filter(
+    e => e.isAlive && Math.hypot(e.x - cx, e.y - cy) <= ability.aoeRadius,
+  );
+  for (const target of enemies) {
+    const isCrit = checkCrit(player, state.rng);
+    const dmg = Math.round(calcDamage(ability, player.stats, target, isCrit, state.rng) * dmgMult);
+    applyDamage(target, dmg, state.vfxEvents, isCrit);
+    applyEffects(ability, target, player, state);
+    if (ability.knockdown || dmg >= KNOCKDOWN_THRESHOLD) {
+      applyKnockback(target, ability.knockbackForce || 100, player.facing, ability.knockdown, state.vfxEvents);
+    }
+  }
+  pushAbilityVfx(state.vfxEvents, player, ability, {
+    type: 'aoe_pop',
+    x: cx,
+    y: cy,
+    radius: ability.aoeRadius,
+  });
 }
 
 function fireAbility(player: Actor, ability: AbilityDef, state: SimState, ctrl: PlayerController): void {
@@ -659,6 +686,20 @@ function fireAbility(player: Actor, ability: AbilityDef, state: SimState, ctrl: 
     });
   }
 
+  if (ability.isGroundTarget && !ability.isChannel) {
+    if (ability.castTimeMs > 0) {
+      player.state = 'casting';
+      player.animationId = 'channel';
+      player.stateTimeMs = 0;
+      ctrl.castingAbility = ability.id;
+      ctrl.castMs = 0;
+    } else {
+      detonateGroundTarget(player, ability, state, ctrl);
+    }
+    clearCombo(ctrl.comboBuffer);
+    return;
+  }
+
   if (ability.isSummon) {
     handleSummon(ability, player, state);
   }
@@ -683,6 +724,12 @@ function fireAbility(player: Actor, ability: AbilityDef, state: SimState, ctrl: 
     const idx = classes.indexOf(player.primedClass || 'knight');
     player.primedClass = classes[(idx + 1) % classes.length];
     state.vfxEvents.push({ type: 'status_text', color: '#e0e0e0', x: player.x, y: player.y - 80, text: `Primed: ${player.primedClass}` });
+    pushAbilityVfx(state.vfxEvents, player, ability, {
+      type: 'aoe_pop',
+      x: player.x,
+      y: player.y,
+      radius: 50,
+    });
   }
 
   if (ability.id === 'miasma' && player.guildId === 'leper') {

@@ -5,6 +5,8 @@
     "chosen_strike_impact": { "frames": 5, "frameDurationMs": 90,  "loop": false, "anchor": {"x":28,"y":68}, "scale": 1.2 },
     "chosen_nuke_burst":    { "frames": 1, "frameDurationMs": 450, "loop": false, "frameSize": {"w":160,"h":160}, "anchor": {"x":80,"y":80}, "scale": 1.55 },
     "eclipse_aura":         { "frames": 1, "frameDurationMs": 450, "loop": false, "frameSize": {"w":160,"h":160}, "anchor": {"x":80,"y":80}, "scale": 1.5 },
-    "apotheosis_aura":      { "frames": 1, "frameDurationMs": 450, "loop": false, "frameSize": {"w":160,"h":160}, "anchor": {"x":80,"y":80}, "scale": 1.6 }
+    "apotheosis_aura":      { "frames": 1, "frameDurationMs": 450, "loop": false, "frameSize": {"w":160,"h":160}, "anchor": {"x":80,"y":80}, "scale": 1.6 },
+    "class_swap_burst":     { "frames": 1, "frameDurationMs": 400, "loop": false, "frameSize": {"w":160,"h":160}, "anchor": {"x":80,"y":80}, "scale": 1.5 },
+    "chosen_utility_glow":  { "frames": 1, "frameDurationMs": 350, "loop": false, "anchor": {"x":48,"y":48}, "scale": 1.3 }
   }
 }
