@@ -39,7 +39,11 @@ type PreviewEffect =
   | 'champion_cleaver'
   | 'champion_skullsplitter'
   | 'champion_tithe'
-  | 'champion_challenge';
+  | 'champion_challenge'
+  | 'hunter_disengage'
+  | 'hunter_rain'
+  | 'hunter_trap'
+  | 'hunter_aimed_shot';
 
 interface AbilityPreviewSpec {
   effect?: PreviewEffect;
@@ -103,6 +107,14 @@ function getAbilityPreviewSpec(guildId: GuildId, abilityId: string): AbilityPrev
         case 'skullsplitter':    return { effect: 'champion_skullsplitter' };
         case 'challenge':        return { effect: 'champion_challenge' };
         default:                 return {};
+      }
+    case 'hunter':
+      switch (abilityId) {
+        case 'disengage':      return { effect: 'hunter_disengage' };
+        case 'aimed_shot':     return { effect: 'hunter_aimed_shot' };
+        case 'bear_trap':      return { effect: 'hunter_trap' };
+        case 'rain_of_arrows': return { effect: 'hunter_rain' };
+        default:               return {};
       }
     default:
       return {};
@@ -205,6 +217,14 @@ function getSpriteTransform(
       scale *= 1.0 + Math.sin(progress * TAU * 2) * 0.02; y += 4; break;
     case 'champion_challenge':
       y += 4; break;
+    case 'hunter_disengage':
+      x = -2 - Math.sin(progress * TAU) * 3; y += 4; break;
+    case 'hunter_rain':
+      scale *= 1.0 + Math.sin(progress * TAU * 2) * 0.015; y += 2; break;
+    case 'hunter_trap':
+      y += 8; break;
+    case 'hunter_aimed_shot':
+      x = -3 + Math.sin(progress * TAU) * 1.5; y += 4; break;
     default:
       break;
   }
@@ -598,6 +618,50 @@ function PreviewOverlay({
           <ellipse cx="60" cy="60" rx="28" ry="32" fill="none" stroke="#a71d2a" strokeWidth={4} opacity={0.78 + pulse * 0.18} />
           <ellipse cx="60" cy="60" rx="20" ry="24" fill="none" stroke="#fbbf24" strokeWidth={2} opacity={0.65} />
           <line x1="60" y1="28" x2="60" y2="92" stroke="#fca5a5" strokeWidth={2.5} opacity={0.72} />
+        </>
+      );
+      break;
+    case 'hunter_disengage':
+      content = (
+        <>
+          <circle cx="60" cy="60" r="30" fill="#78716c" opacity={0.28 + pulse * 0.1} />
+          <circle cx="60" cy="60" r="34" fill="none" stroke="#a3e635" strokeWidth={3.5} opacity={0.8 + pulse * 0.16} />
+          <circle cx="60" cy="60" r="22" fill="none" stroke="#d9f99d" strokeWidth={1.5} opacity={0.6} />
+          {[0,1,2,3].map(i => {
+            const a = orbit * 0.6 + i * TAU / 4;
+            return <circle key={i} cx={60+Math.cos(a)*36} cy={60+Math.sin(a)*18} r="2.5" fill="#a3e635" opacity={0.85} />;
+          })}
+        </>
+      );
+      break;
+    case 'hunter_rain':
+      content = (
+        <>
+          <ellipse cx="60" cy="60" rx="30" ry="34" fill="none" stroke="#a3e635" strokeWidth={2.5} opacity={0.65 + pulse * 0.2} />
+          {[0,1,2,3,4,5].map(i => {
+            const t = (progress * 2 + i * 0.2) % 1;
+            const x = 38 + i * 10;
+            return <line key={i} x1={x} y1={28 + t * 40} x2={x - 2} y2={32 + t * 40} stroke="#d9f99d" strokeWidth={2} strokeLinecap="round" opacity={1 - t} />;
+          })}
+        </>
+      );
+      break;
+    case 'hunter_trap':
+      content = (
+        <>
+          <circle cx="60" cy="74" r="16" fill="none" stroke="#8d6e63" strokeWidth={4} opacity={0.88} />
+          <line x1="44" y1="74" x2="76" y2="74" stroke="#1c1917" strokeWidth={5} strokeLinecap="round" opacity="0.92" />
+          <circle cx="60" cy="74" r="4" fill="#fbbf24" opacity={0.9 + pulse * 0.08} />
+        </>
+      );
+      break;
+    case 'hunter_aimed_shot':
+      content = (
+        <>
+          <line x1="34" y1="62" x2={58 + progress * 24} y2="62" stroke="#8d6e63" strokeWidth={4} strokeLinecap="round" opacity="0.88" />
+          <polygon points={`${60+progress*24},54 ${72+progress*24},62 ${60+progress*24},70`} fill="#d1d5db" opacity="0.85" />
+          <line x1={55+progress*24} y1="56" x2={62+progress*24} y2="62" stroke="#cbd5e1" strokeWidth={3} strokeLinecap="round" opacity="0.75" />
+          <line x1={55+progress*24} y1="68" x2={62+progress*24} y2="62" stroke="#cbd5e1" strokeWidth={3} strokeLinecap="round" opacity="0.75" />
         </>
       );
       break;

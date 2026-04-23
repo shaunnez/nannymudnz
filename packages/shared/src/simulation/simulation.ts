@@ -321,6 +321,9 @@ function getAbilityAssetKey(abilityId: string, eventType: VFXEvent['type']): str
     case 'skullsplitter':    return eventType === 'aoe_pop'   ? 'skullsplitter_burst'  : undefined;
     case 'tithe_of_blood':   return eventType === 'heal_glow' ? 'tithe_glow'           : undefined;
     case 'challenge':        return eventType === 'aoe_pop'   ? 'challenge_mark'       : undefined;
+    case 'disengage':       return eventType === 'aoe_pop'       ? 'disengage_burst' : undefined;
+    case 'bear_trap':       return eventType === 'aoe_pop'       ? 'bear_trap_snap'  : undefined;
+    case 'rain_of_arrows':  return eventType === 'channel_pulse' ? 'rain_pulse'      : undefined;
     default:
       return undefined;
   }

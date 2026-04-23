@@ -593,6 +593,45 @@ export class ActorView {
     this.auraFx.setVisible(true);
   }
 
+  private drawHunterDisengage(bodyHeight: number): void {
+    this.attackFx.clear();
+    this.attackFx.fillStyle(0x78716c, 0.35);
+    this.attackFx.fillCircle(0, -bodyHeight * 0.5, 32);
+    this.attackFx.lineStyle(3, 0xa3e635, 0.82);
+    this.attackFx.strokeCircle(0, -bodyHeight * 0.5, 32);
+    this.attackFx.lineStyle(2, 0xd9f99d, 0.65);
+    this.attackFx.strokeCircle(0, -bodyHeight * 0.5, 22);
+    this.attackFx.setVisible(true);
+  }
+
+  private drawHunterRainChannel(bodyHeight: number, visualTime: number): void {
+    this.auraFx.clear();
+    for (let i = 0; i < 6; i++) {
+      const t = (visualTime * 2 + i * 0.22) % 1;
+      const x = (i % 3 - 1) * this.width * 0.55;
+      const y = -bodyHeight * 0.9 + t * bodyHeight * 1.1;
+      this.auraFx.fillStyle(0xa3e635, (1 - t) * 0.82);
+      this.auraFx.fillRect(x - 1, y, 2, 8);
+    }
+    this.auraFx.lineStyle(2, 0xa3e635, 0.55);
+    this.auraFx.strokeEllipse(0, -bodyHeight * 0.52, this.width * 1.3, bodyHeight * 0.9);
+    this.auraFx.setVisible(true);
+  }
+
+  private drawHunterBearTrap(bodyHeight: number): void {
+    this.attackFx.clear();
+    this.attackFx.lineStyle(4, 0x8d6e63, 0.9);
+    this.attackFx.strokeCircle(0, -bodyHeight * 0.2, 18);
+    this.attackFx.lineStyle(6, 0x44403c, 0.88);
+    this.attackFx.beginPath();
+    this.attackFx.moveTo(-14, -bodyHeight * 0.2);
+    this.attackFx.lineTo(14, -bodyHeight * 0.2);
+    this.attackFx.strokePath();
+    this.attackFx.fillStyle(0xfbbf24, 0.9);
+    this.attackFx.fillCircle(0, -bodyHeight * 0.2, 3);
+    this.attackFx.setVisible(true);
+  }
+
   syncFrom(actor: Actor): void {
     const groundScreenY = worldYToScreenY(actor.y, this.band.min, this.band.max);
     const screenY = groundScreenY - actor.z * 0.6;
@@ -800,6 +839,15 @@ export class ActorView {
     if (isCleaverAttack) this.drawChampionCleaver(bodyHeight);
     if (isSkullsplitter) this.drawChampionSkullsplitter(bodyHeight);
     if (isChampionBuff) this.drawChampionTitheFx(bodyHeight, visualTime, actor.mp);
+
+    const isHunter = actor.guildId === 'hunter';
+    const isHunterDisengage = isHunter && actor.state === 'attacking' && actor.animationId === 'ability_1';
+    const isHunterRain = isHunter && actor.state === 'channeling';
+    const isHunterTrap = isHunter && actor.state === 'attacking' && actor.animationId === 'ability_4';
+
+    if (isHunterDisengage) this.drawHunterDisengage(bodyHeight);
+    if (isHunterRain) this.drawHunterRainChannel(bodyHeight, visualTime);
+    if (isHunterTrap) this.drawHunterBearTrap(bodyHeight);
 
     // Status alpha overlays.
     let alpha = 1;

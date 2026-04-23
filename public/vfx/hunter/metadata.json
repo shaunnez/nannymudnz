@@ -1,0 +1,9 @@
+{
+  "guildId": "hunter",
+  "frameSize": { "w": 96, "h": 96 },
+  "assets": {
+    "disengage_burst": { "frames": 6, "frameDurationMs": 100, "loop": false, "anchor": {"x":48,"y":72}, "scale": 1.35 },
+    "bear_trap_snap":  { "frames": 5, "frameDurationMs": 90,  "loop": false, "anchor": {"x":48,"y":68}, "scale": 1.2  },
+    "rain_pulse":      { "frames": 7, "frameDurationMs": 120, "loop": false, "frameSize": {"w":160,"h":160}, "anchor": {"x":80,"y":80}, "scale": 1.45 }
+  }
+}
