@@ -134,7 +134,7 @@ function mirrorActor(src: Actor, dst: ActorSchema): void {
   if (src.shapeshiftForm !== undefined) dst.shapeshiftForm = src.shapeshiftForm;
   if (src.primedClass !== undefined) dst.primedClass = src.primedClass;
   if (src.miasmaActive !== undefined) dst.miasmaActive = src.miasmaActive;
-  if (src.nocturneActive !== undefined) dst.nocturneActive = src.nocturneActive;
+  dst.stealthed = src.statusEffects.some(e => e.type === 'stealth');
   if (src.fivePointPalmTarget !== undefined) dst.fivePointPalmTarget = src.fivePointPalmTarget;
 
   if (src.dishes) {
