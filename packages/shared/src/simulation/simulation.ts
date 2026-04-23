@@ -1,5 +1,5 @@
 import type {
-  SimState, Actor, InputState, GuildId, Projectile,
+  SimState, Actor, InputState, GuildId, Projectile, DamageType,
   AbilityDef, ActorKind, AnimationId, PlayerController, StatusEffectType, VFXEvent, GroundZone,
 } from './types';
 import { getGuild, DRUID_BEAR_ABILITIES, DRUID_BEAR_RMB } from './guildData';
@@ -580,6 +580,44 @@ function fireAbility(player: Actor, ability: AbilityDef, state: SimState, ctrl: 
     });
   }
 
+  if (ability.id === 'chosen_utility' && player.guildId === 'master') {
+    const primed = player.primedClass ?? 'knight';
+    switch (primed) {
+      case 'knight':
+        addStatusEffect(state, player, 'damage_reduction', 0.4, 2000, player.id);
+        state.vfxEvents.push({ type: 'aura_pulse', x: player.x, y: player.y, color: '#fbbf24' });
+        break;
+      case 'mage': {
+        const dir = player.facing;
+        player.x = Math.max(0, Math.min(player.x + dir * 150, 4000));
+        state.vfxEvents.push({ type: 'blink_trail', x: player.x, y: player.y, color: '#818cf8' });
+        break;
+      }
+      case 'monk': {
+        const targets = [...state.enemies, ...(state.opponent ? [state.opponent] : [])]
+          .filter(e => e.isAlive && Math.abs(e.x - player.x) < 120 && Math.abs(e.y - player.y) < ATTACK_Y_TOLERANCE);
+        for (const t of targets) applyDamage(t, 25, state.vfxEvents, false);
+        player.x = Math.max(0, Math.min(player.x + player.facing * 80, 4000));
+        state.vfxEvents.push({ type: 'hit_spark', x: player.x, y: player.y, color: '#fde68a' });
+        break;
+      }
+      case 'hunter': {
+        player.x = Math.max(0, Math.min(player.x - player.facing * 120, 4000));
+        const nearby = [...state.enemies, ...(state.opponent ? [state.opponent] : [])]
+          .filter(e => e.isAlive && Math.abs(e.x - player.x) < 150 && Math.abs(e.y - player.y) < ATTACK_Y_TOLERANCE);
+        for (const t of nearby) addStatusEffect(state, t, 'slow', 0.4, 1500, player.id);
+        state.vfxEvents.push({ type: 'aoe_pop', x: player.x, y: player.y, color: '#78350f' });
+        break;
+      }
+      case 'druid':
+        addStatusEffect(state, player, 'hot', 20, 4000, player.id);
+        state.vfxEvents.push({ type: 'heal_glow', x: player.x, y: player.y, color: '#86efac' });
+        break;
+    }
+    clearCombo(ctrl.comboBuffer);
+    return;
+  }
+
   if (ability.isTeleport) {
     const tx = player.x + player.facing * ability.teleportDist;
     pushAbilityVfx(state.vfxEvents, player, ability, {
@@ -601,6 +639,43 @@ function fireAbility(player: Actor, ability: AbilityDef, state: SimState, ctrl: 
     });
     clearCombo(ctrl.comboBuffer);
     return;
+  }
+
+  if (ability.id === 'chosen_strike' && player.guildId === 'master') {
+    const primed = player.primedClass ?? 'knight';
+    if (primed === 'mage' || primed === 'hunter') {
+      const projDamageType: DamageType = primed === 'mage' ? 'magical' : 'physical';
+      const projRange = primed === 'hunter' ? 450 : 280;
+      const proj: Projectile = {
+        id: `proj_${state.nextProjectileId++}`,
+        ownerId: player.id,
+        guildId: player.guildId,
+        team: player.team,
+        x: player.x,
+        y: player.y,
+        z: player.z + player.height * 0.55,
+        vx: player.facing * 500,
+        vy: 0,
+        vz: 0,
+        damage: ability.baseDamage,
+        damageType: projDamageType,
+        range: projRange,
+        traveled: 0,
+        radius: 8,
+        knockdown: false,
+        knockbackForce: 0,
+        effects: {},
+        piercing: false,
+        color: primed === 'mage' ? '#818cf8' : '#8d6e63',
+        type: ability.id,
+        hitActorIds: [],
+      };
+      state.projectiles.push(proj);
+      state.vfxEvents.push({ type: 'projectile_spawn', x: proj.x, y: proj.y, color: proj.color });
+      clearCombo(ctrl.comboBuffer);
+      return;
+    }
+    // knight / monk / druid: fall through to standard melee path
   }
 
   if (ability.isProjectile) {
