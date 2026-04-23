@@ -2,11 +2,11 @@
   "guildId": "monk",
   "frameSize": { "w": 96, "h": 96 },
   "assets": {
-    "serenity_aura":      { "frames": 7, "frameDurationMs": 120, "loop": false, "frameSize": {"w":160,"h":160}, "anchor": {"x":80,"y":80}, "scale": 1.45 },
+    "serenity_aura":      { "frames": 1, "frameDurationMs": 400, "loop": false, "anchor": {"x":48,"y":48}, "scale": 1.45 },
     "flying_kick_impact": { "frames": 5, "frameDurationMs": 90,  "loop": false, "anchor": {"x":28,"y":68}, "scale": 1.2 },
     "jab_impact":         { "frames": 4, "frameDurationMs": 80,  "loop": false, "anchor": {"x":28,"y":48}, "scale": 1.1 },
-    "five_point_impact":  { "frames": 6, "frameDurationMs": 100, "loop": false, "anchor": {"x":48,"y":48}, "scale": 1.2 },
-    "dragons_fury_pulse": { "frames": 7, "frameDurationMs": 120, "loop": false, "frameSize": {"w":160,"h":160}, "anchor": {"x":80,"y":80}, "scale": 1.5 },
-    "parry_flash":        { "frames": 5, "frameDurationMs": 85,  "loop": false, "anchor": {"x":48,"y":72}, "scale": 1.25 }
+    "five_point_impact":  { "frames": 1, "frameDurationMs": 400, "loop": false, "anchor": {"x":48,"y":48}, "scale": 1.3 },
+    "dragons_fury_pulse": { "frames": 1, "frameDurationMs": 450, "loop": false, "frameSize": {"w":160,"h":160}, "anchor": {"x":80,"y":80}, "scale": 1.55 },
+    "parry_flash":        { "frames": 1, "frameDurationMs": 350, "loop": false, "anchor": {"x":48,"y":48}, "scale": 1.3 }
   }
 }
