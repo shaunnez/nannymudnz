@@ -333,6 +333,9 @@ export class MatchRoom extends Room<MatchState> {
     const p2 = joinerId ? this.coalesceInput(joinerId) : makeEmptyInputState();
     tickSimulation(this.plainSim, p1, dtMs, p2);
     mirrorSimToSchema(this.plainSim, this.state.sim);
+    if (this.plainSim.vfxEvents.length > 0) {
+      this.broadcast('vfx', this.plainSim.vfxEvents);
+    }
 
     // Propagate sim match-end into MatchState.phase. The sim flips
     // `round.phase` to 'matchOver' after the best-of resolves; until we mirror

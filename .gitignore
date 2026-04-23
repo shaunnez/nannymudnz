@@ -33,3 +33,6 @@ assets-old
 # (public/sprites/<id>/*.png + metadata.json) stay tracked.
 public/sprites/*/raw/
 public/world/*/raw/
+
+.superpowers
+.claude/worktrees

@@ -17,7 +17,7 @@ import { ActorView } from '../view/ActorView';
 import { ProjectileView } from '../view/ProjectileView';
 import { PickupView } from '../view/PickupView';
 import { consumeVfxEvents } from '../view/ParticleFX';
-import type { Actor, Projectile, Pickup, InputState } from '@nannymud/shared/simulation/types';
+import type { Actor, Projectile, Pickup, InputState, VFXEvent } from '@nannymud/shared/simulation/types';
 import { WORLD_WIDTH } from '@nannymud/shared/simulation/constants';
 import type { GameCallbacks, NetMode } from '../PhaserGame';
 import { InputSender } from '../net/InputSender';
@@ -110,11 +110,9 @@ export class GameplayScene extends Phaser.Scene {
           tMs: performance.now(),
           actors: collectActorSnapshots(sAsSim),
         });
-        if (sAsSim.vfxEvents && sAsSim.vfxEvents.length > 0) {
-          consumeVfxEvents(this, sAsSim.vfxEvents);
-        }
       };
       this.room.onStateChange(this.onMpStateChange);
+      this.room.onMessage('vfx', (events: VFXEvent[]) => consumeVfxEvents(this, events));
     } else if (mode === 'vs') {
       if (!p2) throw new Error('VS mode requires a p2 guild');
       const difficulty = (this.game.registry.get('difficulty') as number | null) ?? 2;
