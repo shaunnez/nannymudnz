@@ -166,6 +166,7 @@ export function createInitialState(guildId: GuildId, seed: number = Date.now()):
     allies: [],
     pickups: [],
     projectiles: [],
+    groundZones: [],
     vfxEvents: [],
     waves: STAGE_WAVES.map(w => ({ ...w, enemies: w.enemies.map(e => ({ ...e })), triggered: false, cleared: false })),
     currentWave: -1,
@@ -1175,7 +1176,7 @@ function handlePlayerInput(state: SimState, input: InputState, ctrl: PlayerContr
   if (input.testAbilitySlot != null && !isSilenced(player)) {
     const guild = getGuild(player.guildId!);
     const slot = input.testAbilitySlot;
-    const ability = slot <= 5 ? guild.abilities[slot - 1] : guild.rmb;
+    const ability = slot === 'rmb' ? guild.rmb : slot <= 5 ? guild.abilities[slot - 1] : guild.rmb;
     if (ability) {
       fireAbility(player, ability, state, ctrl);
       return;

@@ -1,4 +1,22 @@
 export type DamageType = 'physical' | 'magical' | 'nature' | 'holy' | 'shadow' | 'necrotic' | 'psychic';
+
+export type GroundZoneVfxStyle = 'dome' | 'puddle' | 'ring';
+
+export interface GroundZone {
+  id: string;
+  x: number;
+  y: number;
+  radius: number;
+  remainingMs: number;
+  ownerTeam: 'player' | 'enemy';
+  effects: Partial<Record<StatusEffectType, { magnitude: number; durationMs: number }>>;
+  damagePerTick: number;
+  damageType: DamageType;
+  vfxColor: string;
+  vfxStyle: GroundZoneVfxStyle;
+  nextPulseMsDown: number;
+  triggerOnce?: boolean;
+}
 export type StatusEffectType =
   | 'slow' | 'root' | 'stun' | 'silence' | 'knockback' | 'blind' | 'taunt'
   | 'shield' | 'hot' | 'dot' | 'lifesteal' | 'armor_shred' | 'magic_shred'
@@ -180,6 +198,10 @@ export interface Actor {
   aiState: AIState;
   bossPhase: number;
   summonedByPlayer: boolean;
+  summonedBy?: string;
+  petAiMode?: 'aggressive' | 'defensive' | 'passive';
+  baseHpMax?: number;
+  baseMoveSpeed?: number;
   bloodtally?: number;
   chiOrbs?: number;
   sanity?: number;
@@ -187,7 +209,6 @@ export interface Actor {
   primedClass?: string;
   dishes?: string[];
   miasmaActive?: boolean;
-  nocturneActive?: boolean;
   fivePointPalmTarget?: string;
   isAlive: boolean;
   deathTimeMs: number;
@@ -336,6 +357,7 @@ export interface SimState {
   allies: Actor[];
   pickups: Pickup[];
   projectiles: Projectile[];
+  groundZones: GroundZone[];
   vfxEvents: VFXEvent[];
   waves: Wave[];
   currentWave: number;
@@ -383,7 +405,7 @@ export interface InputState {
   lastRightPressMs: number;
   runningLeft: boolean;
   runningRight: boolean;
-  testAbilitySlot: number | null;
+  testAbilitySlot: number | 'rmb' | null;
 }
 
 export interface ComboBuffer {
