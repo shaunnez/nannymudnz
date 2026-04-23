@@ -6,6 +6,15 @@
 
 **Architecture:** Task 1 adds two server message handlers (`chat` broadcast, `kick` disconnect). Task 2 rewrites `MpLobby.tsx` with the new layout: left column (slots + footer actions) and right column (chat panel), plus meta strip and keyboard shortcuts.
 
+## Build Order & Model
+
+| Task | Files | Order | Model | Rationale |
+|------|-------|-------|-------|-----------|
+| Task 1: Server handlers | `packages/server/src/rooms/MatchRoom.ts` | **PARALLEL** | `haiku` | Small, mechanical — 2 `onMessage` blocks, no type inference complexity |
+| Task 2: Client lobby rewrite | `src/screens/mp/MpLobby.tsx` | **PARALLEL** | `sonnet` | Large file rewrite, theme token lookups may need fixing, `Chip`/`Btn` prop validation |
+
+Tasks 1 and 2 have **no shared files and no TypeScript cross-dependency** — they are safe to run concurrently. Final verification (typecheck + tests) runs after both agents complete.
+
 **Tech Stack:** React 18, TypeScript, Colyseus 0.17 (`@colyseus/sdk`), Vitest
 
 ---

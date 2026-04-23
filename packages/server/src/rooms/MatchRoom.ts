@@ -61,6 +61,21 @@ export class MatchRoom extends Room<MatchState> {
       if (slot) slot.ready = msg.ready;
     });
 
+    this.onMessage('chat', (client: Client, msg: { text: string }) => {
+      const slot = this.state.players.get(client.sessionId);
+      if (!slot) return;
+      const text = String(msg.text ?? '').slice(0, 200).trim();
+      if (!text) return;
+      this.broadcast('chat', { name: slot.name, text });
+    });
+
+    this.onMessage('kick', (client: Client, msg: { sessionId: string }) => {
+      if (client.sessionId !== this.state.hostSessionId) return;
+      if (this.state.phase !== 'lobby') return;
+      const target = this.clients.find((c) => c.sessionId === msg.sessionId);
+      target?.leave(4000, 'kicked');
+    });
+
     this.onMessage('launch_battle', (client: Client) => {
       if (client.sessionId !== this.state.hostSessionId) return;
       const slots = [...this.state.players.values()];
