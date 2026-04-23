@@ -287,7 +287,9 @@ export type VFXEventType =
   | 'ability_name'
   | 'status_mark'
   | 'channel_pulse'
-  | 'aura_pulse';
+  | 'aura_pulse'
+  | 'zone_pulse'
+  | 'summon_spawn';
 
 export interface VFXEvent {
   type: VFXEventType;
@@ -297,6 +299,7 @@ export interface VFXEvent {
   z?: number;
   facing?: 1 | -1;
   radius?: number;
+  style?: GroundZoneVfxStyle;
   vx?: number;
   vy?: number;
   x2?: number;

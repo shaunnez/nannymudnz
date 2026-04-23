@@ -1,6 +1,6 @@
 import type {
   SimState, Actor, InputState, GuildId, Projectile,
-  AbilityDef, ActorKind, AnimationId, PlayerController, StatusEffectType, VFXEvent,
+  AbilityDef, ActorKind, AnimationId, PlayerController, StatusEffectType, VFXEvent, GroundZone,
 } from './types';
 import { getGuild } from './guildData';
 import { makeRng } from './rng';
@@ -453,6 +453,41 @@ function detonateGroundTarget(player: Actor, ability: AbilityDef, state: SimStat
     y: cy,
     radius: ability.aoeRadius,
   });
+
+  if (ability.id === 'eternal_night') {
+    state.groundZones.push({
+      id: `gz_${state.nextEffectId++}`,
+      x: cx,
+      y: cy,
+      radius: 240,
+      remainingMs: 6000,
+      ownerTeam: player.team === 'player' ? 'enemy' : 'player',
+      effects: { silence: { magnitude: 1, durationMs: 1200 } },
+      damagePerTick: 8,
+      damageType: 'shadow',
+      vfxColor: '#1a0033',
+      vfxStyle: 'dome',
+      nextPulseMsDown: 1000,
+    });
+  }
+
+  if (ability.id === 'bear_trap') {
+    state.groundZones.push({
+      id: `gz_${state.nextEffectId++}`,
+      x: cx,
+      y: cy,
+      radius: 40,
+      remainingMs: 8000,
+      ownerTeam: player.team === 'player' ? 'enemy' : 'player',
+      effects: { root: { magnitude: 1, durationMs: 1500 } },
+      damagePerTick: 0,
+      damageType: 'physical',
+      vfxColor: '#78350f',
+      vfxStyle: 'puddle',
+      nextPulseMsDown: 1000,
+      triggerOnce: true,
+    });
+  }
 }
 
 function fireAbility(player: Actor, ability: AbilityDef, state: SimState, ctrl: PlayerController): void {
@@ -1363,6 +1398,59 @@ function spawnPickup(state: SimState, enemy: Actor): void {
   }
 }
 
+function tickGroundZones(state: SimState, dtMs: number): void {
+  const allActors: Actor[] = [
+    state.player,
+    ...(state.opponent ? [state.opponent] : []),
+    ...state.enemies,
+    ...state.allies,
+  ];
+
+  state.groundZones = (state.groundZones as GroundZone[]).filter(zone => {
+    zone.remainingMs -= dtMs;
+    if (zone.remainingMs <= 0) return false;
+
+    zone.nextPulseMsDown -= dtMs;
+    if (zone.nextPulseMsDown <= 0) {
+      zone.nextPulseMsDown = 1000;
+      state.vfxEvents.push({
+        type: 'zone_pulse',
+        x: zone.x,
+        y: zone.y,
+        color: zone.vfxColor,
+        radius: zone.radius,
+        style: zone.vfxStyle,
+      } as VFXEvent);
+    }
+
+    let triggered = false;
+    for (const actor of allActors) {
+      if (!actor.isAlive) continue;
+      if (actor.team === zone.ownerTeam) continue;
+      const dx = actor.x - zone.x;
+      const dy = actor.y - zone.y;
+      if (Math.abs(dx) > zone.radius || Math.abs(dy) > ATTACK_Y_TOLERANCE * 2) continue;
+
+      for (const [etype, edata] of Object.entries(zone.effects) as [StatusEffectType, { magnitude: number; durationMs: number }][]) {
+        addStatusEffect(state, actor, etype, edata.magnitude, edata.durationMs, zone.id);
+      }
+
+      if (zone.damagePerTick > 0) {
+        const dtSec = dtMs / 1000;
+        applyDamage(actor, zone.damagePerTick * dtSec, state.vfxEvents, false);
+      }
+
+      if (zone.triggerOnce) {
+        triggered = true;
+        break;
+      }
+    }
+
+    if (triggered) return false;
+    return true;
+  });
+}
+
 export function tickSimulation(
   state: SimState,
   input: InputState,
@@ -1438,6 +1526,7 @@ export function tickSimulation(
   state.allies = state.allies.filter(a => a.isAlive);
 
   tickProjectiles(state, dtSec);
+  tickGroundZones(state, dtMs);
 
   updateCamera(state);
 
@@ -1520,6 +1609,7 @@ function tickVsSimulation(
   }
 
   tickProjectiles(state, dtSec);
+  tickGroundZones(state, dtMs);
   updateCamera(state);
   tickRound(state, dtMs);
 
