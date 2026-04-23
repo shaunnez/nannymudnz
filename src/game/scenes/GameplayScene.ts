@@ -371,7 +371,7 @@ export class GameplayScene extends Phaser.Scene {
       seen.add(actor.id);
       let view = this.actorViews.get(actor.id);
       if (!view) {
-        view = new ActorView(this, actor);
+        view = new ActorView(this, actor, actor.id === this.simState.player.id);
         this.actorViews.set(actor.id, view);
       }
       const snap = interp?.get(actor.id);

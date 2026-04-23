@@ -94,8 +94,10 @@ export class ActorView {
   private readonly spriteId?: ActorKind;
   private readonly hasSprites: boolean;
   private readonly band: ScreenYBand;
+  private readonly isLocalPlayerActor: boolean;
 
-  constructor(scene: Phaser.Scene, actor: Actor) {
+  constructor(scene: Phaser.Scene, actor: Actor, isLocalPlayerActor: boolean = false) {
+    this.isLocalPlayerActor = isLocalPlayerActor;
     this.scene = scene;
     this.band = getScreenYBand(scene);
     this.actorId = actor.id;
@@ -1201,7 +1203,8 @@ export class ActorView {
     // Status alpha overlays.
     let alpha = 1;
     if (actor.statusEffects.some(e => e.type === 'stun')) alpha = Math.min(alpha, 0.7);
-    if (actor.statusEffects.some(e => e.type === 'stealth')) alpha = Math.min(alpha, 0.35);
+    const isStealthed = actor.statusEffects.some((e: { type: string }) => e.type === 'stealth');
+    if (isStealthed) alpha = this.isLocalPlayerActor ? 0.3 : 0.0;
     if (actor.invulnerableMs > 0 && actor.state === 'getup') {
       alpha = Math.min(alpha, 0.5 + Math.sin(performance.now() * 0.02) * 0.3);
     }
