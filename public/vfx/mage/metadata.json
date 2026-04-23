@@ -2,7 +2,7 @@
   "guildId": "mage",
   "frameSize": { "w": 160, "h": 160 },
   "assets": {
-    "ice_nova_burst": { "frames": 7, "frameDurationMs": 115, "loop": false, "anchor": {"x":80,"y":80}, "scale": 1.5 },
-    "meteor_impact":  { "frames": 8, "frameDurationMs": 125, "loop": false, "anchor": {"x":80,"y":80}, "scale": 1.6 }
+    "ice_nova_burst": { "frames": 1, "frameDurationMs": 450, "loop": false, "anchor": {"x":80,"y":80}, "scale": 1.6 },
+    "meteor_impact":  { "frames": 1, "frameDurationMs": 450, "loop": false, "anchor": {"x":80,"y":80}, "scale": 1.65 }
   }
 }
