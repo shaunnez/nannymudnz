@@ -2,12 +2,14 @@ import { Schema, type, ArraySchema } from '@colyseus/schema';
 import type {
   ActorTeam,
   DamageType,
+  GuildId,
   StatusEffectType,
 } from '../simulation/types';
 
 export class ProjectileSchema extends Schema {
   @type('string') id!: string;
   @type('string') ownerId!: string;
+  @type('string') guildId!: GuildId | null;
   @type('string') team!: ActorTeam;
   @type('number') x!: number;
   @type('number') y!: number;

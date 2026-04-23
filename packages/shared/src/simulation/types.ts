@@ -233,6 +233,7 @@ export interface Pickup {
 export interface Projectile {
   id: string;
   ownerId: string;
+  guildId: GuildId | null;
   team: ActorTeam;
   x: number;
   y: number;

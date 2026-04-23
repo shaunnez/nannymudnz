@@ -102,6 +102,7 @@ function spawnProjectile(state: SimState, actor: Actor, target: Actor, damage: n
   const proj: Projectile = {
     id: `proj_${state.nextProjectileId++}`,
     ownerId: actor.id,
+    guildId: null,
     team: actor.team,
     x: actor.x,
     y: actor.y,

@@ -349,6 +349,9 @@ function getAbilityAssetKey(abilityId: string, eventType: VFXEvent['type']): str
     case 'chosen_nuke':    return eventType === 'aoe_pop'    ? 'chosen_nuke_burst'    : undefined;
     case 'eclipse':        return eventType === 'aura_pulse' ? 'eclipse_aura'         : undefined;
     case 'apotheosis':     return eventType === 'aura_pulse' ? 'apotheosis_aura'      : undefined;
+    case 'frostbolt':      return eventType === 'hit_spark'  ? 'frostbolt_impact'     : undefined;
+    case 'arcane_shard':   return eventType === 'hit_spark'  ? 'arcane_shard_impact'  : undefined;
+    case 'piercing_volley': return eventType === 'hit_spark' ? 'arrow_impact'         : undefined;
     default:
       return undefined;
   }
@@ -489,6 +492,7 @@ function fireAbility(player: Actor, ability: AbilityDef, state: SimState, ctrl: 
       const proj: Projectile = {
         id: `proj_${state.nextProjectileId++}`,
         ownerId: player.id,
+        guildId: player.guildId,
         team: player.team,
         x: player.x,
         y: player.y + spread,
@@ -903,7 +907,15 @@ function tickProjectiles(state: SimState, dtSec: number): void {
       if (dx <= target.width / 2 + proj.radius && dy <= ATTACK_Y_TOLERANCE + proj.radius) {
         const isCrit = state.rng() < 0.05;
         applyDamage(target, proj.damage * (isCrit ? 1.5 : 1), state.vfxEvents, isCrit);
-        state.vfxEvents.push({ type: 'hit_spark', color: proj.color, x: proj.x, y: proj.y, z: proj.z });
+        state.vfxEvents.push({
+          type: 'hit_spark',
+          color: proj.color,
+          x: proj.x,
+          y: proj.y,
+          z: proj.z,
+          guildId: proj.guildId,
+          assetKey: proj.guildId ? getAbilityAssetKey(proj.type, 'hit_spark') : undefined,
+        });
 
         for (const [etype, edata] of Object.entries(proj.effects)) {
           if (edata) addStatusEffect(state, target, etype as StatusEffectType, edata.magnitude, edata.durationMs, proj.ownerId);
@@ -1116,6 +1128,7 @@ function handlePlayerInput(state: SimState, input: InputState, ctrl: PlayerContr
       const proj: Projectile = {
         id: `proj_${state.nextProjectileId++}`,
         ownerId: player.id,
+        guildId: null,
         team: player.team,
         x: player.x,
         y: player.y,
