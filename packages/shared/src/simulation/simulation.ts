@@ -499,6 +499,12 @@ function fireAbility(player: Actor, ability: AbilityDef, state: SimState, ctrl: 
     if (ability.effects.stealth) {
       addStatusEffect(state, player, 'stealth', 1, ability.effects.stealth.durationMs, player.id);
     }
+    pushAbilityVfx(state.vfxEvents, player, ability, {
+      type: 'aoe_pop',
+      x: player.x,   // player.x is now the destination
+      y: player.y,
+      radius: 40,
+    });
     clearCombo(ctrl.comboBuffer);
     return;
   }
