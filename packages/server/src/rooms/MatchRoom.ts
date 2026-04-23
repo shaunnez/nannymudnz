@@ -87,6 +87,12 @@ export class MatchRoom extends Room<MatchState> {
       this.state.phase = 'loading';
     });
 
+    this.onMessage('hover_stage', (client: Client, msg: { idx: number }) => {
+      if (client.sessionId !== this.state.hostSessionId) return;
+      if (this.state.phase !== 'stage_select') return;
+      this.state.hoveredStageIdx = Math.max(0, Math.min(8, msg.idx));
+    });
+
     this.onMessage('ready_to_start', (client: Client) => {
       if (this.state.phase !== 'loading') return;
       this.readyToStart.add(client.sessionId);
