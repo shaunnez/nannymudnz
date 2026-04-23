@@ -1,49 +1,13 @@
 {
   "guildId": "leper",
-  "frameSize": {
-    "w": 96,
-    "h": 96
-  },
+  "frameSize": { "w": 96, "h": 96 },
   "assets": {
-    "plague_vomit_burst": {
-      "frames": 6,
-      "frameDurationMs": 120,
-      "loop": false,
-      "anchor": {
-        "x": 31,
-        "y": 58
-      },
-      "scale": 1.35
-    },
-    "diseased_claw_impact": {
-      "frames": 5,
-      "frameDurationMs": 95,
-      "loop": false,
-      "anchor": {
-        "x": 24,
-        "y": 56
-      },
-      "scale": 1.15
-    },
-    "necrotic_embrace_drain": {
-      "frames": 6,
-      "frameDurationMs": 115,
-      "loop": false,
-      "anchor": {
-        "x": 48,
-        "y": 70
-      },
-      "scale": 1.15
-    },
-    "rotting_tide_burst": {
-      "frames": 8,
-      "frameDurationMs": 125,
-      "loop": false,
-      "anchor": {
-        "x": 48,
-        "y": 66
-      },
-      "scale": 1.45
-    }
+    "plague_vomit_burst":     { "frames": 1, "frameDurationMs": 450, "loop": false, "frameSize": {"w":160,"h":160}, "anchor": {"x":80,"y":80}, "scale": 1.55 },
+    "diseased_claw_impact":   { "frames": 5, "frameDurationMs": 95,  "loop": false, "anchor": {"x":24,"y":56}, "scale": 1.15 },
+    "necrotic_embrace_drain": { "frames": 1, "frameDurationMs": 400, "loop": false, "anchor": {"x":48,"y":48}, "scale": 1.35 },
+    "contagion_mark":         { "frames": 1, "frameDurationMs": 400, "loop": false, "anchor": {"x":48,"y":48}, "scale": 1.3 },
+    "rotting_tide_burst":     { "frames": 1, "frameDurationMs": 450, "loop": false, "frameSize": {"w":160,"h":160}, "anchor": {"x":80,"y":80}, "scale": 1.6 },
+    "rotting_tide_channel":   { "frames": 1, "frameDurationMs": 350, "loop": false, "anchor": {"x":48,"y":48}, "scale": 1.2 },
+    "miasma_aura":            { "frames": 1, "frameDurationMs": 400, "loop": false, "anchor": {"x":48,"y":48}, "scale": 1.3 }
   }
 }
