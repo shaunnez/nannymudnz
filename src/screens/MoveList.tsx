@@ -78,7 +78,7 @@ export function MoveList({ initialGuild, onBack, onDossier }: Props) {
                   gridTemplateColumns: '44px 1fr auto',
                   gap: 14,
                   alignItems: 'center',
-                  padding: '9px 22px',
+                  padding: '8px 22px',
                   borderBottom: `1px solid ${theme.lineSoft}`,
                   cursor: 'pointer',
                   background: isActive ? `${acc}12` : 'transparent',
@@ -90,7 +90,7 @@ export function MoveList({ initialGuild, onBack, onDossier }: Props) {
                   <div
                     style={{
                       fontFamily: theme.fontDisplay,
-                      fontSize: 19,
+                      fontSize: 16,
                       color: isActive ? acc : theme.ink,
                       letterSpacing: '-0.01em',
                       lineHeight: 1.2,
@@ -205,7 +205,7 @@ function MoveRow({ slot, ability, accent }: { slot: string; ability: AbilityDef;
         display: 'grid',
         gridTemplateColumns: TABLE_COLS,
         gap: 14,
-        padding:'10px 6px',
+        padding:'14px 6px',
         borderBottom: `1px solid ${theme.lineSoft}`,
         alignItems: 'start',
       }}
@@ -220,11 +220,11 @@ function MoveRow({ slot, ability, accent }: { slot: string; ability: AbilityDef;
         <div style={{ fontFamily: theme.fontDisplay, fontSize: 22, color: theme.ink, letterSpacing: '-0.01em', lineHeight: 1.15 }}>
           {ability.name}
         </div>
-        <div style={{ fontFamily: theme.fontBody, fontSize: 18, color: theme.inkDim, lineHeight: 1.5, marginTop: 4 }}>
+        <div style={{ fontFamily: theme.fontBody, fontSize: 16, color: theme.inkDim, lineHeight: 1.5, marginTop: 4 }}>
           {ability.description || '—'}
         </div>
       </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+      <div style={{ display: 'flex', flexDirection: 'row', gap: 10, flexWrap: 'wrap' }}>
         {ability.baseDamage > 0 && <TagPill tone="warn">DMG · {ability.baseDamage}</TagPill>}
         {ability.isHeal && <TagPill tone="good">HEAL</TagPill>}
         {ability.isProjectile && <TagPill>PROJECTILE</TagPill>}
@@ -256,7 +256,6 @@ function TagPill({ children, tone = 'default' }: { children: React.ReactNode; to
     <span
       style={{
         display: 'block',
-        width: '100%',
         textAlign: 'center',
         padding: '6px 10px',
         border: `1px solid ${t.bd}`,

@@ -101,17 +101,17 @@ function getSpriteTransform(
 function getOverlayScale(effect: PreviewEffect | undefined, scale: number): number {
   switch (effect) {
     case 'viking_whirlwind':
-      return Math.max(0.92, scale * 0.52);
+      return Math.max(1.08, scale * 0.62);
     case 'viking_harpoon':
-      return Math.max(0.84, scale * 0.46);
+      return Math.max(1.02, scale * 0.58);
     case 'viking_axe_swing':
-      return Math.max(0.9, scale * 0.48);
+      return Math.max(1.06, scale * 0.6);
     case 'viking_bloodlust':
     case 'viking_undying_rage':
     case 'viking_shield_bash':
-      return Math.max(0.88, scale * 0.46);
+      return Math.max(0.98, scale * 0.54);
     default:
-      return Math.max(0.88, scale * 0.46);
+      return Math.max(0.98, scale * 0.54);
   }
 }
 
@@ -137,26 +137,26 @@ function PreviewOverlay({
     case 'viking_whirlwind':
       content = (
         <g transform={`rotate(${sweep * 10} 60 60)`}>
-          <path d="M40 82 A22 22 0 0 1 40 46" fill="none" stroke="#f97316" strokeWidth={7.5} strokeLinecap="round" opacity={0.86 + pulse * 0.12} />
-          <path d="M80 42 A22 22 0 0 1 80 78" fill="none" stroke="#fb923c" strokeWidth={7.5} strokeLinecap="round" opacity={0.8 + (1 - pulse) * 0.1} />
-          <path d="M47 78 A15 15 0 0 1 47 52" fill="none" stroke="#fde68a" strokeWidth={3.5} strokeLinecap="round" opacity={0.92} />
-          <path d="M73 48 A15 15 0 0 1 73 74" fill="none" stroke="#fdba74" strokeWidth={3.5} strokeLinecap="round" opacity={0.84} />
-          <circle cx={44 + sweep * 2.5} cy={86} r="2.4" fill="#fff7ed" opacity="0.76" />
-          <circle cx={76 - sweep * 2.5} cy={83} r="2.2" fill="#fed7aa" opacity="0.7" />
+          <path d="M28 84 A28 28 0 0 1 28 36" fill="none" stroke="#f97316" strokeWidth={8.5} strokeLinecap="round" opacity={0.88 + pulse * 0.12} />
+          <path d="M92 36 A28 28 0 0 1 92 84" fill="none" stroke="#fb923c" strokeWidth={8.5} strokeLinecap="round" opacity={0.82 + (1 - pulse) * 0.1} />
+          <path d="M40 79 A18 18 0 0 1 40 45" fill="none" stroke="#fde68a" strokeWidth={4} strokeLinecap="round" opacity={0.95} />
+          <path d="M80 41 A18 18 0 0 1 80 75" fill="none" stroke="#fdba74" strokeWidth={4} strokeLinecap="round" opacity={0.88} />
+          <circle cx={34 + sweep * 3} cy={87} r="2.8" fill="#fff7ed" opacity="0.8" />
+          <circle cx={86 - sweep * 3} cy={84} r="2.5" fill="#fed7aa" opacity="0.74" />
         </g>
       );
       break;
     case 'viking_harpoon': {
-      const x = 64 + progress * 18;
-      const y = 61 - Math.sin(progress * Math.PI) * 4;
+      const x = 72 + progress * 20;
+      const y = 62 - Math.sin(progress * Math.PI) * 5;
       content = (
         <>
-          <line x1={54} y1={61} x2={x + 8} y2={y} stroke="#5b3a29" strokeWidth={3.75} strokeLinecap="round" />
-          <polygon points={`${x + 8},${y} ${x - 2},${y - 6.5} ${x - 2},${y + 6.5}`} fill="#cbd5e1" />
-          <line x1={x - 5} y1={y - 5} x2={x + 1.5} y2={y} stroke="#cbd5e1" strokeWidth={2.75} strokeLinecap="round" />
-          <line x1={x - 5} y1={y + 5} x2={x + 1.5} y2={y} stroke="#cbd5e1" strokeWidth={2.75} strokeLinecap="round" />
-          <line x1={52} y1={61} x2={46} y2={61} stroke="#ffffff" strokeWidth={2} strokeLinecap="round" opacity="0.28" />
-          <line x1={44} y1={64} x2={38} y2={64} stroke="#ffffff" strokeWidth={1.75} strokeLinecap="round" opacity="0.18" />
+          <line x1={48} y1={62} x2={x + 8} y2={y} stroke="#5b3a29" strokeWidth={4.5} strokeLinecap="round" />
+          <polygon points={`${x + 8},${y} ${x - 4},${y - 8} ${x - 4},${y + 8}`} fill="#cbd5e1" />
+          <line x1={x - 7} y1={y - 6} x2={x + 1} y2={y} stroke="#cbd5e1" strokeWidth={3} strokeLinecap="round" />
+          <line x1={x - 7} y1={y + 6} x2={x + 1} y2={y} stroke="#cbd5e1" strokeWidth={3} strokeLinecap="round" />
+          <line x1={44} y1={62} x2={36} y2={62} stroke="#ffffff" strokeWidth={2.5} strokeLinecap="round" opacity="0.34" />
+          <line x1={33} y1={66} x2={24} y2={66} stroke="#ffffff" strokeWidth={2} strokeLinecap="round" opacity="0.22" />
         </>
       );
       break;
@@ -177,9 +177,9 @@ function PreviewOverlay({
       });
       content = (
         <>
-          <ellipse cx="60" cy="60" rx="24" ry="28" fill="#7f1d1d" opacity={0.18 + pulse * 0.12} />
-          <ellipse cx="60" cy="60" rx="18" ry="21" fill="#ef4444" opacity={0.14 + pulse * 0.08} />
-          <ellipse cx="60" cy="60" rx="26" ry="30" fill="none" stroke="#ef4444" strokeWidth={3.5} opacity={0.54 + pulse * 0.16} />
+          <ellipse cx="60" cy="60" rx="28" ry="32" fill="#7f1d1d" opacity={0.2 + pulse * 0.12} />
+          <ellipse cx="60" cy="60" rx="20" ry="24" fill="#ef4444" opacity={0.16 + pulse * 0.08} />
+          <ellipse cx="60" cy="60" rx="30" ry="34" fill="none" stroke="#ef4444" strokeWidth={4} opacity={0.56 + pulse * 0.16} />
           {dots}
         </>
       );
@@ -189,9 +189,9 @@ function PreviewOverlay({
       const offset = progress * 10;
       content = (
         <>
-          <path d={`M56 ${82 - offset * 0.45} A24 24 0 0 1 84 52`} fill="none" stroke="#f97316" strokeWidth={8} strokeLinecap="round" opacity="0.95" />
-          <path d={`M60 ${77 - offset * 0.35} A16 16 0 0 1 80 56`} fill="none" stroke="#fde68a" strokeWidth={4} strokeLinecap="round" opacity="0.95" />
-          <circle cx={83} cy={53 + offset * 0.06} r="3.5" fill="#fff7ed" opacity="0.92" />
+          <path d={`M50 ${88 - offset * 0.45} A30 30 0 0 1 92 42`} fill="none" stroke="#f97316" strokeWidth={9} strokeLinecap="round" opacity="0.96" />
+          <path d={`M56 ${82 - offset * 0.35} A22 22 0 0 1 86 48`} fill="none" stroke="#fde68a" strokeWidth={4.5} strokeLinecap="round" opacity="0.96" />
+          <circle cx={89} cy={44 + offset * 0.05} r="4" fill="#fff7ed" opacity="0.94" />
         </>
       );
       break;
@@ -199,11 +199,11 @@ function PreviewOverlay({
     case 'viking_undying_rage':
       content = (
         <>
-          <ellipse cx="60" cy="60" rx="24" ry="28" fill="#450a0a" opacity={0.2 + pulse * 0.1} />
-          <ellipse cx="60" cy="60" rx="29" ry="34" fill="none" stroke="#dc2626" strokeWidth={4.5} opacity={0.88} />
-          <ellipse cx="60" cy="60" rx="22" ry="26" fill="none" stroke="#fca5a5" strokeWidth={3} opacity={0.74} />
-          <circle cx="39" cy="42" r="3" fill="#fca5a5" opacity="0.84" />
-          <circle cx="81" cy="40" r="2.5" fill="#fca5a5" opacity="0.72" />
+          <ellipse cx="60" cy="60" rx="28" ry="32" fill="#450a0a" opacity={0.22 + pulse * 0.1} />
+          <ellipse cx="60" cy="60" rx="34" ry="39" fill="none" stroke="#dc2626" strokeWidth={5} opacity={0.9} />
+          <ellipse cx="60" cy="60" rx="25" ry="29" fill="none" stroke="#fca5a5" strokeWidth={3.25} opacity={0.76} />
+          <circle cx="37" cy="40" r="3.25" fill="#fca5a5" opacity="0.86" />
+          <circle cx="83" cy="38" r="2.75" fill="#fca5a5" opacity="0.74" />
         </>
       );
       break;
@@ -211,9 +211,9 @@ function PreviewOverlay({
       const x = 77 + sweep * 3;
       content = (
         <>
-          <path d="M66 51 Q81 58 66 66" fill="none" stroke="#94a3b8" strokeWidth={5.5} strokeLinecap="round" opacity="0.92" />
-          <path d="M78 47 L84 56 L93 53 L87 60 L94 68 L84 67 L81 76 L77 67 L68 69 L74 60 L66 53 L77 55 Z" fill="#fde68a" opacity={0.72 + pulse * 0.14} />
-          <circle cx={x} cy="60" r="4" fill="#fff7ed" opacity="0.8" />
+          <path d="M64 50 Q84 58 64 68" fill="none" stroke="#94a3b8" strokeWidth={6} strokeLinecap="round" opacity="0.94" />
+          <path d="M78 46 L86 56 L97 52 L90 60 L98 69 L86 68 L82 79 L77 68 L66 70 L73 60 L64 52 L77 55 Z" fill="#fde68a" opacity={0.74 + pulse * 0.14} />
+          <circle cx={x} cy="60" r="4.25" fill="#fff7ed" opacity="0.82" />
         </>
       );
       break;

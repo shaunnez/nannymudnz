@@ -7,13 +7,11 @@ import type {
   Projectile,
   RoundState,
   SimMode,
-  VFXEvent,
   Wave,
 } from '../simulation/types';
 import { ActorSchema } from './ActorSchema';
 import { PickupSchema } from './PickupSchema';
 import { ProjectileSchema } from './ProjectileSchema';
-import { VFXEventSchema } from './VFXEventSchema';
 import { LogEntrySchema } from './LogEntrySchema';
 import { RoundStateSchema } from './RoundStateSchema';
 import { WaveSchema } from './WaveSchema';
@@ -31,8 +29,6 @@ export class SimStateSchema extends Schema {
     new ArraySchema<PickupSchema>() as unknown as Pickup[];
   @type({ array: ProjectileSchema }) projectiles: Projectile[] =
     new ArraySchema<ProjectileSchema>() as unknown as Projectile[];
-  @type({ array: VFXEventSchema }) vfxEvents: VFXEvent[] =
-    new ArraySchema<VFXEventSchema>() as unknown as VFXEvent[];
   @type({ array: WaveSchema }) waves: Wave[] =
     new ArraySchema<WaveSchema>() as unknown as Wave[];
 

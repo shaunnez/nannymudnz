@@ -207,7 +207,7 @@ export function MpCharSelect({ room, onLeave, onPhaseChange }: Props) {
                       letterSpacing: 2,
                     }}
                   >
-                    {g?.name?.toUpperCase()}
+                    {g.name.toUpperCase()}
                   </div>
                   {localLockedHere && (
                     <div
