@@ -106,6 +106,7 @@ export function GameScreen({
       gameRef.current = null;
       setGameReady(false);
       setPreloading(true);
+      setLoadProgress(undefined);
     };
   }, [mode, p1, p2, stageId, netMode, matchRoom, difficulty]);
 
