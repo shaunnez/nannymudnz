@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LF2 vs Nannymud — Background Analysis</title>
+<style>
+  body { background: #111; color: #eee; font-family: -apple-system, sans-serif; margin: 0; padding: 16px; }
+  h1 { font-size: 18px; color: #0ff; margin: 0 0 4px; }
+  h2 { font-size: 14px; color: #0ff; margin: 24px 0 8px; border-bottom: 1px solid #333; padding-bottom: 4px; }
+  h3 { font-size: 13px; margin: 16px 0 6px; }
+  img { width: 100%; border-radius: 4px; display: block; }
+  .label { font-size: 11px; letter-spacing: 1px; margin-bottom: 6px; font-weight: bold; }
+  .green { color: #0f0; }
+  .orange { color: #f80; }
+  .red { color: #f66; }
+  .card { background: #1a1a1a; border: 1px solid #333; border-radius: 6px; padding: 12px; margin-bottom: 12px; }
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  @media (max-width: 600px) { .row { grid-template-columns: 1fr; } }
+  ul { margin: 6px 0; padding-left: 18px; }
+  li { font-size: 12px; line-height: 1.8; color: #ccc; }
+  .layer { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 10px; }
+  .layer-box { flex-shrink: 0; width: 70px; padding: 6px; border-radius: 4px; text-align: center; font-size: 10px; font-weight: bold; line-height: 1.4; }
+  .layer-desc { font-size: 12px; color: #aaa; line-height: 1.6; }
+  .bad { color: #f88; }
+  .good { color: #8f8; }
+</style>
+</head>
+<body>
+
+<h1>Background Analysis</h1>
+<p style="font-size:12px;color:#888;margin:0 0 16px">LF2 structure vs what we built — and how to fix it</p>
+
+<h2>Reference: LF2 Fan Stage</h2>
+<div class="card">
+  <div class="label green">✓ LF2 — continuous filled backdrop</div>
+  <img src="lf2_reference_stage.png" alt="LF2 reference stage">
+  <ul style="margin-top:10px">
+    <li>Blue stone wall fills <strong>every pixel</strong> of the backdrop — no empty space</li>
+    <li>Pillars, arch, torches are baked into the wall scene — not floating sprites</li>
+    <li>Clear ground plane (reflective blue floor) meets wall at a sharp horizon line</li>
+    <li>Torch flames are the only separate animated elements</li>
+  </ul>
+</div>
+
+<h2>Current: Our Night Market</h2>
+<div class="card">
+  <div class="label orange">⚠ Ours — isolated props with empty gaps</div>
+  <img src="our_market_current.png" alt="Our Night Market current">
+  <ul style="margin-top:10px">
+    <li class="bad">Individual props (lanterns, stalls) every 280px with large <strong>empty dark gaps</strong></li>
+    <li class="bad">Midground is just a gradient — nothing fills the wall area behind the props</li>
+    <li class="bad">Feels like props placed on an empty stage, not being <em>somewhere</em></li>
+    <li class="bad">No horizon strip between ground and backdrop</li>
+  </ul>
+</div>
+
+<h2>How LF2 Layers Work</h2>
+<div class="card">
+  <div class="layer">
+    <div class="layer-box" style="background:#1a3a6e;border:1px solid #4a7aae">SKY<br>LAYER</div>
+    <div class="layer-desc">
+      <strong>~60% of screen height</strong><br>
+      Wide painted bitmap that tiles horizontally. Sky gradient, clouds, distant scenery (mountains, city silhouette). Scrolls at 0.1–0.2× camera. <em>Covers every pixel — no gaps.</em>
+    </div>
+  </div>
+  <div class="layer">
+    <div class="layer-box" style="background:#3a2a1a;border:1px solid #7a6a3a">WALL<br>BACKDROP</div>
+    <div class="layer-desc">
+      <strong>~30–40% of screen height above ground</strong><br>
+      The main scene — castle wall, market shopfronts, tree line, cave ceiling. A <strong>tileable image</strong> (400–600px wide) that repeats across the full world width. Scrolls at 0.3–0.5×.
+    </div>
+  </div>
+  <div class="layer">
+    <div class="layer-box" style="background:#2a2a1a;border:1px solid #6a6a3a">HORIZON<br>STRIP</div>
+    <div class="layer-desc">
+      <strong>~20–30px tall band</strong><br>
+      Thin decorative strip where backdrop meets ground. Stone ledge, wooden planks, grass edge, wall base. Tiled. Creates the visual "seam" between floor and background scene.
+    </div>
+  </div>
+  <div class="layer">
+    <div class="layer-box" style="background:#1a2a1a;border:1px solid #3a6a3a">GROUND<br>PLANE</div>
+    <div class="layer-desc">
+      <strong>~40% of screen height</strong><br>
+      Flat solid-colour plane — dirt, flagstone, grass. Simple gradient. Perspective lines (diagonal). Characters walk on this. <em>Already fine in our game.</em>
+    </div>
+  </div>
+</div>
+
+<h2>Our Current Assembly Hall</h2>
+<div class="card">
+  <div class="label orange">Assembly — better than Market but same issue</div>
+  <img src="our_assembly_current.png" alt="Our Assembly Hall current">
+  <p style="font-size:12px;color:#888;margin-top:8px">The rug and floor look great. The pillars and banners have the right <em>idea</em> but are too sparse — the wall between them is just a plain colour gradient. In LF2 the wall behind pillars would be a continuous brick/stone texture.</p>
+</div>
+
+<h2>The Fix</h2>
+<div class="card">
+  <h3 style="color:#0f0;margin-top:0">Replace scattered props → tiled backdrop images</h3>
+  <ul>
+    <li class="good"><strong>Generate one tileable ~400px wide image per stage</strong> using PixelLab — e.g. "night market shopfront wall with lanterns, pixel art side view, seamlessly tileable"</li>
+    <li class="good">Use Phaser <code>TileSprite</code> to repeat this image across the full 4000px world width at the horizon band</li>
+    <li class="good">Add a thin 20px <strong>horizon strip tile</strong> (stone ledge / wooden plank edge) where backdrop meets ground</li>
+    <li class="good">Keep individual prop sprites only for <strong>rare feature pieces</strong> (e.g. the throne, the main bell post) — not repeated every 280px</li>
+    <li class="good">Sky and ground procedural drawing stays as-is — it already looks good</li>
+  </ul>
+</div>
+
+<h2>What to generate per stage</h2>
+<div class="card">
+  <table style="width:100%;border-collapse:collapse;font-size:11px">
+    <tr style="color:#0ff;border-bottom:1px solid #333">
+      <td style="padding:4px 8px">Stage</td>
+      <td style="padding:4px 8px">Wall backdrop tile (~400×200px)</td>
+      <td style="padding:4px 8px">Horizon strip (~400×24px)</td>
+    </tr>
+    <tr style="border-bottom:1px solid #222"><td style="padding:4px 8px;color:#888">Assembly</td><td style="padding:4px 8px">Stone wall with torch sconces + heraldic banner panels</td><td style="padding:4px 8px">Stone ledge / carpet edge</td></tr>
+    <tr style="border-bottom:1px solid #222"><td style="padding:4px 8px;color:#888">Night Market</td><td style="padding:4px 8px">Dense market shopfronts with hanging lanterns, signs, goods</td><td style="padding:4px 8px">Cobblestone kerb</td></tr>
+    <tr style="border-bottom:1px solid #222"><td style="padding:4px 8px;color:#888">Rot-Kitchen</td><td style="padding:4px 8px">Dark brick wall with ovens, hooks, pipes</td><td style="padding:4px 8px">Flagstone base</td></tr>
+    <tr style="border-bottom:1px solid #222"><td style="padding:4px 8px;color:#888">Mage Tower</td><td style="padding:4px 8px">Arcane stone wall with rune panels, crystal sconces</td><td style="padding:4px 8px">Glass floor edge with rune glow</td></tr>
+    <tr style="border-bottom:1px solid #222"><td style="padding:4px 8px;color:#888">Grove</td><td style="padding:4px 8px">Dense moonlit forest treeline with glowing undergrowth</td><td style="padding:4px 8px">Grass + root edge</td></tr>
+    <tr style="border-bottom:1px solid #222"><td style="padding:4px 8px;color:#888">Catacombs</td><td style="padding:4px 8px">Cave stone wall with stalactites, dripping water, skull niches</td><td style="padding:4px 8px">Wet stone lip</td></tr>
+    <tr style="border-bottom:1px solid #222"><td style="padding:4px 8px;color:#888">Red Throne</td><td style="padding:4px 8px">Crimson stone wall with arched windows, iron torch brackets</td><td style="padding:4px 8px">Dark stone slab edge</td></tr>
+    <tr style="border-bottom:1px solid #222"><td style="padding:4px 8px;color:#888">Docks</td><td style="padding:4px 8px">Foggy harbour — weathered timber warehouse wall, dock ropes</td><td style="padding:4px 8px">Dock plank edge</td></tr>
+    <tr><td style="padding:4px 8px;color:#888">Rooftops</td><td style="padding:4px 8px">Distant rooftop silhouettes + pale dawn sky band</td><td style="padding:4px 8px">Slate tile edge</td></tr>
+  </table>
+</div>
+
+</body>
+</html>
