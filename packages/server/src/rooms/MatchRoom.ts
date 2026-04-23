@@ -128,6 +128,7 @@ export class MatchRoom extends Room<MatchState> {
       this.pendingRematchOffer = null;
       this.state.matchWinnerSessionId = '';
       this.state.stageId = '';
+      this.state.hoveredStageIdx = 0;
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (this.state as any).sim = undefined;
       this.plainSim = null;

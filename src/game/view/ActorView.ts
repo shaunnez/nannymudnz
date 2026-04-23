@@ -294,6 +294,76 @@ export class ActorView {
     this.attackFx.setVisible(true);
   }
 
+  private drawAdventurerRallyingCry(bodyHeight: number, visualTime: number): void {
+    this.auraFx.clear();
+    const pulse = 0.6 + Math.sin(visualTime * 4) * 0.25;
+    this.auraFx.lineStyle(3, 0xf59e0b, 0.72 + pulse * 0.18);
+    this.auraFx.strokeEllipse(0, -bodyHeight * 0.52, this.width * 1.38, bodyHeight * 0.98);
+    this.auraFx.lineStyle(1.5, 0xfde68a, 0.5);
+    this.auraFx.strokeEllipse(0, -bodyHeight * 0.52, this.width * 1.15, bodyHeight * 0.78);
+    for (let i = 0; i < 3; i++) {
+      const angle = visualTime * 3 + i * ((Math.PI * 2) / 3);
+      this.auraFx.fillStyle(0xfbbf24, 0.88);
+      this.auraFx.fillCircle(
+        Math.cos(angle) * this.width * 0.72,
+        -bodyHeight * 0.52 + Math.sin(angle) * bodyHeight * 0.5,
+        2.5,
+      );
+    }
+    this.auraFx.setVisible(true);
+  }
+
+  private drawAdventurerAdrenalineRush(bodyHeight: number, visualTime: number): void {
+    this.auraFx.clear();
+    const pulse = 0.55 + Math.sin(visualTime * 8) * 0.3;
+    this.auraFx.fillStyle(0xf97316, 0.1 + pulse * 0.08);
+    this.auraFx.fillEllipse(0, -bodyHeight * 0.52, this.width * 1.45, bodyHeight * 1.02);
+    this.auraFx.lineStyle(4, 0xf97316, 0.82 + pulse * 0.14);
+    this.auraFx.strokeEllipse(0, -bodyHeight * 0.52, this.width * 1.32, bodyHeight * 0.92);
+    this.auraFx.lineStyle(2, 0xfde68a, 0.65);
+    this.auraFx.strokeEllipse(0, -bodyHeight * 0.52, this.width * 1.1, bodyHeight * 0.72);
+    for (let i = 0; i < 4; i++) {
+      const angle = visualTime * 5 + i * ((Math.PI * 2) / 4);
+      this.auraFx.fillStyle(0xfb923c, 0.82);
+      this.auraFx.fillCircle(
+        Math.cos(angle) * this.width * 0.68,
+        -bodyHeight * 0.52 + Math.sin(angle) * bodyHeight * 0.46,
+        2,
+      );
+    }
+    this.auraFx.setVisible(true);
+  }
+
+  private drawAdventurerBandage(bodyHeight: number, visualTime: number): void {
+    this.auraFx.clear();
+    const pulse = 0.5 + Math.sin(visualTime * 6) * 0.3;
+    this.auraFx.lineStyle(3, 0x22c55e, 0.7 + pulse * 0.22);
+    this.auraFx.strokeEllipse(0, -bodyHeight * 0.52, this.width * 1.28, bodyHeight * 0.92);
+    for (let i = 0; i < 4; i++) {
+      const t = (visualTime * 1.5 + i * 0.35) % 1;
+      const x = (i % 2 === 0 ? 1 : -1) * this.width * 0.22;
+      const y = -bodyHeight * 0.1 - t * bodyHeight * 0.82;
+      this.auraFx.fillStyle(0x4ade80, (1 - t) * 0.88);
+      this.auraFx.fillCircle(x, y, 2.5);
+    }
+    this.auraFx.setVisible(true);
+  }
+
+  private drawAdventurerSlash(bodyHeight: number): void {
+    this.attackFx.clear();
+    this.attackFx.lineStyle(5.5, 0xc9a961, 0.92);
+    this.attackFx.beginPath();
+    this.attackFx.arc(8, -bodyHeight * 0.52, 33, -1.1, 0.9, false);
+    this.attackFx.strokePath();
+    this.attackFx.lineStyle(2.5, 0xfde68a, 0.82);
+    this.attackFx.beginPath();
+    this.attackFx.arc(8, -bodyHeight * 0.52, 22, -0.9, 0.72, false);
+    this.attackFx.strokePath();
+    this.attackFx.fillStyle(0xfff7ed, 0.92);
+    this.attackFx.fillCircle(32, -bodyHeight * 0.56, 3);
+    this.attackFx.setVisible(true);
+  }
+
   syncFrom(actor: Actor): void {
     const groundScreenY = worldYToScreenY(actor.y, this.band.min, this.band.max);
     const screenY = groundScreenY - actor.z * 0.6;
@@ -445,6 +515,21 @@ export class ActorView {
       this.drawVikingAxeSwing(bodyHeight);
     }
 
+    const isAdventurer = actor.guildId === 'adventurer';
+    const isRallyingCry = isAdventurer && actor.statusEffects.some(
+      e => e.type === 'speed_boost' && Math.abs(e.magnitude - 0.15) < 0.01,
+    );
+    const isAdrenalineRush = isAdventurer && actor.statusEffects.some(
+      e => e.type === 'attack_speed_boost' && e.magnitude === 0.4,
+    );
+    const isAdventurerChanneling = isAdventurer && actor.state === 'channeling';
+    const isAdventurerSlash = isAdventurer && actor.state === 'attacking' && actor.animationId === 'ability_2';
+
+    if (isRallyingCry) this.drawAdventurerRallyingCry(bodyHeight, visualTime);
+    if (isAdrenalineRush) this.drawAdventurerAdrenalineRush(bodyHeight, visualTime);
+    if (isAdventurerChanneling) this.drawAdventurerBandage(bodyHeight, visualTime);
+    if (isAdventurerSlash) this.drawAdventurerSlash(bodyHeight);
+
     // Status alpha overlays.
     let alpha = 1;
     if (actor.statusEffects.some(e => e.type === 'stun')) alpha = Math.min(alpha, 0.7);
@@ -461,7 +546,10 @@ export class ActorView {
     // reaction even when the sprite has no dedicated hurt animation
     // (critical for wolf/wolf_pet on the quadruped template).
     const isHit = actor.invulnerableMs > 0 && actor.state !== 'getup';
-    const buffTint = isUndyingRage ? 0x7f1d1d : isBloodlust ? 0xb91c1c : null;
+    const buffTint = isUndyingRage ? 0x7f1d1d
+      : isBloodlust ? 0xb91c1c
+      : isAdrenalineRush ? 0xc2410c
+      : null;
     if (this.sprite) {
       if (isHit) {
         this.sprite.setTintFill(0xffffff);

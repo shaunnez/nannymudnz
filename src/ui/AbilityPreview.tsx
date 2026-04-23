@@ -16,7 +16,12 @@ type PreviewEffect =
   | 'viking_bloodlust'
   | 'viking_axe_swing'
   | 'viking_undying_rage'
-  | 'viking_shield_bash';
+  | 'viking_shield_bash'
+  | 'adventurer_rallying_cry'
+  | 'adventurer_slash'
+  | 'adventurer_bandage'
+  | 'adventurer_adrenaline_rush'
+  | 'adventurer_second_wind';
 
 interface AbilityPreviewSpec {
   effect?: PreviewEffect;
@@ -35,6 +40,15 @@ function getAbilityPreviewSpec(guildId: GuildId, abilityId: string): AbilityPrev
         case 'undying_rage': return { effect: 'viking_undying_rage' };
         case 'shield_bash': return { effect: 'viking_shield_bash' };
         default: return {};
+      }
+    case 'adventurer':
+      switch (abilityId) {
+        case 'rallying_cry':    return { effect: 'adventurer_rallying_cry' };
+        case 'slash':           return { effect: 'adventurer_slash' };
+        case 'bandage':         return { effect: 'adventurer_bandage' };
+        case 'adrenaline_rush': return { effect: 'adventurer_adrenaline_rush' };
+        case 'second_wind':     return { effect: 'adventurer_second_wind' };
+        default:                return {};
       }
     default:
       return {};
@@ -91,6 +105,16 @@ function getSpriteTransform(
       x = -1 + Math.sin(progress * TAU) * 1.5;
       y += 6;
       break;
+    case 'adventurer_rallying_cry':
+      scale *= 1.0 + Math.sin(progress * TAU) * 0.02; y += 4; break;
+    case 'adventurer_slash':
+      x = 2 + Math.sin(progress * TAU) * 2; y += 4; break;
+    case 'adventurer_bandage':
+      scale *= 1.0 + Math.sin(progress * TAU * 2) * 0.015; y += 4; break;
+    case 'adventurer_adrenaline_rush':
+      scale *= 1.06 + Math.sin(progress * TAU) * 0.03; y += 2; break;
+    case 'adventurer_second_wind':
+      y += 4; break;
     default:
       break;
   }
@@ -218,6 +242,64 @@ function PreviewOverlay({
       );
       break;
     }
+    case 'adventurer_rallying_cry':
+      content = (
+        <>
+          <ellipse cx="60" cy="60" rx="32" ry="36" fill="none" stroke="#f59e0b" strokeWidth={4} opacity={0.72 + pulse * 0.2} />
+          <ellipse cx="60" cy="60" rx="24" ry="28" fill="none" stroke="#fde68a" strokeWidth={2} opacity={0.58} />
+          {[0,1,2].map(i => (
+            <circle key={i} cx={60+Math.cos(orbit+i*TAU/3)*36} cy={60+Math.sin(orbit+i*TAU/3)*18} r="3" fill="#fbbf24" opacity={0.9} />
+          ))}
+        </>
+      );
+      break;
+    case 'adventurer_slash':
+      content = (
+        <>
+          <path d={`M44 ${74-sweep*4} A26 26 0 0 1 90 44`} fill="none" stroke="#c9a961" strokeWidth={8} strokeLinecap="round" opacity="0.95" />
+          <path d={`M50 ${68-sweep*3} A18 18 0 0 1 84 50`} fill="none" stroke="#fde68a" strokeWidth={4} strokeLinecap="round" opacity="0.9" />
+          <circle cx={88} cy={44} r="3.5" fill="#fff7ed" opacity="0.92" />
+        </>
+      );
+      break;
+    case 'adventurer_bandage':
+      content = (
+        <>
+          <ellipse cx="60" cy="60" rx="28" ry="32" fill="#14532d" opacity={0.15+pulse*0.1} />
+          <ellipse cx="60" cy="60" rx="32" ry="36" fill="none" stroke="#22c55e" strokeWidth={3} opacity={0.62+pulse*0.28} />
+          <line x1="60" y1="44" x2="60" y2="76" stroke="#86efac" strokeWidth={3} opacity={0.78} />
+          <line x1="44" y1="60" x2="76" y2="60" stroke="#86efac" strokeWidth={3} opacity={0.78} />
+          {[0,1,2,3].map(i => {
+            const t=(progress*1.5+i*0.3)%1;
+            return <circle key={i} cx={52+(i%2)*16} cy={72-t*32} r="2" fill="#4ade80" opacity={1-t} />;
+          })}
+        </>
+      );
+      break;
+    case 'adventurer_adrenaline_rush':
+      content = (
+        <>
+          <ellipse cx="60" cy="60" rx="30" ry="34" fill="#7c2d12" opacity={0.18+pulse*0.1} />
+          <ellipse cx="60" cy="60" rx="38" ry="42" fill="none" stroke="#f97316" strokeWidth={5} opacity={0.84+pulse*0.13} />
+          <ellipse cx="60" cy="60" rx="26" ry="30" fill="none" stroke="#fde68a" strokeWidth={2.5} opacity={0.68} />
+          {[0,1,2,3].map(i => (
+            <circle key={i} cx={60+Math.cos(orbit*1.4+i*TAU/4)*32} cy={60+Math.sin(orbit*1.4+i*TAU/4)*16} r="2.5" fill="#fb923c" opacity={0.82} />
+          ))}
+        </>
+      );
+      break;
+    case 'adventurer_second_wind':
+      content = (
+        <>
+          <ellipse cx="60" cy="60" rx="22" ry="26" fill="#78350f" opacity={0.16+pulse*0.12} />
+          <ellipse cx="60" cy="60" rx="28" ry="32" fill="none" stroke="#f59e0b" strokeWidth={4} opacity={0.7+pulse*0.25} />
+          {[0,1,2,3,4,5].map(i => {
+            const angle=i*TAU/6; const r=22+pulse*8;
+            return <circle key={i} cx={60+Math.cos(angle)*r} cy={60+Math.sin(angle)*r*0.58} r="2" fill="#fde68a" opacity={0.7+pulse*0.25} />;
+          })}
+        </>
+      );
+      break;
     default:
       break;
   }
@@ -258,7 +340,9 @@ export function AbilityPreview({
       ? 'drop-shadow(0 0 16px rgba(220, 38, 38, 0.55)) sepia(1) saturate(6) hue-rotate(-38deg) brightness(0.88)'
       : preview.effect === 'viking_undying_rage'
         ? 'drop-shadow(0 0 18px rgba(127, 29, 29, 0.6)) sepia(1) saturate(4) hue-rotate(-32deg) brightness(0.86)'
-        : 'none';
+        : preview.effect === 'adventurer_adrenaline_rush'
+          ? 'drop-shadow(0 0 14px rgba(249,115,22,0.5)) sepia(0.4) saturate(2) hue-rotate(8deg) brightness(1.05)'
+          : 'none';
 
   return (
     <div

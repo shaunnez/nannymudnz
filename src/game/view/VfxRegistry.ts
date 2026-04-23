@@ -20,6 +20,7 @@ const VFX_GUILDS: GuildId[] = [
   'knight',
   'leper',
   'viking',
+  'adventurer',
 ];
 
 const loadedMetadata = new Map<GuildId, GuildVfxMetadata>();

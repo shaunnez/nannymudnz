@@ -297,6 +297,11 @@ function getAbilityAssetKey(abilityId: string, eventType: VFXEvent['type']): str
       return undefined;
     case 'miasma':
       return eventType === 'aura_pulse' ? 'miasma_aura' : undefined;
+    case 'rallying_cry':    return eventType === 'aura_pulse' ? 'rallying_cry_aura'    : undefined;
+    case 'slash':           return eventType === 'hit_spark'  ? 'slash_impact'         : undefined;
+    case 'bandage':         return eventType === 'heal_glow'  ? 'bandage_glow'         : undefined;
+    case 'adrenaline_rush': return eventType === 'aura_pulse' ? 'adrenaline_rush_aura' : undefined;
+    case 'second_wind':     return eventType === 'aura_pulse' ? 'second_wind_glow'     : undefined;
     default:
       return undefined;
   }
