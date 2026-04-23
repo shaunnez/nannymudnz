@@ -42,6 +42,7 @@ function createRoom(opts: { name?: string } = {}) {
   stubTimers(room);
   // Stub disconnect so we can spy on it without crashing
   (room as unknown as { disconnect: () => void }).disconnect = vi.fn();
+  room['setMetadata'] = vi.fn().mockResolvedValue(undefined);
   room.onCreate(opts);
   return room;
 }
