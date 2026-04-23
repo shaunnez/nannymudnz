@@ -8,6 +8,8 @@ export interface StageMeta {
   hue: number;
   blurb: string;
   enabled: boolean;
+  /** Path under /public to a 16:9 preview image, or null if no art yet. */
+  preview: string | null;
 }
 
 export const STAGES: StageMeta[] = [
@@ -17,6 +19,7 @@ export const STAGES: StageMeta[] = [
     hue: 210,
     blurb: 'Flagstones under torchlight. The Knights swore here — mind the pillars.',
     enabled: true,
+    preview: '/world/assembly/preview.png',
   },
   {
     id: 'market',
@@ -24,6 +27,7 @@ export const STAGES: StageMeta[] = [
     hue: 40,
     blurb: 'Paper lanterns and slick cobbles. The stalls are open. The knives, also.',
     enabled: false,
+    preview: null,
   },
   {
     id: 'kitchen',
@@ -31,6 +35,7 @@ export const STAGES: StageMeta[] = [
     hue: 95,
     blurb: 'The Lepers took the stoves. The stew is old and moves on its own.',
     enabled: false,
+    preview: null,
   },
   {
     id: 'tower',
@@ -38,6 +43,7 @@ export const STAGES: StageMeta[] = [
     hue: 260,
     blurb: 'Levitating glass floors. Do not step where the runes are singing.',
     enabled: false,
+    preview: null,
   },
   {
     id: 'grove',
@@ -45,6 +51,7 @@ export const STAGES: StageMeta[] = [
     hue: 140,
     blurb: 'The old trees listen. Tread polite. The Druids are watching.',
     enabled: false,
+    preview: null,
   },
   {
     id: 'catacombs',
@@ -52,6 +59,7 @@ export const STAGES: StageMeta[] = [
     hue: 300,
     blurb: 'Stalactites, saltwater, and names written in a dead vowel.',
     enabled: false,
+    preview: null,
   },
   {
     id: 'throne',
@@ -59,6 +67,7 @@ export const STAGES: StageMeta[] = [
     hue: 15,
     blurb: 'The throne counts. Every retreat is a step into the pit.',
     enabled: false,
+    preview: null,
   },
   {
     id: 'docks',
@@ -66,6 +75,7 @@ export const STAGES: StageMeta[] = [
     hue: 330,
     blurb: 'Fog off the pier. Nothing docks here that returns.',
     enabled: false,
+    preview: null,
   },
   {
     id: 'rooftops',
@@ -73,6 +83,7 @@ export const STAGES: StageMeta[] = [
     hue: 185,
     blurb: 'Slate tiles, thin air, one misstep to the courtyard below.',
     enabled: false,
+    preview: null,
   },
 ];
 

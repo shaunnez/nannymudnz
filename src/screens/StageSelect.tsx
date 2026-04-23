@@ -93,7 +93,7 @@ export function StageSelect({ initialStage, onBack, onReady }: Props) {
                 style={{
                   position: 'relative',
                   border: `1px solid ${active ? acc : theme.lineSoft}`,
-                  background: `linear-gradient(145deg, ${acc}22, ${theme.panel} 70%)`,
+                  background: theme.panel,
                   outline: active ? `1px solid ${acc}` : 'none',
                   outlineOffset: 2,
                   cursor: locked ? 'not-allowed' : 'pointer',
@@ -101,19 +101,93 @@ export function StageSelect({ initialStage, onBack, onReady }: Props) {
                   display: 'flex',
                   flexDirection: 'column',
                   justifyContent: 'flex-end',
-                  padding: 16,
-                  opacity: locked ? 0.55 : 1,
                   transition: 'border-color 120ms ease',
                 }}
               >
+                {s.preview ? (
+                  <img
+                    src={s.preview}
+                    alt={s.name}
+                    style={{
+                      position: 'absolute',
+                      inset: 0,
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'cover',
+                      imageRendering: 'pixelated',
+                      filter: active ? 'none' : 'saturate(0.85) brightness(0.88)',
+                      transition: 'filter 120ms ease',
+                    }}
+                  />
+                ) : (
+                  <>
+                    <div
+                      style={{
+                        position: 'absolute',
+                        inset: 0,
+                        background: `linear-gradient(145deg, ${acc}22, ${theme.panel} 70%)`,
+                      }}
+                    />
+                    <div
+                      style={{
+                        position: 'absolute',
+                        inset: 0,
+                        background: `repeating-linear-gradient(135deg, transparent 0 14px, ${acc}18 14px 15px)`,
+                      }}
+                    />
+                    <div
+                      style={{
+                        position: 'absolute',
+                        inset: 0,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexDirection: 'column',
+                        gap: 8,
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: 44,
+                          height: 44,
+                          border: `1px solid ${acc}`,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontFamily: theme.fontMono,
+                          fontSize: 20,
+                          color: acc,
+                        }}
+                      >
+                        ◇
+                      </div>
+                      <div
+                        style={{
+                          fontFamily: theme.fontMono,
+                          fontSize: 10,
+                          color: theme.warn,
+                          letterSpacing: 3,
+                        }}
+                      >
+                        COMING SOON
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {/* Bottom gradient scrim for label legibility */}
                 <div
                   style={{
                     position: 'absolute',
-                    inset: 0,
-                    background: `repeating-linear-gradient(135deg, transparent 0 14px, ${acc}15 14px 15px)`,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    height: '55%',
+                    background: 'linear-gradient(to top, rgba(5,7,10,0.92) 0%, rgba(5,7,10,0.55) 55%, rgba(5,7,10,0) 100%)',
                     pointerEvents: 'none',
                   }}
                 />
+
                 <div
                   style={{
                     position: 'absolute',
@@ -121,8 +195,11 @@ export function StageSelect({ initialStage, onBack, onReady }: Props) {
                     left: 12,
                     fontFamily: theme.fontMono,
                     fontSize: 10,
-                    color: theme.inkMuted,
+                    color: theme.ink,
                     letterSpacing: 2,
+                    background: 'rgba(5,7,10,0.6)',
+                    padding: '2px 6px',
+                    border: `1px solid ${active ? acc : 'transparent'}`,
                   }}
                 >
                   {String(i + 1).padStart(2, '0')}
@@ -136,11 +213,14 @@ export function StageSelect({ initialStage, onBack, onReady }: Props) {
                     fontSize: 10,
                     color: acc,
                     letterSpacing: 2,
+                    background: 'rgba(5,7,10,0.6)',
+                    padding: '2px 6px',
                   }}
                 >
                   HUE {s.hue}°
                 </div>
-                <div style={{ position: 'relative' }}>
+
+                <div style={{ position: 'relative', padding: 16 }}>
                   <div
                     style={{
                       fontFamily: theme.fontDisplay,
@@ -148,6 +228,7 @@ export function StageSelect({ initialStage, onBack, onReady }: Props) {
                       color: theme.ink,
                       letterSpacing: '-0.01em',
                       lineHeight: 1.05,
+                      textShadow: '0 1px 2px rgba(0,0,0,0.6)',
                     }}
                   >
                     {s.name}
@@ -157,7 +238,7 @@ export function StageSelect({ initialStage, onBack, onReady }: Props) {
                       marginTop: 4,
                       fontFamily: theme.fontMono,
                       fontSize: 10,
-                      color: locked ? theme.warn : theme.inkMuted,
+                      color: locked ? theme.warn : active ? acc : theme.inkDim,
                       letterSpacing: 2,
                     }}
                   >
@@ -186,11 +267,14 @@ export function StageSelect({ initialStage, onBack, onReady }: Props) {
             <div
               style={{
                 fontFamily: theme.fontDisplay,
-                fontSize: 42,
+                fontSize: 30,
                 color: theme.ink,
                 letterSpacing: '-0.02em',
-                lineHeight: 1,
+                lineHeight: 1.05,
                 marginTop: 6,
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
               }}
             >
               {cur.name}
@@ -206,13 +290,28 @@ export function StageSelect({ initialStage, onBack, onReady }: Props) {
               overflow: 'hidden',
             }}
           >
-            <div
-              style={{
-                position: 'absolute',
-                inset: 0,
-                background: `repeating-linear-gradient(135deg, transparent 0 18px, ${accent}12 18px 19px)`,
-              }}
-            />
+            {cur.preview ? (
+              <img
+                src={cur.preview}
+                alt={cur.name}
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover',
+                  imageRendering: 'pixelated',
+                }}
+              />
+            ) : (
+              <div
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  background: `repeating-linear-gradient(135deg, transparent 0 18px, ${accent}12 18px 19px)`,
+                }}
+              />
+            )}
             <div
               style={{
                 position: 'absolute',
@@ -222,9 +321,11 @@ export function StageSelect({ initialStage, onBack, onReady }: Props) {
                 fontSize: 10,
                 color: theme.inkMuted,
                 letterSpacing: 2,
+                background: cur.preview ? 'rgba(0,0,0,0.55)' : 'transparent',
+                padding: cur.preview ? '2px 6px' : 0,
               }}
             >
-              [ stage preview ]
+              {cur.preview ? cur.name.toUpperCase() : '[ stage preview ]'}
             </div>
           </div>
 
@@ -235,12 +336,25 @@ export function StageSelect({ initialStage, onBack, onReady }: Props) {
               color: theme.inkDim,
               lineHeight: 1.55,
               fontStyle: 'italic',
+              minHeight: `calc(13px * 1.55 * 3)`,
+              display: '-webkit-box',
+              WebkitLineClamp: 3,
+              WebkitBoxOrient: 'vertical',
+              overflow: 'hidden',
             }}
           >
             {cur.blurb}
           </div>
 
-          <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: 6 }}>
+          <div
+            style={{
+              flex: 1,
+              minHeight: 0,
+              display: 'flex',
+              flexDirection: 'column',
+              borderTop: `1px solid ${theme.lineSoft}`,
+            }}
+          >
             {STAGES.map((s, i) => {
               const act = i === cursor;
               const acc = `oklch(0.70 0.16 ${s.hue})`;
@@ -250,30 +364,50 @@ export function StageSelect({ initialStage, onBack, onReady }: Props) {
                   onClick={() => { if (s.enabled) onReady(s.id); else setCursor(i); }}
                   onMouseEnter={() => setCursor(i)}
                   style={{
+                    flex: 1,
+                    minHeight: 0,
                     display: 'grid',
-                    gridTemplateColumns: '24px 10px 1fr auto',
-                    gap: 10,
+                    gridTemplateColumns: '32px 12px 1fr auto',
+                    gap: 14,
                     alignItems: 'center',
-                    padding: '6px 4px',
+                    padding: '0 6px',
                     borderBottom: `1px solid ${theme.lineSoft}`,
+                    borderLeft: `2px solid ${act ? acc : 'transparent'}`,
+                    background: act ? `${acc}10` : 'transparent',
                     cursor: s.enabled ? 'pointer' : 'default',
+                    transition: 'background 120ms ease, border-color 120ms ease',
                   }}
                 >
-                  <span style={{ fontFamily: theme.fontMono, fontSize: 10, color: act ? accent : theme.inkMuted }}>
+                  <span
+                    style={{
+                      fontFamily: theme.fontMono,
+                      fontSize: 12,
+                      color: act ? accent : theme.inkMuted,
+                      letterSpacing: 1,
+                    }}
+                  >
                     {String(i + 1).padStart(2, '0')}
                   </span>
-                  <span style={{ width: 8, height: 8, background: acc, opacity: act ? 1 : s.enabled ? 0.55 : 0.25 }} />
+                  <span style={{ width: 10, height: 10, background: acc, opacity: act ? 1 : s.enabled ? 0.6 : 0.25 }} />
                   <span
                     style={{
                       fontFamily: theme.fontDisplay,
-                      fontSize: 13,
+                      fontSize: 18,
+                      letterSpacing: '-0.01em',
                       color: act ? accent : s.enabled ? theme.ink : theme.inkMuted,
                     }}
                   >
                     {s.name}
                   </span>
-                  <span style={{ fontFamily: theme.fontMono, fontSize: 9, color: theme.inkMuted, letterSpacing: 2 }}>
-                    {s.enabled ? (act ? '◆' : '') : 'SOON'}
+                  <span
+                    style={{
+                      fontFamily: theme.fontMono,
+                      fontSize: 10,
+                      color: s.enabled ? (act ? accent : theme.inkMuted) : theme.warn,
+                      letterSpacing: 2,
+                    }}
+                  >
+                    {s.enabled ? (act ? '◆ SELECTED' : 'READY') : 'SOON'}
                   </span>
                 </div>
               );

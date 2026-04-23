@@ -1,12 +1,12 @@
 import Phaser from 'phaser';
-import type { Actor, AnimationId, GuildId } from '@nannymud/shared/simulation/types';
+import type { Actor, ActorKind, AnimationId } from '@nannymud/shared/simulation/types';
 import { GUILDS } from '@nannymud/shared/simulation/guildData';
 import { ENEMY_DEFS } from '@nannymud/shared/simulation/enemyData';
 import { worldYToScreenY, getScreenYBand, type ScreenYBand } from '../constants';
 import {
   animationKey,
-  getGuildMetadata,
-  guildHasSprites,
+  getActorMetadata,
+  hasSprites,
   resolveAnimation,
   textureKey,
 } from './AnimationRegistry';
@@ -81,7 +81,7 @@ export class ActorView {
   private readonly outlineColor: number;
   private readonly initialChar: string;
   private readonly initialColor: string;
-  private readonly guildId?: GuildId;
+  private readonly spriteId?: ActorKind;
   private readonly hasSprites: boolean;
   private readonly band: ScreenYBand;
 
@@ -90,8 +90,8 @@ export class ActorView {
     this.actorId = actor.id;
     this.width = actor.width;
     this.height = actor.height;
-    this.guildId = actor.guildId ?? undefined;
-    this.hasSprites = !!this.guildId && guildHasSprites(this.guildId);
+    this.spriteId = (actor.guildId ?? actor.kind) as ActorKind | undefined;
+    this.hasSprites = !!this.spriteId && hasSprites(this.spriteId);
 
     const { color, initial } = colorAndInitial(actor);
     this.fillColor = hexToInt(color);
@@ -118,10 +118,10 @@ export class ActorView {
       this.initial,
     ];
 
-    if (this.hasSprites && this.guildId) {
-      const idleTex = textureKey(this.guildId, 'idle');
+    if (this.hasSprites && this.spriteId) {
+      const idleTex = textureKey(this.spriteId, 'idle');
       if (scene.textures.exists(idleTex)) {
-        const meta = getGuildMetadata(this.guildId);
+        const meta = getActorMetadata(this.spriteId);
         const idleMeta = meta?.animations.idle;
         this.sprite = scene.add.sprite(0, 0, idleTex, 0).setScale(DISPLAY_SCALE);
         if (meta && idleMeta) {
@@ -155,10 +155,10 @@ export class ActorView {
   }
 
   private playAnim(animId: AnimationId): void {
-    if (!this.sprite || !this.guildId) return;
-    const resolved = resolveAnimation(this.guildId, animId);
+    if (!this.sprite || !this.spriteId) return;
+    const resolved = resolveAnimation(this.spriteId, animId);
     if (!resolved) return;
-    const key = animationKey(this.guildId, resolved);
+    const key = animationKey(this.spriteId, resolved);
     if (this.currentAnim === key) return;
     this.currentAnim = key;
     this.sprite.play(key, true);

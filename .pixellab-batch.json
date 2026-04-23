@@ -48,5 +48,42 @@
     "taking-punch",
     "falling-back-death",
     "fireball"
-  ]
+  ],
+  "npc_chars": {
+    "plains_bandit": "7bbcd87e-810c-4b82-81c8-f987f7695658",
+    "wolf": "8854266e-5052-45ae-8b7a-bd00edba5e2e",
+    "bandit_archer": "a1b76b16-c85c-4f93-9ef5-19c89811cfec",
+    "bandit_brute": "e5c0e377-43ad-4c15-814a-ef7562c70e7c",
+    "bandit_king": "56de046c-267b-4236-88d9-1957b359fb80",
+    "drowned_spawn": "790fd275-7402-4f18-8f4b-d444d4124bfc",
+    "rotting_husk": "9f45a0ec-a54c-46b7-9a9a-c49a8a21867b",
+    "wolf_pet": "a7b3cae0-cc07-4fee-b007-a79b60b02657"
+  },
+  "npc_reduced_anims_humanoid": [
+    "breathing-idle",
+    "walking-6-frames",
+    "running-6-frames",
+    "lead-jab",
+    "taking-punch",
+    "falling-back-death"
+  ],
+  "npc_reduced_anims_quadruped": [
+    "idle",
+    "walk-6-frames",
+    "running-6-frames",
+    "bark",
+    "sneaking"
+  ],
+  "npc_composited": [
+    "plains_bandit",
+    "wolf",
+    "bandit_archer",
+    "bandit_king",
+    "drowned_spawn",
+    "rotting_husk",
+    "wolf_pet",
+    "bandit_brute"
+  ],
+  "npc_pending": [],
+  "note": "Composite script only consumes the east direction per animation. NPC batches should use directions=['east'] to save 8x cost."
 }

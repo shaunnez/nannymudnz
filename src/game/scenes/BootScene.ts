@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { VIRTUAL_WIDTH, VIRTUAL_HEIGHT } from '../constants';
-import { queueGuildSprites, registerGuildAnimations } from '../view/AnimationRegistry';
+import { MANIFEST } from '../assets/manifest';
+import { queueActorSprites, registerActorAnimations } from '../view/AnimationRegistry';
 
 export class BootScene extends Phaser.Scene {
   constructor() {
@@ -8,7 +9,14 @@ export class BootScene extends Phaser.Scene {
   }
 
   preload(): void {
-    queueGuildSprites(this);
+    queueActorSprites(this);
+    for (const images of Object.values(MANIFEST.stageImages)) {
+      for (const image of images) {
+        if (!this.textures.exists(image.key)) {
+          this.load.image(image.key, image.url);
+        }
+      }
+    }
 
     const barBgWidth = Math.floor(VIRTUAL_WIDTH * 0.5);
     const barBgHeight = 16;
@@ -40,7 +48,7 @@ export class BootScene extends Phaser.Scene {
   }
 
   create(): void {
-    registerGuildAnimations(this);
+    registerActorAnimations(this);
     // Tell any React overlay that preload + animation registration is done.
     // Sticky flag on the registry lets late-mounting listeners (HMR, slow
     // React commit) resolve without hanging on a missed event.

@@ -22,8 +22,11 @@ from PIL import Image
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
-# PixelLab folder-name (prefix before the hash) -> our AnimationId
+# PixelLab folder-name (prefix before the hash) -> our AnimationId.
+# Covers both the legacy humanoid names used by the original guild batches
+# and the newer template IDs used by NPC batches + the quadruped (dog) set.
 FOLDER_PREFIX_MAP = {
+    # Legacy humanoid names (original guild exports)
     "jab_attack": "attack_1",
     "cross_punch_attack": "attack_2",
     "uppercut": "attack_3",
@@ -33,6 +36,28 @@ FOLDER_PREFIX_MAP = {
     "casting_a_fireball": "ability_1",
     "high_kick": "ability_2",
     "crouching": "ability_5",
+    # Newer humanoid template IDs (NPC batches)
+    "breathing_idle": "idle",
+    "walking_6_frames": "walk",
+    "running_6_frames": "run",
+    "lead_jab": "attack_1",
+    "cross_punch": "attack_2",
+    "surprise_uppercut": "attack_3",
+    "taking_punch": "hurt",
+    "falling_back_death": "death",
+    "jumping_1": "jump",
+    "fight_stance_idle_8_frames": "block",
+    "throw_object": "ability_4",
+    "pushing": "ability_3",
+    "fireball": "ability_1",
+    # Quadruped (dog) templates — wolf/wolf_pet
+    "idle": "idle",
+    "walk_6_frames": "walk",
+    "bark": "attack_1",
+    "barking": "attack_1",
+    "sneaking": "death",
+    "fast_walk": "walk",
+    "walking": "walk",
 }
 
 # For "animating-XXX" folders (generic slug), disambiguate by frame count.
@@ -119,6 +144,35 @@ GUILD_OVERRIDES: dict[str, dict[str, str]] = {
         "animating-21c438d2": "ability_3",
         "animating-e84a5630": "ability_4",
     },
+    # NPC pilots
+    "plains_bandit": {
+        "animating-f5b91e9a": "walk",
+    },
+    "wolf": {
+        "animation-ca1af2c4": "idle",
+    },
+    # NPC batch
+    "bandit_archer": {
+        "animating-17d8f1b4": "walk",
+        "casting_a_fireball-4a256321": "attack_1",
+    },
+    "bandit_king": {
+        "animating-0122c7cd": "walk",
+        "cross_punch_attack-28e0228b": "attack_1",
+    },
+    "drowned_spawn": {
+        "animating-30730639": "walk",
+    },
+    "rotting_husk": {
+        "animating-98bbf456": "walk",
+    },
+    "wolf_pet": {
+        "animation-04b4aeb3": "idle",
+    },
+    "bandit_brute": {
+        "animating-0316d789": "attack_1",
+        "animating-0dbe1428": "walk",
+    },
 }
 
 LOOP_ANIMS = {"idle", "walk", "run", "block", "ability_5"}
@@ -184,6 +238,12 @@ def classify(folder_name: str, frame_count: int, guild_overrides: dict[str, str]
     prefix = folder_name.rsplit("-", 1)[0]
     if prefix in FOLDER_PREFIX_MAP:
         return FOLDER_PREFIX_MAP[prefix]
+    # Normalize dashes↔underscores: newer PixelLab template IDs use dashes
+    # (e.g., "lead-jab"), older exports used underscores (e.g., "jab_attack").
+    # Try both forms so one FOLDER_PREFIX_MAP entry covers either export.
+    normalized = prefix.replace("-", "_")
+    if normalized in FOLDER_PREFIX_MAP:
+        return FOLDER_PREFIX_MAP[normalized]
     if prefix == "animating":
         return FRAMECOUNT_AMBIGUOUS_MAP.get(frame_count)
     return None

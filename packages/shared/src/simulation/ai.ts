@@ -105,7 +105,7 @@ function spawnProjectile(state: SimState, actor: Actor, target: Actor, damage: n
     team: actor.team,
     x: actor.x,
     y: actor.y,
-    z: actor.z + 20,
+    z: actor.z + actor.height * 0.55,
     vx: (dx / dist) * speed,
     vy: (dy / dist) * speed,
     vz: 0,
@@ -140,7 +140,13 @@ function tickChaserAI(actor: Actor, target: Actor, state: SimState, _dtSec: numb
     return;
   }
 
-  if (dist > def.attackRange + 10) {
+  // Chebyshev-ish approach: keep closing until BOTH axes are inside the
+  // tight tolerances tryMeleeAttack will later enforce. Using Euclidean
+  // `dist` alone lets the actor stop at dist≈range with dy still out of
+  // the 30u depth tolerance, which reads as "drifts nearby but never hits".
+  const xClose = Math.abs(dx) <= def.attackRange;
+  const yClose = Math.abs(dy) <= 25;
+  if (!xClose || !yClose) {
     moveToward(actor, target.x, target.y, speed);
   } else {
     stopMoving(actor);

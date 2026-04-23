@@ -1,15 +1,19 @@
 import Phaser from 'phaser';
-import type { AnimationId, GuildId } from '@nannymud/shared/simulation/types';
+import type { ActorKind, AnimationId } from '@nannymud/shared/simulation/types';
 
 /**
- * Per-guild sprite metadata as emitted by scripts/composite-pixellab-sprites.py.
+ * Per-actor sprite metadata as emitted by scripts/composite-pixellab-sprites.py.
  * Each PNG next to metadata.json is a horizontal strip of `frames` tiles,
  * each `frameSize.w × frameSize.h`. Frame 0 faces `facing` (right/left),
  * the ActorView flips the whole sprite via scaleX when the actor faces the
  * other way.
+ *
+ * The `guildId` field in the JSON is kept for backwards compatibility with
+ * existing guild metadata.json files, but the registry indexes by ActorKind
+ * so both player guilds and enemies share a single sprite pipeline.
  */
-interface GuildMetadata {
-  guildId: GuildId;
+interface ActorSpriteMetadata {
+  guildId: ActorKind;
   frameSize: { w: number; h: number };
   facing: 'right' | 'left';
   animations: Partial<Record<AnimationId, {
@@ -20,34 +24,44 @@ interface GuildMetadata {
   }>>;
 }
 
-const SPRITE_GUILDS: GuildId[] = [
+const SPRITE_ACTORS: ActorKind[] = [
+  // Player guilds
   'adventurer', 'champion', 'chef', 'cultist', 'darkmage',
   'druid', 'hunter', 'knight', 'leper', 'mage', 'master',
   'monk', 'prophet', 'vampire', 'viking',
+  // Enemies + summons — entries added as sprite bundles land in public/sprites/
+  'plains_bandit',
+  'wolf',
+  'bandit_archer',
+  'bandit_king',
+  'drowned_spawn',
+  'rotting_husk',
+  'wolf_pet',
+  'bandit_brute',
 ];
 
 // Populated as metadata loads complete. ActorView reads from here to pick an
-// anchor offset and to check whether a guild has sprite coverage.
-const loadedMetadata = new Map<GuildId, GuildMetadata>();
+// anchor offset and to check whether an actor kind has sprite coverage.
+const loadedMetadata = new Map<ActorKind, ActorSpriteMetadata>();
 
-export function getGuildMetadata(guildId: GuildId): GuildMetadata | undefined {
-  return loadedMetadata.get(guildId);
+export function getActorMetadata(actorId: ActorKind): ActorSpriteMetadata | undefined {
+  return loadedMetadata.get(actorId);
 }
 
-export function guildHasSprites(guildId: GuildId): boolean {
-  return loadedMetadata.has(guildId);
+export function hasSprites(actorId: ActorKind): boolean {
+  return loadedMetadata.has(actorId);
 }
 
-export function animationKey(guildId: GuildId, animId: AnimationId): string {
-  return `${guildId}:${animId}`;
+export function animationKey(actorId: ActorKind, animId: AnimationId): string {
+  return `${actorId}:${animId}`;
 }
 
-export function textureKey(guildId: GuildId, animId: AnimationId): string {
-  return `tex:${guildId}:${animId}`;
+export function textureKey(actorId: ActorKind, animId: AnimationId): string {
+  return `tex:${actorId}:${animId}`;
 }
 
-function metadataKey(guildId: GuildId): string {
-  return `meta:${guildId}`;
+function metadataKey(actorId: ActorKind): string {
+  return `meta:${actorId}`;
 }
 
 /**
@@ -58,21 +72,21 @@ function metadataKey(guildId: GuildId): string {
  * preload, so the progress bar keeps ticking and the loader's `complete`
  * event fires after everything has finished.
  */
-export function queueGuildSprites(scene: Phaser.Scene): void {
-  for (const guildId of SPRITE_GUILDS) {
-    scene.load.json(metadataKey(guildId), `sprites/${guildId}/metadata.json`);
+export function queueActorSprites(scene: Phaser.Scene): void {
+  for (const actorId of SPRITE_ACTORS) {
+    scene.load.json(metadataKey(actorId), `sprites/${actorId}/metadata.json`);
   }
 
-  for (const guildId of SPRITE_GUILDS) {
-    const key = metadataKey(guildId);
+  for (const actorId of SPRITE_ACTORS) {
+    const key = metadataKey(actorId);
     scene.load.on(`filecomplete-json-${key}`, () => {
-      const meta = scene.cache.json.get(key) as GuildMetadata | undefined;
+      const meta = scene.cache.json.get(key) as ActorSpriteMetadata | undefined;
       if (!meta) return;
-      loadedMetadata.set(guildId, meta);
+      loadedMetadata.set(actorId, meta);
       for (const animId of Object.keys(meta.animations) as AnimationId[]) {
         scene.load.spritesheet(
-          textureKey(guildId, animId),
-          `sprites/${guildId}/${animId}.png`,
+          textureKey(actorId, animId),
+          `sprites/${actorId}/${animId}.png`,
           { frameWidth: meta.frameSize.w, frameHeight: meta.frameSize.h },
         );
       }
@@ -81,18 +95,18 @@ export function queueGuildSprites(scene: Phaser.Scene): void {
 }
 
 /**
- * Registers Phaser animations for every guild whose metadata finished loading.
+ * Registers Phaser animations for every actor whose metadata finished loading.
  * Called once from BootScene.create after preload completes. Safe to call
  * multiple times — skips animations that already exist on scene.anims.
  */
-export function registerGuildAnimations(scene: Phaser.Scene): void {
-  for (const [guildId, meta] of loadedMetadata) {
+export function registerActorAnimations(scene: Phaser.Scene): void {
+  for (const [actorId, meta] of loadedMetadata) {
     for (const [animIdRaw, animMeta] of Object.entries(meta.animations)) {
       if (!animMeta) continue;
       const animId = animIdRaw as AnimationId;
-      const key = animationKey(guildId, animId);
+      const key = animationKey(actorId, animId);
       if (scene.anims.exists(key)) continue;
-      const texKey = textureKey(guildId, animId);
+      const texKey = textureKey(actorId, animId);
       if (!scene.textures.exists(texKey)) continue;
       const frameRate = 1000 / Math.max(1, animMeta.frameDurationMs);
       scene.anims.create({
@@ -143,10 +157,10 @@ const FALLBACK: Record<AnimationId, readonly AnimationId[]> = {
 };
 
 export function resolveAnimation(
-  guildId: GuildId,
+  actorId: ActorKind,
   requested: AnimationId,
 ): AnimationId | null {
-  const meta = loadedMetadata.get(guildId);
+  const meta = loadedMetadata.get(actorId);
   if (!meta) return null;
   const chain = FALLBACK[requested] ?? ['idle'];
   for (const id of chain) {
