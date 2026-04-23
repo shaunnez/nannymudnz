@@ -4,6 +4,7 @@ import type { Room } from '@colyseus/sdk';
 import type { GuildId, SimMode, SimState } from '@nannymud/shared/simulation/types';
 import type { MatchState } from '@nannymud/shared';
 import { PauseOverlay } from './PauseOverlay';
+import { StoryGameOverOverlay } from './StoryGameOverOverlay';
 import { GuildDetails } from './GuildDetails';
 import { LoadingScreen } from './LoadingScreen';
 import { useFullscreen } from '../layout/useFullscreen';
@@ -37,6 +38,7 @@ export function GameScreen({
   const [preloading, setPreloading] = useState(true);
   const [isPaused, setIsPaused] = useState(false);
   const [showMoves, setShowMoves] = useState(false);
+  const [showStoryGameOver, setShowStoryGameOver] = useState(false);
   const pausedByMovesRef = useRef(false);
 
   const { isFullscreen, toggle: toggleFullscreen } = useFullscreen();
@@ -58,7 +60,13 @@ export function GameScreen({
 
     const callbacks: GameCallbacks = {
       onVictory: (score) => onVictoryRef.current(score),
-      onDefeat: () => onDefeatRef.current(),
+      onDefeat: () => {
+        if (mode === 'story') {
+          setShowStoryGameOver(true);
+        } else {
+          onDefeatRef.current();
+        }
+      },
       onQuit: () => onQuitRef.current(),
       toggleFullscreen: () => toggleFullscreenRef.current(),
       getIsFullscreen: () => isFullscreenRef.current,
@@ -118,6 +126,16 @@ export function GameScreen({
   const handleRestart = useCallback(() => {
     emitToGameplay('restart-requested');
   }, [emitToGameplay]);
+
+  const handleStoryRematch = useCallback(() => {
+    setShowStoryGameOver(false);
+    emitToGameplay('restart-requested');
+  }, [emitToGameplay]);
+
+  const handleStoryMenu = useCallback(() => {
+    setShowStoryGameOver(false);
+    onQuit();
+  }, [onQuit]);
 
   const closeMoves = useCallback(() => {
     setShowMoves(false);
@@ -184,6 +202,12 @@ export function GameScreen({
         />
       )}
       {netMode !== 'mp' && showMoves && <GuildDetails guildId={p1} onClose={closeMoves} />}
+      {showStoryGameOver && mode === 'story' && (
+        <StoryGameOverOverlay
+          onRematch={handleStoryRematch}
+          onMenu={handleStoryMenu}
+        />
+      )}
       {preloading && (
         <div style={{ position: 'absolute', inset: 0 }}>
           <LoadingScreen

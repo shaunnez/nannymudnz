@@ -71,9 +71,26 @@ Do not raise duplicates — check whether an open issue with the same symptom al
 - For feel-sensitive combat work, note that QA can confirm obvious wrongness but cannot be the final judge of nuance.
 - Ignore `agents/_historical/` for current verification policy.
 
+## Issue comment
+
+Before returning your report, post a comment on the GitHub issue:
+
+```
+POST https://api.github.com/repos/shaunnez/nannymudnz/issues/{n}/comments
+Authorization: token $GITHUB_TOKEN
+```
+
+Comment body must include:
+- **Result:** PASS or FAIL (bold, first line)
+- checks run and their outcome
+- evidence (screenshot paths, test output, build output)
+- exact rejection reason if failing
+- any setup gaps found
+- links to any new GitHub issues raised during this pass
+
 ## Required report
 
-Return:
+Return to the orchestrator:
 
 - checks run
 - screenshots or captured evidence when relevant

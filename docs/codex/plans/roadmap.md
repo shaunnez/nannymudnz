@@ -19,17 +19,29 @@ All exit criteria met:
 - `docs/runbooks/review-design-drift.md` and the two PRDs share the same label scheme and manifest path
 - agent specs patched: branch/worktree naming, commit+push mandate, post-batch roadmap update rule
 
-### Batch P1 - Combat clarity (active)
+### Batch P1-i - Bug and design triage (complete, 2026-04-23)
 
-Entry condition: met.
+Issues dispatched: #4 (story game over routing), #5 (ability panel icons + cooldown timers).
+Both QA-passed. Pending manual merge to main — see integration note below.
 
-Scope (from Milestone 1):
+Integration note: worktrees branched from an older main commit that predates the MP-extended `GameScreen.tsx`.
+Issue #4 fix must be applied to the current main `GameScreen.tsx` (which has MP props) before merging.
 
-1. hurt reaction pass — actor flinch, stagger, and knockback responses
-2. impact placement pass — VFX anchor and hit-stop alignment
-3. telegraph readability pass — startup and recovery window legibility
+Remaining todo-labeled issues:
+- #3 (lane:dev, priority:high): Leper miasma drains ROT too fast — next dev slot
 
-Dispatch source: `docs/codex/plans/combat-polish-vertical-slice-prd.md` + this roadmap.
+Blockers:
+- GitHub token (provided token returned 401) — label transitions (todo → in-progress → qa → done) skipped this batch
+
+### Batch P1-ii - Next (active)
+
+Entry condition: batch P1-i merged or cherry-picked to main.
+
+Scope:
+- Issue #3: Leper miasma drain rate + toggle/deactivate fix (lane:dev, priority:high)
+- Milestone 1 combat clarity tasks (hurt reaction, impact placement, telegraph readability) when #3 is resolved
+
+Dispatch source: GitHub Issues `shaunnez/nannymudnz` + `docs/codex/plans/combat-polish-vertical-slice-prd.md`.
 
 Known setup gap: Playwright not yet installed. QA will use the manual/browser fallback and record it as a gap finding.
 

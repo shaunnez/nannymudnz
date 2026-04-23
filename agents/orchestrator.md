@@ -35,6 +35,21 @@ Do not improvise a backlog from older plans, `docs/superpowers/plans/`, or files
 - Prefer at most one Dev task, one design/drift task, and one Asset task at a time.
 - Route feel-sensitive work to Reviewer and optionally to a human gate after QA.
 
+## Issue tracking
+
+Post a comment on the GitHub issue at each significant state transition using the REST API:
+
+```
+POST https://api.github.com/repos/shaunnez/nannymudnz/issues/{n}/comments
+Authorization: token $GITHUB_TOKEN
+```
+
+Required comment events:
+- **Dispatching Dev** — note the branch, worktree, and task scope being executed
+- **Dispatching QA** — note that Dev completed and QA is now verifying
+- **QA pass** — note the PR URL created and that the issue is awaiting human merge
+- **QA fail** — note the rejection reason (copied from QA report) and that the task is back in `todo`
+
 ## Lane routing
 
 - Use `agents/dev.md` for bounded code changes.
@@ -48,6 +63,30 @@ Feature branches: `codex/issue-{n}-{slug}` (e.g. `codex/issue-123-hurt-reaction`
 Worktrees: `.worktrees/issue-{n}-{slug}` (e.g. `.worktrees/issue-123-hurt-reaction`).
 
 When GitHub Issues are not yet configured, use the roadmap task name as the slug.
+
+## QA pass handoff
+
+When QA returns a pass result for a task:
+
+1. Create a PR via the GitHub CLI:
+   ```
+   gh pr create --base main --head codex/issue-{n}-{slug} \
+     --title "<issue title>" \
+     --body "<QA summary: checks run, evidence, files changed, residual risk>"
+   ```
+2. Move the GitHub issue label from `qa` to `done`.
+3. Remove the local worktree:
+   ```
+   git worktree remove .worktrees/issue-{n}-{slug}
+   ```
+   The branch stays on origin — the human merges via GitHub.
+4. Report the PR URL so the human can review and merge.
+
+When QA returns a fail result:
+
+- Move the label from `qa` back to `todo`.
+- Post a GitHub issue comment with the exact rejection reason from the QA report.
+- Do not remove the worktree — leave it for the Dev agent to re-enter.
 
 ## After each batch
 

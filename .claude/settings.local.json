@@ -34,7 +34,10 @@
       "PowerShell(gh issue list --repo shaunnez/nannymudnz --label \"todo\" --json number,title,labels,body --limit 50 2>&1)",
       "Bash(git *)",
       "Bash(npm test *)",
-      "Bash(npx tsc *)"
+      "Bash(npx tsc *)",
+      "PowerShell(git *)",
+      "Read(//c/Users/nimbl/projects/nannymud/packages/shared/src/schema/**)",
+      "Read(//c/Users/nimbl/projects/nannymud/packages/shared/src//**)"
     ]
   }
 }

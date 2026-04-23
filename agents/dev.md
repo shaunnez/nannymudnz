@@ -37,7 +37,19 @@ Use the convention from `agents/orchestrator.md`:
    - `npm run build`
    - targeted tests when they exist for the changed area
 5. Commit the change to the feature branch and push to origin.
-6. Report changed files, checks run, and residual risk.
+   Do **not** create a PR — the orchestrator does that after QA passes.
+6. Post a comment on the GitHub issue via the REST API:
+   ```
+   POST https://api.github.com/repos/shaunnez/nannymudnz/issues/{n}/comments
+   Authorization: token $GITHUB_TOKEN
+   ```
+   Comment body must include:
+   - branch name and commit SHA
+   - files changed (list)
+   - checks run and their pass/fail result
+   - any residual risk or open question
+7. Report the same findings back to the orchestrator.
+   Leave the worktree in place; QA will inspect it next.
 
 ## Hard rules
 

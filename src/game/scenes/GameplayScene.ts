@@ -300,10 +300,8 @@ export class GameplayScene extends Phaser.Scene {
   }
 
   /**
-   * MP camera tracks whichever actor belongs to this client (host → player,
-   * joiner → opponent). Mirrors the server's lerp/clamp in physics.ts so
-   * movement feels consistent. Prefers interpolated x when available so the
-   * camera rides the smoothed position, not the 50ms-late raw server x.
+   * MP camera centres between both fighters so both players see the same slice
+   * of the world. Prefers interpolated positions for smooth motion.
    */
   private computeLocalCameraX(sim: SimState, interp: Map<string, ActorSnapshot>): number {
     if (!this.room) return this.localCameraX;
@@ -312,9 +310,11 @@ export class GameplayScene extends Phaser.Scene {
     if (!localActor) return this.localCameraX;
 
     const lx = interp.get(localActor.id)?.x ?? localActor.x;
-    const targetCamX = lx - 300;
+    const otherActor: Actor | null = isHost ? (sim.opponent ?? null) : sim.player;
+    const ox = otherActor ? (interp.get(otherActor.id)?.x ?? otherActor.x) : lx;
+    const targetCamX = (lx + ox) / 2 - 450; // centre midpoint in 900px viewport
     if (!this.localCameraInitialized) {
-      this.localCameraX = targetCamX;
+      this.localCameraX = Math.max(0, Math.min(WORLD_WIDTH - 900, targetCamX));
       this.localCameraInitialized = true;
     } else {
       this.localCameraX += (targetCamX - this.localCameraX) * 0.08;
