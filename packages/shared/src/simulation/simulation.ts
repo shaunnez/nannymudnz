@@ -309,6 +309,12 @@ function getAbilityAssetKey(abilityId: string, eventType: VFXEvent['type']): str
     case 'cleanse':      return eventType === 'heal_glow'     ? 'cleanse_glow'       : undefined;
     case 'tranquility':  return eventType === 'channel_pulse' ? 'tranquility_pulse'  : undefined;
     case 'shapeshift':   return eventType === 'aoe_pop'       ? 'shapeshift_burst'   : undefined;
+    case 'serenity':        return eventType === 'aura_pulse'    ? 'serenity_aura'      : undefined;
+    case 'flying_kick':     return eventType === 'hit_spark'     ? 'flying_kick_impact' : undefined;
+    case 'jab':             return eventType === 'hit_spark'     ? 'jab_impact'         : undefined;
+    case 'five_point_palm': return eventType === 'hit_spark'     ? 'five_point_impact'  : undefined;
+    case 'dragons_fury':    return eventType === 'channel_pulse' ? 'dragons_fury_pulse' : undefined;
+    case 'monk_parry':      return eventType === 'aoe_pop'       ? 'parry_flash'        : undefined;
     default:
       return undefined;
   }

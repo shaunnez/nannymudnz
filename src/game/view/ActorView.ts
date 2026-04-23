@@ -438,6 +438,80 @@ export class ActorView {
     if (this.sprite) this.sprite.setScale(this.spriteScale * 1.08);
   }
 
+  private drawMonkSerenity(bodyHeight: number, visualTime: number, chiOrbs: number): void {
+    this.auraFx.clear();
+    this.auraFx.lineStyle(2, 0xfcd34d, 0.72);
+    this.auraFx.strokeEllipse(0, -bodyHeight * 0.52, this.width * 1.3, bodyHeight * 0.92);
+    for (let i = 0; i < 5; i++) {
+      const a = visualTime * 6 + i * (Math.PI * 2 / 5);
+      const filled = i < chiOrbs;
+      this.auraFx.fillStyle(filled ? 0xfcd34d : 0x44403c, filled ? 0.9 : 0.35);
+      this.auraFx.fillCircle(
+        Math.cos(a) * this.width * 0.66,
+        -bodyHeight * 0.52 + Math.sin(a) * bodyHeight * 0.46,
+        3,
+      );
+    }
+    this.auraFx.setVisible(true);
+  }
+
+  private drawMonkDragonsFury(bodyHeight: number, visualTime: number): void {
+    this.auraFx.clear();
+    this.auraFx.lineStyle(5, 0xf97316, 0.88);
+    this.auraFx.beginPath();
+    this.auraFx.arc(0, -bodyHeight * 0.52, 32, visualTime * 8, visualTime * 8 + 2.5, false);
+    this.auraFx.strokePath();
+    for (let i = 0; i < 4; i++) {
+      const a = visualTime * 12 + i * (Math.PI / 2);
+      this.auraFx.fillStyle(0xfcd34d, 0.9);
+      this.auraFx.fillCircle(
+        Math.cos(a) * 24,
+        -bodyHeight * 0.52 + Math.sin(a) * 24,
+        2.5,
+      );
+    }
+    this.auraFx.setVisible(true);
+  }
+
+  private drawMonkFlyingKick(bodyHeight: number): void {
+    this.attackFx.clear();
+    this.attackFx.lineStyle(6, 0xf59e0b, 0.92);
+    this.attackFx.beginPath();
+    this.attackFx.arc(10, -bodyHeight * 0.48, 38, -1.2, 1.0, false);
+    this.attackFx.strokePath();
+    this.attackFx.lineStyle(3, 0xfde68a, 0.8);
+    this.attackFx.beginPath();
+    this.attackFx.arc(10, -bodyHeight * 0.48, 26, -1.0, 0.8, false);
+    this.attackFx.strokePath();
+    this.attackFx.fillStyle(0xfff7ed, 0.95);
+    this.attackFx.fillCircle(36, -bodyHeight * 0.52, 3);
+    this.attackFx.fillCircle(28, -bodyHeight * 0.7, 2.5);
+    this.attackFx.setVisible(true);
+  }
+
+  private drawMonkJab(bodyHeight: number): void {
+    this.attackFx.clear();
+    this.attackFx.lineStyle(4, 0xfcd34d, 0.9);
+    this.attackFx.beginPath();
+    this.attackFx.arc(10, -bodyHeight * 0.5, 20, -0.6, 0.6, false);
+    this.attackFx.strokePath();
+    this.attackFx.fillStyle(0xfff7ed, 0.95);
+    this.attackFx.fillCircle(24, -bodyHeight * 0.5, 2.5);
+    this.attackFx.setVisible(true);
+  }
+
+  private drawMonkFivePoint(bodyHeight: number): void {
+    this.attackFx.clear();
+    for (let i = 0; i < 5; i++) {
+      const a = (Math.PI * 2 / 5) * i - Math.PI / 2;
+      this.attackFx.fillStyle(0xef4444, 0.88);
+      this.attackFx.fillCircle(10 + Math.cos(a) * 18, -bodyHeight * 0.5 + Math.sin(a) * 18, 3);
+    }
+    this.attackFx.fillStyle(0xfcd34d, 0.9);
+    this.attackFx.fillCircle(10, -bodyHeight * 0.5, 4);
+    this.attackFx.setVisible(true);
+  }
+
   syncFrom(actor: Actor): void {
     const groundScreenY = worldYToScreenY(actor.y, this.band.min, this.band.max);
     const screenY = groundScreenY - actor.z * 0.6;
@@ -619,6 +693,19 @@ export class ActorView {
     if (isDruidWildGrowth) this.drawDruidWildGrowth(bodyHeight);
     if (isDruidChanneling) this.drawDruidChanneling(bodyHeight, visualTime);
     if (isDruidShapeshift) this.drawDruidShapeshift(bodyHeight, visualTime);
+
+    const isMonk = actor.guildId === 'monk';
+    const isMonkSerenity = isMonk && actor.statusEffects.some(e => e.type === 'untargetable');
+    const isMonkDragonsFury = isMonk && actor.state === 'channeling';
+    const isMonkFlyingKick = isMonk && actor.state === 'attacking' && actor.animationId === 'ability_2';
+    const isMonkJab = isMonk && actor.state === 'attacking' && actor.animationId === 'ability_3';
+    const isMonkFivePoint = isMonk && actor.state === 'attacking' && actor.animationId === 'ability_4';
+
+    if (isMonkSerenity) this.drawMonkSerenity(bodyHeight, visualTime, actor.chiOrbs ?? 0);
+    if (isMonkDragonsFury) this.drawMonkDragonsFury(bodyHeight, visualTime);
+    if (isMonkFlyingKick) this.drawMonkFlyingKick(bodyHeight);
+    if (isMonkJab) this.drawMonkJab(bodyHeight);
+    if (isMonkFivePoint) this.drawMonkFivePoint(bodyHeight);
 
     // Status alpha overlays.
     let alpha = 1;

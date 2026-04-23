@@ -27,7 +27,13 @@ type PreviewEffect =
   | 'mage_meteor'
   | 'druid_wild_growth'
   | 'druid_channeling'
-  | 'druid_shapeshift';
+  | 'druid_shapeshift'
+  | 'monk_jab'
+  | 'monk_flying_kick'
+  | 'monk_five_point'
+  | 'monk_serenity'
+  | 'monk_dragons_fury'
+  | 'monk_parry';
 
 interface AbilityPreviewSpec {
   effect?: PreviewEffect;
@@ -71,6 +77,16 @@ function getAbilityPreviewSpec(guildId: GuildId, abilityId: string): AbilityPrev
         case 'tranquility':  return { effect: 'druid_channeling' };
         case 'shapeshift':   return { effect: 'druid_shapeshift' };
         default:             return {};
+      }
+    case 'monk':
+      switch (abilityId) {
+        case 'serenity':        return { effect: 'monk_serenity' };
+        case 'flying_kick':     return { effect: 'monk_flying_kick' };
+        case 'jab':             return { effect: 'monk_jab' };
+        case 'five_point_palm': return { effect: 'monk_five_point' };
+        case 'dragons_fury':    return { effect: 'monk_dragons_fury' };
+        case 'monk_parry':      return { effect: 'monk_parry' };
+        default:                return {};
       }
     default:
       return {};
@@ -149,6 +165,18 @@ function getSpriteTransform(
       scale *= 1.0 + Math.sin(progress * TAU * 2) * 0.015; y += 4; break;
     case 'druid_shapeshift':
       scale *= 1.06 + Math.sin(progress * TAU) * 0.025; y += 2; break;
+    case 'monk_jab':
+      x = 3 + Math.sin(progress * TAU) * 2; y += 4; break;
+    case 'monk_flying_kick':
+      x = 2 + Math.sin(progress * TAU) * 3; y += 2; break;
+    case 'monk_five_point':
+      scale *= 1.02 + Math.sin(progress * TAU) * 0.02; y += 4; break;
+    case 'monk_serenity':
+      scale *= 1.04 + Math.sin(progress * TAU) * 0.02; y += 2; break;
+    case 'monk_dragons_fury':
+      scale *= 1.0 + Math.sin(progress * TAU * 3) * 0.03; y += 2; break;
+    case 'monk_parry':
+      y += 4; break;
     default:
       break;
   }
@@ -413,6 +441,71 @@ function PreviewOverlay({
           {[0,1,2,3,4,5].map(i => {
             const a = orbit * 0.8 + i * TAU / 6;
             return <circle key={i} cx={60+Math.cos(a)*34} cy={60+Math.sin(a)*17} r="2.5" fill="#4ade80" opacity={0.85} />;
+          })}
+        </>
+      );
+      break;
+    case 'monk_jab':
+      content = (
+        <>
+          <line x1="48" y1="62" x2={62 + sweep * 8} y2="62" stroke="#fcd34d" strokeWidth={5} strokeLinecap="round" opacity="0.92" />
+          <circle cx={64 + sweep * 8} cy="62" r="3" fill="#fffbeb" opacity="0.9" />
+        </>
+      );
+      break;
+    case 'monk_flying_kick':
+      content = (
+        <>
+          <path d={`M42 ${76 - sweep * 4} A30 30 0 0 1 90 44`} fill="none" stroke="#f59e0b" strokeWidth={8} strokeLinecap="round" opacity="0.95" />
+          <path d={`M48 ${70 - sweep * 3} A22 22 0 0 1 84 50`} fill="none" stroke="#fde68a" strokeWidth={4} strokeLinecap="round" opacity="0.9" />
+          <circle cx={88} cy={44} r="3.5" fill="#fffbeb" opacity="0.92" />
+          <circle cx={78} cy={34 + sweep * 2} r="2.5" fill="#fcd34d" opacity="0.8" />
+        </>
+      );
+      break;
+    case 'monk_five_point':
+      content = (
+        <>
+          {[0,1,2,3,4].map(i => {
+            const a = i * TAU / 5 - Math.PI / 2;
+            const r = 22 + pulse * 6;
+            return <circle key={i} cx={60+Math.cos(a)*r} cy={60+Math.sin(a)*r} r="3.5" fill="#ef4444" opacity={0.85+pulse*0.12} />;
+          })}
+          <circle cx="60" cy="60" r="5" fill="#fcd34d" opacity={0.9+pulse*0.08} />
+        </>
+      );
+      break;
+    case 'monk_serenity':
+      content = (
+        <>
+          <ellipse cx="60" cy="60" rx="30" ry="34" fill="none" stroke="#fcd34d" strokeWidth={3} opacity={0.72 + pulse * 0.2} />
+          <ellipse cx="60" cy="60" rx="22" ry="26" fill="none" stroke="#d9a441" strokeWidth={1.5} opacity={0.5} />
+          {[0,1,2,3,4].map(i => {
+            const a = orbit * 1.2 + i * TAU / 5;
+            return <circle key={i} cx={60+Math.cos(a)*34} cy={60+Math.sin(a)*17} r="3" fill="#fcd34d" opacity={0.88} />;
+          })}
+        </>
+      );
+      break;
+    case 'monk_dragons_fury':
+      content = (
+        <>
+          <path d={`M ${60+Math.cos(orbit*8)*32} ${60+Math.sin(orbit*8)*16} A 32 16 0 0 1 ${60+Math.cos(orbit*8+2.5)*32} ${60+Math.sin(orbit*8+2.5)*16}`} fill="none" stroke="#f97316" strokeWidth={6} strokeLinecap="round" opacity="0.9" />
+          {[0,1,2,3].map(i => {
+            const a = orbit * 12 + i * TAU / 4;
+            return <circle key={i} cx={60+Math.cos(a)*24} cy={60+Math.sin(a)*12} r="2.5" fill="#fcd34d" opacity={0.88} />;
+          })}
+        </>
+      );
+      break;
+    case 'monk_parry':
+      content = (
+        <>
+          <circle cx="60" cy="60" r={28 + pulse * 6} fill="none" stroke="#fcd34d" strokeWidth={4} opacity={0.8 + pulse * 0.18} />
+          <circle cx="60" cy="60" r={18 + pulse * 4} fill="none" stroke="#fffbeb" strokeWidth={2} opacity={0.65} />
+          {[0,1,2,3].map(i => {
+            const a = i * TAU / 4;
+            return <circle key={i} cx={60+Math.cos(a)*(28+pulse*6)} cy={60+Math.sin(a)*(28+pulse*6)} r="2.5" fill="#fcd34d" opacity="0.85" />;
           })}
         </>
       );
