@@ -36,6 +36,20 @@ export default function App() {
   // URL routing: /multiplayer → mp_hub on initial mount.
   useEffect(() => {
     if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    const guildParam = params.get('guild');
+    const guildFromUrl = GUILDS.find((g) => g.id === guildParam)?.id;
+
+    if (window.location.pathname === '/dossier' && state.screen === 'title') {
+      go('guild_dossier', { guildId: guildFromUrl ?? 'viking' });
+      return;
+    }
+
+    if (window.location.pathname === '/moves' && state.screen === 'title') {
+      go('moves', guildFromUrl ? { guildId: guildFromUrl } : undefined);
+      return;
+    }
+
     if (window.location.pathname === '/multiplayer' && state.screen === 'title') {
       go('mp_hub');
     }
