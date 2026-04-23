@@ -2,9 +2,11 @@
   "guildId": "darkmage",
   "frameSize": { "w": 160, "h": 160 },
   "assets": {
-    "darkness_burst":     { "frames": 1, "frameDurationMs": 400, "loop": false, "frameSize": {"w":96,"h":96},   "anchor": {"x":48,"y":48}, "scale": 1.4 },
-    "soul_leech_drain":   { "frames": 1, "frameDurationMs": 400, "loop": false, "frameSize": {"w":96,"h":96},   "anchor": {"x":48,"y":48}, "scale": 1.3 },
-    "eternal_night_burst":{ "frames": 1, "frameDurationMs": 450, "loop": false, "anchor": {"x":80,"y":80}, "scale": 1.65 },
-    "shadow_cloak_aura":  { "frames": 1, "frameDurationMs": 400, "loop": false, "frameSize": {"w":96,"h":96},   "anchor": {"x":48,"y":48}, "scale": 1.35 }
+    "darkness_burst":        { "frames": 1, "frameDurationMs": 400, "loop": false, "frameSize": {"w":96,"h":96},  "anchor": {"x":48,"y":48}, "scale": 1.4 },
+    "soul_leech_drain":      { "frames": 1, "frameDurationMs": 400, "loop": false, "frameSize": {"w":96,"h":96},  "anchor": {"x":48,"y":48}, "scale": 1.3 },
+    "eternal_night_burst":   { "frames": 1, "frameDurationMs": 450, "loop": false, "anchor": {"x":80,"y":80}, "scale": 1.65 },
+    "shadow_cloak_aura":     { "frames": 1, "frameDurationMs": 400, "loop": false, "frameSize": {"w":96,"h":96},  "anchor": {"x":48,"y":48}, "scale": 1.35 },
+    "grasping_shadow_burst": { "frames": 1, "frameDurationMs": 320, "loop": false, "frameSize": {"w":96,"h":96},  "anchor": {"x":48,"y":48}, "scale": 1.25 },
+    "shadow_bolt_impact":    { "frames": 1, "frameDurationMs": 300, "loop": false, "frameSize": {"w":96,"h":96},  "anchor": {"x":48,"y":48}, "scale": 1.2 }
   }
 }

@@ -6,6 +6,7 @@
     "bless_aura":               { "frames": 1, "frameDurationMs": 380, "loop": false, "anchor": {"x":48,"y":48}, "scale": 1.35 },
     "curse_mark":               { "frames": 1, "frameDurationMs": 400, "loop": false, "anchor": {"x":48,"y":48}, "scale": 1.3 },
     "divine_insight_burst":     { "frames": 1, "frameDurationMs": 450, "loop": false, "frameSize": {"w":160,"h":160}, "anchor": {"x":80,"y":80}, "scale": 1.6 },
-    "divine_intervention_aura": { "frames": 1, "frameDurationMs": 450, "loop": false, "frameSize": {"w":160,"h":160}, "anchor": {"x":80,"y":80}, "scale": 1.65 }
+    "divine_intervention_aura": { "frames": 1, "frameDurationMs": 450, "loop": false, "frameSize": {"w":160,"h":160}, "anchor": {"x":80,"y":80}, "scale": 1.65 },
+    "smite_burst":              { "frames": 1, "frameDurationMs": 380, "loop": false, "frameSize": {"w":160,"h":160}, "anchor": {"x":80,"y":80}, "scale": 1.5 }
   }
 }

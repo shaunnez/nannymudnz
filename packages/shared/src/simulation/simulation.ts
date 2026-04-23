@@ -352,6 +352,28 @@ function getAbilityAssetKey(abilityId: string, eventType: VFXEvent['type']): str
     case 'frostbolt':      return eventType === 'hit_spark'  ? 'frostbolt_impact'     : undefined;
     case 'arcane_shard':   return eventType === 'hit_spark'  ? 'arcane_shard_impact'  : undefined;
     case 'piercing_volley': return eventType === 'hit_spark' ? 'piercing_volley_impact' : undefined;
+    // Mage teleport flashes (event pushed in Task 3's isTeleport block)
+    case 'blink':            return eventType === 'aoe_pop'    ? 'blink_flash'             : undefined;
+    case 'short_teleport':   return eventType === 'aoe_pop'    ? 'short_teleport_flash'    : undefined;
+    // Hunter projectile impact (bear_trap flash comes from Task 5's ground-target detonation)
+    case 'aimed_shot':       return eventType === 'hit_spark'  ? 'aimed_shot_impact'       : undefined;
+    // Adventurer
+    case 'quickshot':        return eventType === 'hit_spark'  ? 'quickshot_impact'        : undefined;
+    // Knight rmb buff
+    case 'shield_block':     return eventType === 'aura_pulse' ? 'shield_block_flash'      : undefined;
+    // Druid projectile
+    case 'entangle':         return eventType === 'hit_spark'  ? 'entangle_burst'          : undefined;
+    // Viking projectile
+    case 'harpoon':          return eventType === 'hit_spark'  ? 'harpoon_impact'          : undefined;
+    // Prophet projectile
+    case 'smite':            return eventType === 'hit_spark'  ? 'smite_burst'             : undefined;
+    // Chef projectile
+    case 'spice_toss':       return eventType === 'hit_spark'  ? 'spice_toss_impact'       : undefined;
+    // Master teleport flash
+    case 'chosen_utility':   return eventType === 'aoe_pop'    ? 'chosen_utility_glow'     : undefined;
+    // Darkmage projectile impacts
+    case 'grasping_shadow':  return eventType === 'hit_spark'  ? 'grasping_shadow_burst'   : undefined;
+    case 'shadow_bolt':      return eventType === 'hit_spark'  ? 'shadow_bolt_impact'      : undefined;
     default:
       return undefined;
   }

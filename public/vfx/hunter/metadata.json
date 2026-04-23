@@ -2,8 +2,10 @@
   "guildId": "hunter",
   "frameSize": { "w": 96, "h": 96 },
   "assets": {
-    "disengage_burst": { "frames": 1, "frameDurationMs": 380, "loop": false, "anchor": {"x":48,"y":48}, "scale": 1.4 },
-    "bear_trap_snap":  { "frames": 1, "frameDurationMs": 350, "loop": false, "anchor": {"x":48,"y":60}, "scale": 1.2 },
-    "rain_pulse":      { "frames": 1, "frameDurationMs": 450, "loop": false, "anchor": {"x":48,"y":48}, "scale": 1.45 }
+    "disengage_burst":        { "frames": 1, "frameDurationMs": 380, "loop": false, "anchor": {"x":48,"y":48}, "scale": 1.4 },
+    "bear_trap_snap":         { "frames": 1, "frameDurationMs": 350, "loop": false, "anchor": {"x":48,"y":60}, "scale": 1.2 },
+    "rain_pulse":             { "frames": 1, "frameDurationMs": 450, "loop": false, "anchor": {"x":48,"y":48}, "scale": 1.45 },
+    "aimed_shot_impact":      { "frames": 1, "frameDurationMs": 300, "loop": false, "anchor": {"x":48,"y":48}, "scale": 1.15 },
+    "piercing_volley_impact": { "frames": 1, "frameDurationMs": 280, "loop": false, "anchor": {"x":48,"y":48}, "scale": 1.1 }
   }
 }
