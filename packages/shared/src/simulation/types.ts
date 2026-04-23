@@ -211,6 +211,13 @@ export interface AIState {
   windupActive: boolean;
   windupTimeMs: number;
   lungeMs: number;
+  // VS-mode CPU only. Hysteresis state for pursuit — committed horizontal
+  // direction (-1 = move left, 0 = stop/engage, 1 = move right). Held across
+  // ticks so the CPU doesn't oscillate start/stop as |dx| flutters near the
+  // attack-range boundary. SP-only; not mirrored in AIStateSchema.
+  pursuitDir?: -1 | 0 | 1;
+  // Cooldown between CPU ability fires (ms remaining).
+  abilityCooldownMs?: number;
 }
 
 export interface Pickup {

@@ -17,7 +17,7 @@ export function RoundTimer({ round, animate }: Props) {
       <div
         style={{
           fontFamily: theme.fontMono,
-          fontSize: 60,
+          fontSize: 20,
           fontVariantNumeric: 'tabular-nums',
           color,
           animation: pulse,

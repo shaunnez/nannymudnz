@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import type { Projectile } from '@nannymud/shared/simulation/types';
-import { worldYToScreenY, getScreenYBand, type ScreenYBand } from '../constants';
+import { DEPTH_SCALE, worldYToScreenY, getScreenYBand, type ScreenYBand } from '../constants';
 
 function hexToInt(hex: string): number {
   const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
@@ -41,7 +41,7 @@ export class ProjectileView {
   }
 
   syncFrom(proj: Projectile): void {
-    const screenY = worldYToScreenY(proj.y, this.band.min, this.band.max) - proj.z * 0.5;
+    const screenY = worldYToScreenY(proj.y, this.band.min, this.band.max) - proj.z * DEPTH_SCALE;
     this.graphics.setPosition(proj.x, screenY);
     this.graphics.setDepth(proj.y + 0.5); // draw above same-plane actors (matches canvas order)
     this.redraw(proj);

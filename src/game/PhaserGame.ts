@@ -5,7 +5,6 @@ import type { MatchState } from '@nannymud/shared';
 import { VIRTUAL_WIDTH, VIRTUAL_HEIGHT } from './constants';
 import { BootScene } from './scenes/BootScene';
 import { GameplayScene } from './scenes/GameplayScene';
-import { HudScene } from './scenes/HudScene';
 
 export type NetMode = 'sp' | 'mp';
 
@@ -44,7 +43,7 @@ export function makePhaserGame(parent: HTMLElement, boot: GameBootConfig): Phase
       mode: Phaser.Scale.FIT,
       autoCenter: Phaser.Scale.CENTER_BOTH,
     },
-    scene: [BootScene, GameplayScene, HudScene],
+    scene: [BootScene, GameplayScene],
     disableContextMenu: true,
     input: { keyboard: true },
     render: { antialias: false },

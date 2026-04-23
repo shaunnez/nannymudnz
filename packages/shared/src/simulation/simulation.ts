@@ -10,6 +10,7 @@ import {
   DOUBLE_TAP_MS, COMBO_ATTACK_WINDOW_MS, KNOCKDOWN_THRESHOLD,
   PICKUP_GRAB_RANGE, HP_REGEN_RATE, HP_DARK_REGEN_RATE, BLOCK_STAMINA_DRAIN,
   PARRY_WINDOW_MS, DODGE_DURATION_MS, DODGE_DISTANCE, DODGE_INVULN_MS, RUN_SPEED_MULT,
+  ATTACK_Y_TOLERANCE,
 } from './constants';
 import {
   calcDamage, checkCrit, applyDamage, applyHeal, addStatusEffect,
@@ -412,14 +413,8 @@ function fireAbility(player: Actor, ability: AbilityDef, state: SimState, ctrl: 
   }
 
   if (ability.isProjectile) {
-    const enemies = getEnemiesOf(state, player);
-    const targets = enemies.filter(e => e.isAlive);
-    const nearest = targets.reduce<Actor | null>((b, e) => {
-      if (!b) return e;
-      return Math.abs(e.x - player.x) < Math.abs(b.x - player.x) ? e : b;
-    }, null);
-
-    const dir = nearest ? Math.sign(nearest.x - player.x) || player.facing : player.facing;
+    const enemies = getEnemiesOf(state, player).filter(e => e.isAlive);
+    const dir = player.facing;
     const projCount = ability.id === 'piercing_volley' ? 3 : 1;
 
     for (let i = 0; i < projCount; i++) {
@@ -431,7 +426,7 @@ function fireAbility(player: Actor, ability: AbilityDef, state: SimState, ctrl: 
         team: player.team,
         x: player.x,
         y: player.y + spread,
-        z: player.z + 20,
+        z: player.z + player.height * 0.55,
         vx: dir * (ability.projectileSpeed + delay * 0),
         vy: spread * 0.5,
         vz: 0,
@@ -443,7 +438,7 @@ function fireAbility(player: Actor, ability: AbilityDef, state: SimState, ctrl: 
         knockdown: ability.knockdown,
         knockbackForce: ability.knockbackForce,
         effects: ability.effects as Projectile['effects'],
-        piercing: ability.id === 'arcane_shard',
+        piercing: ability.piercing,
         color: ability.vfxColor,
         type: ability.id,
         hitActorIds: [],
@@ -662,7 +657,12 @@ function performBasicAttack(player: Actor, state: SimState, ctrl: PlayerControll
   player.animationId = animId;
   player.state = 'attacking';
 
-  const targets = getEnemiesOf(state, player).filter(e => e.isAlive && isInRange(player, e, range));
+  const targets = getEnemiesOf(state, player).filter(e => {
+    if (!e.isAlive || !isInRange(player, e, range)) return false;
+    const dx = e.x - player.x;
+    if (Math.abs(dx) < 1) return true;
+    return Math.sign(dx) === player.facing;
+  });
 
   if (player.heldPickup?.type === 'club') {
     player.heldPickup.hitsLeft--;
@@ -826,7 +826,7 @@ function tickProjectiles(state: SimState, dtSec: number): void {
       if (proj.hitActorIds.includes(target.id)) continue;
       const dx = Math.abs(target.x - proj.x);
       const dy = Math.abs(target.y - proj.y);
-      if (dx <= target.width / 2 + proj.radius && dy <= 30) {
+      if (dx <= target.width / 2 + proj.radius && dy <= ATTACK_Y_TOLERANCE + proj.radius) {
         const isCrit = state.rng() < 0.05;
         applyDamage(target, proj.damage * (isCrit ? 1.5 : 1), state.vfxEvents, isCrit);
         state.vfxEvents.push({ type: 'hit_spark', color: proj.color, x: proj.x, y: proj.y, z: proj.z });
@@ -956,7 +956,7 @@ function handlePlayerInput(state: SimState, input: InputState, ctrl: PlayerContr
     if (input.attackJustPressed) {
       const parrySucceeds = ctrl.parryWindowMs < PARRY_WINDOW_MS;
       if (parrySucceeds) {
-        state.vfxEvents.push({ type: 'aoe_pop', color: '#fbbf24', x: player.x, y: player.y, z: player.z, radius: 60 });
+        state.vfxEvents.push({ type: 'channel_pulse', color: '#fbbf24', x: player.x, y: player.y, z: player.z + player.height * 0.55, radius: 60 });
         player.mp = Math.min(player.mpMax, player.mp + 10);
         if (player.guildId === 'monk') {
           player.chiOrbs = Math.min(5, (player.chiOrbs || 0) + 1);
@@ -1045,7 +1045,7 @@ function handlePlayerInput(state: SimState, input: InputState, ctrl: PlayerContr
         team: player.team,
         x: player.x,
         y: player.y,
-        z: player.z + 15,
+        z: player.z + player.height * 0.55,
         vx: player.facing * 500,
         vy: 0,
         vz: 100,

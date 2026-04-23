@@ -17,7 +17,7 @@ export function AbilityStrip({ actor, side, showKeys, simTimeMs }: Props) {
   const cards = [...guild.abilities.slice(0, 5), guild.rmb];
 
   return (
-    <div style={{ display: 'flex', gap: 5 }}>
+    <div style={{ display: 'flex', gap: 4 }}>
       {cards.map((a, i) => {
         const cdUntil = actor.abilityCooldowns.get(a.id) ?? 0;
         const cdRemaining = Math.max(0, cdUntil - simTimeMs);
@@ -31,8 +31,8 @@ export function AbilityStrip({ actor, side, showKeys, simTimeMs }: Props) {
             key={a.id}
             style={{
               position: 'relative',
-              width: 70,
-              height: 110,
+              width: 68,
+              height: 92,
               background: theme.panel,
               border: `1px solid ${side === 'p1' ? theme.team1 : theme.team2}`,
               borderRadius: 4,
@@ -53,7 +53,7 @@ export function AbilityStrip({ actor, side, showKeys, simTimeMs }: Props) {
               {a.cost}
             </div>
             <div style={{ position: 'absolute', bottom: 5, left: 4, right: 4, textAlign: 'center' }}>
-              <div style={{ fontSize: 11, lineHeight: 1.1, marginBottom: 3, color: theme.ink }}>{a.name}</div>
+              <div style={{ fontSize:8, lineHeight: 1.1, marginBottom: 3, color: theme.ink }}>{a.name}</div>
               <div style={{ display: 'flex', justifyContent: 'center' }}>
                 <ComboDisplay combo={a.combo} size={10} color={theme.inkMuted} gap={2} />
               </div>

@@ -146,7 +146,6 @@ export default function App() {
             p2={state.p2}
             stageId={state.stageId}
             animateHud={state.animateHud}
-            showLog={state.showLog}
             difficulty={state.difficulty}
             onVictory={(score) => {
               setFinalScore(score);
@@ -190,9 +189,7 @@ export default function App() {
         {state.screen === 'settings' && (
           <SettingsScreen
             animateHud={state.animateHud}
-            showLog={state.showLog}
             onToggleAnimateHud={() => set({ animateHud: !state.animateHud })}
-            onToggleShowLog={() => set({ showLog: !state.showLog })}
             onBack={() => go('menu')}
           />
         )}
@@ -250,7 +247,6 @@ export default function App() {
           <MpBattle
             room={state.mpRoom}
             animateHud={state.animateHud}
-            showLog={state.showLog}
             onLeave={leaveMp}
             onPhaseChange={onPhaseChange}
           />

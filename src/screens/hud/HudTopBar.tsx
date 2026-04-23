@@ -1,19 +1,28 @@
-import type { Actor, RoundState } from '@nannymud/shared/simulation/types';
+import type { Actor, RoundState, SimMode, SimState } from '@nannymud/shared/simulation/types';
 import { getGuild } from '@nannymud/shared/simulation/guildData';
 import { GUILD_META } from '../../data/guildMeta';
-import { theme, guildAccent } from '../../ui';
+import { theme, guildAccent, GuildMonogram } from '../../ui';
 import { MeterBar } from '../../ui/MeterBar';
 import { RoundTimer } from './RoundTimer';
+import { BossSlot } from './BossSlot';
+import { PlayerExtras } from './PlayerExtras';
 
 interface Props {
+  mode: SimMode;
   p1: Actor;
-  p2: Actor;
+  p2: Actor | null;
   round: RoundState | null;
   stageName: string;
   animate: boolean;
+  state: SimState;
 }
 
-export function HudTopBar({ p1, p2, round, stageName, animate }: Props) {
+export function HudTopBar({ mode, p1, p2, round, stageName, animate, state }: Props) {
+  const boss =
+    mode === 'story'
+      ? state.enemies.find((e) => e.isAlive && e.aiState.behavior === 'boss') ?? null
+      : null;
+
   return (
     <div
       style={{
@@ -25,35 +34,57 @@ export function HudTopBar({ p1, p2, round, stageName, animate }: Props) {
         display: 'grid',
         gridTemplateColumns: '1fr auto 1fr',
         alignItems: 'center',
-        gap: 16,
+        gap: 18,
         padding: '6px 14px',
         background: theme.bg,
         borderBottom: `1px solid ${theme.line}`,
         pointerEvents: 'none',
       }}
     >
-      <PlayerSlot actor={p1} side="left" label="P1" />
-      <div style={{ textAlign: 'center', minWidth: 140 }}>
-        <div
-          style={{
-            fontFamily: theme.fontDisplay,
-            fontSize: 14,
-            letterSpacing: 3,
-            color: theme.inkDim,
-            textTransform: 'uppercase',
-            marginBottom: 2,
-          }}
-        >
-          {stageName}
-        </div>
-        <RoundTimer round={round} animate={animate} />
+      <PlayerSlot actor={p1} side="left" label="P1" showExtras={mode === 'story'} />
+
+      <div style={{ textAlign: 'center', minWidth: mode === 'vs' ? 140 : 0 }}>
+        {mode === 'vs' && (
+          <>
+            <div
+              style={{
+                fontFamily: theme.fontDisplay,
+                fontSize: 12,
+                letterSpacing: 3,
+                color: theme.inkDim,
+                textTransform: 'uppercase',
+                marginBottom: 2,
+              }}
+            >
+              {stageName}
+            </div>
+            <RoundTimer round={round} animate={animate} />
+          </>
+        )}
       </div>
-      <PlayerSlot actor={p2} side="right" label="P2" />
+
+      {mode === 'story' ? (
+        <BossSlot boss={boss} />
+      ) : p2 ? (
+        <PlayerSlot actor={p2} side="right" label="P2" showExtras={false} />
+      ) : (
+        <div />
+      )}
     </div>
   );
 }
 
-function PlayerSlot({ actor, side, label }: { actor: Actor; side: 'left' | 'right'; label: string }) {
+function PlayerSlot({
+  actor,
+  side,
+  label,
+  showExtras,
+}: {
+  actor: Actor;
+  side: 'left' | 'right';
+  label: string;
+  showExtras: boolean;
+}) {
   const guild = getGuild(actor.guildId!);
   const meta = GUILD_META[actor.guildId!];
   const accent = guildAccent(meta.hue);
@@ -76,21 +107,13 @@ function PlayerSlot({ actor, side, label }: { actor: Actor; side: 'left' | 'righ
       <div
         style={{
           flex: '0 0 auto',
-          width: 54,
-          height: 54,
           borderRadius: 6,
-          background: theme.panel,
           border: `2px solid ${teamColor}`,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          fontFamily: theme.fontDisplay,
-          fontSize: 20,
-          fontWeight: 700,
-          color: accent,
+          overflow: 'hidden',
+          lineHeight: 0,
         }}
       >
-        {meta.glyph}
+        <GuildMonogram guildId={actor.guildId!} size={54} />
       </div>
       <div style={{ flex: 1, minWidth: 0, textAlign }}>
         <div
@@ -167,6 +190,7 @@ function PlayerSlot({ actor, side, label }: { actor: Actor; side: 'left' | 'righ
             {Math.round(actor.mp)}/{actor.mpMax}
           </span>
         </div>
+        {showExtras && <PlayerExtras actor={actor} side={side} />}
       </div>
     </div>
   );

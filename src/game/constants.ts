@@ -7,8 +7,11 @@ import Phaser from 'phaser';
 export const VIRTUAL_WIDTH = 900;
 export const VIRTUAL_HEIGHT = 506;
 
-// Elevation (world-z → screen-y) falloff factor.
-export const DEPTH_SCALE = 0.6;
+// Elevation (world-z → screen-y) falloff factor. Sim actor heights are ~60
+// units while rendered sprites are 124px frames at 1.5× scale (~186px tall),
+// so VFX placed at `actor.z + actor.height` need a larger scale than raw
+// sim-to-screen depth or they land at knee level on the sprite.
+export const DEPTH_SCALE = 1.8;
 
 // Depth-axis projection. Simulation y is a depth plane in [WORLD_Y_MIN, WORLD_Y_MAX];
 // rendering maps that onto the vertical "stage" band of the canvas.
@@ -38,28 +41,24 @@ export interface ScreenYBand {
 // Virtual-pixel (900×506) HUD reservations. The React overlay scales these
 // proportionally via a transform so Phaser and HUD stay pixel-aligned at any
 // display size — see HudOverlay.tsx.
-export const HUD_TOP_PX = 80;
-export const HUD_BOTTOM_PX = 220;
-
-/** Scene-y band for story mode (camera fills canvas). */
-export const SCREEN_Y_BAND_STORY: ScreenYBand = {
-  min: VIRTUAL_HEIGHT * 0.42,
-  max: VIRTUAL_HEIGHT * 0.92,
-};
+export const HUD_TOP_PX = 72;
+export const HUD_BOTTOM_PX = 128;
 
 /**
- * Scene-y band for VS/MP. The camera viewport is the middle strip between the
- * React HUD panels — the camera's local (0,0) maps to the top of the visible
- * strip, so the band is relative to that strip, NOT the full canvas. Small
- * paddings keep feet + shadow clear of the panel borders.
+ * Scene-y band for all modes. The camera viewport is the middle strip between
+ * the React HUD panels — the camera's local (0,0) maps to the top of the
+ * visible strip, so the band is relative to that strip, NOT the full canvas.
+ * Small paddings keep feet + shadow clear of the panel borders.
  */
 export const VS_VIEWPORT_HEIGHT = VIRTUAL_HEIGHT - HUD_TOP_PX - HUD_BOTTOM_PX;
-// Widen the walkable depth band so the player can traverse closer to the top
-// of the horizon and the bottom of the frame — the HUD panels already reserve
-// the "chrome" area, so the whole viewport is fair-walk territory.
+// Walkable depth band — actor feet project into this screen-y range (relative
+// to the camera viewport). The min must be tall enough that a sprite drawn
+// from its feet at `min` doesn't extend above the viewport into the top HUD.
+// Sprites render at DISPLAY_SCALE=1.5 over an 80px frame (~120 virtual px),
+// so `min` is clamped at the sprite's screen height + a small safety margin.
 export const SCREEN_Y_BAND_VS: ScreenYBand = {
-  min: Math.round(VS_VIEWPORT_HEIGHT * 0.24),
-  max: Math.round(VS_VIEWPORT_HEIGHT * 0.96),
+  min: 130,
+  max: VS_VIEWPORT_HEIGHT - 8,
 };
 
 /**
@@ -70,5 +69,5 @@ export const SCREEN_Y_BAND_KEY = 'screenYBand';
 
 export function getScreenYBand(scene: Phaser.Scene): ScreenYBand {
   const band = scene.game.registry.get(SCREEN_Y_BAND_KEY) as ScreenYBand | undefined;
-  return band ?? SCREEN_Y_BAND_STORY;
+  return band ?? SCREEN_Y_BAND_VS;
 }

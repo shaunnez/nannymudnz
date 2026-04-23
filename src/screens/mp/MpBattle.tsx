@@ -9,7 +9,6 @@ import { MpLoading } from './MpLoading';
 interface Props {
   room: Room<MatchState>;
   animateHud: boolean;
-  showLog: boolean;
   onLeave: () => void;
   onPhaseChange: (phase: MatchPhase) => void;
 }
@@ -20,7 +19,7 @@ interface Props {
  * and boot config render the right characters, then hands control to GameScreen
  * which runs in `netMode === 'mp'`.
  */
-export function MpBattle({ room, animateHud, showLog, onLeave, onPhaseChange }: Props) {
+export function MpBattle({ room, animateHud, onLeave, onPhaseChange }: Props) {
   const state = useMatchState(room);
 
   usePhaseBounce(state?.phase ?? 'in_game', 'in_game', onPhaseChange);
@@ -40,7 +39,6 @@ export function MpBattle({ room, animateHud, showLog, onLeave, onPhaseChange }: 
       p2={p2}
       stageId={stageId}
       animateHud={animateHud}
-      showLog={showLog}
       matchRoom={room}
       onVictory={() => {
         // In MP the server drives phase transitions; victory handoff is the

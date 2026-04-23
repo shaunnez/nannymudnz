@@ -29,7 +29,6 @@ import {
   HUD_TOP_PX,
   HUD_BOTTOM_PX,
   SCREEN_Y_BAND_KEY,
-  SCREEN_Y_BAND_STORY,
   SCREEN_Y_BAND_VS,
 } from '../constants';
 
@@ -135,20 +134,14 @@ export class GameplayScene extends Phaser.Scene {
     this.bossMusicStarted = false;
     this.audio.startStageMusic();
 
-    if (mode === 'story') {
-      this.background = new BackgroundView(this);
-      this.scene.launch('Hud');
-      this.game.registry.set(SCREEN_Y_BAND_KEY, SCREEN_Y_BAND_STORY);
-    } else {
-      // VS / MP: React HUD overlays the canvas; shrink camera viewport to the
-      // un-covered band. The camera's local (0,0) is the top of the visible
-      // strip, so the sprite projection band is relative to that strip, not
-      // the full canvas — publish SCREEN_Y_BAND_VS so views project correctly.
-      const vsViewportHeight = VIRTUAL_HEIGHT - HUD_TOP_PX - HUD_BOTTOM_PX;
-      this.background = new BackgroundView(this, vsViewportHeight);
-      this.cameras.main.setViewport(0, HUD_TOP_PX, VIRTUAL_WIDTH, vsViewportHeight);
-      this.game.registry.set(SCREEN_Y_BAND_KEY, SCREEN_Y_BAND_VS);
-    }
+    // All modes use the React HUD overlay; shrink the camera viewport to the
+    // un-covered strip between the top/bottom HUD panels. The camera's local
+    // (0,0) is the top of the visible strip, so the sprite projection band
+    // (SCREEN_Y_BAND_VS) is relative to that strip, not the full canvas.
+    const viewportHeight = VIRTUAL_HEIGHT - HUD_TOP_PX - HUD_BOTTOM_PX;
+    this.background = new BackgroundView(this, viewportHeight, stageId);
+    this.cameras.main.setViewport(0, HUD_TOP_PX, VIRTUAL_WIDTH, viewportHeight);
+    this.game.registry.set(SCREEN_Y_BAND_KEY, SCREEN_Y_BAND_VS);
 
     if (import.meta.env.DEV) {
       this.debugText = this.add
@@ -236,10 +229,8 @@ export class GameplayScene extends Phaser.Scene {
     this.reconcilePickups();
     consumeVfxEvents(this, this.simState.vfxEvents);
     this.game.registry.set('simState', this.simState);
-    if (this.simState.mode === 'vs') {
-      this.events.emit('sim-tick', this.simState);
-      this.game.events.emit('sim-tick', this.simState);
-    }
+    this.events.emit('sim-tick', this.simState);
+    this.game.events.emit('sim-tick', this.simState);
 
     this.updateDebugText();
 

@@ -42,7 +42,6 @@ export interface AppState {
   mpRoom: Room<MatchState> | null;
 
   animateHud: boolean;
-  showLog: boolean;
 
   /** SP VS CPU difficulty (0..5). Ignored in MP / story. */
   difficulty: number;
@@ -63,7 +62,6 @@ const DEFAULT_STATE: AppState = {
   winner: null,
   mpRoom: null,
   animateHud: true,
-  showLog: true,
   difficulty: 2,
 };
 
@@ -75,7 +73,6 @@ const PERSISTED_KEYS: (keyof AppState)[] = [
   'p2Team',
   'stageId',
   'animateHud',
-  'showLog',
   'difficulty',
 ];
 

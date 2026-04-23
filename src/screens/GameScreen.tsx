@@ -18,7 +18,6 @@ interface Props {
   p2?: GuildId;
   stageId: string;
   animateHud: boolean;
-  showLog: boolean;
   difficulty?: number;
   /** When present, GameScreen runs in multiplayer mode and mirrors server state. */
   matchRoom?: Room<MatchState>;
@@ -28,7 +27,7 @@ interface Props {
 }
 
 export function GameScreen({
-  mode, p1, p2, stageId, animateHud, showLog, difficulty, matchRoom,
+  mode, p1, p2, stageId, animateHud, difficulty, matchRoom,
   onVictory, onDefeat, onQuit,
 }: Props) {
   const netMode = matchRoom ? 'mp' : 'sp';
@@ -166,12 +165,11 @@ export function GameScreen({
       }}
     >
       <div ref={parentRef} style={{ width: '100%', height: '100%' }} />
-      {mode === 'vs' && gameReady && (
+      {gameReady && (
         <HudOverlay
           game={gameRef.current}
           stageName={stageName}
           animate={animateHud}
-          showLog={showLog}
           inMp={netMode === 'mp'}
           localSessionId={matchRoom?.sessionId}
           hostSessionId={matchRoom?.state.hostSessionId}

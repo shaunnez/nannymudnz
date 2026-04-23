@@ -40,13 +40,11 @@ function formatKey(k: string): string {
 
 interface Props {
   animateHud: boolean;
-  showLog: boolean;
   onToggleAnimateHud: () => void;
-  onToggleShowLog: () => void;
   onBack: () => void;
 }
 
-export function SettingsScreen({ animateHud, showLog, onToggleAnimateHud, onToggleShowLog, onBack }: Props) {
+export function SettingsScreen({ animateHud, onToggleAnimateHud, onBack }: Props) {
   const [volume, setVolume] = useState(loadVolume);
   const [bindings, setBindings] = useState<KeyBindings>(loadKeyBindings);
   const [rebinding, setRebinding] = useState<keyof KeyBindings | null>(null);
@@ -129,12 +127,6 @@ export function SettingsScreen({ animateHud, showLog, onToggleAnimateHud, onTogg
             sub="Pulse meters, glow combo text, flicker scanlines on hit"
             on={animateHud}
             onClick={onToggleAnimateHud}
-          />
-          <Toggle
-            label="Show scroll log"
-            sub="Display the rolling combat log during battle (when implemented)"
-            on={showLog}
-            onClick={onToggleShowLog}
           />
         </div>
 

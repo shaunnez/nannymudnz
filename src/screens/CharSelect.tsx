@@ -19,8 +19,8 @@ type Slot = 'p1' | 'opp';
 
 const COLS = 5;
 const ROWS = 3;
-const TILE_VS = 175;
-const TILE_SOLO = 160;
+const TILE_SIZE = 175;
+const TILE_GAP = 16;
 
 function pickRandom<T>(list: readonly T[], exclude?: T): T {
   const pool = exclude ? list.filter((x) => x !== exclude) : list;
@@ -66,13 +66,10 @@ export function CharSelect({ mode, initialP1, initialP2, onBack, onReady }: Prop
         const nr = Math.max(0, Math.min(ROWS - 1, r + dy));
         const nc = Math.max(0, Math.min(COLS - 1, col + dx));
         const nextIdx = nr * COLS + nc;
-        if (!hasOpponent) {
-          setPicks((p) => ({ ...p, p1: ids[nextIdx] }));
-        }
         return { ...c, [active]: nextIdx };
       });
     },
-    [active, canMove, hasOpponent, ids],
+    [active, canMove],
   );
 
   const lockActive = useCallback(() => {
@@ -108,7 +105,7 @@ export function CharSelect({ mode, initialP1, initialP2, onBack, onReady }: Prop
       } else if (e.key === 'Enter') {
         e.preventDefault();
         if (!hasOpponent) {
-          onReady(picks.p1, picks.opp);
+          setPicks((p) => ({ ...p, p1: ids[cursors.p1] }));
           return;
         }
         if (readyToCommit) onReady(picks.p1, picks.opp);
@@ -127,9 +124,9 @@ export function CharSelect({ mode, initialP1, initialP2, onBack, onReady }: Prop
   const hoveredGuild = GUILDS.find((g) => g.id === hoveredId)!;
   const hoveredMeta = GUILD_META[hoveredId];
 
-  const bodyColumns = hasOpponent ? '280px 1fr 280px' : '320px 1fr';
-  const tileSize = hasOpponent ? TILE_VS : TILE_SOLO;
-  const tileGap = hasOpponent ? 16 : 22;
+  const bodyColumns = '280px 1fr 280px';
+  const tileSize = TILE_SIZE;
+  const tileGap = TILE_GAP;
 
   return (
     <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
@@ -184,6 +181,7 @@ export function CharSelect({ mode, initialP1, initialP2, onBack, onReady }: Prop
           guildId={locked.p1 ? picks.p1 : ids[cursors.p1]}
           locked={hasOpponent ? locked.p1 : false}
           active={active === 'p1'}
+          statusText={!hasOpponent ? 'HOVER' : undefined}
           onView={() => setDetailsFor(locked.p1 ? picks.p1 : ids[cursors.p1])}
         />
 
@@ -230,7 +228,7 @@ export function CharSelect({ mode, initialP1, initialP2, onBack, onReady }: Prop
                       const other: Slot = active === 'p1' ? 'opp' : 'p1';
                       if (!locked[other]) setActive(other);
                     }
-                    // Non-VS: just preview — no lock. Commit happens via READY / Enter.
+                    // Stage: click commits picks.p1 to the right-hand SELECTED panel. No lock.
                   }}
                   style={{
                     position: 'relative',
@@ -335,13 +333,22 @@ export function CharSelect({ mode, initialP1, initialP2, onBack, onReady }: Prop
           </div>
         </div>
 
-        {hasOpponent && (
+        {hasOpponent ? (
           <SidePanel
             role="CPU"
             guildId={locked.opp ? picks.opp : ids[cursors.opp]}
             locked={locked.opp}
             active={active === 'opp'}
             onView={() => setDetailsFor(locked.opp ? picks.opp : ids[cursors.opp])}
+          />
+        ) : (
+          <SidePanel
+            role="P1"
+            guildId={picks.p1}
+            locked={true}
+            active={false}
+            statusText="SELECTED"
+            onView={() => setDetailsFor(picks.p1)}
           />
         )}
       </div>
@@ -361,7 +368,7 @@ export function CharSelect({ mode, initialP1, initialP2, onBack, onReady }: Prop
         }}
       >
         <span>◀▶▲▼ MOVE</span>
-        <span>↵ LOCK / READY</span>
+        <span>{hasOpponent ? '↵ LOCK / READY' : '↵ SELECT'}</span>
         {hasOpponent && <span>TAB SWITCH</span>}
         <span>ESC BACK</span>
       </div>
@@ -374,10 +381,11 @@ interface SidePanelProps {
   guildId: GuildId;
   locked: boolean;
   active: boolean;
+  statusText?: string;
   onView: () => void;
 }
 
-function SidePanel({ role, guildId, locked, active, onView }: SidePanelProps) {
+function SidePanel({ role, guildId, locked, active, statusText, onView }: SidePanelProps) {
   const guild = GUILDS.find((g) => g.id === guildId)!;
   const meta = GUILD_META[guildId];
   const accent = guildAccent(meta.hue);
@@ -415,7 +423,7 @@ function SidePanel({ role, guildId, locked, active, onView }: SidePanelProps) {
             color: locked ? theme.good : theme.warn,
           }}
         >
-          {locked ? 'LOCKED' : 'SELECTING…'}
+          {statusText ?? (locked ? 'LOCKED' : 'SELECTING…')}
         </span>
       </div>
       <GuildMonogram guildId={guildId} size={180} selected={locked} />

@@ -9,7 +9,6 @@ interface Props {
   game: Phaser.Game | null;
   stageName: string;
   animate: boolean;
-  showLog: boolean;
   /** True in multiplayer. Gates the p1/p2 swap below. */
   inMp?: boolean;
   /** MP-only: local client's sessionId. Used to pick which actor is rendered
@@ -23,7 +22,6 @@ export function HudOverlay({
   game,
   stageName,
   animate,
-  showLog,
   inMp = false,
   localSessionId,
   hostSessionId,
@@ -36,22 +34,23 @@ export function HudOverlay({
   // parent; rendering HUD children inside a VIRTUAL_WIDTH × VIRTUAL_HEIGHT
   // inner frame and scaling uniformly keeps bars, text, and card sizes in
   // exact lockstep with the game viewport at any display resolution.
-  const frameRef = useRef<HTMLDivElement>(null);
+  //
+  // Callback ref (setState) rather than useRef: this component returns null
+  // until the first sim-tick arrives, so a useRef would be null at effect
+  // time and never re-measure. The effect re-runs when frameEl becomes set.
+  const [frameEl, setFrameEl] = useState<HTMLDivElement | null>(null);
   const [scale, setScale] = useState(1);
   useLayoutEffect(() => {
-    const el = frameRef.current;
-    if (!el) return;
+    if (!frameEl) return;
     const measure = () => {
-      const rect = el.getBoundingClientRect();
-      // The frame is 16:9 (aspectRatio in ScalingFrame), so scaling by width
-      // is sufficient; height will match within a rounding pixel.
-      setScale(rect.width / VIRTUAL_WIDTH);
+      const rect = frameEl.getBoundingClientRect();
+      if (rect.width > 0) setScale(rect.width / VIRTUAL_WIDTH);
     };
     measure();
     const obs = new ResizeObserver(measure);
-    obs.observe(el);
+    obs.observe(frameEl);
     return () => obs.disconnect();
-  }, []);
+  }, [frameEl]);
 
   useEffect(() => {
     if (!game) return;
@@ -69,7 +68,13 @@ export function HudOverlay({
   }, [game]);
 
   const state = stateRef.current;
-  if (!state || state.mode !== 'vs' || !state.opponent) return null;
+  if (!state) return null;
+
+  const isVs = state.mode === 'vs';
+
+  // VS requires an opponent slot to have meaningful data; wait one more tick
+  // if it hasn't populated yet so we don't render an empty P2 card.
+  if (isVs && !state.opponent) return null;
 
   // In MP, defer the first HUD render until both sessionIds are known so we
   // don't flicker guests onto the host's side of the bar for one frame.
@@ -79,12 +84,12 @@ export function HudOverlay({
   // In SP VS, local is always state.player. In MP, show the local player on
   // the left regardless of which schema slot they occupy.
   const localIsHost = inMp && localSessionId === hostSessionId;
-  const p1 = inMp && !localIsHost ? state.opponent : state.player;
-  const p2 = inMp && !localIsHost ? state.player : state.opponent;
+  const p1 = inMp && !localIsHost ? state.opponent! : state.player;
+  const p2 = isVs ? (inMp && !localIsHost ? state.player : state.opponent) : null;
 
   return (
     <div
-      ref={frameRef}
+      ref={setFrameEl}
       style={{
         position: 'absolute',
         inset: 0,
@@ -105,18 +110,20 @@ export function HudOverlay({
         }}
       >
         <HudTopBar
+          mode={state.mode}
           p1={p1}
           p2={p2}
           round={state.round}
           stageName={stageName}
           animate={animate}
+          state={state}
         />
         <HudFooter
+          mode={state.mode}
           p1={p1}
           p2={p2}
-          log={state.combatLog}
-          showLog={showLog}
           simTimeMs={state.timeMs}
+          state={state}
         />
       </div>
     </div>
