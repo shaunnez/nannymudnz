@@ -1,0 +1,27 @@
+{
+  "stageId": "kitchen",
+  "theme": "rot-kitchen with decayed brick stoves, iron cauldrons, and leper-occupied filth",
+  "source": "pixellab-first-pass",
+  "assets": {
+    "cauldron_iron_bubbling": {
+      "path": "/world/kitchen/raw/cauldron_iron_bubbling.png",
+      "kind": "landmark",
+      "usage": "central stage focal point, large cauldron with ominous stew"
+    },
+    "stove_brick_ruined": {
+      "path": "/world/kitchen/raw/stove_brick_ruined.png",
+      "kind": "dress_prop",
+      "usage": "ruined stove unit, repeated along backline"
+    },
+    "meat_hooks_hanging": {
+      "path": "/world/kitchen/raw/meat_hooks_hanging.png",
+      "kind": "backdrop",
+      "usage": "overhead hanging hooks, positioned above horizon line at ceiling height"
+    },
+    "barrel_rotten_leaking": {
+      "path": "/world/kitchen/raw/barrel_rotten_leaking.png",
+      "kind": "floor_prop",
+      "usage": "low clutter decay prop near stoves"
+    }
+  }
+}

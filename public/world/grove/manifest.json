@@ -1,0 +1,27 @@
+{
+  "stageId": "grove",
+  "theme": "moonwake grove with ancient gnarled trees, standing stones, bioluminescent mushrooms, druid altar",
+  "source": "pixellab-first-pass",
+  "assets": {
+    "tree_ancient_gnarled": {
+      "path": "/world/grove/raw/tree_ancient_gnarled.png",
+      "kind": "landmark",
+      "usage": "massive tree trunk as primary backline landmark, repeated at variable spacing"
+    },
+    "stone_standing_runic": {
+      "path": "/world/grove/raw/stone_standing_runic.png",
+      "kind": "landmark",
+      "usage": "standing stone between trees, faint glow accent"
+    },
+    "mushroom_bioluminescent": {
+      "path": "/world/grove/raw/mushroom_bioluminescent.png",
+      "kind": "floor_prop",
+      "usage": "glowing mushroom cluster ground dressing"
+    },
+    "altar_mossy_druid": {
+      "path": "/world/grove/raw/altar_mossy_druid.png",
+      "kind": "dress_prop",
+      "usage": "low altar prop near standing stones"
+    }
+  }
+}

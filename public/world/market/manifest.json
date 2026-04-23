@@ -1,0 +1,27 @@
+{
+  "stageId": "market",
+  "theme": "asian night market with paper lanterns, wet cobblestones, amber light, crowded stalls",
+  "source": "pixellab-first-pass",
+  "assets": {
+    "lantern_post_paper": {
+      "path": "/world/market/raw/lantern_post_paper.png",
+      "kind": "landmark",
+      "usage": "tall lantern pole repeated along the backline for warm ambient light"
+    },
+    "market_stall_wooden": {
+      "path": "/world/market/raw/market_stall_wooden.png",
+      "kind": "dress_prop",
+      "usage": "wide stall unit tiled across mid-background to form the market row"
+    },
+    "barrel_crate_stack": {
+      "path": "/world/market/raw/barrel_crate_stack.png",
+      "kind": "floor_prop",
+      "usage": "low clutter prop between stalls, breakage flavor"
+    },
+    "hanging_sign_lantern": {
+      "path": "/world/market/raw/hanging_sign_lantern.png",
+      "kind": "dress_prop",
+      "usage": "hanging shop sign accent above stall entrances"
+    }
+  }
+}

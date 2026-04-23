@@ -1,0 +1,27 @@
+{
+  "stageId": "catacombs",
+  "theme": "drowned catacombs with limestone stalactites, saltwater flooding, bone piles, skull torches",
+  "source": "pixellab-first-pass",
+  "assets": {
+    "stalactite_cluster": {
+      "path": "/world/catacombs/raw/stalactite_cluster.png",
+      "kind": "backdrop",
+      "usage": "ceiling stalactites positioned above horizon line, repeated overhead"
+    },
+    "bone_pile_ancient": {
+      "path": "/world/catacombs/raw/bone_pile_ancient.png",
+      "kind": "floor_prop",
+      "usage": "bone pile clutter at wall bases"
+    },
+    "torch_sconce_skull": {
+      "path": "/world/catacombs/raw/torch_sconce_skull.png",
+      "kind": "light_source",
+      "usage": "wall torch between pillars, dim catacomb lighting"
+    },
+    "pillar_cracked_flooded": {
+      "path": "/world/catacombs/raw/pillar_cracked_flooded.png",
+      "kind": "landmark",
+      "usage": "cracked pillar with waterline mark, repeated backline architecture"
+    }
+  }
+}

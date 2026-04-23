@@ -51,7 +51,7 @@ function Add-SummonBurstFrames {
   for($idx=0;$idx-lt 8;$idx++){
     $frame=New-Frame $largeGrid;$g=[System.Drawing.Graphics]::FromImage($frame)
     try{
-      $r=4+$idx*2;Draw-Ring $g $pal.dark $largeGrid/2 $largeGrid/2 $r 2;Draw-Ring $g $pal.void $largeGrid/2 $largeGrid/2 ($r+2) 1
+      $cx=[int]($largeGrid/2);$r=4+$idx*2;Draw-Ring $g $pal.dark $cx $cx $r 2;Draw-Ring $g $pal.void $cx $cx ($r+2) 1
       for($i=0;$i-lt 6;$i++){$angle=[Math]::PI*2/6*$i+$idx*0.4;$dx=[int]([Math]::Round([Math]::Cos($angle)*($r+3)));$dy=[int]([Math]::Round([Math]::Sin($angle)*($r+3)));Draw-Pixel $g $pal.bright (20+$dx) (20+$dy) 2 2}
       $frames.Add($frame)
     }finally{$g.Dispose()}
