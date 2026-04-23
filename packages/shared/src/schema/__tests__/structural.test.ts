@@ -4,7 +4,6 @@ import type {
   Actor,
   Projectile,
   Pickup,
-  VFXEvent,
   LogEntry,
   RoundState,
 } from '../../simulation/types';
@@ -13,7 +12,6 @@ import {
   ActorSchema,
   ProjectileSchema,
   PickupSchema,
-  VFXEventSchema,
   LogEntrySchema,
   RoundStateSchema,
 } from '../index';
@@ -30,9 +28,6 @@ describe('Schema structurally satisfies SimState', () => {
   });
   it('PickupSchema is assignable to Pickup', () => {
     expectTypeOf<PickupSchema>().toMatchTypeOf<Pickup>();
-  });
-  it('VFXEventSchema is assignable to VFXEvent', () => {
-    expectTypeOf<VFXEventSchema>().toMatchTypeOf<VFXEvent>();
   });
   it('LogEntrySchema is assignable to LogEntry', () => {
     expectTypeOf<LogEntrySchema>().toMatchTypeOf<LogEntry>();

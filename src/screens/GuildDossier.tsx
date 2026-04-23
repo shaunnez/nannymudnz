@@ -78,12 +78,12 @@ export function GuildDossier({ guildId, onBack, onPrev, onNext }: Props) {
           }}
         >
           <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: 18, alignItems: 'center' }}>
-            <GuildMonogram guildId={guildId} size={120} selected />
+            <GuildMonogram guildId={guildId} size={80} selected />
             <div>
               <div style={{ fontFamily: theme.fontMono, fontSize: 10, color: accent, letterSpacing: 5 }}>
                 {meta.tag.toUpperCase()}
               </div>
-              <div style={{ fontFamily: theme.fontDisplay, fontSize: 54, color: theme.ink, letterSpacing: '-0.02em', lineHeight: 1 }}>
+              <div style={{ fontFamily: theme.fontDisplay, fontSize: 44, color: theme.ink, letterSpacing: '-0.02em', lineHeight: 1 }}>
                 {guild.name}
               </div>
               <div style={{ fontFamily: theme.fontBody, fontSize: 12, color: theme.inkDim, marginTop: 4 }}>
@@ -149,14 +149,14 @@ export function GuildDossier({ guildId, onBack, onPrev, onNext }: Props) {
           <SectionLabel kicker="STATS" right="6-AXIS">
             Attribute distribution
           </SectionLabel>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             {STAT_KEYS.map((k) => (
               <div key={k} style={{ display: 'grid', gridTemplateColumns: '56px 1fr 48px', alignItems: 'center', gap: 14 }}>
-                <span style={{ fontFamily: theme.fontMono, fontSize: 16, color: theme.inkMuted, letterSpacing: 3 }}>
+                <span style={{ fontFamily: theme.fontMono, fontSize: 14, color: theme.inkMuted, letterSpacing: 3 }}>
                   {k}
                 </span>
-                <MeterBar value={guild.stats[k]} max={STAT_MAX} color={accent} height={18} />
-                <span style={{ fontFamily: theme.fontMono, fontSize: 18, color: accent, textAlign: 'right', letterSpacing: 1 }}>
+                <MeterBar value={guild.stats[k]} max={STAT_MAX} color={accent} height={10} />
+                <span style={{ fontFamily: theme.fontMono, fontSize: 16, color: accent, textAlign: 'right', letterSpacing: 1 }}>
                   {guild.stats[k]}
                 </span>
               </div>
@@ -321,7 +321,7 @@ function VitalTile({ label, value, accent, emphasized }: { label: string; value:
         border: `1px solid ${border}`,
       }}
     >
-      <span style={{ fontFamily: theme.fontMono, fontSize: 9, color: theme.inkMuted, letterSpacing: 2 }}>
+      <span style={{ fontFamily: theme.fontMono, fontSize: 14, color: theme.inkMuted, letterSpacing: 2 }}>
         {label.toUpperCase()}
       </span>
       <span style={{ fontFamily: theme.fontDisplay, fontSize: 22, color: fg, lineHeight: 1.1, marginTop: 2 }}>

@@ -32,7 +32,9 @@
       "Bash(curl *)",
       "Bash(npm run *)",
       "PowerShell(gh issue list --repo shaunnez/nannymudnz --label \"todo\" --json number,title,labels,body --limit 50 2>&1)",
-      "Bash(git *)"
+      "Bash(git *)",
+      "Bash(npm test *)",
+      "Bash(npx tsc *)"
     ]
   }
 }

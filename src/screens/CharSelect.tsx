@@ -19,7 +19,7 @@ type Slot = 'p1' | 'opp';
 
 const COLS = 5;
 const ROWS = 3;
-const TILE_SIZE = 190;
+const TILE_SIZE = 160;
 const TILE_GAP = 20;
 
 function pickRandom<T>(list: readonly T[], exclude?: T): T {
@@ -187,7 +187,7 @@ export function CharSelect({ mode, initialP1, initialP2, onBack, onReady }: Prop
 
         <div
           style={{
-            padding: '28px 36px',
+            padding: '20px 30px',
             display: 'flex',
             flexDirection: 'column',
             gap: 18,

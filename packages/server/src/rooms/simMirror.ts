@@ -20,7 +20,6 @@ import type {
   SimState,
   Stats,
   StatusEffect,
-  VFXEvent,
 } from '@nannymud/shared/simulation/types';
 import {
   ActorSchema,
@@ -32,7 +31,6 @@ import {
   SimStateSchema,
   StatsSchema,
   StatusEffectSchema,
-  VFXEventSchema,
 } from '@nannymud/shared';
 
 export function createSimSchema(plain: SimState): SimStateSchema {
@@ -82,7 +80,6 @@ export function mirrorSimToSchema(src: SimState, dst: SimStateSchema): void {
   syncArray(dst.allies as unknown as ArraySchema<ActorSchema>, src.allies, makeActor, mirrorActor);
   syncArray(dst.pickups as unknown as ArraySchema<PickupSchema>, src.pickups, makePickup, mirrorPickup);
   syncArray(dst.projectiles as unknown as ArraySchema<ProjectileSchema>, src.projectiles, makeProjectile, mirrorProjectile);
-  syncArray(dst.vfxEvents as unknown as ArraySchema<VFXEventSchema>, src.vfxEvents, makeVfx, mirrorVfx);
   syncArray(dst.combatLog as unknown as ArraySchema<LogEntrySchema>, src.combatLog, makeLog, mirrorLog);
   // waves is story-only; empty in VS.
 }
@@ -244,29 +241,6 @@ function mirrorProjectile(src: Projectile, dst: ProjectileSchema): void {
   syncPrimitiveArray(dst.hitActorIds as unknown as ArraySchema<string>, src.hitActorIds);
 }
 
-function mirrorVfx(src: VFXEvent, dst: VFXEventSchema): void {
-  dst.type = src.type;
-  dst.color = src.color;
-  dst.x = src.x;
-  dst.y = src.y;
-  if (src.z !== undefined) dst.z = src.z;
-  if (src.facing !== undefined) dst.facing = src.facing;
-  if (src.radius !== undefined) dst.radius = src.radius;
-  if (src.vx !== undefined) dst.vx = src.vx;
-  if (src.vy !== undefined) dst.vy = src.vy;
-  if (src.x2 !== undefined) dst.x2 = src.x2;
-  if (src.y2 !== undefined) dst.y2 = src.y2;
-  if (src.value !== undefined) dst.value = src.value;
-  if (src.text !== undefined) dst.text = src.text;
-  if (src.isCrit !== undefined) dst.isCrit = src.isCrit;
-  if (src.isHeal !== undefined) dst.isHeal = src.isHeal;
-  if (src.guildId !== undefined) dst.guildId = src.guildId;
-  if (src.abilityId !== undefined) dst.abilityId = src.abilityId;
-  if (src.ownerId !== undefined) dst.ownerId = src.ownerId;
-  if (src.targetId !== undefined) dst.targetId = src.targetId;
-  if (src.assetKey !== undefined) dst.assetKey = src.assetKey;
-}
-
 function mirrorLog(src: LogEntry, dst: LogEntrySchema): void {
   dst.id = src.id;
   dst.tickId = src.tickId;
@@ -283,7 +257,6 @@ function makeActor(): ActorSchema { return new ActorSchema(); }
 function makeStatusEffect(): StatusEffectSchema { return new StatusEffectSchema(); }
 function makePickup(): PickupSchema { return new PickupSchema(); }
 function makeProjectile(): ProjectileSchema { return new ProjectileSchema(); }
-function makeVfx(): VFXEventSchema { return new VFXEventSchema(); }
 function makeLog(): LogEntrySchema { return new LogEntrySchema(); }
 
 function syncArray<TPlain, TSchema>(

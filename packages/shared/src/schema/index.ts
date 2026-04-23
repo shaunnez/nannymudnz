@@ -4,7 +4,6 @@ export * from './AIStateSchema';
 export * from './PickupSchema';
 export * from './ActorSchema';
 export * from './ProjectileSchema';
-export * from './VFXEventSchema';
 export * from './LogEntrySchema';
 export * from './RoundStateSchema';
 export * from './WaveSchema';

@@ -39,7 +39,7 @@ export function SidePanel({ role, guildId, locked, active, statusText, roleLabel
         <span
           style={{
             fontFamily: theme.fontMono,
-            fontSize: 14,
+            fontSize: 12,
             letterSpacing: 3,
             color: active ? labelColor : theme.inkMuted,
           }}
