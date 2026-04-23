@@ -17,9 +17,14 @@ function New-Color([string]$hex,[int]$alpha=255) {
     [Convert]::ToInt32($hex.Substring(4,2),16))
 }
 $pal = @{
-  gold=[New-Color '#c9a961']; lgold=[New-Color '#fde68a']; amber=[New-Color '#f59e0b']
-  orange=[New-Color '#f97316']; green=[New-Color '#22c55e']; lgreen=[New-Color '#86efac']
-  white=[New-Color '#f8fafc']; dark=[New-Color '#1c1917']
+  gold   = (New-Color '#c9a961')
+  lgold  = (New-Color '#fde68a')
+  amber  = (New-Color '#f59e0b')
+  orange = (New-Color '#f97316')
+  green  = (New-Color '#22c55e')
+  lgreen = (New-Color '#86efac')
+  white  = (New-Color '#f8fafc')
+  dark   = (New-Color '#1c1917')
 }
 function New-Brush($c){return New-Object System.Drawing.SolidBrush($c)}
 function New-Pen($c,[float]$w=1){$p=New-Object System.Drawing.Pen($c,$w);$p.LineJoin=[System.Drawing.Drawing2D.LineJoin]::Round;return $p}
