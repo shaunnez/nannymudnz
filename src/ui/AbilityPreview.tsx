@@ -43,7 +43,12 @@ type PreviewEffect =
   | 'hunter_disengage'
   | 'hunter_rain'
   | 'hunter_trap'
-  | 'hunter_aimed_shot';
+  | 'hunter_aimed_shot'
+  | 'prophet_shield'
+  | 'prophet_bless'
+  | 'prophet_curse'
+  | 'prophet_divine'
+  | 'prophet_insight';
 
 interface AbilityPreviewSpec {
   effect?: PreviewEffect;
@@ -115,6 +120,15 @@ function getAbilityPreviewSpec(guildId: GuildId, abilityId: string): AbilityPrev
         case 'bear_trap':      return { effect: 'hunter_trap' };
         case 'rain_of_arrows': return { effect: 'hunter_rain' };
         default:               return {};
+      }
+    case 'prophet':
+      switch (abilityId) {
+        case 'prophetic_shield':    return { effect: 'prophet_shield' };
+        case 'bless':               return { effect: 'prophet_bless' };
+        case 'curse':               return { effect: 'prophet_curse' };
+        case 'divine_intervention': return { effect: 'prophet_divine' };
+        case 'divine_insight':      return { effect: 'prophet_insight' };
+        default:                    return {};
       }
     default:
       return {};
@@ -225,6 +239,16 @@ function getSpriteTransform(
       y += 8; break;
     case 'hunter_aimed_shot':
       x = -3 + Math.sin(progress * TAU) * 1.5; y += 4; break;
+    case 'prophet_shield':
+      scale *= 1.02 + Math.sin(progress * TAU) * 0.02; y += 2; break;
+    case 'prophet_bless':
+      scale *= 1.0 + Math.sin(progress * TAU * 1.5) * 0.02; y += 4; break;
+    case 'prophet_curse':
+      scale *= 1.02 + Math.sin(progress * TAU) * 0.02; y += 4; break;
+    case 'prophet_divine':
+      scale *= 1.08 + Math.sin(progress * TAU) * 0.03; y += 2; break;
+    case 'prophet_insight':
+      scale *= 1.04 + Math.sin(progress * TAU) * 0.02; y += 2; break;
     default:
       break;
   }
@@ -665,6 +689,66 @@ function PreviewOverlay({
         </>
       );
       break;
+    case 'prophet_shield':
+      content = (
+        <>
+          <ellipse cx="60" cy="60" rx="34" ry="38" fill="none" stroke="#fde68a" strokeWidth={4} opacity={0.8 + pulse * 0.16} />
+          <ellipse cx="60" cy="60" rx="24" ry="28" fill="none" stroke="#ffffff" strokeWidth={2} opacity={0.55} />
+          <line x1="60" y1="22" x2="60" y2="98" stroke="#ffffff" strokeWidth={2.5} opacity={0.65} />
+          <line x1="22" y1="60" x2="98" y2="60" stroke="#ffffff" strokeWidth={2.5} opacity={0.65} />
+          {[0,1,2,3].map(i => {
+            const a = orbit * 0.8 + i * TAU / 4;
+            return <circle key={i} cx={60+Math.cos(a)*38} cy={60+Math.sin(a)*19} r="2.5" fill="#fbbf24" opacity={0.88} />;
+          })}
+        </>
+      );
+      break;
+    case 'prophet_bless':
+      content = (
+        <>
+          <ellipse cx="60" cy="60" rx="30" ry="34" fill="none" stroke="#f7e8a4" strokeWidth={3.5} opacity={0.72 + pulse * 0.2} />
+          <ellipse cx="60" cy="60" rx="22" ry="26" fill="none" stroke="#fde68a" strokeWidth={1.5} opacity={0.52} />
+          {[0,1,2].map(i => {
+            const a = orbit + i * TAU / 3;
+            return <circle key={i} cx={60+Math.cos(a)*34} cy={60+Math.sin(a)*17} r="3" fill="#fbbf24" opacity={0.88} />;
+          })}
+        </>
+      );
+      break;
+    case 'prophet_curse':
+      content = (
+        <>
+          <ellipse cx="60" cy="60" rx="28" ry="32" fill="#2e1065" opacity={0.18 + pulse * 0.1} />
+          <ellipse cx="60" cy="60" rx="32" ry="36" fill="none" stroke="#7c3aed" strokeWidth={4} opacity={0.82 + pulse * 0.14} />
+          <ellipse cx="60" cy="60" rx="22" ry="26" fill="none" stroke="#ede9fe" strokeWidth={1.5} opacity={0.55} />
+          <line x1="60" y1="28" x2="60" y2="92" stroke="#7c3aed" strokeWidth={2.5} opacity={0.7} />
+          <line x1="28" y1="60" x2="92" y2="60" stroke="#7c3aed" strokeWidth={2.5} opacity={0.7} />
+        </>
+      );
+      break;
+    case 'prophet_divine':
+      content = (
+        <>
+          <ellipse cx="60" cy="60" rx="36" ry="40" fill="#ffffff" opacity={0.2 + pulse * 0.12} />
+          <ellipse cx="60" cy="60" rx="40" ry="44" fill="none" stroke="#ffffff" strokeWidth={6} opacity={0.88 + pulse * 0.1} />
+          <ellipse cx="60" cy="60" rx="28" ry="32" fill="none" stroke="#fde68a" strokeWidth={2.5} opacity={0.72} />
+          <line x1="60" y1="16" x2="60" y2="104" stroke="#ffffff" strokeWidth={3} opacity={0.65} />
+          <line x1="16" y1="60" x2="104" y2="60" stroke="#ffffff" strokeWidth={3} opacity={0.65} />
+        </>
+      );
+      break;
+    case 'prophet_insight':
+      content = (
+        <>
+          <circle cx="60" cy="60" r="36" fill="none" stroke="#ffffff" strokeWidth={4} opacity={0.78 + pulse * 0.18} />
+          <circle cx="60" cy="60" r="26" fill="none" stroke="#fde68a" strokeWidth={2} opacity={0.6} />
+          {[0,1,2,3,4,5,6,7].map(i => {
+            const a = i * TAU / 8 + orbit * 0.4;
+            return <circle key={i} cx={60+Math.cos(a)*38} cy={60+Math.sin(a)*38} r="2.5" fill="#fbbf24" opacity={0.85} />;
+          })}
+        </>
+      );
+      break;
     default:
       break;
   }
@@ -717,7 +801,11 @@ export function AbilityPreview({
                   ? 'drop-shadow(0 0 16px rgba(220,38,38,0.6)) sepia(0.8) saturate(4) hue-rotate(-20deg) brightness(0.88)'
                   : preview.effect === 'champion_tithe'
                     ? 'drop-shadow(0 0 10px rgba(220,38,38,0.45)) sepia(0.4) saturate(2) hue-rotate(-15deg) brightness(0.95)'
-                    : 'none';
+                    : preview.effect === 'prophet_divine'
+                      ? 'drop-shadow(0 0 18px rgba(255,255,255,0.7)) brightness(1.15) saturate(0.4)'
+                      : preview.effect === 'prophet_curse'
+                        ? 'drop-shadow(0 0 12px rgba(124,58,237,0.55)) sepia(0.5) saturate(3) hue-rotate(200deg) brightness(0.9)'
+                        : 'none';
 
   return (
     <div

@@ -16,7 +16,7 @@ interface GuildVfxMetadata {
   assets: Record<string, GuildVfxAssetMetadata>;
 }
 
-const VFX_GUILDS: GuildId[] = ['knight', 'leper', 'viking', 'adventurer', 'mage', 'druid', 'monk', 'champion', 'hunter'];
+const VFX_GUILDS: GuildId[] = ['knight', 'leper', 'viking', 'adventurer', 'mage', 'druid', 'monk', 'champion', 'hunter', 'prophet'];
 
 const loadedMetadata = new Map<GuildId, GuildVfxMetadata>();
 

@@ -324,6 +324,11 @@ function getAbilityAssetKey(abilityId: string, eventType: VFXEvent['type']): str
     case 'disengage':       return eventType === 'aoe_pop'       ? 'disengage_burst' : undefined;
     case 'bear_trap':       return eventType === 'aoe_pop'       ? 'bear_trap_snap'  : undefined;
     case 'rain_of_arrows':  return eventType === 'channel_pulse' ? 'rain_pulse'      : undefined;
+    case 'prophetic_shield':    return eventType === 'aura_pulse' ? 'prophetic_shield_aura'    : undefined;
+    case 'bless':               return eventType === 'aura_pulse' ? 'bless_aura'               : undefined;
+    case 'curse':               return eventType === 'aoe_pop'    ? 'curse_mark'               : undefined;
+    case 'divine_insight':      return eventType === 'aoe_pop'    ? 'divine_insight_burst'      : undefined;
+    case 'divine_intervention': return eventType === 'aura_pulse' ? 'divine_intervention_aura' : undefined;
     default:
       return undefined;
   }

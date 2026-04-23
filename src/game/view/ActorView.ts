@@ -632,6 +632,56 @@ export class ActorView {
     this.attackFx.setVisible(true);
   }
 
+  private drawProphetShieldAura(bodyHeight: number, visualTime: number): void {
+    this.auraFx.clear();
+    const pulse = 0.65 + Math.sin(visualTime * 3) * 0.22;
+    this.auraFx.lineStyle(4, 0xfde68a, 0.78 + pulse * 0.18);
+    this.auraFx.strokeEllipse(0, -bodyHeight * 0.52, this.width * 1.38, bodyHeight * 0.98);
+    this.auraFx.lineStyle(2, 0xffffff, 0.5);
+    this.auraFx.strokeEllipse(0, -bodyHeight * 0.52, this.width * 1.16, bodyHeight * 0.76);
+    for (let i = 0; i < 4; i++) {
+      const a = visualTime * 1.5 + i * (Math.PI / 2);
+      this.auraFx.fillStyle(0xfbbf24, 0.9);
+      this.auraFx.fillCircle(
+        Math.cos(a) * this.width * 0.72,
+        -bodyHeight * 0.52 + Math.sin(a) * bodyHeight * 0.5,
+        2.5,
+      );
+    }
+    this.auraFx.setVisible(true);
+  }
+
+  private drawProphetBlessAura(bodyHeight: number, visualTime: number): void {
+    this.auraFx.clear();
+    const pulse = 0.6 + Math.sin(visualTime * 4) * 0.25;
+    this.auraFx.lineStyle(3, 0xf7e8a4, 0.7 + pulse * 0.2);
+    this.auraFx.strokeEllipse(0, -bodyHeight * 0.52, this.width * 1.3, bodyHeight * 0.92);
+    this.auraFx.lineStyle(1.5, 0xfde68a, 0.5);
+    this.auraFx.strokeEllipse(0, -bodyHeight * 0.52, this.width * 1.1, bodyHeight * 0.72);
+    for (let i = 0; i < 3; i++) {
+      const a = visualTime * 2.5 + i * (Math.PI * 2 / 3);
+      this.auraFx.fillStyle(0xfbbf24, 0.85);
+      this.auraFx.fillCircle(
+        Math.cos(a) * this.width * 0.66,
+        -bodyHeight * 0.52 + Math.sin(a) * bodyHeight * 0.46,
+        2,
+      );
+    }
+    this.auraFx.setVisible(true);
+  }
+
+  private drawProphetDivineIntervention(bodyHeight: number): void {
+    this.auraFx.clear();
+    this.auraFx.fillStyle(0xffffff, 0.22);
+    this.auraFx.fillEllipse(0, -bodyHeight * 0.52, this.width * 1.5, bodyHeight * 1.1);
+    this.auraFx.lineStyle(5, 0xffffff, 0.88);
+    this.auraFx.strokeEllipse(0, -bodyHeight * 0.52, this.width * 1.42, bodyHeight * 1.02);
+    this.auraFx.lineStyle(2.5, 0xfde68a, 0.7);
+    this.auraFx.strokeEllipse(0, -bodyHeight * 0.52, this.width * 1.2, bodyHeight * 0.82);
+    this.auraFx.setVisible(true);
+    if (this.sprite) this.sprite.setTint(0xfffde7);
+  }
+
   syncFrom(actor: Actor): void {
     const groundScreenY = worldYToScreenY(actor.y, this.band.min, this.band.max);
     const screenY = groundScreenY - actor.z * 0.6;
@@ -849,6 +899,15 @@ export class ActorView {
     if (isHunterRain) this.drawHunterRainChannel(bodyHeight, visualTime);
     if (isHunterTrap) this.drawHunterBearTrap(bodyHeight);
 
+    const isProphet = actor.guildId === 'prophet';
+    const isProphetShield = isProphet && actor.statusEffects.some(e => e.type === 'shield' && e.magnitude === 80);
+    const isProphetBless = isProphet && actor.statusEffects.some(e => e.type === 'damage_boost' && Math.abs(e.magnitude - 0.15) < 0.01);
+    const isProphetDivine = isProphet && actor.statusEffects.some(e => e.type === 'untargetable');
+
+    if (isProphetShield) this.drawProphetShieldAura(bodyHeight, visualTime);
+    if (isProphetBless) this.drawProphetBlessAura(bodyHeight, visualTime);
+    if (isProphetDivine) this.drawProphetDivineIntervention(bodyHeight);
+
     // Status alpha overlays.
     let alpha = 1;
     if (actor.statusEffects.some(e => e.type === 'stun')) alpha = Math.min(alpha, 0.7);
@@ -869,6 +928,7 @@ export class ActorView {
       : isBloodlust ? 0xb91c1c
       : isAdrenalineRush ? 0xc2410c
       : isChampionBuff ? 0x991b1b
+      : isProphetDivine ? 0xfffde7
       : null;
     if (this.sprite) {
       if (isHit) {
