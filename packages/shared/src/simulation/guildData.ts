@@ -726,3 +726,51 @@ export function getGuild(id: string): GuildDef {
   if (!g) throw new Error(`Unknown guild: ${id}`);
   return g;
 }
+
+export const DRUID_BEAR_ABILITIES: AbilityDef[] = [
+  makeAbility({
+    id: 'bear_maul', name: 'Maul', combo: 'down,down,attack',
+    baseDamage: 55, scaleStat: 'STR', scaleAmount: 0.9,
+    range: 70, knockdown: true, damageType: 'physical',
+    vfxColor: '#8B4513', description: 'Heavy swipe, knocks down target',
+  }),
+  makeAbility({
+    id: 'bear_charge', name: 'Charge', combo: 'right,right,attack',
+    baseDamage: 35, scaleStat: 'STR', scaleAmount: 0.6,
+    range: 180, isTeleport: true, teleportDist: 180,
+    knockbackForce: 200, damageType: 'physical',
+    vfxColor: '#A0522D', description: 'Rush forward, knockup first enemy hit',
+  }),
+  makeAbility({
+    id: 'bear_roar', name: 'Roar', combo: 'down,up,attack',
+    baseDamage: 0, aoeRadius: 150, cooldownMs: 8000, cost: 20,
+    effects: {
+      slow: { magnitude: 0.4, durationMs: 2000 },
+      fear: { magnitude: 1, durationMs: 1000 },
+    },
+    damageType: 'physical', vfxColor: '#FFD700',
+    description: '150u AoE slow + brief fear',
+  }),
+  makeAbility({
+    id: 'bear_rend', name: 'Rend', combo: 'left,right,attack',
+    baseDamage: 20, scaleStat: 'STR', scaleAmount: 0.4,
+    range: 75, damageType: 'physical',
+    effects: { dot: { magnitude: 8, durationMs: 3000 } },
+    vfxColor: '#DC143C', description: 'Melee + stacking bleed DoT',
+  }),
+  makeAbility({
+    id: 'bear_primal_fury', name: 'Primal Fury', combo: 'down,up,down,up,attack',
+    baseDamage: 0, cooldownMs: 90000, cost: 60,
+    effects: {
+      damage_boost: { magnitude: 0.4, durationMs: 6000 },
+      speed_boost: { magnitude: 0.2, durationMs: 6000 },
+    },
+    vfxColor: '#FF4500', description: '6s berserk: +40% dmg +20% speed',
+  }),
+];
+
+export const DRUID_BEAR_RMB: AbilityDef = makeAbility({
+  id: 'bear_revert', name: 'Revert', combo: 'block+attack',
+  cooldownMs: 0, cost: 0,
+  vfxColor: '#228B22', description: 'Exit bear form, restore stats',
+});
