@@ -2,7 +2,7 @@ import type {
   SimState, Actor, InputState, GuildId, Projectile,
   AbilityDef, ActorKind, AnimationId, PlayerController, StatusEffectType, VFXEvent, GroundZone,
 } from './types';
-import { getGuild } from './guildData';
+import { getGuild, DRUID_BEAR_ABILITIES, DRUID_BEAR_RMB } from './guildData';
 import { makeRng } from './rng';
 import { ENEMY_DEFS, STAGE_WAVES } from './enemyData';
 import {
@@ -91,6 +91,27 @@ export function createPlayerActor(guildId: GuildId): Actor {
     deathTimeMs: 0,
     score: 0,
   };
+}
+
+export function enterBearForm(actor: Actor): void {
+  actor.baseHpMax = actor.hpMax;
+  actor.baseMoveSpeed = actor.moveSpeed;
+  actor.hpMax = Math.round(actor.hpMax * 1.5);
+  actor.hp = Math.min(actor.hp + Math.round(actor.baseHpMax * 0.3), actor.hpMax);
+  actor.moveSpeed = Math.round(actor.moveSpeed * 0.8);
+  actor.kind = 'bear_form';
+  actor.shapeshiftForm = 'bear';
+}
+
+export function revertBearForm(actor: Actor): void {
+  actor.hpMax = actor.baseHpMax ?? actor.hpMax;
+  actor.hp = Math.min(actor.hp, actor.hpMax);
+  actor.moveSpeed = actor.baseMoveSpeed ?? actor.moveSpeed;
+  actor.baseHpMax = undefined;
+  actor.baseMoveSpeed = undefined;
+  actor.kind = 'druid';
+  actor.shapeshiftForm = 'none';
+  actor.statusEffects = actor.statusEffects.filter(e => !(e.type === 'damage_boost' && e.source === 'bear_form'));
 }
 
 function createEnemyActor(kind: string, x: number, y: number, state: SimState): Actor {
@@ -751,8 +772,14 @@ function fireAbility(player: Actor, ability: AbilityDef, state: SimState, ctrl: 
   }
 
   if (ability.id === 'shapeshift' && player.guildId === 'druid') {
-    const form = player.shapeshiftForm || 'none';
-    player.shapeshiftForm = form === 'none' ? 'bear' : form === 'bear' ? 'wolf' : 'none';
+    if ((player.shapeshiftForm ?? 'none') === 'none') {
+      enterBearForm(player);
+      addStatusEffect(state, player, 'damage_boost', 0.3, 999999, 'bear_form');
+    }
+  }
+
+  if (ability.id === 'bear_revert') {
+    revertBearForm(player);
   }
 
   if (ability.id === 'class_swap' && player.guildId === 'master') {
@@ -1220,8 +1247,15 @@ function handlePlayerInput(state: SimState, input: InputState, ctrl: PlayerContr
 
   const comboResult = detectComboFromInput(ctrl.comboBuffer, input, now);
   if (comboResult && input.attackJustPressed) {
-    const guild = getGuild(player.guildId!);
-    const ability = guild.abilities.find(a => a.combo === comboResult) || (comboResult === 'block+attack' ? guild.rmb : null);
+    let ability: AbilityDef | null = null;
+    if (player.shapeshiftForm === 'bear') {
+      ability = DRUID_BEAR_ABILITIES.find(a => a.combo === comboResult) ??
+                (comboResult === 'block+attack' ? DRUID_BEAR_RMB : null) ?? null;
+    } else {
+      const guild = getGuild(player.guildId!);
+      ability = guild.abilities.find(a => a.combo === comboResult) ??
+                (comboResult === 'block+attack' ? guild.rmb : null) ?? null;
+    }
     if (ability) {
       fireAbility(player, ability, state, ctrl);
       return;
@@ -1229,8 +1263,8 @@ function handlePlayerInput(state: SimState, input: InputState, ctrl: PlayerContr
   }
 
   if (input.blockJustPressed && input.attackJustPressed) {
-    const guild = getGuild(player.guildId!);
-    fireAbility(player, guild.rmb, state, ctrl);
+    const rmb = player.shapeshiftForm === 'bear' ? DRUID_BEAR_RMB : getGuild(player.guildId!).rmb;
+    fireAbility(player, rmb, state, ctrl);
     return;
   }
 
