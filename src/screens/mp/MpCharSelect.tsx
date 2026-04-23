@@ -20,7 +20,7 @@ interface Props {
 
 const COLS = 5;
 const ROWS = 3;
-const TILE_SIZE = 190;
+const TILE_SIZE = 150;
 const TILE_GAP = 20;
 
 export function MpCharSelect({ room, onLeave, onPhaseChange }: Props) {

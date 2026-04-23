@@ -76,7 +76,7 @@ export function SidePanel({ role, guildId, locked, active, statusText, roleLabel
       <div
         style={{
           fontFamily: theme.fontBody,
-          fontSize: 15,
+          fontSize: 12,
           color: theme.inkDim,
           lineHeight: 1.55,
           minHeight: 'calc(12px * 1.55 * 4)',
@@ -103,8 +103,8 @@ export function SidePanel({ role, guildId, locked, active, statusText, roleLabel
             alignItems: 'center',
             gap: 6,
             fontFamily: theme.fontMono,
-            fontSize: 20,
-            color: theme.inkMuted,
+            fontSize: 16,
+            color: theme.inkDim,
             letterSpacing: 2,
             marginBottom: 6,
           }}
@@ -113,7 +113,7 @@ export function SidePanel({ role, guildId, locked, active, statusText, roleLabel
           <ComboDisplay combo={ult.combo} size={20} color={theme.ink} />
         </div>
         <div style={{ fontFamily: theme.fontDisplay, fontSize: 18, color: accent }}>{ult.name}</div>
-        <div style={{ fontFamily: theme.fontBody, fontSize: 14, color: theme.inkDim }}>
+        <div style={{ fontFamily: theme.fontBody, fontSize: 14, color: theme.inkDim, minHeight: '65px' }}>
           {ult.description}
         </div>
       </div>
