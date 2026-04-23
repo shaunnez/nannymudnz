@@ -400,6 +400,8 @@ export interface PlayerController {
   parryWindowMs: number;
   channelMs: number;
   channelingAbility: string | null;
+  castingAbility: string | null;
+  castMs: number;
   groundTargetX: number;
   groundTargetY: number;
   attackChain: number;

@@ -85,3 +85,114 @@ describe('class_swap fires aoe_pop burst', () => {
     expect(burst.length).toBeGreaterThan(0);
   });
 });
+
+describe('ground-target detonation', () => {
+  it('meteor enters casting state on fire', () => {
+    let state = createVsState('mage', 'knight', 'assembly', 1);
+    state.player.mp = 100;
+
+    // advance past VS intro
+    for (let i = 0; i < 150; i++) {
+      state = tickSimulation(state, idleInput(), 16);
+    }
+
+    // meteor is mage ability index 4 → slot 5
+    const fireInput: InputState = { ...idleInput(), testAbilitySlot: 5 };
+    state = tickSimulation(state, fireInput, 16);
+
+    expect(state.player.state).toBe('casting');
+  });
+
+  it('meteor detonates with aoe_pop after 1200ms', () => {
+    let state = createVsState('mage', 'knight', 'assembly', 1);
+    state.player.mp = 100;
+
+    for (let i = 0; i < 150; i++) {
+      state = tickSimulation(state, idleInput(), 16);
+    }
+
+    const fireInput: InputState = { ...idleInput(), testAbilitySlot: 5 };
+    state = tickSimulation(state, fireInput, 16);
+
+    // Tick 1200ms + buffer (80 ticks × 16ms = 1280ms); accumulate events per-tick
+    const allEvents: typeof state.vfxEvents = [];
+    for (let i = 0; i < 80; i++) {
+      state = tickSimulation(state, idleInput(), 16);
+      allEvents.push(...state.vfxEvents);
+    }
+
+    const impact = allEvents.filter(
+      e => e.type === 'aoe_pop' && e.guildId === 'mage' && e.assetKey === 'meteor_impact',
+    );
+    expect(impact.length).toBeGreaterThan(0);
+    expect(state.player.state).not.toBe('casting');
+  });
+
+  it('bear_trap (castTimeMs=0) detonates immediately with aoe_pop', () => {
+    let state = createVsState('hunter', 'knight', 'assembly', 1);
+    state.player.mp = 50;
+
+    for (let i = 0; i < 150; i++) {
+      state = tickSimulation(state, idleInput(), 16);
+    }
+
+    // bear_trap is hunter ability index 3 → slot 4
+    const fireInput: InputState = { ...idleInput(), testAbilitySlot: 4 };
+    state = tickSimulation(state, fireInput, 16);
+
+    const snap = state.vfxEvents.filter(
+      e => e.type === 'aoe_pop' && e.guildId === 'hunter' && e.assetKey === 'bear_trap_snap',
+    );
+    expect(snap.length).toBeGreaterThan(0);
+    expect(state.player.state).not.toBe('casting');
+  });
+});
+
+describe('misplaced-PNG abilities fire correct sprites', () => {
+  it('vampire hemorrhage hit_spark has assetKey=hemorrhage_burst', () => {
+    let state = createVsState('vampire', 'knight', 'assembly', 1);
+    state.player.mp = state.player.mpMax;
+
+    for (let i = 0; i < 150; i++) {
+      state = tickSimulation(state, idleInput(), 16);
+    }
+
+    // hemorrhage is vampire ability index 0 → slot 1
+    const fireInput: InputState = { ...idleInput(), testAbilitySlot: 1 };
+    state = tickSimulation(state, fireInput, 16);
+
+    expect(state.projectiles.length).toBeGreaterThan(0);
+
+    for (let i = 0; i < 60; i++) {
+      state = tickSimulation(state, idleInput(), 16);
+      const hit = state.vfxEvents.filter(
+        e => e.type === 'hit_spark' && e.guildId === 'vampire' && e.assetKey === 'hemorrhage_burst',
+      );
+      if (hit.length > 0) return;
+    }
+    throw new Error('No hemorrhage hit_spark found');
+  });
+
+  it('cultist whispers hit_spark has assetKey=whispers_aura', () => {
+    let state = createVsState('cultist', 'knight', 'assembly', 1);
+
+    for (let i = 0; i < 150; i++) {
+      state = tickSimulation(state, idleInput(), 16);
+    }
+
+    // whispers is cultist ability index 1 → slot 2
+    const fireInput: InputState = { ...idleInput(), testAbilitySlot: 2 };
+    state = tickSimulation(state, fireInput, 16);
+
+    expect(state.projectiles.length).toBeGreaterThan(0);
+
+    for (let i = 0; i < 60; i++) {
+      state = tickSimulation(state, idleInput(), 16);
+      const hit = state.vfxEvents.filter(
+        e => e.type === 'hit_spark' && e.guildId === 'cultist' && e.assetKey === 'whispers_aura',
+      );
+      if (hit.length > 0) return;
+    }
+    throw new Error('No whispers hit_spark found');
+  });
+});

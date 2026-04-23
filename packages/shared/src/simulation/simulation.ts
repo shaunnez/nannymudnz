@@ -1086,6 +1086,19 @@ function handlePlayerInput(state: SimState, input: InputState, ctrl: PlayerContr
     return;
   }
 
+  if (player.state === 'casting') {
+    ctrl.castMs += dtMs;
+    const guild = getGuild(player.guildId!);
+    const ability = [...guild.abilities, guild.rmb].find(a => a.id === ctrl.castingAbility);
+    if (!ability || ctrl.castMs >= ability.castTimeMs) {
+      if (ability) detonateGroundTarget(actor ?? player, ability, state, ctrl);
+      player.state = 'idle';
+      ctrl.castingAbility = null;
+      ctrl.castMs = 0;
+    }
+    return;
+  }
+
   if (input.pauseJustPressed) {
     state.phase = state.phase === 'paused' ? 'playing' : 'paused';
     return;
