@@ -17,12 +17,59 @@ function findTarget(actor: Actor, state: SimState): Actor | null {
   });
 }
 
+function tickPetAI(actor: Actor, state: SimState): boolean {
+  if (actor.petAiMode === undefined) return false;
+
+  if (actor.petAiMode === 'passive') {
+    const owner = [state.player, state.opponent].filter(Boolean).find(a => a!.id === actor.summonedBy) ?? null;
+    if (owner) {
+      const dx = owner.x - actor.x;
+      if (Math.abs(dx) > 80) {
+        actor.vx = Math.sign(dx) * actor.moveSpeed;
+        actor.facing = Math.sign(dx) as -1 | 1;
+      } else {
+        actor.vx = 0;
+      }
+      const dy = owner.y - actor.y;
+      actor.vy = Math.abs(dy) > 40 ? Math.sign(dy) * actor.moveSpeed * 0.5 : 0;
+    }
+    return true;
+  }
+
+  if (actor.petAiMode === 'defensive') {
+    const owner = [state.player, state.opponent].filter(Boolean).find(a => a!.id === actor.summonedBy) ?? null;
+    if (!owner) return false;
+    const ownerUnderAttack = state.enemies.some(
+      e => e.isAlive && Math.abs(e.x - owner.x) < 120 && e.state === 'attacking',
+    );
+    if (!ownerUnderAttack) {
+      const dx = owner.x - actor.x;
+      if (Math.abs(dx) > 80) {
+        actor.vx = Math.sign(dx) * actor.moveSpeed;
+        actor.facing = Math.sign(dx) as -1 | 1;
+      } else {
+        actor.vx = 0;
+      }
+      const dy = owner.y - actor.y;
+      actor.vy = Math.abs(dy) > 40 ? Math.sign(dy) * actor.moveSpeed * 0.5 : 0;
+      return true;
+    }
+    // owner under attack: fall through to aggressive (return false = run normal AI)
+    return false;
+  }
+
+  // aggressive: run normal AI
+  return false;
+}
+
 export function tickAI(actor: Actor, state: SimState, dtSec: number, vfxEvents: VFXEvent[]): void {
   if (!actor.isAlive || isStunned(actor)) {
     actor.vx = 0;
     actor.vy = 0;
     return;
   }
+
+  if (tickPetAI(actor, state)) return;
 
   const def = ENEMY_DEFS[actor.kind];
   if (!def) return;

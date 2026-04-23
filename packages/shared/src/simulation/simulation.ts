@@ -815,6 +815,34 @@ function fireAbility(player: Actor, ability: AbilityDef, state: SimState, ctrl: 
     });
   }
 
+  if (ability.id === 'pet_command' && player.guildId === 'hunter') {
+    const existingPet = [...state.allies, ...(state.opponent ? [state.opponent] : [])]
+      .find(a => a.summonedBy === player.id && a.isAlive);
+
+    if (!existingPet) {
+      spawnEnemyAt(state, 'wolf', player.x + player.facing * 60, player.y);
+      const wolf = state.enemies[state.enemies.length - 1];
+      if (wolf) {
+        wolf.team = 'player';
+        wolf.summonedBy = player.id;
+        wolf.petAiMode = 'aggressive';
+        state.enemies.pop();
+        state.allies.push(wolf);
+        state.vfxEvents.push({ type: 'summon_spawn', x: wolf.x, y: wolf.y, color: '#8d6e63' });
+      }
+    } else {
+      const modes = ['aggressive', 'defensive', 'passive'] as const;
+      const idx = modes.indexOf(existingPet.petAiMode ?? 'aggressive');
+      existingPet.petAiMode = modes[(idx + 1) % modes.length];
+      state.vfxEvents.push({
+        type: 'status_text', x: existingPet.x, y: existingPet.y - 60,
+        color: '#ffffff', text: existingPet.petAiMode,
+      });
+    }
+    clearCombo(ctrl.comboBuffer);
+    return;
+  }
+
   clearCombo(ctrl.comboBuffer);
 }
 
