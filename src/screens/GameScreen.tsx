@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import Phaser from 'phaser';
 import type { GuildId, SimMode, SimState } from '@nannymud/shared/simulation/types';
 import { PauseOverlay } from './PauseOverlay';
+import { StoryGameOverOverlay } from './StoryGameOverOverlay';
 import { GuildDetails } from './GuildDetails';
 import { useFullscreen } from '../layout/useFullscreen';
 import { makePhaserGame, type GameCallbacks } from '../game/PhaserGame';
@@ -29,6 +30,7 @@ export function GameScreen({
   const [gameReady, setGameReady] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [showMoves, setShowMoves] = useState(false);
+  const [showStoryGameOver, setShowStoryGameOver] = useState(false);
   const pausedByMovesRef = useRef(false);
 
   const { isFullscreen, toggle: toggleFullscreen } = useFullscreen();
@@ -50,7 +52,13 @@ export function GameScreen({
 
     const callbacks: GameCallbacks = {
       onVictory: (score) => onVictoryRef.current(score),
-      onDefeat: () => onDefeatRef.current(),
+      onDefeat: () => {
+        if (mode === 'story') {
+          setShowStoryGameOver(true);
+        } else {
+          onDefeatRef.current();
+        }
+      },
       onQuit: () => onQuitRef.current(),
       toggleFullscreen: () => toggleFullscreenRef.current(),
       getIsFullscreen: () => isFullscreenRef.current,
@@ -108,6 +116,16 @@ export function GameScreen({
     }
   }, [emitToGameplay]);
 
+  const handleStoryRematch = useCallback(() => {
+    setShowStoryGameOver(false);
+    emitToGameplay('restart-requested');
+  }, [emitToGameplay]);
+
+  const handleStoryMenu = useCallback(() => {
+    setShowStoryGameOver(false);
+    onQuit();
+  }, [onQuit]);
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== 'Tab') return;
@@ -160,6 +178,12 @@ export function GameScreen({
         />
       )}
       {showMoves && <GuildDetails guildId={p1} onClose={closeMoves} />}
+      {showStoryGameOver && mode === 'story' && (
+        <StoryGameOverOverlay
+          onRematch={handleStoryRematch}
+          onMenu={handleStoryMenu}
+        />
+      )}
     </div>
   );
 }
