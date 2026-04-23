@@ -333,5 +333,17 @@ export class MatchRoom extends Room<MatchState> {
     const p2 = joinerId ? this.coalesceInput(joinerId) : makeEmptyInputState();
     tickSimulation(this.plainSim, p1, dtMs, p2);
     mirrorSimToSchema(this.plainSim, this.state.sim);
+
+    // Propagate sim match-end into MatchState.phase. The sim flips
+    // `round.phase` to 'matchOver' after the best-of resolves; until we mirror
+    // that into 'results' here, clients stay stuck on the battle screen.
+    if (this.plainSim.round?.phase === 'matchOver') {
+      const winner = this.plainSim.round.matchWinner;
+      const joinerId2 = this.getJoinerId();
+      if (winner === 'p1') this.state.matchWinnerSessionId = this.state.hostSessionId;
+      else if (winner === 'p2') this.state.matchWinnerSessionId = joinerId2;
+      else this.state.matchWinnerSessionId = ''; // draw
+      this.state.phase = 'results';
+    }
   }
 }

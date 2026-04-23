@@ -15,12 +15,14 @@ export function createVsState(
   _stageId: string,
   seed: number,
   humanOpponent = false,
+  difficulty = 2,
 ): SimState {
   const state = createInitialState(p1, seed);
   state.mode = 'vs';
   state.waves = [];
   state.currentWave = -1;
   state.bossSpawned = false;
+  if (!humanOpponent) state.difficulty = difficulty;
 
   const opponent = buildOpponent(p2, state.player.x + OPPONENT_SPAWN_X_OFFSET, humanOpponent);
   state.opponent = opponent;
@@ -49,23 +51,19 @@ function buildOpponent(guildId: GuildId, x: number, humanOpponent = false): Acto
   const a = createPlayerActor(guildId);
   a.id = 'opponent';
   a.team = 'enemy';
-  // MP: both combatants are human; story/single VS: only p1 is human.
-  a.isPlayer = humanOpponent;
+  // Both SP CPU and MP opponents are driven through the player-input pipeline
+  // (synthesized input for CPU, real input for MP), so both flag as isPlayer
+  // to keep combat / animation routing symmetric. The guild-based enemy
+  // `tickAI` path in ai.ts is not used for VS opponents — it expects an
+  // enemy `kind` that's absent on guild actors.
+  a.isPlayer = true;
   a.x = x;
   a.facing = -1;
-  a.aiState = humanOpponent
-    ? {
-        // Neutralised: no target, no behavior drives. handlePlayerInput
-        // will take the wheel each tick.
-        ...a.aiState,
-        behavior: 'chaser',
-        targetId: null,
-      }
-    : {
-        ...a.aiState,
-        behavior: 'chaser',
-        targetId: 'player',
-      };
+  a.aiState = {
+    ...a.aiState,
+    behavior: 'chaser',
+    targetId: humanOpponent ? null : 'player',
+  };
   return a;
 }
 

@@ -49,8 +49,8 @@ This file tracks guild asset production using `src/simulation/guildData.ts` as t
 
 | Guild | Batch | Base Prompt | Character Prompts | Character Assets | VFX Prompts | VFX Assets | RMB VFX | Special Actors | Status | Notes |
 |---|---|---:|---:|---:|---:|---:|---:|---|---|---|
-| leper | 1 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | `rotting_husk` | not-started | Regenerate baseline at `124x124` |
-| knight | 1 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | none | not-started | Strong readability test for shield/tank poses |
+| leper | 1 | [x] | [x] | [x] | [x] | [x] | [ ] | `rotting_husk` | review | Current character and VFX reference baseline; keep as the contract anchor unless a later cross-guild review finds a systemic issue |
+| knight | 1 | [x] | [x] | [x] | [x] | [x] | [ ] | none | in-progress | VFX first pass exists; character baseline still needs fresh PixelLab review/regeneration before sign-off |
 | mage | 1 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | none | not-started | Strong readability test for projectile/caster poses |
 | monk | 2 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | none | not-started | Fast animation readability test |
 | viking | 2 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | none | not-started | Rage/brawler silhouette |
@@ -77,9 +77,7 @@ This file tracks guild asset production using `src/simulation/guildData.ts` as t
 
 ## Implementation Order After Context Reset
 
-1. Finalize Leper prompt pack
-2. Regenerate Leper characters
-3. Generate Leper VFX
-4. Validate Leper in-game
-5. Repeat for Knight
-6. Repeat for Mage
+1. Keep Leper as the approved character/VFX contract reference
+2. Regenerate Knight from fresh PixelLab prompts and validate in-game
+3. Move to Mage once Knight is visually approved
+4. Resume the remaining guild batches only after Knight and Mage establish the cross-guild quality bar

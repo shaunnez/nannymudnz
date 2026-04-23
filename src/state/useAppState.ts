@@ -43,6 +43,9 @@ export interface AppState {
 
   animateHud: boolean;
   showLog: boolean;
+
+  /** SP VS CPU difficulty (0..5). Ignored in MP / story. */
+  difficulty: number;
 }
 
 const STORAGE_KEY = 'nannymud-app-state-v1';
@@ -61,6 +64,7 @@ const DEFAULT_STATE: AppState = {
   mpRoom: null,
   animateHud: true,
   showLog: true,
+  difficulty: 2,
 };
 
 const PERSISTED_KEYS: (keyof AppState)[] = [
@@ -72,6 +76,7 @@ const PERSISTED_KEYS: (keyof AppState)[] = [
   'stageId',
   'animateHud',
   'showLog',
+  'difficulty',
 ];
 
 function loadPersisted(): Partial<AppState> {

@@ -30,9 +30,9 @@ export class BackgroundView {
 
   private readonly hillLayers: HillLayer[];
 
-  constructor(scene: Phaser.Scene) {
+  constructor(scene: Phaser.Scene, viewportHeight: number = VIRTUAL_HEIGHT) {
     this.width = VIRTUAL_WIDTH;
-    this.height = VIRTUAL_HEIGHT;
+    this.height = viewportHeight;
     this.groundTopScreen = this.height * 0.45;
 
     this.sky = scene.add.graphics().setScrollFactor(0).setDepth(-1000);

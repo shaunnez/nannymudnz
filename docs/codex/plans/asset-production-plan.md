@@ -2,7 +2,7 @@
 
 ## Goal
 
-Ship a repeatable asset-production pipeline for guild character sprites and guild VFX, starting with a normalized `124x124` Leper baseline and a Leper-first VFX pass before scaling to the remaining guilds.
+Ship a repeatable asset-production pipeline for guild character sprites and guild VFX, starting with a normalized `124x124` Leper baseline and then extending that contract through fresh PixelLab generation for the remaining guilds.
 
 This plan is the durable source of truth for the production rollout in this repo.
 
@@ -91,6 +91,13 @@ For each guild we maintain:
 - a VFX plan that maps abilities to current runtime hooks
 - generated VFX assets in `public/vfx/<guildId>/` when that lane is active
 
+## Current Rollout Status
+
+- `public/sprites/leper/` is the current approved character baseline and contract reference.
+- `public/vfx/leper/` is the current approved first-pass VFX baseline.
+- `public/vfx/knight/` exists as a first-pass Knight VFX pack and should be preserved unless tuning is needed.
+- `public/sprites/knight/` exists, including raw exports, but the Knight character baseline still needs a fresh PixelLab-led review/regeneration before it should be considered signed off.
+
 ## Batch Strategy
 
 ### Phase 1: Planning
@@ -101,7 +108,7 @@ For each guild we maintain:
 
 ### Phase 2: Baseline generation
 
-- Generate or refresh the raw character export.
+- Generate or refresh the raw character export from PixelLab.
 - Composite to normalized `124x124`.
 - Write metadata using measured frame counts.
 
@@ -161,7 +168,7 @@ A guild VFX baseline is done when:
 
 ## Immediate Next Step
 
-1. Normalize Knight's legacy character sheets to the `124x124` baseline while the repo lacks a Knight raw export.
-2. Generate the first Knight VFX batch from the current hook families.
-3. Validate Knight sprites and VFX in-game against the Leper baseline.
-4. Use the Knight pass to decide whether Mage or Vampire is the cleaner next batch.
+1. Regenerate Knight from fresh PixelLab prompts grounded in `guildData.ts`, using Leper as the quality and contract baseline.
+2. Save and preserve the Knight raw export under `public/sprites/knight/raw/`, then composite and normalize the approved output to the `124x124` runtime contract.
+3. Validate Knight sprites together with the existing Knight VFX pack in-game against the Leper baseline, tuning anchors and timing only where needed.
+4. Move to Mage next once Knight passes visual review, then continue guild scale-out from that cleaner baseline.

@@ -28,6 +28,8 @@ export interface GameBootConfig {
   netMode?: NetMode;
   /** Required when `netMode === 'mp'`. */
   matchRoom?: Room<MatchState>;
+  /** SP VS only — CPU difficulty 0..5. Ignored in MP / story. */
+  difficulty?: number;
 }
 
 export function makePhaserGame(parent: HTMLElement, boot: GameBootConfig): Phaser.Game {
@@ -56,6 +58,7 @@ export function makePhaserGame(parent: HTMLElement, boot: GameBootConfig): Phase
   game.registry.set('callbacks', boot.callbacks);
   game.registry.set('netMode', boot.netMode ?? 'sp');
   game.registry.set('matchRoom', boot.matchRoom ?? null);
+  game.registry.set('difficulty', boot.difficulty ?? 2);
 
   return game;
 }

@@ -35,8 +35,11 @@ export interface ScreenYBand {
 
 // VS HUD band reservations — the React HUD overlay covers these strips,
 // so the camera viewport shrinks to the middle to keep action centered.
-export const HUD_TOP_PX = 72;
-export const HUD_BOTTOM_PX = 160;
+// Virtual-pixel (900×506) HUD reservations. The React overlay scales these
+// proportionally via a transform so Phaser and HUD stay pixel-aligned at any
+// display size — see HudOverlay.tsx.
+export const HUD_TOP_PX = 80;
+export const HUD_BOTTOM_PX = 220;
 
 /** Scene-y band for story mode (camera fills canvas). */
 export const SCREEN_Y_BAND_STORY: ScreenYBand = {
@@ -50,10 +53,13 @@ export const SCREEN_Y_BAND_STORY: ScreenYBand = {
  * strip, so the band is relative to that strip, NOT the full canvas. Small
  * paddings keep feet + shadow clear of the panel borders.
  */
-const VS_VIEWPORT_HEIGHT = VIRTUAL_HEIGHT - HUD_TOP_PX - HUD_BOTTOM_PX;
+export const VS_VIEWPORT_HEIGHT = VIRTUAL_HEIGHT - HUD_TOP_PX - HUD_BOTTOM_PX;
+// Widen the walkable depth band so the player can traverse closer to the top
+// of the horizon and the bottom of the frame — the HUD panels already reserve
+// the "chrome" area, so the whole viewport is fair-walk territory.
 export const SCREEN_Y_BAND_VS: ScreenYBand = {
-  min: 40,
-  max: VS_VIEWPORT_HEIGHT - 20,
+  min: Math.round(VS_VIEWPORT_HEIGHT * 0.24),
+  max: Math.round(VS_VIEWPORT_HEIGHT * 0.96),
 };
 
 /**

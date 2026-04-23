@@ -39,11 +39,13 @@ const NEWS = [
 
 interface Props {
   onPick: (target: AppScreen, mode?: GameMode) => void;
+  difficulty: number;
+  onDifficultyChange: (d: number) => void;
 }
 
-export function MainMenu({ onPick }: Props) {
+export function MainMenu({ onPick, difficulty, onDifficultyChange }: Props) {
   const [sel, setSel] = useState(0);
-  const [difficulty, setDifficulty] = useState(2);
+  const setDifficulty = onDifficultyChange;
 
   const activate = (index: number) => {
     const item = MENU_ITEMS[index];

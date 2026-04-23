@@ -110,6 +110,8 @@ export default function App() {
               if (mode) set({ mode });
               go(target);
             }}
+            difficulty={state.difficulty}
+            onDifficultyChange={(d) => set({ difficulty: d })}
           />
         )}
 
@@ -145,6 +147,7 @@ export default function App() {
             stageId={state.stageId}
             animateHud={state.animateHud}
             showLog={state.showLog}
+            difficulty={state.difficulty}
             onVictory={(score) => {
               setFinalScore(score);
               set({ winner: 'P1' });

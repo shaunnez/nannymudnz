@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type Phaser from 'phaser';
 import type { SimState } from '@nannymud/shared/simulation/types';
 import { HudTopBar } from './HudTopBar';
 import { HudFooter } from './HudFooter';
+import { VIRTUAL_WIDTH, VIRTUAL_HEIGHT } from '../../game/constants';
 
 interface Props {
   game: Phaser.Game | null;
@@ -30,17 +31,40 @@ export function HudOverlay({
   const stateRef = useRef<SimState | null>(null);
   const [, setTick] = useState(0);
 
+  // Scale the HUD to match Phaser's virtual-pixel coordinate system. The
+  // React overlay and the Phaser canvas share the same 16:9 letterboxed
+  // parent; rendering HUD children inside a VIRTUAL_WIDTH × VIRTUAL_HEIGHT
+  // inner frame and scaling uniformly keeps bars, text, and card sizes in
+  // exact lockstep with the game viewport at any display resolution.
+  const frameRef = useRef<HTMLDivElement>(null);
+  const [scale, setScale] = useState(1);
+  useLayoutEffect(() => {
+    const el = frameRef.current;
+    if (!el) return;
+    const measure = () => {
+      const rect = el.getBoundingClientRect();
+      // The frame is 16:9 (aspectRatio in ScalingFrame), so scaling by width
+      // is sufficient; height will match within a rounding pixel.
+      setScale(rect.width / VIRTUAL_WIDTH);
+    };
+    measure();
+    const obs = new ResizeObserver(measure);
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
+
   useEffect(() => {
     if (!game) return;
     const onTick = (state: SimState) => {
       stateRef.current = state;
       setTick((n) => (n + 1) & 0xffff);
     };
-    const scene = game.scene.getScene('Gameplay');
-    if (!scene) return;
-    scene.events.on('sim-tick', onTick);
+    // Subscribe on game.events (always alive) rather than scene.events — the
+    // Gameplay scene may not have started yet when this effect runs, and a
+    // missed subscription leaves the HUD blank until page refresh.
+    game.events.on('sim-tick', onTick);
     return () => {
-      scene.events.off('sim-tick', onTick);
+      game.events.off('sim-tick', onTick);
     };
   }, [game]);
 
@@ -60,26 +84,41 @@ export function HudOverlay({
 
   return (
     <div
+      ref={frameRef}
       style={{
         position: 'absolute',
         inset: 0,
+        overflow: 'hidden',
         pointerEvents: 'none',
       }}
     >
-      <HudTopBar
-        p1={p1}
-        p2={p2}
-        round={state.round}
-        stageName={stageName}
-        animate={animate}
-      />
-      <HudFooter
-        p1={p1}
-        p2={p2}
-        log={state.combatLog}
-        showLog={showLog}
-        simTimeMs={state.timeMs}
-      />
+      <div
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: VIRTUAL_WIDTH,
+          height: VIRTUAL_HEIGHT,
+          transform: `scale(${scale})`,
+          transformOrigin: 'top left',
+          pointerEvents: 'none',
+        }}
+      >
+        <HudTopBar
+          p1={p1}
+          p2={p2}
+          round={state.round}
+          stageName={stageName}
+          animate={animate}
+        />
+        <HudFooter
+          p1={p1}
+          p2={p2}
+          log={state.combatLog}
+          showLog={showLog}
+          simTimeMs={state.timeMs}
+        />
+      </div>
     </div>
   );
 }

@@ -19,6 +19,7 @@ import {
 import { tickPhysics, tickKnockdown, tickGetup, tickProjectile, updateCamera, getEffectiveMoveSpeed } from './physics';
 import { createComboBuffer, pushComboKey, detectComboFromInput, clearCombo } from './comboBuffer';
 import { tickAI, spawnEnemyAt } from './ai';
+import { synthesizeVsCpuInput, createEmptyCpuInput } from './vsAI';
 import { tickRound } from './vsSimulation';
 import { appendLog as appendCombatLog } from './combatLog';
 
@@ -1327,7 +1328,12 @@ function tickVsSimulation(
         const oppCtrl = getOrCreateController(state, opp.id, opponentInput);
         handlePlayerInput(state, opponentInput, oppCtrl, dtMs, opp);
       } else {
-        tickAI(opp, state, dtSec, state.vfxEvents);
+        // SP VS: synthesize CPU input and drive through the same pipeline.
+        // The opponent actor has a guild (not an enemy `kind`), so the
+        // enemyData-driven tickAI in ai.ts would early-return with no effect.
+        const oppCtrl = getOrCreateController(state, opp.id, createEmptyCpuInput());
+        const cpuInput = synthesizeVsCpuInput(state, opp, oppCtrl.input, dtMs, state.difficulty ?? 2);
+        handlePlayerInput(state, cpuInput, oppCtrl, dtMs, opp);
       }
     }
     tickPhysics(opp, dtSec);
@@ -1335,9 +1341,7 @@ function tickVsSimulation(
     tickGetup(opp, dtSec);
     tickStatusEffects(opp, dtMs, state.vfxEvents);
     tickHPRegen(opp, dtMs, true);
-    if (opponentInput) {
-      tickPlayerResourceRegen(opp, dtMs, true, state);
-    }
+    tickPlayerResourceRegen(opp, dtMs, true, state);
   }
 
   tickProjectiles(state, dtSec);

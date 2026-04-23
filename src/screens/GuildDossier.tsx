@@ -186,6 +186,7 @@ export function GuildDossier({ guildId, onBack, onPrev, onNext }: Props) {
                 </span>
                 <ComboDisplay combo={a.combo} size={13} />
               </div>
+              <SpriteStrip guildId={guildId} animationId={`ability_${i + 1}`} scale={1.0} />
               <div style={{ fontFamily: theme.fontBody, fontSize: 12, color: theme.inkDim, lineHeight: 1.5 }}>
                 {a.description || '—'}
               </div>

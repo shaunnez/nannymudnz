@@ -118,7 +118,8 @@ export class GameplayScene extends Phaser.Scene {
       this.room.onStateChange(this.onMpStateChange);
     } else if (mode === 'vs') {
       if (!p2) throw new Error('VS mode requires a p2 guild');
-      this.simState = createVsState(guildId, p2, stageId, seed);
+      const difficulty = (this.game.registry.get('difficulty') as number | null) ?? 2;
+      this.simState = createVsState(guildId, p2, stageId, seed, false, difficulty);
     } else {
       this.simState = createInitialState(guildId, seed);
     }
@@ -134,9 +135,8 @@ export class GameplayScene extends Phaser.Scene {
     this.bossMusicStarted = false;
     this.audio.startStageMusic();
 
-    this.background = new BackgroundView(this);
-
     if (mode === 'story') {
+      this.background = new BackgroundView(this);
       this.scene.launch('Hud');
       this.game.registry.set(SCREEN_Y_BAND_KEY, SCREEN_Y_BAND_STORY);
     } else {
@@ -144,12 +144,9 @@ export class GameplayScene extends Phaser.Scene {
       // un-covered band. The camera's local (0,0) is the top of the visible
       // strip, so the sprite projection band is relative to that strip, not
       // the full canvas — publish SCREEN_Y_BAND_VS so views project correctly.
-      this.cameras.main.setViewport(
-        0,
-        HUD_TOP_PX,
-        VIRTUAL_WIDTH,
-        VIRTUAL_HEIGHT - HUD_TOP_PX - HUD_BOTTOM_PX,
-      );
+      const vsViewportHeight = VIRTUAL_HEIGHT - HUD_TOP_PX - HUD_BOTTOM_PX;
+      this.background = new BackgroundView(this, vsViewportHeight);
+      this.cameras.main.setViewport(0, HUD_TOP_PX, VIRTUAL_WIDTH, vsViewportHeight);
       this.game.registry.set(SCREEN_Y_BAND_KEY, SCREEN_Y_BAND_VS);
     }
 
@@ -241,6 +238,7 @@ export class GameplayScene extends Phaser.Scene {
     this.game.registry.set('simState', this.simState);
     if (this.simState.mode === 'vs') {
       this.events.emit('sim-tick', this.simState);
+      this.game.events.emit('sim-tick', this.simState);
     }
 
     this.updateDebugText();
@@ -300,6 +298,7 @@ export class GameplayScene extends Phaser.Scene {
     // the next state sync arrived.
     this.game.registry.set('simState', sim);
     this.events.emit('sim-tick', sim);
+    this.game.events.emit('sim-tick', sim);
 
     this.updateDebugText();
 

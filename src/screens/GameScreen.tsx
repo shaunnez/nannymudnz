@@ -19,6 +19,7 @@ interface Props {
   stageId: string;
   animateHud: boolean;
   showLog: boolean;
+  difficulty?: number;
   /** When present, GameScreen runs in multiplayer mode and mirrors server state. */
   matchRoom?: Room<MatchState>;
   onVictory: (score: number) => void;
@@ -27,7 +28,7 @@ interface Props {
 }
 
 export function GameScreen({
-  mode, p1, p2, stageId, animateHud, showLog, matchRoom,
+  mode, p1, p2, stageId, animateHud, showLog, difficulty, matchRoom,
   onVictory, onDefeat, onQuit,
 }: Props) {
   const netMode = matchRoom ? 'mp' : 'sp';
@@ -72,6 +73,7 @@ export function GameScreen({
       callbacks,
       netMode,
       matchRoom,
+      difficulty,
     });
     gameRef.current = game;
     setGameReady(true);
@@ -95,7 +97,7 @@ export function GameScreen({
       setGameReady(false);
       setPreloading(true);
     };
-  }, [mode, p1, p2, stageId, netMode, matchRoom]);
+  }, [mode, p1, p2, stageId, netMode, matchRoom, difficulty]);
 
   useEffect(() => {
     const game = gameRef.current;
@@ -180,6 +182,7 @@ export function GameScreen({
           onResume={handleResume}
           onRestart={handleRestart}
           onQuit={onQuit}
+          onMoveList={() => setShowMoves(true)}
         />
       )}
       {netMode !== 'mp' && showMoves && <GuildDetails guildId={p1} onClose={closeMoves} />}

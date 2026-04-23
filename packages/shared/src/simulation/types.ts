@@ -349,6 +349,8 @@ export interface SimState {
   combatLog: LogEntry[];
   nextLogId: number;
   controllers: Record<string, PlayerController>;
+  /** SP VS only — CPU opponent difficulty (0..5). Undefined in MP / story. */
+  difficulty?: number;
 }
 
 export interface InputState {
