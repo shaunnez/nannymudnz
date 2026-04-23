@@ -364,6 +364,39 @@ export class ActorView {
     this.attackFx.setVisible(true);
   }
 
+  private drawMageIceNova(bodyHeight: number): void {
+    this.attackFx.clear();
+    this.attackFx.lineStyle(4, 0x93c5fd, 0.9);
+    this.attackFx.strokeCircle(0, -bodyHeight * 0.5, 36);
+    this.attackFx.lineStyle(2, 0xe0f2fe, 0.7);
+    this.attackFx.strokeCircle(0, -bodyHeight * 0.5, 24);
+    for (let i = 0; i < 6; i++) {
+      const a = (Math.PI * 2 / 6) * i;
+      this.attackFx.fillStyle(0xbae6fd, 0.9);
+      this.attackFx.fillTriangle(
+        Math.cos(a) * 28, -bodyHeight * 0.5 + Math.sin(a) * 28,
+        Math.cos(a + 0.25) * 38, -bodyHeight * 0.5 + Math.sin(a + 0.25) * 38,
+        Math.cos(a - 0.25) * 38, -bodyHeight * 0.5 + Math.sin(a - 0.25) * 38,
+      );
+    }
+    this.attackFx.setVisible(true);
+  }
+
+  private drawMageMeteorCast(bodyHeight: number, visualTime: number): void {
+    this.auraFx.clear();
+    const pulse = 0.6 + Math.sin(visualTime * 6) * 0.3;
+    this.auraFx.lineStyle(4, 0xef4444, 0.8 + pulse * 0.15);
+    this.auraFx.strokeEllipse(0, -bodyHeight * 0.52, this.width * 1.3, bodyHeight * 0.94);
+    this.auraFx.lineStyle(2, 0xfca5a5, 0.6);
+    this.auraFx.strokeEllipse(0, -bodyHeight * 0.52, this.width * 1.1, bodyHeight * 0.74);
+    for (let i = 0; i < 3; i++) {
+      const a = visualTime * 4 + i * (Math.PI * 2 / 3);
+      this.auraFx.fillStyle(0xf97316, 0.9);
+      this.auraFx.fillCircle(Math.cos(a) * this.width * 0.66, -bodyHeight * 0.52 + Math.sin(a) * bodyHeight * 0.46, 2.5);
+    }
+    this.auraFx.setVisible(true);
+  }
+
   syncFrom(actor: Actor): void {
     const groundScreenY = worldYToScreenY(actor.y, this.band.min, this.band.max);
     const screenY = groundScreenY - actor.z * 0.6;
@@ -529,6 +562,13 @@ export class ActorView {
     if (isAdrenalineRush) this.drawAdventurerAdrenalineRush(bodyHeight, visualTime);
     if (isAdventurerChanneling) this.drawAdventurerBandage(bodyHeight, visualTime);
     if (isAdventurerSlash) this.drawAdventurerSlash(bodyHeight);
+
+    const isMage = actor.guildId === 'mage';
+    const isMageIcenova = isMage && actor.state === 'attacking' && actor.animationId === 'ability_1';
+    const isMageMeteorCast = isMage && actor.state === 'casting';
+
+    if (isMageIcenova) this.drawMageIceNova(bodyHeight);
+    if (isMageMeteorCast) this.drawMageMeteorCast(bodyHeight, visualTime);
 
     // Status alpha overlays.
     let alpha = 1;

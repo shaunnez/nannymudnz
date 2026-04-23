@@ -21,7 +21,10 @@ type PreviewEffect =
   | 'adventurer_slash'
   | 'adventurer_bandage'
   | 'adventurer_adrenaline_rush'
-  | 'adventurer_second_wind';
+  | 'adventurer_second_wind'
+  | 'mage_ice_nova'
+  | 'mage_blink'
+  | 'mage_meteor';
 
 interface AbilityPreviewSpec {
   effect?: PreviewEffect;
@@ -49,6 +52,13 @@ function getAbilityPreviewSpec(guildId: GuildId, abilityId: string): AbilityPrev
         case 'adrenaline_rush': return { effect: 'adventurer_adrenaline_rush' };
         case 'second_wind':     return { effect: 'adventurer_second_wind' };
         default:                return {};
+      }
+    case 'mage':
+      switch (abilityId) {
+        case 'ice_nova': return { effect: 'mage_ice_nova' };
+        case 'blink':    return { effect: 'mage_blink' };
+        case 'meteor':   return { effect: 'mage_meteor' };
+        default:         return {};
       }
     default:
       return {};
@@ -115,6 +125,12 @@ function getSpriteTransform(
       scale *= 1.06 + Math.sin(progress * TAU) * 0.03; y += 2; break;
     case 'adventurer_second_wind':
       y += 4; break;
+    case 'mage_ice_nova':
+      scale *= 1.04 + Math.sin(progress * TAU) * 0.02; y += 4; break;
+    case 'mage_blink':
+      x = -4 + Math.sin(progress * TAU) * 3; y += 4; break;
+    case 'mage_meteor':
+      scale *= 1.06 + Math.sin(progress * TAU) * 0.025; y += 2; break;
     default:
       break;
   }
@@ -300,6 +316,49 @@ function PreviewOverlay({
         </>
       );
       break;
+    case 'mage_ice_nova':
+      content = (
+        <>
+          <circle cx="60" cy="60" r="34" fill="none" stroke="#93c5fd" strokeWidth={4} opacity={0.82 + pulse * 0.14} />
+          <circle cx="60" cy="60" r="24" fill="none" stroke="#e0f2fe" strokeWidth={2} opacity={0.6} />
+          {[0,1,2,3,4,5].map(i => {
+            const a = orbit * 0.5 + i * TAU / 6;
+            return (
+              <polygon
+                key={i}
+                points={`${60+Math.cos(a)*30},${60+Math.sin(a)*30} ${60+Math.cos(a+0.28)*40},${60+Math.sin(a+0.28)*40} ${60+Math.cos(a-0.28)*40},${60+Math.sin(a-0.28)*40}`}
+                fill="#bae6fd"
+                opacity="0.88"
+              />
+            );
+          })}
+        </>
+      );
+      break;
+    case 'mage_blink':
+      content = (
+        <>
+          {[0,1,2,3].map(i => {
+            const t = (progress + i * 0.25) % 1;
+            return <circle key={i} cx={60 - t * 30} cy={62} r={3 * (1 - t)} fill="#c084fc" opacity={1 - t} />;
+          })}
+          <circle cx="38" cy="62" r="4" fill="#818cf8" opacity={0.6 + pulse * 0.3} />
+        </>
+      );
+      break;
+    case 'mage_meteor':
+      content = (
+        <>
+          <ellipse cx="60" cy="60" rx="34" ry="38" fill="#450a0a" opacity={0.2 + pulse * 0.1} />
+          <ellipse cx="60" cy="60" rx="38" ry="42" fill="none" stroke="#ef4444" strokeWidth={5} opacity={0.88} />
+          <ellipse cx="60" cy="60" rx="26" ry="30" fill="none" stroke="#fca5a5" strokeWidth={2.5} opacity={0.68} />
+          {[0,1,2].map(i => {
+            const a = orbit * 2 + i * TAU / 3;
+            return <circle key={i} cx={60+Math.cos(a)*30} cy={60+Math.sin(a)*15} r="3" fill="#f97316" opacity="0.85" />;
+          })}
+        </>
+      );
+      break;
     default:
       break;
   }
@@ -342,7 +401,11 @@ export function AbilityPreview({
         ? 'drop-shadow(0 0 18px rgba(127, 29, 29, 0.6)) sepia(1) saturate(4) hue-rotate(-32deg) brightness(0.86)'
         : preview.effect === 'adventurer_adrenaline_rush'
           ? 'drop-shadow(0 0 14px rgba(249,115,22,0.5)) sepia(0.4) saturate(2) hue-rotate(8deg) brightness(1.05)'
-          : 'none';
+          : preview.effect === 'mage_meteor'
+            ? 'drop-shadow(0 0 16px rgba(239,68,68,0.55)) sepia(0.6) saturate(3) hue-rotate(-15deg) brightness(0.92)'
+            : preview.effect === 'mage_ice_nova'
+              ? 'drop-shadow(0 0 12px rgba(147,197,253,0.6)) sepia(0.3) saturate(2) hue-rotate(160deg) brightness(1.08)'
+              : 'none';
 
   return (
     <div

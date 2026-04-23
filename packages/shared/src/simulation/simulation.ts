@@ -302,6 +302,8 @@ function getAbilityAssetKey(abilityId: string, eventType: VFXEvent['type']): str
     case 'bandage':         return eventType === 'heal_glow'  ? 'bandage_glow'         : undefined;
     case 'adrenaline_rush': return eventType === 'aura_pulse' ? 'adrenaline_rush_aura' : undefined;
     case 'second_wind':     return eventType === 'aura_pulse' ? 'second_wind_glow'     : undefined;
+    case 'ice_nova': return eventType === 'aoe_pop' ? 'ice_nova_burst' : undefined;
+    case 'meteor':   return eventType === 'aoe_pop' ? 'meteor_impact'  : undefined;
     default:
       return undefined;
   }
