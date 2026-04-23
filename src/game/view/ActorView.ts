@@ -747,6 +747,47 @@ export class ActorView {
     this.attackFx.setVisible(true);
   }
 
+  private drawDarkmageEternalNight(bodyHeight: number, visualTime: number): void {
+    this.attackFx.clear();
+    const pulse = 0.55 + Math.sin(visualTime * 4) * 0.28;
+    this.attackFx.fillStyle(0x030712, 0.3 + pulse * 0.12);
+    this.attackFx.fillCircle(0, -bodyHeight * 0.5, 40);
+    this.attackFx.lineStyle(4, 0x6d28d9, 0.78 + pulse * 0.18);
+    this.attackFx.strokeCircle(0, -bodyHeight * 0.5, 40);
+    this.attackFx.lineStyle(2, 0xa855f7, 0.55);
+    this.attackFx.strokeCircle(0, -bodyHeight * 0.5, 28);
+    this.attackFx.setVisible(true);
+  }
+
+  private drawDarkmageCloak(bodyHeight: number, visualTime: number): void {
+    this.auraFx.clear();
+    const pulse = 0.5 + Math.sin(visualTime * 3) * 0.3;
+    this.auraFx.fillStyle(0x1e1b4b, 0.22 + pulse * 0.1);
+    this.auraFx.fillEllipse(0, -bodyHeight * 0.52, this.width * 1.42, bodyHeight * 1.02);
+    this.auraFx.lineStyle(3, 0x4a1458, 0.7 + pulse * 0.22);
+    this.auraFx.strokeEllipse(0, -bodyHeight * 0.52, this.width * 1.35, bodyHeight * 0.96);
+    this.auraFx.lineStyle(1.5, 0x6d28d9, 0.45);
+    this.auraFx.strokeEllipse(0, -bodyHeight * 0.52, this.width * 1.12, bodyHeight * 0.74);
+    this.auraFx.setVisible(true);
+    if (this.sprite) this.sprite.setAlpha(0.45);
+  }
+
+  private drawDarkmageSoulLeech(bodyHeight: number, visualTime: number): void {
+    this.attackFx.clear();
+    for (let i = 0; i < 5; i++) {
+      const t = (visualTime * 1.6 + i * 0.24) % 1;
+      const angle = i * (Math.PI * 2 / 5);
+      const r = (1 - t) * this.width * 0.68;
+      this.attackFx.fillStyle(0xa855f7, (1 - t) * 0.8);
+      this.attackFx.fillCircle(
+        Math.cos(angle) * r,
+        -bodyHeight * 0.52 + Math.sin(angle) * r * 0.6,
+        2.5,
+      );
+    }
+    this.attackFx.setVisible(true);
+  }
+
   syncFrom(actor: Actor): void {
     const groundScreenY = worldYToScreenY(actor.y, this.band.min, this.band.max);
     const screenY = groundScreenY - actor.z * 0.6;
@@ -984,6 +1025,15 @@ export class ActorView {
     if (isVampireNocturne) this.drawVampireNocturne(bodyHeight, visualTime);
     if (isVampireShadowStep) this.drawVampireShadowStep(bodyHeight, visualTime);
 
+    const isDarkmage = actor.guildId === 'darkmage';
+    const isDarkmageEternalNight = isDarkmage && actor.state === 'attacking' && actor.animationId === 'ability_5';
+    const isDarkmageCloak = isDarkmage && actor.statusEffects.some(e => e.type === 'stealth');
+    const isDarkmageSoulLeech = isDarkmage && actor.state === 'attacking' && actor.animationId === 'ability_3';
+
+    if (isDarkmageEternalNight) this.drawDarkmageEternalNight(bodyHeight, visualTime);
+    if (isDarkmageCloak) this.drawDarkmageCloak(bodyHeight, visualTime);
+    if (isDarkmageSoulLeech) this.drawDarkmageSoulLeech(bodyHeight, visualTime);
+
     // Status alpha overlays.
     let alpha = 1;
     if (actor.statusEffects.some(e => e.type === 'stun')) alpha = Math.min(alpha, 0.7);
@@ -1006,6 +1056,7 @@ export class ActorView {
       : isChampionBuff ? 0x991b1b
       : isProphetDivine ? 0xfffde7
       : isVampireNocturne ? 0x1e0a2e
+      : isDarkmageCloak ? 0x1e1b4b
       : null;
     if (this.sprite) {
       if (isHit) {

@@ -332,6 +332,10 @@ function getAbilityAssetKey(abilityId: string, eventType: VFXEvent['type']): str
     case 'blood_drain':  return eventType === 'heal_glow'  ? 'blood_drain_glow'   : undefined;
     case 'fang_strike':  return eventType === 'hit_spark'  ? 'fang_strike_impact' : undefined;
     case 'nocturne':     return eventType === 'aura_pulse' ? 'nocturne_aura'      : undefined;
+    case 'darkness':      return eventType === 'aoe_pop'    ? 'darkness_burst'      : undefined;
+    case 'soul_leech':    return eventType === 'heal_glow'  ? 'soul_leech_drain'    : undefined;
+    case 'eternal_night': return eventType === 'aoe_pop'    ? 'eternal_night_burst' : undefined;
+    case 'shadow_cloak':  return eventType === 'aura_pulse' ? 'shadow_cloak_aura'   : undefined;
     default:
       return undefined;
   }

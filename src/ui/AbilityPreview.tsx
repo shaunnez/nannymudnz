@@ -52,7 +52,11 @@ type PreviewEffect =
   | 'vampire_blood_drain'
   | 'vampire_nocturne'
   | 'vampire_fang_strike'
-  | 'vampire_shadow_step';
+  | 'vampire_shadow_step'
+  | 'darkmage_darkness'
+  | 'darkmage_soul_leech'
+  | 'darkmage_eternal_night'
+  | 'darkmage_shadow_cloak';
 
 interface AbilityPreviewSpec {
   effect?: PreviewEffect;
@@ -142,6 +146,14 @@ function getAbilityPreviewSpec(guildId: GuildId, abilityId: string): AbilityPrev
         case 'shadow_step':  return { effect: 'vampire_shadow_step' };
         case 'mist_step':    return { effect: 'vampire_shadow_step' };
         default:             return {};
+      }
+    case 'darkmage':
+      switch (abilityId) {
+        case 'darkness':      return { effect: 'darkmage_darkness' };
+        case 'soul_leech':    return { effect: 'darkmage_soul_leech' };
+        case 'eternal_night': return { effect: 'darkmage_eternal_night' };
+        case 'shadow_cloak':  return { effect: 'darkmage_shadow_cloak' };
+        default:              return {};
       }
     default:
       return {};
@@ -270,6 +282,14 @@ function getSpriteTransform(
       x = 2 + Math.sin(progress * TAU) * 2; y += 4; break;
     case 'vampire_shadow_step':
       x = -3 + Math.sin(progress * TAU) * 3; y += 4; break;
+    case 'darkmage_darkness':
+      scale *= 1.04 + Math.sin(progress * TAU) * 0.02; y += 2; break;
+    case 'darkmage_soul_leech':
+      scale *= 1.0 + Math.sin(progress * TAU * 2) * 0.02; y += 4; break;
+    case 'darkmage_eternal_night':
+      scale *= 1.06 + Math.sin(progress * TAU) * 0.025; y += 2; break;
+    case 'darkmage_shadow_cloak':
+      scale *= 1.04 + Math.sin(progress * TAU) * 0.02; y += 2; break;
     default:
       break;
   }
@@ -821,6 +841,59 @@ function PreviewOverlay({
         </>
       );
       break;
+    case 'darkmage_darkness':
+      content = (
+        <>
+          <circle cx="60" cy="60" r="34" fill="#030712" opacity={0.32 + pulse * 0.12} />
+          <circle cx="60" cy="60" r="36" fill="none" stroke="#6d28d9" strokeWidth={4} opacity={0.8 + pulse * 0.16} />
+          <circle cx="60" cy="60" r="26" fill="none" stroke="#a855f7" strokeWidth={2} opacity={0.55} />
+          {[0,1,2,3].map(i => {
+            const a = orbit * 0.6 + i * TAU / 4;
+            return <circle key={i} cx={60+Math.cos(a)*38} cy={60+Math.sin(a)*19} r="2.5" fill="#a855f7" opacity={0.82} />;
+          })}
+        </>
+      );
+      break;
+    case 'darkmage_soul_leech':
+      content = (
+        <>
+          <ellipse cx="60" cy="60" rx="26" ry="30" fill="#2e1065" opacity={0.18 + pulse * 0.1} />
+          <ellipse cx="60" cy="60" rx="32" ry="36" fill="none" stroke="#6d28d9" strokeWidth={3} opacity={0.72 + pulse * 0.2} />
+          {[0,1,2,3,4].map(i => {
+            const t = (progress * 1.6 + i * 0.24) % 1;
+            const a = i * TAU / 5;
+            const r = (1 - t) * 32;
+            return <circle key={i} cx={60+Math.cos(a)*r} cy={60+Math.sin(a)*r*0.6} r="2" fill="#a855f7" opacity={1-t} />;
+          })}
+        </>
+      );
+      break;
+    case 'darkmage_eternal_night':
+      content = (
+        <>
+          <circle cx="60" cy="60" r="38" fill="#030712" opacity={0.35 + pulse * 0.12} />
+          <circle cx="60" cy="60" r="40" fill="none" stroke="#6d28d9" strokeWidth={5} opacity={0.85} />
+          <circle cx="60" cy="60" r="30" fill="none" stroke="#a855f7" strokeWidth={2.5} opacity={0.65} />
+          {[0,1,2,3,4,5].map(i => {
+            const a = i * TAU / 6 + orbit * 0.4;
+            return <circle key={i} cx={60+Math.cos(a)*42} cy={60+Math.sin(a)*42} r="2" fill="#ede9fe" opacity={0.72} />;
+          })}
+        </>
+      );
+      break;
+    case 'darkmage_shadow_cloak':
+      content = (
+        <>
+          <ellipse cx="60" cy="60" rx="34" ry="38" fill="#1e1b4b" opacity={0.24 + pulse * 0.1} />
+          <ellipse cx="60" cy="60" rx="36" ry="40" fill="none" stroke="#4a1458" strokeWidth={4} opacity={0.78 + pulse * 0.18} />
+          <ellipse cx="60" cy="60" rx="26" ry="30" fill="none" stroke="#6d28d9" strokeWidth={2} opacity={0.5} />
+          {[0,1,2].map(i => {
+            const a = orbit * 0.9 + i * TAU / 3;
+            return <circle key={i} cx={60+Math.cos(a)*34} cy={60+Math.sin(a)*17} r="2.5" fill="#a855f7" opacity={0.78} />;
+          })}
+        </>
+      );
+      break;
     default:
       break;
   }
@@ -881,7 +954,11 @@ export function AbilityPreview({
                           ? 'drop-shadow(0 0 16px rgba(122,25,53,0.65)) sepia(0.8) saturate(4) hue-rotate(-25deg) brightness(0.82)'
                           : preview.effect === 'vampire_blood_drain'
                             ? 'drop-shadow(0 0 10px rgba(220,38,38,0.5)) sepia(0.5) saturate(3) hue-rotate(-20deg) brightness(0.9)'
-                            : 'none';
+                            : preview.effect === 'darkmage_eternal_night'
+                              ? 'drop-shadow(0 0 18px rgba(109,40,217,0.6)) sepia(0.6) saturate(4) hue-rotate(220deg) brightness(0.82)'
+                              : preview.effect === 'darkmage_shadow_cloak'
+                                ? 'drop-shadow(0 0 12px rgba(74,20,88,0.55)) sepia(0.5) saturate(3) hue-rotate(210deg) brightness(0.78)'
+                                : 'none';
 
   return (
     <div
