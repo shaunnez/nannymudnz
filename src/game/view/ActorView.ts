@@ -872,6 +872,61 @@ export class ActorView {
     this.attackFx.setVisible(true);
   }
 
+  private drawMasterEclipse(bodyHeight: number, visualTime: number): void {
+    this.auraFx.clear();
+    const pulse = 0.58 + Math.sin(visualTime * 4) * 0.25;
+    const hueShift = (visualTime * 0.3) % 1;
+    const colorCycle = hueShift < 0.33 ? 0xd1d5db : hueShift < 0.66 ? 0xa8dadc : 0xfde68a;
+    this.auraFx.lineStyle(3, colorCycle, 0.72 + pulse * 0.2);
+    this.auraFx.strokeEllipse(0, -bodyHeight * 0.52, this.width * 1.35, bodyHeight * 0.96);
+    this.auraFx.lineStyle(1.5, 0xf9fafb, 0.45);
+    this.auraFx.strokeEllipse(0, -bodyHeight * 0.52, this.width * 1.12, bodyHeight * 0.74);
+    for (let i = 0; i < 5; i++) {
+      const a = visualTime * 3 + i * (Math.PI * 2 / 5);
+      this.auraFx.fillStyle(0xe5e7eb, 0.82);
+      this.auraFx.fillCircle(
+        Math.cos(a) * this.width * 0.68,
+        -bodyHeight * 0.52 + Math.sin(a) * bodyHeight * 0.46,
+        2.5,
+      );
+    }
+    this.auraFx.setVisible(true);
+  }
+
+  private drawMasterApotheosis(bodyHeight: number, visualTime: number): void {
+    this.auraFx.clear();
+    const pulse = 0.55 + Math.sin(visualTime * 3) * 0.3;
+    this.auraFx.fillStyle(0xf9fafb, 0.14 + pulse * 0.08);
+    this.auraFx.fillEllipse(0, -bodyHeight * 0.52, this.width * 1.48, bodyHeight * 1.06);
+    this.auraFx.lineStyle(4, 0xe0e0e0, 0.8 + pulse * 0.16);
+    this.auraFx.strokeEllipse(0, -bodyHeight * 0.52, this.width * 1.38, bodyHeight * 0.98);
+    this.auraFx.lineStyle(2, 0xfde68a, 0.55);
+    this.auraFx.strokeEllipse(0, -bodyHeight * 0.52, this.width * 1.14, bodyHeight * 0.76);
+    for (let i = 0; i < 6; i++) {
+      const t = (visualTime * 1.2 + i * 0.22) % 1;
+      const x = (i % 2 === 0 ? 1 : -1) * this.width * 0.22;
+      this.auraFx.fillStyle(0xfde68a, (1 - t) * 0.88);
+      this.auraFx.fillCircle(x, -bodyHeight * 0.08 - t * bodyHeight * 0.82, 2.5);
+    }
+    this.auraFx.setVisible(true);
+    if (this.sprite) this.sprite.setTint(0xf9fafb);
+  }
+
+  private drawMasterChosenStrike(bodyHeight: number): void {
+    this.attackFx.clear();
+    this.attackFx.lineStyle(5, 0x9ca3af, 0.88);
+    this.attackFx.beginPath();
+    this.attackFx.arc(8, -bodyHeight * 0.52, 30, -1.05, 0.85, false);
+    this.attackFx.strokePath();
+    this.attackFx.lineStyle(2.5, 0xf9fafb, 0.75);
+    this.attackFx.beginPath();
+    this.attackFx.arc(8, -bodyHeight * 0.52, 20, -0.9, 0.7, false);
+    this.attackFx.strokePath();
+    this.attackFx.fillStyle(0xfde68a, 0.92);
+    this.attackFx.fillCircle(28, -bodyHeight * 0.56, 3);
+    this.attackFx.setVisible(true);
+  }
+
   syncFrom(actor: Actor): void {
     const groundScreenY = worldYToScreenY(actor.y, this.band.min, this.band.max);
     const screenY = groundScreenY - actor.z * 0.6;
@@ -1134,6 +1189,15 @@ export class ActorView {
     if (isChefSignatureDish) this.drawChefSignatureDish(bodyHeight, visualTime);
     if (isChefLadle) this.drawChefLadleBash(bodyHeight);
 
+    const isMaster = actor.guildId === 'master';
+    const isMasterEclipse = isMaster && actor.statusEffects.some(e => e.type === 'speed_boost');
+    const isMasterApotheosis = isMaster && actor.statusEffects.some(e => e.type === 'hot' && e.magnitude === 20);
+    const isMasterChosenStrike = isMaster && actor.state === 'attacking' && actor.animationId === 'ability_1';
+
+    if (isMasterEclipse) this.drawMasterEclipse(bodyHeight, visualTime);
+    if (isMasterApotheosis) this.drawMasterApotheosis(bodyHeight, visualTime);
+    if (isMasterChosenStrike) this.drawMasterChosenStrike(bodyHeight);
+
     // Status alpha overlays.
     let alpha = 1;
     if (actor.statusEffects.some(e => e.type === 'stun')) alpha = Math.min(alpha, 0.7);
@@ -1157,6 +1221,7 @@ export class ActorView {
       : isProphetDivine ? 0xfffde7
       : isVampireNocturne ? 0x1e0a2e
       : isDarkmageCloak ? 0x1e1b4b
+      : isMasterApotheosis ? 0xf9fafb
       : null;
     if (this.sprite) {
       if (isHit) {

@@ -65,7 +65,11 @@ type PreviewEffect =
   | 'chef_feast'
   | 'chef_ladle'
   | 'chef_soup'
-  | 'chef_signature';
+  | 'chef_signature'
+  | 'master_eclipse'
+  | 'master_apotheosis'
+  | 'master_chosen_strike'
+  | 'master_chosen_nuke';
 
 interface AbilityPreviewSpec {
   effect?: PreviewEffect;
@@ -179,6 +183,14 @@ function getAbilityPreviewSpec(guildId: GuildId, abilityId: string): AbilityPrev
         case 'ladle_bash':     return { effect: 'chef_ladle' };
         case 'hot_soup':       return { effect: 'chef_soup' };
         case 'signature_dish': return { effect: 'chef_signature' };
+        default:               return {};
+      }
+    case 'master':
+      switch (abilityId) {
+        case 'chosen_strike':  return { effect: 'master_chosen_strike' };
+        case 'chosen_nuke':    return { effect: 'master_chosen_nuke' };
+        case 'eclipse':        return { effect: 'master_eclipse' };
+        case 'apotheosis':     return { effect: 'master_apotheosis' };
         default:               return {};
       }
     default:
@@ -334,6 +346,14 @@ function getSpriteTransform(
       scale *= 1.0 + Math.sin(progress * TAU * 2) * 0.018; y += 4; break;
     case 'chef_signature':
       scale *= 1.04 + Math.sin(progress * TAU) * 0.025; y += 2; break;
+    case 'master_chosen_strike':
+      x = 2 + Math.sin(progress * TAU) * 2; y += 4; break;
+    case 'master_chosen_nuke':
+      scale *= 1.04 + Math.sin(progress * TAU) * 0.02; y += 2; break;
+    case 'master_eclipse':
+      scale *= 1.02 + Math.sin(progress * TAU * 0.5) * 0.03; y += 2; break;
+    case 'master_apotheosis':
+      scale *= 1.08 + Math.sin(progress * TAU) * 0.03; y += 2; break;
     default:
       break;
   }
@@ -1045,6 +1065,57 @@ function PreviewOverlay({
         </>
       );
       break;
+    case 'master_chosen_strike':
+      content = (
+        <>
+          <path d={`M46 ${72-sweep*3} A24 24 0 0 1 86 48`} fill="none" stroke="#9ca3af" strokeWidth={7} strokeLinecap="round" opacity="0.9" />
+          <path d={`M52 ${66-sweep*2} A16 16 0 0 1 80 54`} fill="none" stroke="#f9fafb" strokeWidth={3.5} strokeLinecap="round" opacity="0.82" />
+          <circle cx={84} cy={48} r="3.5" fill="#fde68a" opacity="0.9" />
+        </>
+      );
+      break;
+    case 'master_chosen_nuke':
+      content = (
+        <>
+          <circle cx="60" cy="60" r="34" fill="none" stroke="#e0e0e0" strokeWidth={4} opacity={0.82 + pulse * 0.14} />
+          <circle cx="60" cy="60" r="24" fill="none" stroke="#f9fafb" strokeWidth={2} opacity={0.6} />
+          {[0,1,2,3,4,5].map(i => {
+            const a = orbit * 0.5 + i * TAU / 6;
+            return <circle key={i} cx={60+Math.cos(a)*36} cy={60+Math.sin(a)*36} r="2.5" fill="#fde68a" opacity={0.85} />;
+          })}
+        </>
+      );
+      break;
+    case 'master_eclipse': {
+      const hue = (progress * 0.3) % 1;
+      const cycleStroke = hue < 0.33 ? '#d1d5db' : hue < 0.66 ? '#a8dadc' : '#fde68a';
+      content = (
+        <>
+          <ellipse cx="60" cy="60" rx="32" ry="36" fill="none" stroke={cycleStroke} strokeWidth={3.5} opacity={0.72 + pulse * 0.2} />
+          <ellipse cx="60" cy="60" rx="22" ry="26" fill="none" stroke="#f9fafb" strokeWidth={1.5} opacity={0.5} />
+          {[0,1,2,3,4].map(i => {
+            const a = orbit + i * TAU / 5;
+            return <circle key={i} cx={60+Math.cos(a)*36} cy={60+Math.sin(a)*18} r="2.5" fill="#e5e7eb" opacity={0.82} />;
+          })}
+        </>
+      );
+      break;
+    }
+    case 'master_apotheosis':
+      content = (
+        <>
+          <ellipse cx="60" cy="60" rx="36" ry="40" fill="#f9fafb" opacity={0.15 + pulse * 0.1} />
+          <ellipse cx="60" cy="60" rx="40" ry="44" fill="none" stroke="#e0e0e0" strokeWidth={5} opacity={0.88 + pulse * 0.1} />
+          <ellipse cx="60" cy="60" rx="28" ry="32" fill="none" stroke="#fde68a" strokeWidth={2.5} opacity={0.68} />
+          <line x1="60" y1="16" x2="60" y2="104" stroke="#f9fafb" strokeWidth={2.5} opacity={0.6} />
+          <line x1="16" y1="60" x2="104" y2="60" stroke="#f9fafb" strokeWidth={2.5} opacity={0.6} />
+          {[0,1,2,3,4,5].map(i => {
+            const t = (progress * 1.2 + i * 0.22) % 1;
+            return <circle key={i} cx={52+(i%2)*16} cy={74-t*36} r="2" fill="#fde68a" opacity={1-t} />;
+          })}
+        </>
+      );
+      break;
     default:
       break;
   }
@@ -1111,7 +1182,9 @@ export function AbilityPreview({
                                 ? 'drop-shadow(0 0 12px rgba(74,20,88,0.55)) sepia(0.5) saturate(3) hue-rotate(210deg) brightness(0.78)'
                                 : preview.effect === 'cultist_gate'
                                   ? 'drop-shadow(0 0 18px rgba(0,0,0,0.8)) sepia(0.7) saturate(3) hue-rotate(120deg) brightness(0.75)'
-                                  : 'none';
+                                  : preview.effect === 'master_apotheosis'
+                                    ? 'drop-shadow(0 0 16px rgba(249,250,251,0.7)) brightness(1.2) saturate(0.3)'
+                                    : 'none';
 
   return (
     <div

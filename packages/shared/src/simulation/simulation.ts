@@ -345,6 +345,10 @@ function getAbilityAssetKey(abilityId: string, eventType: VFXEvent['type']): str
     case 'ladle_bash':     return eventType === 'hit_spark'     ? 'ladle_impact'         : undefined;
     case 'hot_soup':       return eventType === 'heal_glow'     ? 'hot_soup_glow'        : undefined;
     case 'signature_dish': return eventType === 'channel_pulse' ? 'signature_dish_pulse' : undefined;
+    case 'chosen_strike':  return eventType === 'hit_spark'  ? 'chosen_strike_impact' : undefined;
+    case 'chosen_nuke':    return eventType === 'aoe_pop'    ? 'chosen_nuke_burst'    : undefined;
+    case 'eclipse':        return eventType === 'aura_pulse' ? 'eclipse_aura'         : undefined;
+    case 'apotheosis':     return eventType === 'aura_pulse' ? 'apotheosis_aura'      : undefined;
     default:
       return undefined;
   }
