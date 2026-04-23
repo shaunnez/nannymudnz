@@ -86,7 +86,6 @@ export function createPlayerActor(guildId: GuildId): Actor {
     primedClass: 'knight',
     dishes: ['hearty_stew', 'hearty_stew', 'hearty_stew', 'fiery_chili', 'fiery_chili'],
     miasmaActive: false,
-    nocturneActive: false,
     isAlive: true,
     deathTimeMs: 0,
     score: 0,
@@ -517,6 +516,13 @@ function fireAbility(player: Actor, ability: AbilityDef, state: SimState, ctrl: 
     return;
   }
 
+  // Stealth break: first damaging ability from stealth gets +100% damage bonus
+  const wasStealthed = player.statusEffects.some(e => e.type === 'stealth');
+  if (wasStealthed && ability.baseDamage > 0) {
+    player.statusEffects = player.statusEffects.filter(e => e.type !== 'stealth');
+    ctrl.fromStealthAttack = true;
+  }
+
   const now = state.timeMs;
   const cdKey = ability.id;
   const cdRemaining = (player.abilityCooldowns.get(cdKey) ?? 0) - now;
@@ -558,7 +564,11 @@ function fireAbility(player: Actor, ability: AbilityDef, state: SimState, ctrl: 
     });
   }
 
-  const dmgMult = getDamageMultiplier(player);
+  let dmgMult = getDamageMultiplier(player);
+  if (ctrl.fromStealthAttack) {
+    dmgMult *= 2.0;
+    ctrl.fromStealthAttack = false;
+  }
 
   if (ability.isHeal) {
     const healAmt = Math.round((ability.baseDamage + ability.scaleAmount * (ability.scaleStat ? player.stats[ability.scaleStat] : 0)) * dmgMult);

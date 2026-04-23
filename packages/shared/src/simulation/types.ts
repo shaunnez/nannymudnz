@@ -431,4 +431,5 @@ export interface PlayerController {
   groundTargetY: number;
   attackChain: number;
   runningDir: number;
+  fromStealthAttack?: boolean;
 }

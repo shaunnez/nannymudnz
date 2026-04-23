@@ -241,5 +241,5 @@ function resetActorState(a: Actor): void {
   a.bloodtally = 0;
   a.shapeshiftForm = 'none';
   a.miasmaActive = false;
-  a.nocturneActive = false;
+  a.statusEffects = a.statusEffects.filter(e => e.type !== 'stealth');
 }

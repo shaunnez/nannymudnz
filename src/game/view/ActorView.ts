@@ -1156,7 +1156,7 @@ export class ActorView {
     const isVampire = actor.guildId === 'vampire';
     const isVampireBloodDrain = isVampire && actor.state === 'channeling';
     const isVampireFangStrike = isVampire && actor.state === 'attacking' && actor.animationId === 'ability_4';
-    const isVampireNocturne = isVampire && actor.nocturneActive === true;
+    const isVampireNocturne = isVampire && actor.statusEffects.some((e: { type: string }) => e.type === 'stealth');
     const isVampireShadowStep = isVampire && actor.state === 'attacking' && actor.animationId === 'ability_2';
 
     if (isVampireBloodDrain) this.drawVampireBloodDrain(bodyHeight, visualTime);

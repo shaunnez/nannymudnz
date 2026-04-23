@@ -6,9 +6,10 @@ import { getEffectiveMoveSpeed } from './physics';
 
 
 function findTarget(actor: Actor, state: SimState): Actor | null {
-  const targets = actor.team === 'enemy'
+  const targets = (actor.team === 'enemy'
     ? [state.player, ...state.allies].filter(a => a.isAlive)
-    : state.enemies.filter(a => a.isAlive);
+    : state.enemies.filter(a => a.isAlive)
+  ).filter(a => !a.statusEffects.some(e => e.type === 'stealth'));
   if (targets.length === 0) return null;
   return targets.reduce((closest, t) => {
     const dCurrent = Math.hypot(t.x - actor.x, t.y - actor.y);
