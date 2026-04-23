@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { Room } from '@colyseus/sdk';
 import type { MatchState } from '@nannymud/shared';
 import { theme, ModalShell } from '../../ui';
-import { joinByCode } from '../../game/net/ColyseusClient';
+import { joinRoom } from '../../game/net/ColyseusClient';
 
 interface Props {
   playerName: string;
@@ -88,7 +88,7 @@ export function JoinByCodeModal({ playerName, onCancel, onJoined }: Props) {
     setLoading(true);
     setError(null);
     try {
-      const room = await joinByCode(code, playerName);
+      const room = await joinRoom(code, playerName);
       onJoined(room);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Room not found or connection failed. Check the code and try again.');
