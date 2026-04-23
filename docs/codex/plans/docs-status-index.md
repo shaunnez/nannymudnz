@@ -10,26 +10,42 @@ These are the documents that should drive current prioritization and execution.
 
 | Doc | Role | Status |
 |---|---|---|
+| `docs/codex/plans/roadmap.md` | Thin active-batch pointer and milestone tracker | active |
 | `docs/codex/plans/combat-polish-vertical-slice-prd.md` | Primary product and execution roadmap for cleanup, combat feel, flagship world slice, design drift, and backlog clarity | active |
 | `docs/codex/plans/agent-orchestration-prd.md` | Repo-aware multi-agent workflow for worktrees, branches, QA, asset lane, and reviewer lane | active |
-| `docs/codex/plans/asset-production-plan.md` | Character/VFX production contract and rollout order | active |
-| `docs/codex/plans/guild-production-matrix.md` | Guild-by-guild asset backlog tracker | active |
-| `docs/runbooks/generate-guild-sprites.md` | Sprite generation execution runbook | active |
-| `docs/runbooks/generate-guild-vfx.md` | VFX generation execution runbook | active |
-| `docs/runbooks/review-character-animations.md` | Human-in-the-loop animation review workflow | active |
+| `docs/codex/plans/screen-manifest.md` | Screen inventory and schema for design drift review | active |
+| `docs/codex/plans/docs-status-index.md` | Control index for active vs historical docs and agent specs | active |
 | `docs/runbooks/review-design-drift.md` | Design-vs-implementation drift review workflow | active |
 
-## Active But Secondary
+## Active Subplans And Backlogs
 
 These still matter, but they should not override the active control docs above.
 
 | Doc | Role | Status |
 |---|---|---|
+| `docs/codex/plans/asset-production-plan.md` | Character/VFX production contract and rollout order | active-subplan |
+| `docs/codex/plans/guild-production-matrix.md` | Guild-by-guild asset backlog tracker | active-backlog |
+| `docs/codex/plans/assembly-stage-world-kit.md` | Assembly stage art-direction and object-pack subplan | active-subplan |
 | `docs/codex/plans/knight-baseline-plan.md` | Knight-specific sprite baseline plan | active-subplan |
 | `docs/codex/plans/knight-vfx-plan.md` | Knight-specific VFX mapping and first-pass plan | active-subplan |
 | `docs/codex/plans/leper-baseline-plan.md` | Leper-specific baseline reference plan | active-reference |
 | `docs/codex/plans/leper-vfx-plan.md` | Leper-specific VFX reference plan | active-reference |
 | `docs/codex/plans/world-production-matrix.md` | Long-range world-art backlog by lore zone | reference-backlog |
+| `docs/runbooks/generate-guild-sprites.md` | Sprite generation execution runbook | active-runbook |
+| `docs/runbooks/generate-guild-vfx.md` | VFX generation execution runbook | active-runbook |
+| `docs/runbooks/review-character-animations.md` | Human-in-the-loop animation review workflow | active-runbook |
+
+## Active Agent Specs
+
+These are the current agent instructions that match the repo layout and command set.
+
+| Doc | Role | Status |
+|---|---|---|
+| `agents/orchestrator.md` | Reads the roadmap/backlog, dispatches bounded tasks, and coordinates lanes | active |
+| `agents/dev.md` | Implements one bounded code task in one worktree/branch | active |
+| `agents/qa.md` | Verifies bounded work with objective checks and documented browser validation | active |
+| `agents/asset.md` | Handles PixelLab-facing and asset-pipeline tasks | active |
+| `agents/reviewer.md` | Reviews outputs for drift, process quality, and follow-up risks | active |
 
 ## Supporting Reference Docs
 
@@ -54,6 +70,10 @@ These mostly reflect earlier execution phases. Keep them for context, but do not
 
 | Doc | Role | Status |
 |---|---|---|
+| `agents/_historical/cto.md` | Deprecated pre-rewrite orchestrator spec with stale repo assumptions | historical-pending-rewrite |
+| `agents/_historical/dev.md` | Deprecated pre-rewrite dev spec with stale repo assumptions | historical-pending-rewrite |
+| `agents/_historical/qa.md` | Deprecated pre-rewrite QA spec with stale repo assumptions | historical-pending-rewrite |
+| `agents/_historical/retro.md` | Deprecated pre-rewrite retrospective spec tied to old taskboard flow | historical-pending-rewrite |
 | `docs/superpowers/plans/2026-04-20-presentation-layer.md` | Completed/older implementation plan for presentation work | historical |
 | `docs/superpowers/plans/2026-04-21-batch-1-foundations.md` | Earlier batch execution plan | historical |
 | `docs/superpowers/plans/2026-04-21-phase-1-simulation-purity.md` | Earlier implementation phase plan | historical |
@@ -66,18 +86,18 @@ These mostly reflect earlier execution phases. Keep them for context, but do not
 
 This is the short list of major active work that still needs to happen.
 
-1. Restore and hold a trustworthy green baseline, especially shared/server typecheck health.
-2. Consolidate duplicated guild/move-list UI surfaces and clean up string-heavy flow wiring.
-3. Run a proper design drift audit against the handoff package and convert the important gaps into backlog items.
-4. Improve combat readability with hurt-reaction, impact-anchor, and telegraph passes before deeper spectacle work.
-5. Build one flagship stage vertical slice that can serve story, VS, and multiplayer, with pickups/items back in the loop.
-6. Finish the fresh Knight PixelLab character pass, then continue to Mage and the rest of the guild backlog.
-7. Rewrite the repo agents around worktrees, feature branches, GitHub Issues, QA, asset, and reviewer lanes.
-8. Rationalize the markdown backlog so the active docs remain small and the older plans stay reference-only.
+1. ~~Rewrite the repo agents and control docs so autonomous execution is safe.~~ Done — P0 complete 2026-04-23.
+2. ~~Restore and hold a trustworthy green baseline, including the remaining TypeScript deprecation warning and architecture trust gaps.~~ Done — `npm run typecheck` clean 2026-04-23.
+3. Consolidate duplicated guild/move-list UI surfaces and clean up string-heavy flow wiring.
+4. Run a proper design drift audit against the handoff package and convert the important gaps into backlog items.
+5. Improve combat readability with hurt-reaction, impact-anchor, and telegraph passes before deeper spectacle work.
+6. Build one flagship stage vertical slice that can serve story, VS, and multiplayer, with pickups/items back in the loop.
+7. Finish the fresh Knight PixelLab character pass, then continue to Mage and the rest of the guild backlog.
 
 ## Decision Rules
 
-- If a plan conflicts with current product priorities, prefer `combat-polish-vertical-slice-prd.md`.
-- If an asset plan conflicts with an older pilot doc, prefer `asset-production-plan.md` and `guildData.ts`.
+- If a plan conflicts with current product priorities, prefer `docs/codex/plans/combat-polish-vertical-slice-prd.md`.
+- If an orchestration or routing question conflicts with a historical agent spec, prefer `docs/codex/plans/agent-orchestration-prd.md` and the active `agents/*.md` files.
+- If an asset plan conflicts with an older pilot doc, prefer `docs/codex/plans/asset-production-plan.md` and `packages/shared/src/simulation/guildData.ts`.
 - Treat the `docs/superpowers/plans/` implementation plans as historical context unless one is explicitly revived.
-- Once the orchestration system is rewritten, GitHub Issues should become the primary task system and these docs should stay as control/reference layers rather than an ad hoc backlog.
+- Once the orchestration system is configured against GitHub Issues, those issues become the primary task system and these docs remain the control/reference layer rather than an ad hoc backlog.

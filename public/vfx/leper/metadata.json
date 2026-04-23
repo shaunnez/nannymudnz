@@ -11,9 +11,9 @@
       "loop": false,
       "anchor": {
         "x": 31,
-        "y": 72
+        "y": 58
       },
-      "scale": 1.45
+      "scale": 1.35
     },
     "diseased_claw_impact": {
       "frames": 5,
@@ -21,9 +21,9 @@
       "loop": false,
       "anchor": {
         "x": 24,
-        "y": 68
+        "y": 56
       },
-      "scale": 1.25
+      "scale": 1.15
     },
     "necrotic_embrace_drain": {
       "frames": 6,
@@ -31,9 +31,9 @@
       "loop": false,
       "anchor": {
         "x": 48,
-        "y": 86
+        "y": 70
       },
-      "scale": 1.3
+      "scale": 1.15
     },
     "rotting_tide_burst": {
       "frames": 8,
@@ -41,9 +41,9 @@
       "loop": false,
       "anchor": {
         "x": 48,
-        "y": 78
+        "y": 66
       },
-      "scale": 1.75
+      "scale": 1.45
     }
   }
 }

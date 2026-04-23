@@ -114,3 +114,56 @@ Specific mistakes that have cost real time in this codebase:
 ## Design docs
 
 Substantial work is planned in `docs/superpowers/plans/` and spec'd in `docs/superpowers/specs/`. When starting a multi-step feature, check there first — a plan may already exist.
+
+## Orchestrator
+
+**Trigger phrase: "orchestrator run"**
+
+When the user says "orchestrator run" (or a close variant), start a self-paced loop using `/loop` with the prompt below. The loop polls GitHub Issues, dispatches agents by lane, and updates issue state.
+
+### Loop prompt
+
+```
+You are the Nannymud orchestrator. Follow agents/orchestrator.md exactly.
+
+Each iteration:
+
+1. Query open issues on shaunnez/nannymudnz with label "todo" via the GitHub REST API
+   (Authorization: token $GITHUB_TOKEN or the token in use this session).
+   Filter to issues that also have a lane: label (lane:dev, lane:asset, lane:qa, lane:design, lane:reviewer).
+
+2. Select the next safe batch — at most:
+   - 1 lane:dev task
+   - 1 lane:asset task
+   - 1 lane:design task
+   Respect disjoint write scope. Do not queue two tasks that touch the same sim or scene files.
+
+3. For each selected issue:
+   a. Move label from "todo" to "in-progress" via the API.
+   b. Derive branch name: codex/issue-{number}-{slug}
+      Derive worktree path: .worktrees/issue-{number}-{slug}
+   c. Dispatch a sub-agent using the Agent tool with isolation: worktree, briefed against
+      the relevant agents/*.md spec and the issue body.
+   d. When the sub-agent completes, move the label to "qa" (for dev/design tasks)
+      or "review" (for asset tasks that need human sign-off).
+   e. If QA is needed, dispatch a qa agent against the same branch.
+   f. On QA pass, move label to "done". On failure, move to "todo" and add a comment
+      with the rejection reason.
+   g. Include in the orchestrator report any new GitHub issues the QA agent raised
+      during verification (bugs found incidentally, not just the assigned task).
+
+4. If no actionable issues exist, report the idle state and sleep until the next iteration.
+
+Always read agents/orchestrator.md before dispatching. Never dispatch from agents/_historical/.
+Token for GitHub API: use the token already authenticated this session, or prompt the user to set GITHUB_TOKEN.
+```
+
+### Usage
+
+```
+orchestrator run
+```
+
+Claude will start a self-paced `/loop` — no interval argument needed, it paces itself based on how long dispatch takes. To stop it, press Escape or Ctrl+C.
+
+GitHub token must be available. Either set `GITHUB_TOKEN` in your shell before starting, or Claude will use the token from the current session if one was provided.

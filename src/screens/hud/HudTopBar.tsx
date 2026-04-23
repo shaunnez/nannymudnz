@@ -185,12 +185,12 @@ function PlayerSlot({
           }}
         >
           <span>HP {Math.round(actor.hp)}/{actor.hpMax}</span>
+          {showExtras && <PlayerExtras actor={actor} side={side} />}
           <span>
             <span style={{ color: accent }}>{resourceName}</span>{' '}
             {Math.round(actor.mp)}/{actor.mpMax}
           </span>
         </div>
-        {showExtras && <PlayerExtras actor={actor} side={side} />}
       </div>
     </div>
   );

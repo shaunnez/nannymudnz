@@ -21,6 +21,12 @@ Use the current repo layout, not the historical one:
 
 Use the repo's `npm` scripts.
 
+## Branch and worktree naming
+
+Use the convention from `agents/orchestrator.md`:
+- branch: `codex/issue-{n}-{slug}`
+- worktree: `.worktrees/issue-{n}-{slug}`
+
 ## Workflow
 
 1. Confirm task scope, branch, and worktree.
@@ -30,7 +36,8 @@ Use the repo's `npm` scripts.
    - `npm run typecheck`
    - `npm run build`
    - targeted tests when they exist for the changed area
-5. Report changed files, checks run, and residual risk.
+5. Commit the change to the feature branch and push to origin.
+6. Report changed files, checks run, and residual risk.
 
 ## Hard rules
 

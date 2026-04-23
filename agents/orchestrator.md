@@ -20,8 +20,11 @@ If any historical agent spec under `agents/_historical/` conflicts with the file
 
 ## Backlog source
 
-- Preferred source: GitHub Issues with the label taxonomy from `docs/codex/plans/agent-orchestration-prd.md`
-- Temporary repo-side source: `docs/codex/plans/roadmap.md`
+Primary source: GitHub Issues on `shaunnez/nannymudnz` using the label taxonomy from `docs/codex/plans/agent-orchestration-prd.md`.
+
+Label taxonomy is live. Issue templates are in `.github/ISSUE_TEMPLATE/`.
+
+Use `docs/codex/plans/roadmap.md` as the milestone and batch-scope reference alongside issues.
 
 Do not improvise a backlog from older plans, `docs/superpowers/plans/`, or files under `agents/_historical/`.
 
@@ -38,6 +41,20 @@ Do not improvise a backlog from older plans, `docs/superpowers/plans/`, or files
 - Use `agents/qa.md` for verification and evidence gathering.
 - Use `agents/asset.md` for PixelLab-facing or repo-side asset normalization tasks.
 - Use `agents/reviewer.md` for process review, drift classification, and follow-up recommendations.
+
+## Branch and worktree naming
+
+Feature branches: `codex/issue-{n}-{slug}` (e.g. `codex/issue-123-hurt-reaction`).
+Worktrees: `.worktrees/issue-{n}-{slug}` (e.g. `.worktrees/issue-123-hurt-reaction`).
+
+When GitHub Issues are not yet configured, use the roadmap task name as the slug.
+
+## After each batch
+
+When all dispatched tasks complete:
+
+- update `docs/codex/plans/roadmap.md` to reflect completed work and the next active batch
+- transition issue state when GitHub Issues is configured as the backlog source
 
 ## Hard rules
 

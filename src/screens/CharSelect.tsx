@@ -19,8 +19,8 @@ type Slot = 'p1' | 'opp';
 
 const COLS = 5;
 const ROWS = 3;
-const TILE_SIZE = 175;
-const TILE_GAP = 16;
+const TILE_SIZE = 190;
+const TILE_GAP = 20;
 
 function pickRandom<T>(list: readonly T[], exclude?: T): T {
   const pool = exclude ? list.filter((x) => x !== exclude) : list;
@@ -244,7 +244,7 @@ export function CharSelect({ mode, initialP1, initialP2, onBack, onReady }: Prop
                       textAlign: 'center',
                       marginTop: 8,
                       fontFamily: theme.fontMono,
-                      fontSize: 14,
+                      fontSize: 20,
                       color: isActiveTile ? acc : theme.inkDim,
                       letterSpacing: 2,
                     }}
@@ -258,7 +258,7 @@ export function CharSelect({ mode, initialP1, initialP2, onBack, onReady }: Prop
                         top: 4,
                         left: 4,
                         fontFamily: theme.fontMono,
-                        fontSize: 10,
+                        fontSize: 20,
                         color: acc,
                         letterSpacing: 2,
                         textShadow: `0 0 4px ${theme.bgDeep}`,
@@ -275,7 +275,7 @@ export function CharSelect({ mode, initialP1, initialP2, onBack, onReady }: Prop
                         top: 4,
                         right: 4,
                         fontFamily: theme.fontMono,
-                        fontSize: 10,
+                        fontSize: 20,
                         color: acc,
                         letterSpacing: 2,
                         textShadow: `0 0 4px ${theme.bgDeep}`,
@@ -299,9 +299,6 @@ export function CharSelect({ mode, initialP1, initialP2, onBack, onReady }: Prop
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 10 }}>
-              {/* <span style={{ fontFamily: theme.fontMono, fontSize: 10, color: theme.inkMuted, letterSpacing: 2 }}>
-                {active === 'p1' ? 'P1 · HOVER' : 'CPU · HOVER'}
-              </span> */}
               <span
                 style={{
                   fontFamily: theme.fontDisplay,
@@ -311,21 +308,11 @@ export function CharSelect({ mode, initialP1, initialP2, onBack, onReady }: Prop
               >
                 {hoveredGuild.name}
               </span>
-              {/* <span
-                style={{
-                  fontFamily: theme.fontBody,
-                  fontSize: 12,
-                  color: theme.inkDim,
-                  fontStyle: 'italic',
-                }}
-              >
-                {hoveredMeta.sub}
-              </span> */}
               <span style={{ marginLeft: 'auto' }}>
                 <Chip tone="accent" mono>{hoveredMeta.tag}</Chip>
               </span>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 10 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 30 }}>
               {(Object.entries(hoveredGuild.stats) as [keyof Stats, number][]).map(([k, v]) => (
                 <StatBar key={k} label={k} value={v} max={20} hue={hoveredMeta.hue} />
               ))}
@@ -409,7 +396,7 @@ function SidePanel({ role, guildId, locked, active, statusText, onView }: SidePa
         <span
           style={{
             fontFamily: theme.fontMono,
-            fontSize: 11,
+            fontSize: 14,
             letterSpacing: 3,
             color: active ? labelColor : theme.inkMuted,
           }}
@@ -419,7 +406,7 @@ function SidePanel({ role, guildId, locked, active, statusText, onView }: SidePa
         <span
           style={{
             fontFamily: theme.fontMono,
-            fontSize: 10,
+            fontSize: 14,
             color: locked ? theme.good : theme.warn,
           }}
         >
@@ -431,7 +418,7 @@ function SidePanel({ role, guildId, locked, active, statusText, onView }: SidePa
         <div
           style={{
             fontFamily: theme.fontDisplay,
-            fontSize: 34,
+            fontSize: 30,
             color: theme.ink,
             letterSpacing: '-0.01em',
             lineHeight: 1.05,
@@ -439,14 +426,14 @@ function SidePanel({ role, guildId, locked, active, statusText, onView }: SidePa
         >
           {guild.name}
         </div>
-        <div style={{ fontFamily: theme.fontBody, fontSize: 11, color: theme.inkDim, fontStyle: 'italic' }}>
+        <div style={{ fontFamily: theme.fontBody, fontSize: 15, color: theme.inkDim, fontStyle: 'italic' }}>
           {meta.sub}
         </div>
       </div>
       <div
         style={{
           fontFamily: theme.fontBody,
-          fontSize: 12,
+          fontSize: 15,
           color: theme.inkDim,
           lineHeight: 1.55,
           minHeight: 'calc(12px * 1.55 * 4)',
@@ -473,17 +460,17 @@ function SidePanel({ role, guildId, locked, active, statusText, onView }: SidePa
             alignItems: 'center',
             gap: 6,
             fontFamily: theme.fontMono,
-            fontSize: 10,
+            fontSize: 20,
             color: theme.inkMuted,
             letterSpacing: 2,
             marginBottom: 6,
           }}
         >
           <span>ULT ·</span>
-          <ComboDisplay combo={ult.combo} size={12} color={theme.ink} />
+          <ComboDisplay combo={ult.combo} size={20} color={theme.ink} />
         </div>
-        <div style={{ fontFamily: theme.fontDisplay, fontSize: 16, color: accent }}>{ult.name}</div>
-        <div style={{ fontFamily: theme.fontBody, fontSize: 11, color: theme.inkDim }}>
+        <div style={{ fontFamily: theme.fontDisplay, fontSize: 18, color: accent }}>{ult.name}</div>
+        <div style={{ fontFamily: theme.fontBody, fontSize: 14, color: theme.inkDim }}>
           {ult.description}
         </div>
       </div>
@@ -516,7 +503,7 @@ function VitalRow({ label, value, accent, emphasized }: VitalRowProps) {
       <span
         style={{
           fontFamily: theme.fontMono,
-          fontSize: emphasized ? 11 : 13,
+          fontSize: emphasized ? 18 : 16,
           color: emphasized ? accent : theme.ink,
           fontWeight: emphasized ? 400 : 700,
           letterSpacing: 2,
@@ -527,7 +514,7 @@ function VitalRow({ label, value, accent, emphasized }: VitalRowProps) {
       <span
         style={{
           fontFamily: theme.fontDisplay,
-          fontSize: emphasized ? 17 : 13,
+          fontSize: emphasized ? 20 : 16,
           color: fg,
           lineHeight: 1,
         }}
@@ -554,7 +541,7 @@ function AccentBtn({ accent, onClick, children }: AccentBtnProps) {
       onMouseLeave={() => setHover(false)}
       style={{
         padding: '10px 20px',
-        fontSize: 12,
+        fontSize: 15,
         background: hover ? `${accent}22` : 'transparent',
         color: accent,
         border: `1px solid ${accent}`,
@@ -588,8 +575,8 @@ function StatBar({ label, value, max, hue }: StatBarProps) {
           display: 'flex',
           justifyContent: 'space-between',
           fontFamily: theme.fontMono,
-          fontSize: 10,
-          color: theme.inkMuted,
+          fontSize: 18,
+          color: theme.inkDim,
           letterSpacing: 1,
           marginBottom: 3,
         }}
@@ -603,7 +590,7 @@ function StatBar({ label, value, max, hue }: StatBarProps) {
             key={i}
             style={{
               flex: 1,
-              height: 6,
+              height: 10,
               background: i < value ? accent : theme.bgDeep,
               border: `1px solid ${i < value ? accent : theme.lineSoft}`,
             }}

@@ -5,7 +5,9 @@ import { ENEMY_DEFS } from '@nannymud/shared/simulation/enemyData';
 import { worldYToScreenY, getScreenYBand, type ScreenYBand } from '../constants';
 import {
   animationKey,
+  getAnimationLayout,
   getActorMetadata,
+  getReferenceBodyHeight,
   hasSprites,
   resolveAnimation,
   textureKey,
@@ -22,7 +24,8 @@ for (const [kind, def] of Object.entries(ENEMY_DEFS)) {
 const ALLY_COLOR = '#a3e635';
 const ALLY_INITIAL = 'A';
 
-const DISPLAY_SCALE = 1.5;
+const LEGACY_DISPLAY_SCALE = 1.5;
+const SPRITE_BODY_TO_HITBOX_RATIO = 1.5;
 
 function colorAndInitial(actor: Actor): { color: string; initial: string } {
   if (actor.guildId) {
@@ -65,15 +68,22 @@ function darkenInt(int: number, amount: number): number {
 export class ActorView {
   readonly actorId: string;
 
+  private scene: Phaser.Scene;
   private container: Phaser.GameObjects.Container;
   private shadow: Phaser.GameObjects.Graphics;
+  private auraFx: Phaser.GameObjects.Graphics;
+  private whirlwindFx: Phaser.GameObjects.Graphics;
   private body: Phaser.GameObjects.Graphics;
   private nose: Phaser.GameObjects.Graphics;
   private initial: Phaser.GameObjects.Text;
+  private headFx: Phaser.GameObjects.Graphics;
+  private attackFx: Phaser.GameObjects.Graphics;
   private hpBg: Phaser.GameObjects.Graphics;
   private hpFg: Phaser.GameObjects.Graphics;
   private sprite?: Phaser.GameObjects.Sprite;
   private currentAnim?: string;
+  private spriteScale = LEGACY_DISPLAY_SCALE;
+  private spriteBodyHeightPx: number;
 
   private readonly width: number;
   private readonly height: number;
@@ -86,10 +96,12 @@ export class ActorView {
   private readonly band: ScreenYBand;
 
   constructor(scene: Phaser.Scene, actor: Actor) {
+    this.scene = scene;
     this.band = getScreenYBand(scene);
     this.actorId = actor.id;
     this.width = actor.width;
     this.height = actor.height;
+    this.spriteBodyHeightPx = this.height * SPRITE_BODY_TO_HITBOX_RATIO;
     this.spriteId = (actor.guildId ?? actor.kind) as ActorKind | undefined;
     this.hasSprites = !!this.spriteId && hasSprites(this.spriteId);
 
@@ -100,6 +112,8 @@ export class ActorView {
     this.initialColor = color === '#ffffff' ? '#888888' : '#ffffff';
 
     this.shadow = scene.add.graphics();
+    this.auraFx = scene.add.graphics();
+    this.whirlwindFx = scene.add.graphics();
     this.body = scene.add.graphics();
     this.nose = scene.add.graphics();
     this.initial = scene.add.text(0, 0, this.initialChar, {
@@ -108,11 +122,15 @@ export class ActorView {
       fontSize: `${Math.min(16, Math.floor(this.width * 0.4))}px`,
       color: this.initialColor,
     }).setOrigin(0.5);
+    this.headFx = scene.add.graphics();
+    this.attackFx = scene.add.graphics();
     this.hpBg = scene.add.graphics();
     this.hpFg = scene.add.graphics();
 
     const children: Phaser.GameObjects.GameObject[] = [
       this.shadow,
+      this.auraFx,
+      this.whirlwindFx,
       this.body,
       this.nose,
       this.initial,
@@ -121,25 +139,56 @@ export class ActorView {
     if (this.hasSprites && this.spriteId) {
       const idleTex = textureKey(this.spriteId, 'idle');
       if (scene.textures.exists(idleTex)) {
-        const meta = getActorMetadata(this.spriteId);
-        const idleMeta = meta?.animations.idle;
-        this.sprite = scene.add.sprite(0, 0, idleTex, 0).setScale(DISPLAY_SCALE);
-        if (meta && idleMeta) {
-          const ox = idleMeta.anchor.x / meta.frameSize.w;
-          const oy = idleMeta.anchor.y / meta.frameSize.h;
-          this.sprite.setOrigin(ox, oy);
-        } else {
-          this.sprite.setOrigin(0.5, 1);
+        const referenceBodyHeight = getReferenceBodyHeight(scene, this.spriteId);
+        if (referenceBodyHeight) {
+          this.spriteScale = (actor.height * SPRITE_BODY_TO_HITBOX_RATIO) / referenceBodyHeight;
         }
+        this.sprite = scene.add.sprite(0, 0, idleTex, 0).setScale(this.spriteScale);
+        this.applySpriteLayout('idle');
         children.push(this.sprite);
       }
     }
 
+    children.push(this.headFx, this.attackFx);
     children.push(this.hpBg, this.hpFg);
 
     this.container = scene.add.container(0, 0, children);
 
     this.drawBody();
+  }
+
+  private applySpriteLayout(animId: AnimationId): void {
+    if (!this.sprite || !this.spriteId) return;
+    const meta = getActorMetadata(this.spriteId);
+    if (!meta) {
+      this.sprite.setOrigin(0.5, 1);
+      this.spriteBodyHeightPx = this.height * SPRITE_BODY_TO_HITBOX_RATIO;
+      return;
+    }
+
+    const layout = getAnimationLayout(this.scene, this.spriteId, animId);
+    if (layout) {
+      this.sprite.setOrigin(
+        layout.anchor.x / meta.frameSize.w,
+        layout.anchor.y / meta.frameSize.h,
+      );
+      this.spriteBodyHeightPx = Math.max(
+        this.height,
+        (layout.anchor.y - layout.opaqueBounds.top) * this.spriteScale,
+      );
+      return;
+    }
+
+    const animMeta = meta.animations[animId];
+    if (animMeta) {
+      this.sprite.setOrigin(
+        animMeta.anchor.x / meta.frameSize.w,
+        animMeta.anchor.y / meta.frameSize.h,
+      );
+    } else {
+      this.sprite.setOrigin(0.5, 1);
+    }
+    this.spriteBodyHeightPx = this.height * SPRITE_BODY_TO_HITBOX_RATIO;
   }
 
   private drawBody(): void {
@@ -158,10 +207,91 @@ export class ActorView {
     if (!this.sprite || !this.spriteId) return;
     const resolved = resolveAnimation(this.spriteId, animId);
     if (!resolved) return;
+    this.applySpriteLayout(resolved);
     const key = animationKey(this.spriteId, resolved);
     if (this.currentAnim === key) return;
     this.currentAnim = key;
     this.sprite.play(key, true);
+  }
+
+  private clearAttachedFx(): void {
+    for (const fx of [this.auraFx, this.whirlwindFx, this.headFx, this.attackFx]) {
+      fx.clear();
+      fx.setVisible(false);
+      fx.setRotation(0);
+    }
+  }
+
+  private drawVikingBuffDots(bodyHeight: number, visualTime: number): void {
+    this.headFx.clear();
+    this.headFx.fillStyle(0xef4444, 1);
+    const headY = -bodyHeight + 12;
+    for (let i = 0; i < 3; i++) {
+      const angle = visualTime * 5 + i * ((Math.PI * 2) / 3);
+      const x = Math.cos(angle) * 9;
+      const y = headY + Math.sin(angle) * 4;
+      this.headFx.fillCircle(x, y, 2.5);
+    }
+    this.headFx.fillStyle(0xfca5a5, 0.9);
+    this.headFx.fillCircle(0, headY - 2, 1.5);
+    this.headFx.setVisible(true);
+  }
+
+  private drawVikingUndyingAura(bodyHeight: number): void {
+    this.auraFx.clear();
+    this.auraFx.fillStyle(0x450a0a, 0.18);
+    this.auraFx.fillEllipse(0, -bodyHeight * 0.52, this.width * 1.35, bodyHeight * 1.02);
+    this.auraFx.lineStyle(3, 0xdc2626, 0.9);
+    this.auraFx.strokeEllipse(0, -bodyHeight * 0.52, this.width * 1.2, bodyHeight * 0.96);
+    this.auraFx.lineStyle(2, 0xfca5a5, 0.6);
+    this.auraFx.strokeEllipse(0, -bodyHeight * 0.52, this.width * 1.05, bodyHeight * 0.82);
+    this.auraFx.setVisible(true);
+  }
+
+  private drawVikingWhirlwind(bodyHeight: number, visualTime: number, swingDir: -1 | 1): void {
+    this.whirlwindFx.clear();
+    const primaryX = swingDir * (this.width * 0.44);
+    const secondaryX = -primaryX * 0.82;
+    const arcY = -bodyHeight * 0.48;
+    this.whirlwindFx.lineStyle(6, 0xf97316, 0.96);
+    this.whirlwindFx.beginPath();
+    this.whirlwindFx.arc(primaryX, arcY, 28, -1.35, 1.1, swingDir < 0);
+    this.whirlwindFx.strokePath();
+    this.whirlwindFx.lineStyle(3, 0xfde68a, 0.88);
+    this.whirlwindFx.beginPath();
+    this.whirlwindFx.arc(primaryX, arcY, 20, -1.1, 0.9, swingDir < 0);
+    this.whirlwindFx.strokePath();
+    this.whirlwindFx.lineStyle(3, 0xfb923c, 0.45);
+    this.whirlwindFx.beginPath();
+    this.whirlwindFx.arc(secondaryX, arcY + 4, 22, -1.1, 0.9, swingDir > 0);
+    this.whirlwindFx.strokePath();
+    this.whirlwindFx.fillStyle(0xfca5a5, 0.95);
+    this.whirlwindFx.fillCircle(primaryX + swingDir * 10, arcY - 8, 2.5);
+    this.whirlwindFx.fillCircle(primaryX + swingDir * 16, arcY + 2, 2);
+    this.whirlwindFx.fillStyle(0xfb923c, 0.75);
+    for (let i = 0; i < 3; i++) {
+      const t = visualTime * 10 + i * 0.55;
+      const x = primaryX + swingDir * (8 + i * 8);
+      const y = arcY + Math.sin(t) * (5 + i);
+      this.whirlwindFx.fillCircle(x, y, 1.8);
+    }
+    this.whirlwindFx.setVisible(true);
+  }
+
+  private drawVikingAxeSwing(bodyHeight: number): void {
+    this.attackFx.clear();
+    this.attackFx.lineStyle(6, 0xf97316, 0.92);
+    this.attackFx.beginPath();
+    this.attackFx.arc(10, -bodyHeight * 0.52, 34, -1.15, 0.95, false);
+    this.attackFx.strokePath();
+    this.attackFx.lineStyle(3, 0xfde68a, 0.85);
+    this.attackFx.beginPath();
+    this.attackFx.arc(10, -bodyHeight * 0.52, 24, -1.0, 0.75, false);
+    this.attackFx.strokePath();
+    this.attackFx.fillStyle(0xfca5a5, 0.95);
+    this.attackFx.fillCircle(34, -bodyHeight * 0.56, 3);
+    this.attackFx.fillCircle(26, -bodyHeight * 0.73, 2.5);
+    this.attackFx.setVisible(true);
   }
 
   syncFrom(actor: Actor): void {
@@ -186,6 +316,7 @@ export class ActorView {
       this.nose.setVisible(false);
       this.initial.setVisible(false);
       this.shadow.setVisible(false);
+      this.clearAttachedFx();
       this.hpBg.setVisible(false);
       this.hpFg.setVisible(false);
       return;
@@ -209,6 +340,21 @@ export class ActorView {
 
     // Facing flip via container scaleX. Avoid scaling the shadow.
     this.container.scaleX = actor.facing === -1 ? -1 : 1;
+    this.body.setScale(1);
+    this.nose.setScale(1);
+    this.initial.setScale(1);
+    this.body.setAngle(0);
+    this.nose.setAngle(0);
+    this.initial.setAngle(0);
+    this.body.setPosition(0, -this.height / 2);
+    this.nose.setPosition(0, 0);
+    this.initial.setPosition(0, -this.height / 2);
+    if (this.sprite) {
+      this.sprite.setScale(this.spriteScale);
+      this.sprite.setAngle(0);
+      this.sprite.setPosition(0, 0);
+    }
+    this.clearAttachedFx();
 
     if (!this.sprite) {
       // Nose triangle, drawn in body-local space (origin at feet).
@@ -247,7 +393,7 @@ export class ActorView {
       this.hpFg.setVisible(true);
       const barW = this.width;
       const barH = 4;
-      const barY = -this.height - 10;
+      const barY = -(this.sprite ? this.spriteBodyHeightPx : this.height) - 10;
       this.hpBg.clear();
       this.hpBg.fillStyle(0x1f2937, 1);
       this.hpBg.fillRect(-barW / 2, barY, barW, barH);
@@ -259,6 +405,46 @@ export class ActorView {
       this.hpFg.setVisible(false);
     }
 
+    const visualTime = actor.stateTimeMs / 1000;
+    const bodyHeight = this.sprite ? this.spriteBodyHeightPx : this.height;
+    const isViking = actor.guildId === 'viking';
+    const isBloodlust = isViking && actor.statusEffects.some(e => e.type === 'attack_speed_boost');
+    const isUndyingRage = isViking && actor.statusEffects.some(e => e.type === 'shield' && e.magnitude >= 999);
+    const isWhirlwind = isViking && actor.state === 'channeling' && actor.animationId === 'channel';
+    const isAxeSwing = isViking && actor.state === 'attacking' && actor.animationId === 'ability_4';
+    const whirlwindSwingDir = (Math.floor(visualTime * 10) % 2 === 0 ? 1 : -1) as -1 | 1;
+
+    if (isBloodlust) {
+      this.drawVikingBuffDots(bodyHeight, visualTime);
+    }
+    if (isUndyingRage) {
+      this.drawVikingUndyingAura(bodyHeight);
+      if (this.sprite) {
+        this.sprite.setScale(this.spriteScale * 1.12);
+      } else {
+        this.body.setScale(1.12);
+        this.nose.setScale(1.12);
+        this.initial.setScale(1.12);
+      }
+    }
+    if (isWhirlwind) {
+      this.drawVikingWhirlwind(bodyHeight, visualTime, whirlwindSwingDir);
+      if (this.sprite) {
+        this.sprite.setPosition(whirlwindSwingDir * 8, 0);
+        this.sprite.setAngle(whirlwindSwingDir * 8);
+      } else {
+        this.body.setPosition(whirlwindSwingDir * 8, -this.height / 2);
+        this.nose.setPosition(whirlwindSwingDir * 8, 0);
+        this.initial.setPosition(whirlwindSwingDir * 8, -this.height / 2);
+        this.body.setAngle(whirlwindSwingDir * 8);
+        this.nose.setAngle(whirlwindSwingDir * 8);
+        this.initial.setAngle(whirlwindSwingDir * 8);
+      }
+    }
+    if (isAxeSwing) {
+      this.drawVikingAxeSwing(bodyHeight);
+    }
+
     // Status alpha overlays.
     let alpha = 1;
     if (actor.statusEffects.some(e => e.type === 'stun')) alpha = Math.min(alpha, 0.7);
@@ -268,9 +454,23 @@ export class ActorView {
     }
     this.container.setAlpha(alpha);
 
-    // Damage flash on placeholder body only (sprite tinting is noisier — skip
-    // for now, can add as Sprite.setTintFill in a follow-up if wanted).
-    if (!this.sprite && actor.invulnerableMs > 0 && actor.state !== 'getup') {
+    // Damage flash. Fires while invulnerableMs ticks down (except during
+    // getup, which has its own alpha pulse above). For placeholder actors
+    // we repaint the body white; for sprites we setTintFill which turns
+    // every non-alpha pixel white for one frame — reads as a generic hurt
+    // reaction even when the sprite has no dedicated hurt animation
+    // (critical for wolf/wolf_pet on the quadruped template).
+    const isHit = actor.invulnerableMs > 0 && actor.state !== 'getup';
+    const buffTint = isUndyingRage ? 0x7f1d1d : isBloodlust ? 0xb91c1c : null;
+    if (this.sprite) {
+      if (isHit) {
+        this.sprite.setTintFill(0xffffff);
+      } else if (buffTint !== null) {
+        this.sprite.setTint(buffTint);
+      } else {
+        this.sprite.clearTint();
+      }
+    } else if (isHit) {
       this.body.fillStyle(0xffffff, 1);
       this.body.fillRoundedRect(-this.width / 2, -this.height / 2, this.width, this.height, 4);
     }

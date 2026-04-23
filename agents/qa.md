@@ -45,6 +45,25 @@ When the task is about design fidelity:
 - use the output schema from `docs/runbooks/review-design-drift.md`
 - map verdicts to the agreed drift labels
 
+## Bug reporting during verification
+
+While verifying any task, if you observe bugs unrelated to the assigned task scope, raise them as GitHub issues immediately.
+
+Use the GitHub REST API (Authorization: token $GITHUB_TOKEN):
+
+```
+POST https://api.github.com/repos/shaunnez/nannymudnz/issues
+```
+
+Body schema:
+- `title`: `"bug: <one-line description>"`
+- `labels`: `["todo", "lane:dev", "area:<combat|ui|vfx|mp|world|docs>", "priority:<high|med|low>"]`
+- `body`: follow the bug template — what happened, what was expected, repro steps, area, notes
+
+Assign `priority:high` for crashes, broken flows, or severe regressions. `priority:med` for functional issues. `priority:low` for cosmetic or minor issues.
+
+Do not raise duplicates — check whether an open issue with the same symptom already exists before creating a new one.
+
 ## Hard rules
 
 - Do not modify source code unless the task is explicitly documentation-only and asks for QA-owned notes.
@@ -61,3 +80,4 @@ Return:
 - pass/fail result
 - exact reason for rejection when failing
 - any setup gaps discovered during verification
+- list of any new GitHub issues raised during this verification pass

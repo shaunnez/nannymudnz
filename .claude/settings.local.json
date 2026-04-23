@@ -26,7 +26,11 @@
       "Bash(mkdir -p /c/Users/nimbl/projects/nannymud/public/sprites/master/raw)",
       "Bash(curl --fail -L \"https://api.pixellab.ai/mcp/characters/34a1ec42-5d5f-406c-ba08-1ba57c4f67f0/download\" -o /c/Users/nimbl/projects/nannymud/public/sprites/master/master.zip)",
       "Bash(unzip -q /c/Users/nimbl/projects/nannymud/public/sprites/master/master.zip -d /c/Users/nimbl/projects/nannymud/public/sprites/master/raw)",
-      "Bash(rm /c/Users/nimbl/projects/nannymud/public/sprites/master/master.zip)"
+      "Bash(rm /c/Users/nimbl/projects/nannymud/public/sprites/master/master.zip)",
+      "Bash(git commit *)",
+      "Bash(curl -s -w '\\\\nHTTP_STATUS:%{http_code}' -X POST https://api.github.com/repos/shaunnez/nannymudnz/issues -H 'Authorization: token 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' -H 'Accept: application/vnd.github+json' -H 'Content-Type: application/json' -d '{ *)",
+      "Bash(curl *)",
+      "Bash(npm run *)"
     ]
   }
 }

@@ -16,12 +16,27 @@ interface ActorSpriteMetadata {
   guildId: ActorKind;
   frameSize: { w: number; h: number };
   facing: 'right' | 'left';
-  animations: Partial<Record<AnimationId, {
-    frames: number;
-    frameDurationMs: number;
-    loop: boolean;
-    anchor: { x: number; y: number };
-  }>>;
+  animations: Partial<Record<AnimationId, ActorAnimationMetadata>>;
+}
+
+interface SpriteOpaqueBounds {
+  left: number;
+  top: number;
+  right: number;
+  bottom: number;
+}
+
+interface ActorAnimationMetadata {
+  frames: number;
+  frameDurationMs: number;
+  loop: boolean;
+  anchor: { x: number; y: number };
+  opaqueBounds?: SpriteOpaqueBounds;
+}
+
+interface AnimationLayout {
+  anchor: { x: number; y: number };
+  opaqueBounds: SpriteOpaqueBounds;
 }
 
 const SPRITE_ACTORS: ActorKind[] = [
@@ -43,6 +58,8 @@ const SPRITE_ACTORS: ActorKind[] = [
 // Populated as metadata loads complete. ActorView reads from here to pick an
 // anchor offset and to check whether an actor kind has sprite coverage.
 const loadedMetadata = new Map<ActorKind, ActorSpriteMetadata>();
+const measuredLayouts = new Map<string, AnimationLayout>();
+const referenceBodyHeights = new Map<ActorKind, number>();
 
 export function getActorMetadata(actorId: ActorKind): ActorSpriteMetadata | undefined {
   return loadedMetadata.get(actorId);
@@ -73,6 +90,8 @@ function metadataKey(actorId: ActorKind): string {
  * event fires after everything has finished.
  */
 export function queueActorSprites(scene: Phaser.Scene): void {
+  measuredLayouts.clear();
+  referenceBodyHeights.clear();
   for (const actorId of SPRITE_ACTORS) {
     scene.load.json(metadataKey(actorId), `sprites/${actorId}/metadata.json`);
   }
@@ -120,6 +139,156 @@ export function registerActorAnimations(scene: Phaser.Scene): void {
       });
     }
   }
+}
+
+function fullFrameBounds(frameSize: { w: number; h: number }): SpriteOpaqueBounds {
+  return {
+    left: 0,
+    top: 0,
+    right: frameSize.w - 1,
+    bottom: frameSize.h - 1,
+  };
+}
+
+function trimVerticalBounds(
+  rowCounts: number[],
+  rawTop: number,
+  rawBottom: number,
+): { top: number; bottom: number } {
+  const maxRowPixels = rowCounts.reduce((max, count) => Math.max(max, count), 0);
+  if (maxRowPixels <= 0) return { top: rawTop, bottom: rawBottom };
+  const threshold = Math.max(2, Math.ceil(maxRowPixels * 0.15));
+  let top = rawTop;
+  while (top <= rawBottom && rowCounts[top] < threshold) top += 1;
+  let bottom = rawBottom;
+  while (bottom >= top && rowCounts[bottom] < threshold) bottom -= 1;
+  return {
+    top: Math.min(top, rawBottom),
+    bottom: Math.max(bottom, top),
+  };
+}
+
+function measureAnimationLayout(
+  scene: Phaser.Scene,
+  actorId: ActorKind,
+  animId: AnimationId,
+  meta: ActorSpriteMetadata,
+  animMeta: ActorAnimationMetadata,
+): AnimationLayout | null {
+  const texKey = textureKey(actorId, animId);
+  if (!scene.textures.exists(texKey)) return null;
+  const texture = scene.textures.get(texKey);
+  const source = texture.getSourceImage() as CanvasImageSource | null;
+  if (!source || typeof document === 'undefined') return null;
+
+  const { w, h } = meta.frameSize;
+  const canvas = document.createElement('canvas');
+  canvas.width = w;
+  canvas.height = h;
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  if (!ctx) return null;
+
+  let minLeft = w;
+  let minTop = h;
+  let maxRight = -1;
+  let maxBottom = -1;
+  const rowCounts = new Array<number>(h).fill(0);
+
+  for (let frame = 0; frame < animMeta.frames; frame += 1) {
+    ctx.clearRect(0, 0, w, h);
+    ctx.drawImage(source, frame * w, 0, w, h, 0, 0, w, h);
+    const pixels = ctx.getImageData(0, 0, w, h).data;
+    for (let y = 0; y < h; y += 1) {
+      const rowOffset = y * w * 4;
+      for (let x = 0; x < w; x += 1) {
+        if (pixels[rowOffset + x * 4 + 3] === 0) continue;
+        rowCounts[y] += 1;
+        if (x < minLeft) minLeft = x;
+        if (y < minTop) minTop = y;
+        if (x > maxRight) maxRight = x;
+        if (y > maxBottom) maxBottom = y;
+      }
+    }
+  }
+
+  if (maxRight < minLeft || maxBottom < minTop) {
+    return {
+      anchor: {
+        x: animMeta.anchor?.x ?? Math.floor(w / 2),
+        y: animMeta.anchor?.y ?? h - 1,
+      },
+      opaqueBounds: fullFrameBounds(meta.frameSize),
+    };
+  }
+
+  const trimmed = trimVerticalBounds(rowCounts, minTop, maxBottom);
+  return {
+    anchor: {
+      x: animMeta.anchor?.x ?? Math.floor(w / 2),
+      y: trimmed.bottom + 1,
+    },
+    opaqueBounds: {
+      left: minLeft,
+      top: trimmed.top,
+      right: maxRight,
+      bottom: trimmed.bottom,
+    },
+  };
+}
+
+export function getAnimationLayout(
+  scene: Phaser.Scene,
+  actorId: ActorKind,
+  animId: AnimationId,
+): AnimationLayout | null {
+  const key = animationKey(actorId, animId);
+  const cached = measuredLayouts.get(key);
+  if (cached) return cached;
+
+  const meta = loadedMetadata.get(actorId);
+  const animMeta = meta?.animations[animId];
+  if (!meta || !animMeta) return null;
+
+  const opaqueBounds = animMeta.opaqueBounds;
+  const measured = opaqueBounds
+    ? {
+        anchor: {
+          x: animMeta.anchor?.x ?? Math.floor(meta.frameSize.w / 2),
+          y: animMeta.anchor?.y ?? opaqueBounds.bottom + 1,
+        },
+        opaqueBounds,
+      }
+    : measureAnimationLayout(scene, actorId, animId, meta, animMeta);
+
+  const layout = measured ?? {
+    anchor: {
+      x: animMeta.anchor?.x ?? Math.floor(meta.frameSize.w / 2),
+      y: animMeta.anchor?.y ?? meta.frameSize.h - 1,
+    },
+    opaqueBounds: fullFrameBounds(meta.frameSize),
+  };
+  measuredLayouts.set(key, layout);
+  return layout;
+}
+
+export function getReferenceBodyHeight(
+  scene: Phaser.Scene,
+  actorId: ActorKind,
+): number | null {
+  const cached = referenceBodyHeights.get(actorId);
+  if (cached !== undefined) return cached;
+
+  const referenceAnim =
+    resolveAnimation(actorId, 'idle')
+    ?? resolveAnimation(actorId, 'walk')
+    ?? resolveAnimation(actorId, 'run');
+  if (!referenceAnim) return null;
+
+  const layout = getAnimationLayout(scene, actorId, referenceAnim);
+  if (!layout) return null;
+  const bodyHeight = Math.max(1, layout.anchor.y - layout.opaqueBounds.top);
+  referenceBodyHeights.set(actorId, bodyHeight);
+  return bodyHeight;
 }
 
 /**

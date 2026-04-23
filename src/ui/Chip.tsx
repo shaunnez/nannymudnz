@@ -30,7 +30,7 @@ export function Chip({ children, tone = 'default', mono = false }: ChipProps) {
         color: t.fg,
         background: t.bg,
         fontFamily: mono ? theme.fontMono : theme.fontBody,
-        fontSize: 10,
+        fontSize: 14,
         letterSpacing: mono ? 1 : 0,
         textTransform: mono ? 'uppercase' : 'none',
         borderRadius: 2,

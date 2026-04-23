@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import type { VFXEvent } from '@nannymud/shared/simulation/types';
 import { DEPTH_SCALE, worldYToScreenY, getScreenYBand, type ScreenYBand } from '../constants';
+import { spawnGuildVfx } from './VfxRegistry';
 
 /**
  * Consumes per-tick VFXEvents emitted by the simulation and spawns short-lived
@@ -206,6 +207,7 @@ export function consumeVfxEvents(scene: Phaser.Scene, events: VFXEvent[]): void 
   for (const event of events) {
     const { x, y } = worldCoords(event, band);
     const colorInt = hexToInt(event.color);
+    if (spawnGuildVfx(scene, event, x, y)) continue;
 
     switch (event.type) {
       case 'projectile_spawn':

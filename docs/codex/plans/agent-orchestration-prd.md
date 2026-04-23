@@ -23,6 +23,15 @@ Examples of mismatch:
 - they are not aligned to the current Vite + shared/server workspace layout
 - they do not model asset generation or design drift review as real lanes
 
+Until the rewrite lands, the old `agents/*.md` must be treated as historical only. They actively point to wrong paths and wrong tooling, so dispatching from them is unsafe.
+
+Known stale assumptions include:
+
+- `packages/client/src/scenes/` instead of `src/game/scenes/`
+- `packages/server/src/sim/` instead of `packages/shared/src/simulation/`
+- `prototype/combat-prototype.html`, `docs/GDD.md`, `lore/*.json`, `taskboard.md`, and `docs/plan.md`, none of which are current control files here
+- `pnpm` instead of the repo's `npm` scripts
+
 The replacement should preserve the core idea:
 
 - orchestrator delegates
@@ -47,7 +56,11 @@ This is mandatory for safe parallelism in a game repo where:
 
 Agents should never improvise the work queue from scattered markdown alone.
 
-There must be one explicit backlog source of truth, ideally GitHub Issues plus a thin repo-side roadmap/index.
+There must be one explicit backlog source of truth.
+
+Target state: GitHub Issues plus a thin repo-side roadmap/index.
+
+Until GitHub Issues are configured with the agreed label set, the only repo-side dispatch pointer is `docs/codex/plans/roadmap.md`. Agents must not infer active work from older plans or historical docs.
 
 ### QA is layered, not magical
 
@@ -82,7 +95,7 @@ Human input should be reserved for:
 - waits for completion
 - routes tasks to QA
 - routes eligible outputs to reviewer
-- updates issue state / markdown index
+- updates issue state and the roadmap/index when needed
 
 ### Must not do
 
@@ -122,12 +135,13 @@ Human input should be reserved for:
 - `npm run build`
 - relevant tests if they exist
 
-#### Layer B - Playwright flow checks
+#### Layer B - Browser flow checks
 
-- open the correct screen/flow
-- perform key interactions
-- capture screenshots
-- compare expected UI states
+- verify whether Playwright is actually configured before assuming it exists
+- if Playwright is configured, open the correct screen/flow, perform key interactions, and capture screenshots
+- if Playwright is not configured yet, record that as a setup gap and fall back to the documented manual/browser runbook
+
+Playwright install verification is a Phase 0 task, not an assumption.
 
 #### Layer C - Gameplay heuristics
 
@@ -167,7 +181,7 @@ Do not overclaim:
 - looks for process improvements
 - flags avoidable tool churn or bad prompt hygiene
 - suggests improvements to agent markdown, QA flow, and task decomposition
-- optionally performs design drift classification
+- performs design drift classification when requested
 
 ### This lane is especially useful for
 
@@ -180,7 +194,7 @@ Do not overclaim:
 
 ## Recommended source of truth
 
-Use GitHub Issues as the task system.
+Use GitHub Issues as the task system once it is configured.
 
 ### Why
 
@@ -189,24 +203,50 @@ Use GitHub Issues as the task system.
 - works naturally with feature branches and PRs
 - easier to review historically than a constantly rewritten taskboard
 
+### Phase 0 decision
+
+Phase 0 must make the backlog contract explicit:
+
+- preferred destination: GitHub Issues
+- required one-time setup: `.github/ISSUE_TEMPLATE/*`, the agreed label taxonomy, and a board/project view
+- temporary repo-side pointer until that exists: `docs/codex/plans/roadmap.md`
+
+Autonomous issue-driven dispatch must not begin until that setup exists.
+
 ## Suggested issue taxonomy
 
-Labels:
+Lane labels:
 
 - `lane:dev`
 - `lane:asset`
 - `lane:qa`
 - `lane:design`
 - `lane:reviewer`
+
+Area labels:
+
 - `area:combat`
 - `area:vfx`
 - `area:world`
 - `area:ui`
 - `area:mp`
 - `area:docs`
+
+Priority labels:
+
 - `priority:high`
 - `priority:med`
 - `priority:low`
+
+Drift labels:
+
+- `drift:missing`
+- `drift:worse`
+- `drift:acceptable`
+- `drift:better`
+
+Cross-cutting labels:
+
 - `needs-human`
 
 States:
@@ -222,8 +262,10 @@ States:
 
 Even with GitHub Issues, keep a small repo-side control layer:
 
-- one active roadmap/index doc
+- one active roadmap doc at `docs/codex/plans/roadmap.md`
+- one docs status map at `docs/codex/plans/docs-status-index.md`
 - one orchestration PRD
+- one screen manifest at `docs/codex/plans/screen-manifest.md`
 - runbooks for repeated workflows
 
 ## Branch And Worktree Policy
@@ -266,19 +308,11 @@ Make UI drift review repeatable rather than subjective and memory-based.
 
 ## Proposed flow
 
-1. maintain a screen manifest mapping:
-   - handoff screen id
-   - handoff source file
-   - implementation route/state
-   - viewport
+1. maintain `docs/codex/plans/screen-manifest.md`
 2. capture handoff screenshots from the HTML design package
 3. capture implementation screenshots from the live app
-4. use AI comparison to classify:
-   - missing
-   - worse
-   - different but acceptable
-   - better
-5. create/update issues from the findings
+4. use AI comparison to classify with the shared output schema from `docs/runbooks/review-design-drift.md`
+5. create/update issues from the findings using the reconciled drift labels
 
 ## Important guardrail
 
@@ -338,8 +372,8 @@ Pass requires:
 Pass requires:
 
 - objective checks
-- Playwright screenshot capture
-- drift comparison against handoff reference
+- screenshot capture
+- drift comparison against the handoff reference
 
 ### Asset tasks
 
@@ -355,7 +389,7 @@ Pass requires:
 Pass requires:
 
 - objective checks
-- scripted gameplay smoke
+- scripted gameplay smoke when available
 - reviewer or human sign-off when feel is central
 
 ## Reviewer Lane PRD
@@ -398,22 +432,28 @@ Recommended non-human-gated categories:
 
 ## Recommended First Implementation
 
-### Phase 1
+### Phase 0 - Safe foundation
 
-- write new agent specs for this repo
-- define GitHub issue labels and states
-- define worktree/branch conventions
-- make QA Playwright-first
+This phase is serial and blocks everything else.
 
-### Phase 2
+- mark the old `agents/*.md` historical
+- decide backlog home and write the roadmap pointer
+- write the new repo-aware agent specs
+- define the screen manifest path and schema
+- reconcile label taxonomy, including drift labels
+- verify Playwright install/config rather than assuming it
 
-- add design drift screen manifest and screenshot pipeline
-- add reviewer lane
-- add asset lane
+New agent specs should be written by the human or an orchestrator-role agent. Dev should not own backlog-control files unless explicitly assigned.
 
-### Phase 3
+### Phase 1 - Parallel lanes open
 
-- add auto-dispatch for approved issue classes
+- dispatch one bounded Dev task, one drift-review task, and one asset task with disjoint write scope
+- use the roadmap plus configured issues as the only dispatch source
+- keep reviewer optional until the first batch completes
+
+### Phase 2 - Broader automation
+
+- add reviewer lane by default for feel-sensitive work
 - add issue auto-transition logic
 - add periodic backlog summarization
 

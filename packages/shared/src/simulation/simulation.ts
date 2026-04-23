@@ -1,6 +1,6 @@
 import type {
   SimState, Actor, InputState, GuildId, Projectile,
-  AbilityDef, ActorKind, PlayerController, StatusEffectType, VFXEvent,
+  AbilityDef, ActorKind, AnimationId, PlayerController, StatusEffectType, VFXEvent,
 } from './types';
 import { getGuild } from './guildData';
 import { makeRng } from './rng';
@@ -259,8 +259,20 @@ function consumeResource(player: Actor, cost: number): boolean {
   return true;
 }
 
+function getAbilityAnimationId(player: Actor, ability: AbilityDef): AnimationId | null {
+  if (!player.guildId) return null;
+  const guild = getGuild(player.guildId);
+  const idx = guild.abilities.findIndex(a => a.id === ability.id);
+  if (idx < 0 || idx >= 5) return null;
+  return `ability_${idx + 1}` as AnimationId;
+}
+
 function getAbilityAssetKey(abilityId: string, eventType: VFXEvent['type']): string | undefined {
   switch (abilityId) {
+    case 'axe_swing':
+      return eventType === 'hit_spark' ? 'axe_swing_impact' : undefined;
+    case 'shield_bash':
+      return eventType === 'hit_spark' ? 'shield_bash_impact' : undefined;
     case 'holy_rebuke':
       return eventType === 'aoe_pop' ? 'holy_rebuke_burst' : undefined;
     case 'valorous_strike':
@@ -357,6 +369,13 @@ function fireAbility(player: Actor, ability: AbilityDef, state: SimState, ctrl: 
   }
 
   player.abilityCooldowns.set(cdKey, now + ability.cooldownMs);
+  const abilityAnimId = getAbilityAnimationId(player, ability);
+  if (abilityAnimId && !ability.isChannel) {
+    player.state = 'attacking';
+    player.animationId = abilityAnimId;
+    player.stateTimeMs = 0;
+    ctrl.lastAttackMs = now;
+  }
 
   state.vfxEvents.push({
     type: 'ability_name',
@@ -382,16 +401,10 @@ function fireAbility(player: Actor, ability: AbilityDef, state: SimState, ctrl: 
   if (ability.isHeal) {
     const healAmt = Math.round((ability.baseDamage + ability.scaleAmount * (ability.scaleStat ? player.stats[ability.scaleStat] : 0)) * dmgMult);
     applyHeal(player, healAmt, state.vfxEvents);
-    const healVfxZ = player.guildId === 'leper' && ability.id === 'necrotic_embrace'
-      ? player.z + player.height * 1.08
-      : undefined;
     pushAbilityVfx(state.vfxEvents, player, ability, {
       type: 'heal_glow',
-      x: player.guildId === 'leper' && ability.id === 'necrotic_embrace'
-        ? player.x
-        : player.x - 10,
+      x: player.x - 10,
       y: player.y,
-      ...(healVfxZ !== undefined ? { z: healVfxZ } : {}),
     });
   }
 
@@ -468,22 +481,15 @@ function fireAbility(player: Actor, ability: AbilityDef, state: SimState, ctrl: 
         applyKnockback(target, ability.knockbackForce || 150, player.facing, true, state.vfxEvents);
       }
     }
-    const aoeVfxX = player.guildId === 'leper' && ability.id === 'plague_vomit'
-      ? player.x + player.facing * 24 - 4
-      : player.x;
-    const aoeVfxZ = player.guildId === 'leper' && ability.id === 'plague_vomit'
-      ? player.z + player.height * 0.98
-      : player.guildId === 'leper' && ability.id === 'rotting_tide'
-        ? player.z + player.height * 0.82
-      : undefined;
-    const areaVfxType = getPrimaryAreaVfxType(ability.id);
-    pushAbilityVfx(state.vfxEvents, player, ability, {
-      type: areaVfxType,
-      x: aoeVfxX,
-      y: player.y,
-      ...(aoeVfxZ !== undefined ? { z: aoeVfxZ } : {}),
-      radius: ability.aoeRadius,
-    });
+    if (!(player.guildId === 'viking' && ability.id === 'whirlwind')) {
+      const areaVfxType = getPrimaryAreaVfxType(ability.id);
+      pushAbilityVfx(state.vfxEvents, player, ability, {
+        type: areaVfxType,
+        x: player.x,
+        y: player.y,
+        radius: ability.aoeRadius,
+      });
+    }
   }
 
   if (!ability.isProjectile && !ability.isHeal && !ability.isTeleport && ability.baseDamage > 0 && !ability.isGroundTarget && ability.aoeRadius === 0) {
@@ -499,17 +505,10 @@ function fireAbility(player: Actor, ability: AbilityDef, state: SimState, ctrl: 
         applyKnockback(target, ability.knockbackForce || 100, player.facing, ability.knockdown, state.vfxEvents);
       }
     }
-    const hitSparkX = player.guildId === 'leper' && ability.id === 'diseased_claw'
-      ? player.x + player.facing * 30
-      : player.x + player.facing * 18 - 6;
-    const hitSparkZ = player.guildId === 'leper' && ability.id === 'diseased_claw'
-      ? player.z + player.height * 0.68
-      : undefined;
     pushAbilityVfx(state.vfxEvents, player, ability, {
       type: 'hit_spark',
-      x: hitSparkX,
+      x: player.x + player.facing * 18 - 6,
       y: player.y,
-      ...(hitSparkZ !== undefined ? { z: hitSparkZ } : {}),
     });
   }
 
@@ -584,7 +583,6 @@ function fireAbility(player: Actor, ability: AbilityDef, state: SimState, ctrl: 
       type: 'aura_pulse',
       x: player.x,
       y: player.y,
-      z: player.z + player.height * 0.62,
       radius: ability.aoeRadius || 90,
     });
   }
@@ -1144,7 +1142,6 @@ function handlePlayerInput(state: SimState, input: InputState, ctrl: PlayerContr
         type: 'aura_pulse',
         x: player.x,
         y: player.y,
-        z: player.z + player.height * 0.62,
         radius: leperRmb.aoeRadius || 90,
       });
     }

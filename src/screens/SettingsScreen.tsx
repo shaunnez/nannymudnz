@@ -99,37 +99,7 @@ export function SettingsScreen({ animateHud, onToggleAnimateHud, onBack }: Props
       </div>
 
       <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1fr 1fr', overflow: 'hidden' }}>
-        <div style={{ padding: 32, display: 'flex', flexDirection: 'column', gap: 22, overflow: 'auto' }}>
-          <SectionLabel kicker="AUDIO" right={`${Math.round(volume * 100)}%`}>
-            Master volume
-          </SectionLabel>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-            <input
-              type="range"
-              min={0}
-              max={1}
-              step={0.01}
-              value={volume}
-              onChange={(e) => onVolume(parseFloat(e.target.value))}
-              style={{ flex: 1, accentColor: theme.accent }}
-            />
-            <span style={{ fontFamily: theme.fontMono, fontSize: 12, color: theme.accent, minWidth: 44, textAlign: 'right' }}>
-              {Math.round(volume * 100)}%
-            </span>
-          </div>
-          <div style={{ fontFamily: theme.fontBody, fontSize: 11, color: theme.inkMuted, lineHeight: 1.5 }}>
-            Music and combat SFX share this slider. Applies to the next match.
-          </div>
-
-          <SectionLabel kicker="VIDEO">Terminal chrome</SectionLabel>
-          <Toggle
-            label="Animate HUD"
-            sub="Pulse meters, glow combo text, flicker scanlines on hit"
-            on={animateHud}
-            onClick={onToggleAnimateHud}
-          />
-        </div>
-
+        
         <div
           style={{
             padding: 32,
@@ -170,9 +140,7 @@ export function SettingsScreen({ animateHud, onToggleAnimateHud, onBack }: Props
                       {k.toUpperCase()}
                     </div>
                   </div>
-                  {bindings[k] !== DEFAULT_BINDINGS[k] && (
-                    <Chip mono tone="warn">CUSTOM</Chip>
-                  )}
+                  <Chip mono tone="warn">{bindings[k] !== DEFAULT_BINDINGS[k] ? 'Custom' : 'Default'}</Chip>
                   <div
                     style={{
                       justifySelf: 'end',
@@ -194,6 +162,37 @@ export function SettingsScreen({ animateHud, onToggleAnimateHud, onBack }: Props
             })}
           </div>
         </div>
+        <div style={{ padding: 32, display: 'flex', flexDirection: 'column', gap: 22, overflow: 'auto' }}>
+          <SectionLabel kicker="AUDIO" right={`${Math.round(volume * 100)}%`}>
+            Master volume
+          </SectionLabel>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+            <input
+              type="range"
+              min={0}
+              max={1}
+              step={0.01}
+              value={volume}
+              onChange={(e) => onVolume(parseFloat(e.target.value))}
+              style={{ flex: 1, accentColor: theme.accent }}
+            />
+            <span style={{ fontFamily: theme.fontMono, fontSize: 12, color: theme.accent, minWidth: 44, textAlign: 'right' }}>
+              {Math.round(volume * 100)}%
+            </span>
+          </div>
+          <div style={{ fontFamily: theme.fontBody, fontSize: 11, color: theme.inkMuted, lineHeight: 1.5 }}>
+            Music and combat SFX share this slider. Applies to the next match.
+          </div>
+
+          <SectionLabel kicker="VIDEO">Terminal chrome theme</SectionLabel>
+          <Toggle
+            label="Animate HUD"
+            sub="Pulse meters, glow combo text, flicker scanlines on hit"
+            on={animateHud}
+            onClick={onToggleAnimateHud}
+          />
+        </div>
+
       </div>
 
       <div

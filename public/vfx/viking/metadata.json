@@ -1,0 +1,67 @@
+{
+  "guildId": "viking",
+  "frameSize": {
+    "w": 160,
+    "h": 160
+  },
+  "assets": {
+    "whirlwind_burst": {
+      "frames": 1,
+      "frameDurationMs": 180,
+      "loop": false,
+      "anchor": {
+        "x": 80,
+        "y": 80
+      },
+      "scale": 1.15
+    },
+    "axe_swing_impact": {
+      "frames": 1,
+      "frameDurationMs": 140,
+      "loop": false,
+      "frameSize": {
+        "w": 96,
+        "h": 96
+      },
+      "anchor": {
+        "x": 48,
+        "y": 48
+      },
+      "scale": 1.2
+    },
+    "bloodlust_aura": {
+      "frames": 1,
+      "frameDurationMs": 220,
+      "loop": false,
+      "anchor": {
+        "x": 80,
+        "y": 80
+      },
+      "scale": 1.18
+    },
+    "shield_bash_impact": {
+      "frames": 1,
+      "frameDurationMs": 140,
+      "loop": false,
+      "frameSize": {
+        "w": 96,
+        "h": 96
+      },
+      "anchor": {
+        "x": 48,
+        "y": 48
+      },
+      "scale": 1.25
+    },
+    "undying_rage_aura": {
+      "frames": 1,
+      "frameDurationMs": 240,
+      "loop": false,
+      "anchor": {
+        "x": 80,
+        "y": 80
+      },
+      "scale": 1.2
+    }
+  }
+}

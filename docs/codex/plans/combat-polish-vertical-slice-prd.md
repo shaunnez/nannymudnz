@@ -40,6 +40,7 @@ The current problems read like post-pivot consolidation issues, not proof that t
 - Character sprites are now a real production lane.
 - VFX have started to move from placeholder-only rendering toward per-ability routing.
 - Pickups are still present in simulation and Phaser rendering.
+- Verification on 2026-04-23 found and fixed a real baseline blocker in `packages/shared/src/schema/**`: `tsconfig.app.json` needed decorator support because the app typecheck follows the `@nannymud/shared/*` path alias into shared source. The `tsconfig.app.json` `baseUrl` deprecation warning is also cleared.
 
 ### What currently feels weak
 
@@ -49,7 +50,7 @@ The current problems read like post-pivot consolidation issues, not proof that t
 - VFX are mostly still procedural fallback and feel basic
 - stage/world presentation is still largely generic
 - several UI/reference surfaces duplicate similar guild kit rendering logic
-- the repo is not currently on a reliable green baseline
+- active docs, agent specs, and backlog plumbing are not yet aligned tightly enough for safe autonomous execution
 
 ## Product Principles
 
@@ -104,18 +105,23 @@ Reduce code smell and duplication introduced by the late Phaser port, while prot
 - duplicated move-list / guild-kit rendering across:
   - `src/screens/MoveList.tsx`
   - `src/screens/GuildDossier.tsx`
-  - guild detail surfaces used in menus and lobby flows
+  - `src/screens/GuildDetails.tsx`
+  - `src/screens/CharSelect.tsx`
+  - `src/screens/ResultsScreen.tsx`
+  - `src/screens/LoadingScreen.tsx`
+- MP analogues should be verified too, especially `src/screens/mp/MpCharSelect.tsx` and `src/screens/mp/MpLoadingScreen.tsx`
 - string-heavy message and flow wiring in multiplayer screens and room handlers
-- UI text encoding/mojibake in several files
+- possible UI text encoding/mojibake that should be verified with evidence instead of assumed
 - mixed old/new contracts after the Canvas-to-Phaser transition
-- broken `npm run typecheck` baseline, especially around shared schema decorators
+- missing architecture notes about which seams are intentionally string-based versus which should be typed maps/constants
+- shared-schema decorator settings must stay aligned across app/shared typecheck boundaries
 
 ### Deliverables
 
 - one shared presentational layer for guild ability / move-list cards
 - one shared guild-details data adapter sourced from `packages/shared/src/simulation/guildData.ts`
 - one pass to replace obvious duplicated UI copy/patterns
-- a green typecheck baseline
+- a warning-free green typecheck baseline
 - a short architecture note listing where strings are acceptable and where typed maps/constants are preferred
 
 ### Specific recommendations
@@ -397,7 +403,7 @@ Implementation surfaces:
 
 ### Process
 
-1. Build a screen manifest mapping handoff pages to implementation routes/states.
+1. Read and maintain `docs/codex/plans/screen-manifest.md`.
 2. Capture handoff reference screenshots.
 3. Capture matching implementation screenshots.
 4. Compare with a structured rubric:
@@ -410,20 +416,16 @@ Implementation surfaces:
 
 ### Recommended automation
 
-- Playwright captures implementation screenshots.
+- Playwright captures implementation screenshots once the harness is verified.
 - Browser automation captures the handoff HTML reference views.
 - AI review compares the paired screenshots and produces categorized findings.
 - Human signs off on whether a drift item should be fixed or preserved.
 
 ### Deliverables
 
-- one screen manifest
-- one drift report per major flow
-- one queue of implementation tasks tagged:
-  - `design-gap`
-  - `design-worse`
-  - `design-better`
-  - `design-followup`
+- one screen manifest at `docs/codex/plans/screen-manifest.md`
+- one drift report per major flow using the schema in `docs/runbooks/review-design-drift.md`
+- one queue of implementation tasks tagged with the reconciled drift labels from `docs/codex/plans/agent-orchestration-prd.md`
 
 ## Workstream F - Markdown And Backlog Rationalization
 
@@ -440,6 +442,7 @@ The repo now has multiple overlapping markdown sources:
 - runbooks
 - handoff docs
 - ad hoc notes
+- stale agent specs that describe the wrong repo
 
 This makes it hard to answer simple questions like:
 
@@ -450,29 +453,33 @@ This makes it hard to answer simple questions like:
 
 ### Deliverables
 
-- one active roadmap/index doc
+- one active roadmap doc
 - one docs status map:
   - active
   - supporting reference
   - historical/superseded
 - one backlog source of truth for executable work
+- historical copies of the pre-rewrite agent specs, clearly marked as deprecated
 
 ### Recommendation
 
 Keep the rich historical docs, but add a thin top-level control layer that points to:
 
 - the current active product plan
-- the current active execution backlog
+- the current active execution roadmap
 - the current asset production lane
 - the current orchestration plan
+- the current screen manifest for drift review
 
 ## Milestones
 
 ### Milestone 0 - Baseline trust
 
-- restore green typecheck
-- document active architecture seams
-- fix obvious encoding/copy corruption
+- restore a green `npm run typecheck` baseline, especially `packages/shared/src/schema/**`
+- resolve the `tsconfig.app.json` `baseUrl` deprecation warning
+- audit mojibake/encoding issues with evidence instead of assumption
+- document active architecture seams and the current backlog/control docs
+- retire stale agent specs into a clearly historical location
 
 ### Milestone 1 - Combat clarity
 
@@ -511,9 +518,16 @@ Keep the rich historical docs, but add a thin top-level control layer that point
 
 ### Milestone 7 - Backlog and docs clarity
 
-- active roadmap/index exists
+- active roadmap exists
 - current work is easy to locate
 - historical docs are preserved but clearly marked as historical
+
+## Milestone Dependencies
+
+- M0 is a serial precondition for any autonomous execution.
+- M2 depends on M1 so stage dressing does not obscure combat clarity work still in flight.
+- M3 depends on M2 because stage props and clarity VFX share the same asset-generation lane and runtime contracts.
+- M6 depends on M0 so drift findings have a manifest, label scheme, and backlog destination.
 
 ## Acceptance Criteria
 
@@ -558,22 +572,24 @@ Keep the rich historical docs, but add a thin top-level control layer that point
 
 ## Suggested Execution Order
 
-1. fix baseline trust issues
-2. audit and consolidate duplicated guild-kit UI
-3. do hurt/impact/ability placement polish
-4. build the `assembly` vertical slice and refresh pickups
-5. generate clarity-first world props and VFX with PixelLab
-6. layer wow-factor VFX
-7. run the human animation review pass across all guilds
-8. run design drift review and feed it into the backlog
-9. rationalize active markdown/backlog sources
+Steps 1 and 2 are serial preconditions for everything after them. Do not open parallel execution lanes until the control docs, agent specs, and baseline-trust work are aligned.
+
+1. rationalize markdown/backlog sources and retire stale agent specs
+2. fix baseline trust issues
+3. audit and consolidate duplicated guild-kit UI
+4. do hurt/impact/ability placement polish
+5. build the `assembly` vertical slice and refresh pickups
+6. generate clarity-first world props and VFX with PixelLab
+7. layer wow-factor VFX
+8. run the human animation review pass across all guilds
+9. run design drift review and feed it into the backlog
 
 ## Immediate Next Actions
 
-1. Write a read-only architecture audit with a prioritized refactor list.
-2. Restore green typecheck, especially the shared schema decorator path.
-3. Create a combat-feel punch-list focused on hurt, impact anchors, and ability placement.
-4. Define the `assembly` stage asset contract and its first PixelLab prompt pack.
-5. Start the human-in-the-loop animation review runbook for the current guild set.
-6. Add a design drift review runbook and screen manifest.
-7. Add an orchestration PRD for repo-aware autonomous execution.
+1. Land `docs/codex/plans/roadmap.md` and `docs/codex/plans/screen-manifest.md`.
+2. Mark the old `agents/*.md` set historical and replace it with repo-accurate active specs.
+3. Restore a green shared-schema typecheck baseline and clear the `tsconfig.app.json` `baseUrl` deprecation warning.
+4. Write a short architecture audit with a prioritized refactor list.
+5. Create a combat-feel punch-list focused on hurt, impact anchors, and ability placement.
+6. Define the `assembly` stage asset contract and its first PixelLab prompt pack.
+7. Start the human-in-the-loop animation review runbook for the current guild set.

@@ -12,16 +12,28 @@
       "loop": false,
       "anchor": {
         "x": 62,
-        "y": 112
+        "y": 85
+      },
+      "opaqueBounds": {
+        "left": 29,
+        "top": 42,
+        "right": 91,
+        "bottom": 84
       }
     },
     "death": {
-      "frames": 8,
+      "frames": 4,
       "frameDurationMs": 150,
       "loop": false,
       "anchor": {
         "x": 62,
-        "y": 112
+        "y": 86
+      },
+      "opaqueBounds": {
+        "left": 25,
+        "top": 50,
+        "right": 95,
+        "bottom": 85
       }
     },
     "idle": {
@@ -30,7 +42,28 @@
       "loop": true,
       "anchor": {
         "x": 62,
-        "y": 112
+        "y": 85
+      },
+      "opaqueBounds": {
+        "left": 29,
+        "top": 41,
+        "right": 87,
+        "bottom": 84
+      }
+    },
+    "jump": {
+      "frames": 4,
+      "frameDurationMs": 120,
+      "loop": false,
+      "anchor": {
+        "x": 62,
+        "y": 85
+      },
+      "opaqueBounds": {
+        "left": 20,
+        "top": 42,
+        "right": 98,
+        "bottom": 84
       }
     },
     "run": {
@@ -39,7 +72,13 @@
       "loop": true,
       "anchor": {
         "x": 62,
-        "y": 112
+        "y": 82
+      },
+      "opaqueBounds": {
+        "left": 29,
+        "top": 45,
+        "right": 92,
+        "bottom": 81
       }
     },
     "walk": {
@@ -48,7 +87,13 @@
       "loop": true,
       "anchor": {
         "x": 62,
-        "y": 112
+        "y": 85
+      },
+      "opaqueBounds": {
+        "left": 31,
+        "top": 41,
+        "right": 88,
+        "bottom": 84
       }
     }
   }

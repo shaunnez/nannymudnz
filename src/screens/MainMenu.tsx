@@ -177,7 +177,7 @@ export function MainMenu({ onPick, difficulty, onDifficultyChange }: Props) {
                   >
                     {m.sub}
                   </div>
-                  {m.slider && active && (
+                  {m.slider && (
                     <div
                       style={{
                         marginTop: 8,

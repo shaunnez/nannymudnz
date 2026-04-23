@@ -12,6 +12,10 @@ function isArrowLike(type: string): boolean {
   return type === 'arrow' || type.includes('shot') || type.includes('bolt') || type.includes('volley');
 }
 
+function isHarpoon(type: string): boolean {
+  return type === 'harpoon';
+}
+
 /**
  * Per-projectile view. Mirrors renderProjectiles in gameRenderer.ts:
  * - arrow/shot/bolt/volley → oriented rectangle
@@ -24,7 +28,7 @@ export class ProjectileView {
 
   private graphics: Phaser.GameObjects.Graphics;
   private fillColor: number;
-  private readonly shape: 'arrow' | 'throw' | 'orb';
+  private readonly shape: 'arrow' | 'harpoon' | 'throw' | 'orb';
   private readonly rawColor: string;
   private readonly radius: number;
   private readonly band: ScreenYBand;
@@ -34,7 +38,13 @@ export class ProjectileView {
     this.rawColor = proj.color;
     this.fillColor = hexToInt(proj.color);
     this.radius = proj.radius;
-    this.shape = isArrowLike(proj.type) ? 'arrow' : proj.type.includes('throw') ? 'throw' : 'orb';
+    this.shape = isHarpoon(proj.type)
+      ? 'harpoon'
+      : isArrowLike(proj.type)
+        ? 'arrow'
+        : proj.type.includes('throw')
+          ? 'throw'
+          : 'orb';
     this.band = getScreenYBand(scene);
 
     this.graphics = scene.add.graphics();
@@ -50,6 +60,22 @@ export class ProjectileView {
   private redraw(proj: Projectile): void {
     const g = this.graphics;
     g.clear();
+
+    if (this.shape === 'harpoon') {
+      const angle = Math.atan2(proj.vy, proj.vx);
+      g.rotation = angle;
+      g.lineStyle(3, 0x5b3a29, 1);
+      g.lineBetween(-24, 0, 13, 0);
+      g.fillStyle(0xcbd5e1, 1);
+      g.fillTriangle(13, 0, 1, -7, 1, 7);
+      g.lineStyle(3, 0xcbd5e1, 1);
+      g.lineBetween(-2, -6, 6, 0);
+      g.lineBetween(-2, 6, 6, 0);
+      g.lineStyle(2, 0x7f1d1d, 0.85);
+      g.lineBetween(-18, -5, -24, 0);
+      g.lineBetween(-18, 5, -24, 0);
+      return;
+    }
 
     if (this.shape === 'arrow') {
       const angle = Math.atan2(proj.vy, proj.vx);

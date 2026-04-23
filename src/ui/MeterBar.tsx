@@ -55,7 +55,7 @@ export function MeterBar({
             inset: 0,
             width: `${pct * 100}%`,
             background: color,
-            transition: 'width 200ms linear',
+            // transition: 'width 200ms linear',
             boxShadow: flash ? `0 0 10px ${color}` : 'none',
           }}
         />
