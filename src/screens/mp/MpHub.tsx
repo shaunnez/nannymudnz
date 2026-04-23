@@ -5,6 +5,8 @@ import { theme, Btn } from '../../ui';
 import { usePlayerName } from './usePlayerName';
 import { CreateRoomModal } from './CreateRoomModal';
 import { JoinByCodeModal } from './JoinByCodeModal';
+import { usePublicRooms } from './usePublicRooms';
+import { joinRoom, type PublicRoom } from '../../game/net/ColyseusClient';
 
 interface Props {
   onBack: () => void;
@@ -14,14 +16,20 @@ interface Props {
 
 type Modal = 'none' | 'create' | 'join';
 
+function formatRounds(n: number): string {
+  return `Bo${n}`;
+}
+
 export function MpHub({ onBack, onHosted, onJoined }: Props) {
   const [playerName, setPlayerName] = usePlayerName();
   const [modal, setModal] = useState<Modal>('none');
   const [nameInput, setNameInput] = useState(playerName);
+  const [joiningRoomId, setJoiningRoomId] = useState<string | null>(null);
+  const [joinError, setJoinError] = useState<string | null>(null);
 
   const nameReady = playerName.trim().length > 0;
+  const { rooms, error: roomsError } = usePublicRooms();
 
-  // Sync nameInput → playerName on blur/Enter
   const commitName = () => {
     const trimmed = nameInput.trim();
     if (trimmed) setPlayerName(trimmed);
@@ -39,6 +47,19 @@ export function MpHub({ onBack, onHosted, onJoined }: Props) {
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [onBack]);
+
+  const handleJoinPublic = async (room: PublicRoom) => {
+    if (!nameReady || joiningRoomId || room.clients >= room.maxClients) return;
+    setJoiningRoomId(room.roomId);
+    setJoinError(null);
+    try {
+      const joined = await joinRoom(room.roomId, playerName);
+      onJoined(joined);
+    } catch (err) {
+      setJoinError(err instanceof Error ? err.message : 'Failed to join room.');
+      setJoiningRoomId(null);
+    }
+  };
 
   return (
     <div
@@ -201,7 +222,7 @@ export function MpHub({ onBack, onHosted, onJoined }: Props) {
                   opacity: 0.75,
                 }}
               >
-                Create a private room and invite a friend by code
+                Create a private or public room
               </div>
             </button>
 
@@ -245,13 +266,14 @@ export function MpHub({ onBack, onHosted, onJoined }: Props) {
           </div>
         </div>
 
-        {/* RIGHT — public rooms (coming soon) */}
+        {/* RIGHT — public rooms */}
         <div
           style={{
             flex: 1,
             paddingLeft: 48,
             display: 'flex',
             flexDirection: 'column',
+            minHeight: 0,
           }}
         >
           <div
@@ -266,38 +288,139 @@ export function MpHub({ onBack, onHosted, onJoined }: Props) {
             PUBLIC ROOMS
           </div>
 
+          {/* Join error */}
+          {joinError && (
+            <div
+              style={{
+                marginBottom: 12,
+                fontFamily: theme.fontMono,
+                fontSize: 11,
+                color: theme.bad,
+                letterSpacing: 1,
+                padding: '6px 10px',
+                border: `1px solid ${theme.bad}`,
+                background: `${theme.bad}18`,
+              }}
+            >
+              {joinError}
+            </div>
+          )}
+
+          {/* Room list */}
           <div
             style={{
               flex: 1,
-              border: `1px dashed ${theme.line}`,
+              border: `1px solid ${theme.line}`,
+              overflowY: 'auto',
               display: 'flex',
               flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 10,
-              opacity: 0.4,
             }}
           >
-            <div
-              style={{
-                fontFamily: theme.fontDisplay,
-                fontSize: 18,
-                color: theme.ink,
-                letterSpacing: '0.02em',
-              }}
-            >
-              Public rooms
-            </div>
-            <div
-              style={{
-                fontFamily: theme.fontMono,
-                fontSize: 10,
-                color: theme.inkMuted,
-                letterSpacing: 2,
-              }}
-            >
-              — COMING SOON —
-            </div>
+            {roomsError ? (
+              <div
+                style={{
+                  flex: 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontFamily: theme.fontMono,
+                  fontSize: 10,
+                  color: theme.bad,
+                  letterSpacing: 2,
+                  opacity: 0.7,
+                }}
+              >
+                COULD NOT REACH SERVER
+              </div>
+            ) : rooms.length === 0 ? (
+              <div
+                style={{
+                  flex: 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontFamily: theme.fontMono,
+                  fontSize: 10,
+                  color: theme.inkMuted,
+                  letterSpacing: 2,
+                  opacity: 0.5,
+                }}
+              >
+                NO PUBLIC ROOMS
+              </div>
+            ) : (
+              rooms.map((room) => {
+                const isFull = room.clients >= room.maxClients;
+                const isJoining = joiningRoomId === room.roomId;
+                const canJoin = nameReady && !isFull && !joiningRoomId;
+                return (
+                  <button
+                    key={room.roomId}
+                    onClick={() => handleJoinPublic(room)}
+                    disabled={!canJoin}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      padding: '12px 16px',
+                      background: 'transparent',
+                      border: 'none',
+                      borderBottom: `1px solid ${theme.lineSoft}`,
+                      color: canJoin ? theme.ink : theme.inkMuted,
+                      cursor: canJoin ? 'pointer' : 'not-allowed',
+                      textAlign: 'left',
+                      gap: 12,
+                      opacity: canJoin ? 1 : 0.5,
+                      transition: 'background 100ms ease',
+                    }}
+                    onMouseEnter={(e) => {
+                      if (canJoin) (e.currentTarget as HTMLButtonElement).style.background = theme.panel;
+                    }}
+                    onMouseLeave={(e) => {
+                      (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
+                    }}
+                  >
+                    {/* Room info */}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div
+                        style={{
+                          fontFamily: theme.fontMono,
+                          fontSize: 13,
+                          letterSpacing: 1,
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        {room.name}
+                      </div>
+                      <div
+                        style={{
+                          fontFamily: theme.fontBody,
+                          fontSize: 11,
+                          color: theme.inkMuted,
+                          marginTop: 2,
+                        }}
+                      >
+                        {room.hostName} · {formatRounds(room.rounds)}
+                      </div>
+                    </div>
+
+                    {/* Slot badge */}
+                    <div
+                      style={{
+                        fontFamily: theme.fontMono,
+                        fontSize: 10,
+                        letterSpacing: 2,
+                        color: isFull ? theme.bad : theme.accent,
+                        flexShrink: 0,
+                      }}
+                    >
+                      {isJoining ? '…' : isFull ? 'FULL' : `${room.clients}/2`}
+                    </div>
+                  </button>
+                );
+              })
+            )}
           </div>
         </div>
       </div>
