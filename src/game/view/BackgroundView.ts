@@ -180,9 +180,10 @@ export class BackgroundView {
 
   private createAssemblyProps(): void {
     const g = this.groundTopScreen;
-    for (let wx = -300; wx <= 3000; wx += 300) this.sp('stage:assembly:pillar', wx, g + 14, 0.6, -600, 0.62, 0.98);
-    for (let wx = -150; wx <= 2850; wx += 300) this.sp('stage:assembly:banner', wx, g - 12, 0.6, -600, 0.62, 0.98);
-    for (let wx = -300; wx <= 2700; wx += 300) this.sp('stage:assembly:brazier', wx, g - 30, 0.6, -600, 0.40, 0.90);
+    this.addBackdropTile('stage:assembly:backdrop', 0, g, 0.25, -701);
+    this.addBackdropTile('stage:assembly:horizon',  g - 16, 32, 0.45, -700);
+    for (let wx = -600; wx <= 3600; wx += 600)
+      this.sp('stage:assembly:pillar', wx, g + 14, 0.60, -600, 0.62, 0.95);
   }
 
   // ── Night Market ─────────────────────────────────────────────────────────
@@ -273,10 +274,8 @@ export class BackgroundView {
 
   private createKitchenProps(): void {
     const g = this.groundTopScreen;
-    for (let wx = -400; wx <= 3600; wx += 400) this.sp('stage:kitchen:cauldron', wx, g + 10, 0.55, -590, 0.62);
-    for (let wx = -200; wx <= 3800; wx += 400) this.sp('stage:kitchen:stove',    wx, g + 14, 0.48, -620, 0.55, 0.92);
-    for (let wx = -350; wx <= 3850; wx += 350) this.sp('stage:kitchen:hooks',    wx, g - 28, 0.42, -610, 0.50, 0.88);
-    for (let wx = -140; wx <= 3860; wx += 350) this.sp('stage:kitchen:barrel',   wx, g + 18, 0.65, -580, 0.48);
+    this.addBackdropTile('stage:kitchen:backdrop', 0, g, 0.28, -701);
+    this.addBackdropTile('stage:kitchen:horizon',  g - 16, 32, 0.48, -700);
   }
 
   // ── Mage Tower ────────────────────────────────────────────────────────────
@@ -321,10 +320,8 @@ export class BackgroundView {
 
   private createTowerProps(): void {
     const g = this.groundTopScreen;
-    for (let wx = -320; wx <= 3840; wx += 320) this.sp('stage:tower:pillar',   wx, g + 14, 0.62, -600, 0.68);
-    for (let wx = -160; wx <= 3680; wx += 320) this.sp('stage:tower:crystals', wx, g + 12, 0.52, -610, 0.55, 0.92);
-    for (let wx =  -80; wx <= 3760; wx += 320) this.sp('stage:tower:tomes',    wx, g + 18, 0.66, -580, 0.44);
-    for (let wx = -240; wx <= 3600; wx += 320) this.sp('stage:tower:brazier',  wx, g + 12, 0.58, -590, 0.50);
+    this.addBackdropTile('stage:tower:backdrop', 0, g, 0.25, -701);
+    this.addBackdropTile('stage:tower:horizon',  g - 16, 32, 0.45, -700);
   }
 
   // ── Moonwake Grove ────────────────────────────────────────────────────────
@@ -368,10 +365,8 @@ export class BackgroundView {
 
   private createGroveProps(): void {
     const g = this.groundTopScreen;
-    for (let wx = -380; wx <= 3800; wx += 380) this.sp('stage:grove:tree',      wx, g + 14, 0.52, -600, 0.75);
-    for (let wx = -190; wx <= 3610; wx += 380) this.sp('stage:grove:stone',     wx, g + 14, 0.46, -610, 0.62, 0.90);
-    for (let wx = -100; wx <= 3800; wx += 300) this.sp('stage:grove:mushrooms', wx, g + 18, 0.65, -580, 0.50);
-    for (let wx = -280; wx <= 3640; wx += 500) this.sp('stage:grove:altar',     wx, g + 18, 0.56, -590, 0.55, 0.92);
+    this.addBackdropTile('stage:grove:backdrop', 0, g, 0.30, -701);
+    this.addBackdropTile('stage:grove:horizon',  g - 16, 32, 0.50, -700);
   }
 
   // ── Drowned Catacombs ─────────────────────────────────────────────────────
@@ -413,10 +408,8 @@ export class BackgroundView {
 
   private createCatacombsProps(): void {
     const g = this.groundTopScreen;
-    for (let wx = -320; wx <= 3840; wx += 320) this.sp('stage:catacombs:pillar',      wx, g + 14, 0.62, -600, 0.68);
-    for (let wx = -160; wx <= 3680; wx += 320) this.sp('stage:catacombs:stalactites', wx, g - 45, 0.42, -610, 0.55, 0.85);
-    for (let wx = -100; wx <= 3800; wx += 300) this.sp('stage:catacombs:bones',       wx, g + 18, 0.66, -580, 0.50);
-    for (let wx = -240; wx <= 3600; wx += 320) this.sp('stage:catacombs:torch',       wx, g +  8, 0.58, -590, 0.48);
+    this.addBackdropTile('stage:catacombs:backdrop', 0, g, 0.25, -701);
+    this.addBackdropTile('stage:catacombs:horizon',  g - 16, 32, 0.45, -700);
   }
 
   // ── Red Throne ────────────────────────────────────────────────────────────
@@ -465,10 +458,8 @@ export class BackgroundView {
 
   private createThroneProps(): void {
     const g = this.groundTopScreen;
-    for (let wx = -320; wx <= 3840; wx += 320) this.sp('stage:throne:banner', wx, g + 14, 0.62, -600, 0.65);
-    this.sp('stage:throne:throne', 1800, g + 14, 0.35, -650, 0.72);
-    for (let wx = -400; wx <= 3600; wx += 500) this.sp('stage:throne:cage',   wx, g + 14, 0.65, -585, 0.55, 0.92);
-    for (let wx = -240; wx <= 3600; wx += 600) this.sp('stage:throne:block',  wx, g + 20, 0.66, -578, 0.48);
+    this.addBackdropTile('stage:throne:backdrop', 0, g, 0.25, -701);
+    this.addBackdropTile('stage:throne:horizon',  g - 16, 32, 0.45, -700);
   }
 
   // ── Vampire Docks ─────────────────────────────────────────────────────────
@@ -512,10 +503,8 @@ export class BackgroundView {
 
   private createDocksProps(): void {
     const g = this.groundTopScreen;
-    for (let wx = -280; wx <= 3920; wx += 280) this.sp('stage:docks:post',   wx, g + 14, 0.62, -600, 0.68);
-    for (let wx = -140; wx <= 3780; wx += 280) this.sp('stage:docks:lamp',   wx, g + 14, 0.56, -605, 0.65, 0.88);
-    for (let wx = -200; wx <= 3800; wx += 400) this.sp('stage:docks:anchor', wx, g + 14, 0.66, -582, 0.55);
-    for (let wx = -100; wx <= 3750; wx += 350) this.sp('stage:docks:crates', wx, g + 18, 0.64, -585, 0.50, 0.92);
+    this.addBackdropTile('stage:docks:backdrop', 0, g, 0.30, -701);
+    this.addBackdropTile('stage:docks:horizon',  g - 16, 32, 0.50, -700);
   }
 
   // ── Monastery Rooftops ────────────────────────────────────────────────────
@@ -565,10 +554,8 @@ export class BackgroundView {
 
   private createRooftopsProps(): void {
     const g = this.groundTopScreen;
-    for (let wx = -350; wx <= 3850; wx += 350) this.sp('stage:rooftops:chimney',  wx, g + 14, 0.58, -600, 0.65);
-    for (let wx = -175; wx <= 3675; wx += 700) this.sp('stage:rooftops:bell',     wx, g + 14, 0.50, -610, 0.62, 0.92);
-    for (let wx = -175; wx <= 3675; wx += 350) this.sp('stage:rooftops:flags',    wx, g - 22, 0.44, -615, 0.55, 0.85);
-    for (let wx = -350; wx <= 3500; wx += 500) this.sp('stage:rooftops:gargoyle', wx, g + 12, 0.62, -595, 0.50, 0.90);
+    this.addBackdropTile('stage:rooftops:backdrop', 0, g, 0.30, -701);
+    this.addBackdropTile('stage:rooftops:horizon',  g - 16, 32, 0.50, -700);
   }
 
   // ── Generic fallback (non-named stages) ───────────────────────────────────
