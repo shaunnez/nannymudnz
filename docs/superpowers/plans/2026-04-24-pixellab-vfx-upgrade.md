@@ -8,6 +8,19 @@
 
 **Tech Stack:** TypeScript, Phaser 3 tweens, PixelLab MCP (`create_map_object` / `get_map_object`)
 
+## Execution Strategy
+
+| Task | Model | Mode | Reason |
+|---|---|---|---|
+| Task 0 — tween code | **sonnet** | serial | TypeScript precision, typecheck, commit |
+| Task 1 — knight/leper/viking | **haiku** | parallel | Mechanical MCP tool calls + JSON writes |
+| Task 2 — adventurer/mage/druid | **haiku** | parallel | Mechanical MCP tool calls + JSON writes |
+| Task 3 — monk/champion/hunter | **haiku** | parallel | Mechanical MCP tool calls + JSON writes |
+| Task 4 — prophet/vampire/darkmage | **haiku** | parallel | Mechanical MCP tool calls + JSON writes |
+| Task 5 — cultist/chef/master | **haiku** | parallel | Mechanical MCP tool calls + JSON writes |
+
+**Dispatch order:** Task 0 → (on commit) → Tasks 1–5 all simultaneously.
+
 ---
 
 ## Size and metadata conventions

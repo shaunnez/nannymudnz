@@ -82,7 +82,21 @@
       "WebFetch(domain:strategywiki.org)",
       "WebFetch(domain:johnnys.news)",
       "Skill(commit-commands:commit-push-pr)",
-      "Skill(commit-commands:commit-push-pr:*)"
+      "Skill(commit-commands:commit-push-pr:*)",
+      "mcp__plugin_playwright_playwright__browser_click",
+      "mcp__plugin_playwright_playwright__browser_type",
+      "WebFetch(domain:store.steampowered.com)",
+      "WebFetch(domain:shared.fastly.steamstatic.com)",
+      "Bash(npx playwright *)",
+      "Bash(taskkill /F /IM chrome.exe)",
+      "Bash(taskkill /F /IM chromium.exe)",
+      "Bash(python3)",
+      "mcp__plugin_playwright_playwright__browser_close",
+      "PowerShell(\"done\")",
+      "PowerShell(Stop-Process -Id 16048,34432,38792,45860 -Force -ErrorAction SilentlyContinue)",
+      "PowerShell(\"killed\")",
+      "Bash(cat)",
+      "Read(//tmp/**)"
     ]
   }
 }
