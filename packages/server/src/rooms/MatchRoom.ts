@@ -55,6 +55,12 @@ export class MatchRoom extends Room<MatchState> {
     this.state.createdAtMs = Date.now();
     this.roomId = this.state.code;
     console.log(`[MatchRoom] created code=${this.state.code} name="${this.state.name}" rounds=${this.state.rounds}`);
+    void this.setMetadata({
+      name: this.state.name,
+      rounds: this.state.rounds,
+      visibility: this.state.visibility,
+      hostName: '',
+    });
 
     this.onMessage('ready_toggle', (client: Client, msg: { ready: boolean }) => {
       const slot = this.state.players.get(client.sessionId);
@@ -161,9 +167,18 @@ export class MatchRoom extends Room<MatchState> {
     slot.sessionId = client.sessionId;
     slot.name = opts?.playerName ?? opts?.name ?? 'Player';
     this.state.players.set(client.sessionId, slot);
-    if (!this.state.hostSessionId) this.state.hostSessionId = client.sessionId;
+    const isFirstJoin = !this.state.hostSessionId;
+    if (isFirstJoin) this.state.hostSessionId = client.sessionId;
     const isHost = this.state.hostSessionId === client.sessionId;
     console.log(`[MatchRoom ${this.state.code}] join sid=${client.sessionId} name="${slot.name}" host=${isHost} (${this.state.players.size}/${this.maxClients})`);
+    if (isFirstJoin) {
+      void this.setMetadata({
+        name: this.state.name,
+        rounds: this.state.rounds,
+        visibility: this.state.visibility,
+        hostName: slot.name,
+      });
+    }
   }
 
   onLeave(client: Client) {
