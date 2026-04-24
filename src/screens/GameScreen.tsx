@@ -4,6 +4,7 @@ import type { Room } from '@colyseus/sdk';
 import type { GuildId, SimMode, SimState, MatchStats, BattleSlot, BattStatEntry } from '@nannymud/shared/simulation/types';
 import type { MatchState } from '@nannymud/shared';
 import { PauseOverlay } from './PauseOverlay';
+import { theme } from '../ui';
 import { StoryGameOverOverlay } from './StoryGameOverOverlay';
 import { StoryVictoryOverlay } from './StoryVictoryOverlay';
 import { GuildDetails } from './GuildDetails';
@@ -47,6 +48,7 @@ export function GameScreen({
   const [loadProgress, setLoadProgress] = useState<number | undefined>(undefined);
   const [isPaused, setIsPaused] = useState(false);
   const [showMoves, setShowMoves] = useState(false);
+  const [showMpQuit, setShowMpQuit] = useState(false);
   const [showStoryGameOver, setShowStoryGameOver] = useState(false);
   const [storyVictoryScore, setStoryVictoryScore] = useState<number | null>(null);
   const pausedByMovesRef = useRef(false);
@@ -207,6 +209,23 @@ export function GameScreen({
     return () => window.removeEventListener('keydown', onKey);
   }, [closeMoves, emitToGameplay, showMoves, netMode]);
 
+  useEffect(() => {
+    if (netMode !== 'mp') return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'p' || e.key === 'P' || e.key === 'Escape') {
+        e.preventDefault();
+        setShowMpQuit((s) => !s);
+      }
+    };
+    const onTouchPause = () => setShowMpQuit((s) => !s);
+    window.addEventListener('keydown', onKey);
+    window.addEventListener('nannymud:touch-pause', onTouchPause);
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      window.removeEventListener('nannymud:touch-pause', onTouchPause);
+    };
+  }, [netMode]);
+
   const stage = STAGES.find((s) => s.id === stageId);
   const stageName = stage?.name ?? 'Arena';
 
@@ -245,6 +264,9 @@ export function GameScreen({
         />
       )}
       {netMode !== 'mp' && showMoves && <GuildDetails guildId={p1} onClose={closeMoves} />}
+      {netMode === 'mp' && showMpQuit && (
+        <MpQuitOverlay onStay={() => setShowMpQuit(false)} onQuit={onQuit} />
+      )}
       {showStoryGameOver && mode === 'story' && (
         <StoryGameOverOverlay
           onRematch={handleStoryRematch}
@@ -269,6 +291,69 @@ export function GameScreen({
           />
         </div>
       )}
+    </div>
+  );
+}
+
+function MpQuitOverlay({ onStay, onQuit }: { onStay: () => void; onQuit: () => void }) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' || e.key === 'p' || e.key === 'P') { e.preventDefault(); onStay(); }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onStay]);
+
+  return (
+    <div
+      onClick={onStay}
+      style={{
+        position: 'absolute', inset: 0,
+        background: 'rgba(0,0,0,0.72)',
+        backdropFilter: 'blur(2px)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        zIndex: 10,
+      }}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          width: 420,
+          background: theme.panel,
+          border: `1px solid ${theme.line}`,
+          padding: 36,
+          fontFamily: theme.fontBody,
+        }}
+      >
+        <div style={{ fontFamily: theme.fontMono, fontSize: 11, color: theme.inkMuted, letterSpacing: 4, marginBottom: 4 }}>
+          MULTIPLAYER
+        </div>
+        <div style={{ fontFamily: theme.fontDisplay, fontSize: 38, color: theme.ink, letterSpacing: '-0.02em', marginBottom: 28 }}>
+          Quit match?
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div
+            onClick={onStay}
+            style={{ cursor: 'pointer', padding: '14px 0', borderBottom: `1px solid ${theme.lineSoft}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+          >
+            <div>
+              <div style={{ fontFamily: theme.fontDisplay, fontSize: 19, color: theme.accent }}>STAY IN MATCH</div>
+              <div style={{ fontFamily: theme.fontBody, fontSize: 11, color: theme.inkMuted, marginTop: 2 }}>return to the fight</div>
+            </div>
+            <span style={{ fontFamily: theme.fontMono, fontSize: 10, color: theme.accent }}>→</span>
+          </div>
+          <div
+            onClick={onQuit}
+            style={{ cursor: 'pointer', padding: '14px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+          >
+            <div>
+              <div style={{ fontFamily: theme.fontDisplay, fontSize: 19, color: theme.bad }}>QUIT TO MENU</div>
+              <div style={{ fontFamily: theme.fontBody, fontSize: 11, color: theme.inkMuted, marginTop: 2 }}>forfeit and disconnect</div>
+            </div>
+            <span style={{ fontFamily: theme.fontMono, fontSize: 10, color: theme.bad }}>→</span>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

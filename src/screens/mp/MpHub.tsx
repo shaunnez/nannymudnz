@@ -74,32 +74,25 @@ export function MpHub({ onBack, onHosted, onJoined }: Props) {
       {/* Header */}
       <div
         style={{
-          padding: '52px 48px 0',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 4,
+          padding: '18px 36px',
+          borderBottom: `1px solid ${theme.lineSoft}`,
+          display: 'grid',
+          gridTemplateColumns: '1fr auto 1fr',
+          alignItems: 'center',
         }}
       >
-        <div
-          style={{
-            fontFamily: theme.fontMono,
-            fontSize: 10,
-            color: theme.inkMuted,
-            letterSpacing: 3,
-          }}
-        >
-          MAIN MENU → MULTIPLAYER
+        <div style={{ justifySelf: 'start' }}>
+          <Btn size="md" onClick={onBack}>← BACK</Btn>
         </div>
-        <div
-          style={{
-            fontFamily: theme.fontDisplay,
-            fontSize: 36,
-            color: theme.ink,
-            letterSpacing: '-0.02em',
-          }}
-        >
-          ◇ MULTIPLAYER HUB
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+          <span style={{ fontFamily: theme.fontMono, fontSize: 10, color: theme.inkMuted, letterSpacing: 3 }}>
+            MAIN MENU → MULTIPLAYER
+          </span>
+          <span style={{ fontFamily: theme.fontDisplay, fontSize: 24, color: theme.ink }}>
+            ◇ Multiplayer Hub
+          </span>
         </div>
+        <div />
       </div>
 
       {/* Body */}
@@ -260,10 +253,6 @@ export function MpHub({ onBack, onHosted, onJoined }: Props) {
             </button>
           </div>
 
-          {/* Back button */}
-          <div style={{ marginTop: 'auto' }}>
-            <Btn onClick={onBack}>← BACK</Btn>
-          </div>
         </div>
 
         {/* RIGHT — public rooms */}
