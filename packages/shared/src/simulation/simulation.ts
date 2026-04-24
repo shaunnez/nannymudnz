@@ -1845,11 +1845,17 @@ export function tickSimulation(
   if (state.battleMode) {
     state.battleTimer = Math.max(0, state.battleTimer - dtMs);
 
-    if (state.enemies.length > 0 && state.enemies.every((e) => !e.isAlive)) {
+    // Foes = enemies NOT on the player's team. Null/undefined battleTeam
+    // means no team — always a foe.
+    const foes = state.enemies.filter(
+      (e) => !(e.battleTeam != null && state.player.battleTeam != null && e.battleTeam === state.player.battleTeam),
+    );
+
+    if (foes.length > 0 && foes.every((e) => !e.isAlive)) {
       state.phase = 'victory';
     } else if (state.battleTimer === 0) {
-      const maxEnemyHp = state.enemies.reduce((m, e) => Math.max(m, e.hp), 0);
-      state.phase = state.player.hp > maxEnemyHp ? 'victory' : 'defeat';
+      const maxFoeHp = foes.reduce((m, e) => Math.max(m, e.hp), 0);
+      state.phase = state.player.hp > maxFoeHp ? 'victory' : 'defeat';
     }
   } else {
     for (const wave of state.waves) {

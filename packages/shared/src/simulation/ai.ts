@@ -5,13 +5,25 @@ import { GROUND_Y_MIN, GROUND_Y_MAX } from './constants';
 import { getEffectiveMoveSpeed } from './physics';
 
 
+function areTeammateActors(a: Actor, b: Actor): boolean {
+  return a.battleTeam != null && b.battleTeam != null && a.battleTeam === b.battleTeam;
+}
+
 function findTarget(actor: Actor, state: SimState): Actor | null {
-  const targets = (actor.team === 'enemy'
-    ? [state.player, ...state.allies].filter(a => a.isAlive)
-    : state.enemies.filter(a => a.isAlive)
-  ).filter(a => !a.statusEffects.some(e => e.type === 'stealth'));
-  if (targets.length === 0) return null;
-  return targets.reduce((closest, t) => {
+  let candidates: Actor[];
+  if (state.battleMode) {
+    candidates = [state.player, ...state.enemies].filter(
+      (a) => a.isAlive && a.id !== actor.id && !areTeammateActors(a, actor),
+    );
+  } else {
+    candidates = (actor.team === 'enemy'
+      ? [state.player, ...state.allies].filter((a) => a.isAlive)
+      : state.enemies.filter((a) => a.isAlive)
+    );
+  }
+  candidates = candidates.filter((a) => !a.statusEffects.some((e) => e.type === 'stealth'));
+  if (candidates.length === 0) return null;
+  return candidates.reduce((closest, t) => {
     const dCurrent = Math.hypot(t.x - actor.x, t.y - actor.y);
     const dBest = Math.hypot(closest.x - actor.x, closest.y - actor.y);
     return dCurrent < dBest ? t : closest;
