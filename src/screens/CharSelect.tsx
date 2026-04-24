@@ -130,7 +130,7 @@ export function CharSelect({ mode, initialP1, initialP2, onBack, onReady }: Prop
         <div style={{ justifySelf: 'end', display: 'flex', gap: 8 }}>
           {hasOpponent && (
             <Btn size="md" onClick={() => setActiveSlot((s) => (s === 'p1' ? 'cpu' : 'p1'))}>
-              SWITCH · {activeSlot === 'p1' ? 'P1' : 'CPU'}
+              {activeSlot === 'p1' ? 'SWITCH CPU' : 'SWITCH P1'}
             </Btn>
           )}
           <Btn
@@ -157,7 +157,11 @@ export function CharSelect({ mode, initialP1, initialP2, onBack, onReady }: Prop
           guildId={picks.p1 ?? ids[cursors.p1]}
           locked={hasOpponent ? picks.p1 !== null : false}
           active={activeSlot === 'p1'}
-          statusText={!hasOpponent ? 'HOVER' : undefined}
+          statusText={
+            picks.p1 !== null ? 'PICKED' :
+            activeSlot !== 'p1' ? 'NOT PICKED' :
+            undefined
+          }
           onView={() => setDetailsFor(picks.p1 ?? ids[cursors.p1])}
         />
 
@@ -288,22 +292,58 @@ export function CharSelect({ mode, initialP1, initialP2, onBack, onReady }: Prop
         </div>
 
         {hasOpponent ? (
-          <SidePanel
-            role="CPU"
-            guildId={picks.cpu ?? ids[cursors.cpu]}
-            locked={picks.cpu !== null}
-            active={activeSlot === 'cpu'}
-            onView={() => setDetailsFor(picks.cpu ?? ids[cursors.cpu])}
-          />
+          picks.cpu !== null || activeSlot === 'cpu' ? (
+            <SidePanel
+              role="CPU"
+              guildId={picks.cpu ?? ids[cursors.cpu]}
+              locked={picks.cpu !== null}
+              active={activeSlot === 'cpu'}
+              statusText={picks.cpu !== null ? 'PICKED' : undefined}
+              onView={() => setDetailsFor(picks.cpu ?? ids[cursors.cpu])}
+            />
+          ) : (
+            <div
+              style={{
+                padding: 24,
+                borderLeft: `1px solid ${theme.lineSoft}`,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 12,
+              }}
+            >
+              <div style={{ fontFamily: theme.fontMono, fontSize: 12, letterSpacing: 3, color: theme.inkMuted }}>
+                CPU · OPPONENT
+              </div>
+              <div style={{ fontFamily: theme.fontBody, fontSize: 15, color: theme.inkMuted, fontStyle: 'italic' }}>
+                Click "SWITCH CPU" to pick opponent
+              </div>
+            </div>
+          )
         ) : (
-          <SidePanel
-            role="P1"
-            guildId={picks.p1 ?? ids[cursors.p1]}
-            locked={picks.p1 !== null}
-            active={false}
-            statusText="SELECTED"
-            onView={() => setDetailsFor(picks.p1 ?? ids[cursors.p1])}
-          />
+          picks.p1 !== null ? (
+            <SidePanel
+              role="P1"
+              guildId={picks.p1}
+              locked={true}
+              active={false}
+              statusText="SELECTED"
+              onView={() => setDetailsFor(picks.p1!)}
+            />
+          ) : (
+            <div
+              style={{
+                padding: 24,
+                borderLeft: `1px solid ${theme.lineSoft}`,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 12,
+              }}
+            >
+              <div style={{ fontFamily: theme.fontBody, fontSize: 15, color: theme.inkMuted, fontStyle: 'italic' }}>
+                Click a guild to select
+              </div>
+            </div>
+          )
         )}
       </div>
 
