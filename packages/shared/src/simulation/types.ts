@@ -439,6 +439,10 @@ export interface SimState {
   matchStats: MatchStats;
   /** SP VS only — CPU opponent difficulty (0..5). Undefined in MP / story. */
   difficulty?: number;
+  /** True when created via createSurvivalState. Never mutated after init. */
+  survivalMode: boolean;
+  /** Running score. Incremented when waves clear. Only meaningful when survivalMode. */
+  survivalScore: number;
   battleMode: boolean;
   battleSlots: BattleSlot[];
   battleTimer: number;

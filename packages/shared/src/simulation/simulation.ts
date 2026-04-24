@@ -1,13 +1,13 @@
 import type {
   SimState, Actor, InputState, GuildId, Projectile, DamageType,
   AbilityDef, ActorKind, AnimationId, PlayerController, StatusEffectType, VFXEvent, GroundZone,
-  MatchStats,
+  MatchStats, BattleSlot,
 } from './types';
 import { getGuild, DRUID_WOLF_ABILITIES, DRUID_WOLF_RMB } from './guildData';
 import { makeRng } from './rng';
 import { ENEMY_DEFS, STAGE_WAVES } from './enemyData';
 import {
-  PLAYER_SPAWN_X, PLAYER_SPAWN_Y, ENEMY_SPAWN_Y_RANGE,
+  PLAYER_SPAWN_X, PLAYER_SPAWN_Y, ENEMY_SPAWN_Y_RANGE, WORLD_WIDTH, GROUND_Y_MIN, GROUND_Y_MAX,
   DOUBLE_TAP_MS, COMBO_ATTACK_WINDOW_MS, KNOCKDOWN_THRESHOLD,
   PICKUP_GRAB_RANGE, HP_REGEN_RATE, HP_DARK_REGEN_RATE, BLOCK_STAMINA_DRAIN,
   PARRY_WINDOW_MS, DODGE_DURATION_MS, DODGE_DISTANCE, DODGE_INVULN_MS, RUN_SPEED_MULT,
@@ -210,10 +210,50 @@ export function createInitialState(guildId: GuildId, seed: number = Date.now()):
     nextLogId: 1,
     controllers: {},
     matchStats: makeEmptyMatchStats(),
+    survivalMode: false,
+    survivalScore: 0,
     battleMode: false,
     battleSlots: [],
     battleTimer: 0,
     battStats: null,
+  };
+}
+
+// eslint-disable-next-line no-restricted-globals -- seed chosen once at boot, outside tick loop
+export function createSurvivalState(guildId: GuildId, seed: number = Date.now()): SimState {
+  return {
+    ...createInitialState(guildId, seed),
+    waves: [],
+    currentWave: 0,
+    survivalMode: true,
+    survivalScore: 0,
+  };
+}
+
+// eslint-disable-next-line no-restricted-globals -- seed chosen once at boot, outside tick loop
+export function createBattleState(
+  humanGuildId: GuildId,
+  slots: BattleSlot[],
+  _stageId: string,
+  seed: number = Date.now(),
+): SimState {
+  const base = createInitialState(humanGuildId, seed);
+
+  const cpuSlots = slots.filter(s => s.type === 'cpu');
+  const enemies: Actor[] = cpuSlots.map((slot, i) => {
+    const spawnX = WORLD_WIDTH * 0.35 + i * 120;
+    const spawnY = GROUND_Y_MIN + base.rng() * (GROUND_Y_MAX - GROUND_Y_MIN);
+    return createEnemyActor(slot.guildId as ActorKind, spawnX, spawnY, base);
+  });
+
+  return {
+    ...base,
+    enemies,
+    waves: [],
+    currentWave: 0,
+    battleMode: true,
+    battleSlots: slots,
+    battleTimer: 180_000,
   };
 }
 
