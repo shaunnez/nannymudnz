@@ -64,7 +64,7 @@ export function MobileWelcome() {
         {/* Body */}
         <div style={{ padding: '20px 20px 8px', display: 'flex', flexDirection: 'column', gap: 16 }}>
           <div style={{ fontFamily: theme.fontBody, fontSize: 14, color: theme.inkDim, lineHeight: 1.6 }}>
-            Add to your home screen for fullscreen mode with no browser bar. You can play in portrait too, but landscape is where it's at.
+            Play in landscape for the best experience. For an optimal experience, save as a web app — fullscreen, no browser bar, no zoom issues.
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
