@@ -23,6 +23,7 @@ import { useAppState, type AppScreen } from './state/useAppState';
 import type { GuildId, MatchStats, BattStatEntry } from '@nannymud/shared/simulation/types';
 import { BattleConfigScreen } from './screens/BattleConfigScreen';
 import { BattleResultsScreen } from './screens/BattleResultsScreen';
+import { MobileWelcome } from './screens/MobileWelcome';
 
 const PHASE_TO_SCREEN: Record<MatchPhase, AppScreen> = {
   lobby: 'mp_lobby',
@@ -123,6 +124,8 @@ export default function App() {
   }, [state.mpRoom, set, go]);
 
   return (
+    <>
+    <MobileWelcome />
     <ScalingFrame>
       <div
         style={{
@@ -362,6 +365,7 @@ export default function App() {
         <Scanlines />
       </div>
     </ScalingFrame>
+    </>
   );
 }
 
