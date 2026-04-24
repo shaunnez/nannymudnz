@@ -5,6 +5,8 @@ import { HudTopBar } from './HudTopBar';
 import { HudFooter } from './HudFooter';
 import { VIRTUAL_WIDTH, VIRTUAL_HEIGHT } from '../../game/constants';
 import { dispatchTouchPause } from '../../game/input/PhaserInputAdapter';
+import { TouchJoystick } from './TouchJoystick';
+import { useIsMobile } from '../../hooks/useIsMobile';
 
 interface Props {
   game: Phaser.Game | null;
@@ -68,6 +70,7 @@ export function HudOverlay({
     };
   }, [game]);
 
+  const mobile = useIsMobile();
   const state = stateRef.current;
   if (!state) return null;
 
@@ -126,6 +129,7 @@ export function HudOverlay({
           simTimeMs={state.timeMs}
           state={state}
         />
+        {mobile && <TouchJoystick />}
       </div>
       {/* Mobile pause button — outside the scaled div so it stays top-right at display coords */}
       <button
@@ -134,8 +138,8 @@ export function HudOverlay({
           position: 'absolute',
           top: 8,
           right: 8,
-          width: 36,
-          height: 36,
+          width: 52,
+          height: 52,
           background: 'rgba(0,0,0,0.55)',
           border: '1px solid rgba(255,255,255,0.2)',
           borderRadius: 6,
