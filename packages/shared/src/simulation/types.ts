@@ -361,7 +361,7 @@ export interface RoundState {
   matchWinner: 'p1' | 'p2' | 'draw' | null;
 }
 
-export type SimMode = 'story' | 'vs';
+export type SimMode = 'story' | 'vs' | 'surv';
 
 export interface ActorMatchStats {
   damageDealt: number;

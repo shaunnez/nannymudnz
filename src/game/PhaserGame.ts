@@ -33,6 +33,8 @@ export interface GameBootConfig {
   battleMode?: boolean;
   /** Required when battleMode is true. */
   battleSlots?: BattleSlot[];
+  /** True when game mode is 'surv'. Initialises sim via createSurvivalState. */
+  survivalMode?: boolean;
 }
 
 export function makePhaserGame(parent: HTMLElement, boot: GameBootConfig): Phaser.Game {
@@ -64,6 +66,7 @@ export function makePhaserGame(parent: HTMLElement, boot: GameBootConfig): Phase
   game.registry.set('difficulty', boot.difficulty ?? 2);
   game.registry.set('battleMode', boot.battleMode ?? false);
   game.registry.set('battleSlots', boot.battleSlots ?? []);
+  game.registry.set('survivalMode', boot.survivalMode ?? false);
 
   return game;
 }

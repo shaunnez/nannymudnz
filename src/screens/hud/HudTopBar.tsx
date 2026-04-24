@@ -43,7 +43,7 @@ export function HudTopBar({ mode, p1, p2, round, stageName, animate, state }: Pr
     >
       <PlayerSlot actor={p1} side="left" label="P1" showExtras={true} petMode={state.allies.find(a => a.kind === 'wolf_pet')?.petAiMode} />
 
-      <div style={{ textAlign: 'center', minWidth: mode === 'vs' ? 140 : 0 }}>
+      <div style={{ textAlign: 'center', minWidth: mode === 'vs' || mode === 'surv' ? 140 : 0 }}>
         {mode === 'vs' && (
           <>
             <div
@@ -60,6 +60,19 @@ export function HudTopBar({ mode, p1, p2, round, stageName, animate, state }: Pr
             </div>
             <RoundTimer round={round} animate={animate} />
           </>
+        )}
+        {mode === 'surv' && (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+            <div style={{ fontFamily: theme.fontMono, fontSize: 9, color: theme.inkMuted, letterSpacing: 3 }}>
+              SURVIVAL
+            </div>
+            <div style={{ fontFamily: theme.fontDisplay, fontSize: 22, color: theme.accent, letterSpacing: '-0.02em', lineHeight: 1 }}>
+              WAVE {String(state.currentWave).padStart(2, '0')}
+            </div>
+            <div style={{ fontFamily: theme.fontMono, fontSize: 10, color: theme.inkDim, letterSpacing: 1 }}>
+              {state.survivalScore.toLocaleString()} PTS
+            </div>
+          </div>
         )}
       </div>
 
