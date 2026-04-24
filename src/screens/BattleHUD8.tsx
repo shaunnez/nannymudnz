@@ -2,7 +2,8 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type Phaser from 'phaser';
 import type { SimState, BattleSlot } from '@nannymud/shared/simulation/types';
 import { GUILDS } from '@nannymud/shared/simulation/guildData';
-import { theme, GuildMonogram } from '../ui';
+import { theme, GuildMonogram, guildAccent } from '../ui';
+import { GUILD_META } from '../data/guildMeta';
 import { VIRTUAL_WIDTH, VIRTUAL_HEIGHT } from '../game/constants';
 import { AbilityStrip } from './hud/AbilityStrip';
 import { TouchJoystick } from './hud/TouchJoystick';
@@ -138,14 +139,15 @@ export function BattleHUD8({ game, slots }: Props) {
                 const mpPct = actor ? actor.mp / Math.max(1, actor.mpMax) : 0;
                 const isDead = actor ? !actor.isAlive : true;
                 const hpColor = hpPct > 0.35 ? theme.good : hpPct > 0.15 ? theme.warn : theme.bad;
+                const mpColor = guildAccent(GUILD_META[slot.guildId]?.hue ?? 200);
                 const guild = GUILDS.find((g) => g.id === slot.guildId);
                 return (
                   <div key={i} style={{
-                    padding: '3px 5px',
+                    padding: '4px 6px',
                     border: `1px solid ${isHuman ? theme.accent : teamColor}`,
                     background: isDead ? `${theme.bad}11` : theme.bgDeep,
                     opacity: isDead ? 0.4 : 1,
-                    display: 'grid', gridTemplateColumns: '20px 1fr', gap: 4,
+                    display: 'grid', gridTemplateColumns: '20px 1fr', gap: 5,
                     alignItems: 'start', overflow: 'hidden',
                   }}>
                     <GuildMonogram guildId={slot.guildId} size={20} selected={isHuman} dim={isDead} />
@@ -156,11 +158,11 @@ export function BattleHUD8({ game, slots }: Props) {
                         </span>
                         {isDead && <span style={{ fontFamily: theme.fontMono, fontSize: 6, color: theme.bad, flexShrink: 0 }}>KO</span>}
                       </div>
-                      <div style={{ height: 5, background: theme.line, position: 'relative', overflow: 'hidden', borderRadius: 1, marginTop: 2 }}>
+                      <div style={{ height: 8, background: theme.line, position: 'relative', overflow: 'hidden', borderRadius: 1, marginTop: 3 }}>
                         <div style={{ position: 'absolute', inset: 0, width: `${hpPct * 100}%`, background: hpColor }} />
                       </div>
-                      <div style={{ height: 3, background: theme.line, position: 'relative', overflow: 'hidden', borderRadius: 1, marginTop: 2 }}>
-                        <div style={{ position: 'absolute', inset: 0, width: `${mpPct * 100}%`, background: theme.accent }} />
+                      <div style={{ height: 5, background: theme.line, position: 'relative', overflow: 'hidden', borderRadius: 1, marginTop: 2 }}>
+                        <div style={{ position: 'absolute', inset: 0, width: `${mpPct * 100}%`, background: mpColor }} />
                       </div>
                     </div>
                   </div>
@@ -209,6 +211,7 @@ function PlayerBarRow({ slots, slotOffset, getActor, isTop, bottomOffset = 0 }: 
         const mpPct = actor ? actor.mp / Math.max(1, actor.mpMax) : 0;
         const isDead = actor ? !actor.isAlive : true;
         const hpColor = hpPct > 0.35 ? theme.good : hpPct > 0.15 ? theme.warn : theme.bad;
+        const mpColor = guildAccent(GUILD_META[slot.guildId]?.hue ?? 200);
         const guild = GUILDS.find((g) => g.id === slot.guildId);
         const guildName = guild?.name ?? slot.guildId;
 
@@ -246,14 +249,14 @@ function PlayerBarRow({ slots, slotOffset, getActor, isTop, bottomOffset = 0 }: 
                     position: 'absolute', inset: 0,
                     width: `${hpPct * 100}%`,
                     background: hpColor,
-                    transition: 'width 150ms linear',
+                    transition: 'none',
                   }} />
                 </div>
                 <div style={{
                   fontFamily: theme.fontMono, fontSize: 7, color: theme.inkDim,
                   letterSpacing: 1, marginTop: 2,
                 }}>
-                  HP {actor ? actor.hp : 0}/{actor ? actor.hpMax : 0}
+                  HP {actor ? Math.round(actor.hp) : 0}/{actor ? actor.hpMax : 0}
                 </div>
               </div>
               {/* MP bar */}
@@ -262,15 +265,15 @@ function PlayerBarRow({ slots, slotOffset, getActor, isTop, bottomOffset = 0 }: 
                   <div style={{
                     position: 'absolute', inset: 0,
                     width: `${mpPct * 100}%`,
-                    background: theme.accent,
-                    transition: 'width 150ms linear',
+                    background: mpColor,
+                    transition: 'none',
                   }} />
                 </div>
                 <div style={{
                   fontFamily: theme.fontMono, fontSize: 7, color: theme.inkDim,
                   letterSpacing: 1, marginTop: 2,
                 }}>
-                  MP {actor ? actor.mp : 0}/{actor ? actor.mpMax : 0}
+                  MP {actor ? Math.round(actor.mp) : 0}/{actor ? actor.mpMax : 0}
                 </div>
               </div>
             </div>
