@@ -1635,9 +1635,11 @@ function handlePlayerInput(state: SimState, input: InputState, ctrl: PlayerContr
     }
     const miasmaTargets = getEnemiesOf(state, player).filter(e => e.isAlive && Math.hypot(e.x - player.x, e.y - player.y) < 90);
     for (const t of miasmaTargets) {
-      const dotDmg = (5 + player.stats.CON * 0.2) * dtSec;
-      if (dotDmg > 0.01) {
-        trackDamage(state, player.id, t.id, applyDamage(t, Math.max(1, Math.round(dotDmg * (state.rng() > 0.9 ? 1 : 0))), state.vfxEvents, false), false);
+      const miasmaBase = leperRmb.effects?.dot?.magnitude ?? 2;
+      const dotDmg = miasmaBase * dtSec;
+      const dmgAmount = Math.round(dotDmg);
+      if (dmgAmount > 0) {
+        trackDamage(state, player.id, t.id, applyDamage(t, dmgAmount, state.vfxEvents, false), false);
       }
     }
     player.mp = Math.max(0, player.mp - dtSec * 2);

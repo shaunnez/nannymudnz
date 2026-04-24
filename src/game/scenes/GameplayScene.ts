@@ -215,6 +215,9 @@ export class GameplayScene extends Phaser.Scene {
     }
 
     const prevPhase = this.simState.phase;
+    const prevPlayerState = this.simState.player.state;
+    const prevPlayerAlive = this.simState.player.isAlive;
+    const prevPlayerZ = this.simState.player.z;
     this.simState = tickSimulation(this.simState, inputState, dtMs);
     this.inputAdapter.clearJustPressed();
 
@@ -222,7 +225,7 @@ export class GameplayScene extends Phaser.Scene {
       this.game.events.emit('phase-change', this.simState.phase);
     }
 
-    this.dispatchAudio(prevPhase, inputState);
+    this.dispatchAudio(prevPhase, inputState, prevPlayerState, prevPlayerAlive, prevPlayerZ);
 
     this.cameras.main.scrollX = this.simState.cameraX;
     this.background.update(this.simState.cameraX);
@@ -340,7 +343,13 @@ export class GameplayScene extends Phaser.Scene {
     ].join('\n'));
   }
 
-  private dispatchAudio(prevPhase: SimState['phase'], inputState: InputState): void {
+  private dispatchAudio(
+    prevPhase: SimState['phase'],
+    inputState: InputState,
+    prevPlayerState: string,
+    prevPlayerAlive: boolean,
+    prevPlayerZ: number
+  ): void {
     const state = this.simState;
 
     if (!this.bossMusicStarted && state.bossSpawned) {
@@ -349,9 +358,27 @@ export class GameplayScene extends Phaser.Scene {
     }
 
     const vfx = state.vfxEvents;
-    if (vfx.some(e => e.type === 'hit_spark')) this.audio.playAttack();
+
+    // Crit overrides normal attack so both don't fire in the same tick.
+    const hasCrit = vfx.some(e => e.type === 'damage_number' && e.isCrit);
+    if (hasCrit) this.audio.playCrit();
+    else if (vfx.some(e => e.type === 'hit_spark')) this.audio.playAttack();
+
     if (vfx.some(e => e.type === 'heal_glow')) this.audio.playHeal();
-    if (state.player.state === 'blocking') this.audio.playBlock();
+    if (vfx.some(e => e.type === 'aoe_pop')) this.audio.playAoeBoom();
+    if (vfx.some(e => e.type === 'blink_trail')) this.audio.playBlink();
+    if (vfx.some(e => e.type === 'channel_pulse')) this.audio.playChannelPulse();
+    if (vfx.some(e => e.type === 'aura_pulse')) this.audio.playAuraPulse();
+    if (vfx.some(e => e.type === 'zone_pulse')) this.audio.playZonePulse();
+    if (vfx.some(e => e.type === 'summon_spawn')) this.audio.playSummonSpawn();
+    if (vfx.some(e => e.type === 'ability_name' && e.ownerId === state.player.id)) this.audio.playCast();
+
+    // Player state transitions — fire once on entry, not every frame.
+    if (!state.player.isAlive && prevPlayerAlive) this.audio.playDeath();
+    if (state.player.state === 'knockdown' && prevPlayerState !== 'knockdown') this.audio.playKnockdown();
+    if (state.player.z === 0 && prevPlayerZ > 0 && prevPlayerState === 'jumping') this.audio.playLand();
+    if (state.player.state === 'blocking' && prevPlayerState !== 'blocking') this.audio.playBlock();
+
     if (
       state.player.state === 'jumping' &&
       state.player.z < 10 &&
@@ -360,7 +387,6 @@ export class GameplayScene extends Phaser.Scene {
       this.audio.playJump();
     }
 
-    // Suppress unused-warning when future use arrives.
     void prevPhase;
   }
 
