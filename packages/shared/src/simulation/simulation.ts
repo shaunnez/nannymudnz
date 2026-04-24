@@ -917,7 +917,7 @@ function fireAbility(player: Actor, ability: AbilityDef, state: SimState, ctrl: 
       spawnEnemyAt(state, 'wolf', player.x + player.facing * 60, player.y);
       const wolf = state.enemies[state.enemies.length - 1];
       if (wolf) {
-        wolf.team = 'player';
+        wolf.team = player.team;
         wolf.summonedBy = player.id;
         wolf.petAiMode = 'aggressive';
         state.enemies.pop();
@@ -954,7 +954,7 @@ function handleSummon(ability: AbilityDef, player: Actor, state: SimState): void
     spawnEnemyAt(state, 'drowned_spawn', player.x + player.facing * 60, player.y);
     const spawn = state.enemies[state.enemies.length - 1];
     if (spawn) {
-      spawn.team = 'player';
+      spawn.team = player.team;
       state.enemies.pop();
       state.allies.push(spawn);
     }
@@ -964,7 +964,7 @@ function handleSummon(ability: AbilityDef, player: Actor, state: SimState): void
       spawnEnemyAt(state, 'rotting_husk', player.x + (i === 0 ? 60 : -60), player.y);
       const husk = state.enemies[state.enemies.length - 1];
       if (husk) {
-        husk.team = 'player';
+        husk.team = player.team;
         state.enemies.pop();
         state.allies.push(husk);
       }
