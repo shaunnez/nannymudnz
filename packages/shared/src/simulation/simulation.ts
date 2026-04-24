@@ -487,7 +487,7 @@ function detonateGroundTarget(player: Actor, ability: AbilityDef, state: SimStat
       y: cy,
       radius: 240,
       remainingMs: 6000,
-      ownerTeam: player.team,
+      ownerTeam: player.team as 'player' | 'enemy',
       effects: { silence: { magnitude: 1, durationMs: 1200 } },
       damagePerTick: 8,
       damageType: 'shadow',
@@ -507,7 +507,7 @@ function detonateGroundTarget(player: Actor, ability: AbilityDef, state: SimStat
       y: cy,
       radius: 40,
       remainingMs: 300000,
-      ownerTeam: player.team,
+      ownerTeam: player.team as 'player' | 'enemy',
       effects: { root: { magnitude: 1, durationMs: 2000 } },
       damagePerTick: 0,
       triggerDamage: 40,
@@ -857,6 +857,14 @@ function fireAbility(player: Actor, ability: AbilityDef, state: SimState, ctrl: 
 
   if (ability.isSummon) {
     handleSummon(ability, player, state);
+  }
+
+  if (ability.id === 'disengage' && player.guildId === 'hunter') {
+    player.x = Math.max(20, Math.min(3980, player.x - player.facing * 150));
+    player.vz = 280;
+    player.state = 'jumping';
+    player.animationId = 'jump';
+    state.vfxEvents.push({ type: 'blink_trail', color: ability.vfxColor, x: player.x + player.facing * 150, y: player.y, x2: player.x, y2: player.y });
   }
 
   if (ability.id === 'jab' && player.guildId === 'monk') {
