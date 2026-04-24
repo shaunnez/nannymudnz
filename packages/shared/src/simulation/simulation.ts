@@ -494,7 +494,7 @@ function getEnemiesOf(state: SimState, actor: Actor): Actor[] {
       return state.opponent ? [state.opponent] : [];
     }
     if (actor.id === 'opponent') {
-      return [state.player];
+      return [state.player, ...state.allies];
     }
   }
   if (actor.team === 'enemy') {

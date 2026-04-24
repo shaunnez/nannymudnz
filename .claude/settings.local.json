@@ -108,7 +108,8 @@
       "Bash(rm /c/Users/nimbl/projects/nannymud/public/vfx/cultist/mist_step_flash.png)",
       "Bash(rm /c/Users/nimbl/projects/nannymud/public/vfx/darkmage/shadow_step_flash.png)",
       "Bash(rm /c/Users/nimbl/projects/nannymud/public/vfx/darkmage/whispers_aura.png)",
-      "Bash(echo \"Exit: $?\")"
+      "Bash(echo \"Exit: $?\")",
+      "Bash(grep \"^  {$\" /c/Users/nimbl/projects/nannymud/packages/shared/src/simulation/guildData.ts)"
     ]
   }
 }
