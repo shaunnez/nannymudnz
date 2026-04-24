@@ -35,6 +35,12 @@ export function dispatchTouchJoystick(state: TouchJoystickState): void {
   window.dispatchEvent(new CustomEvent(TOUCH_JOYSTICK_EVENT, { detail: state }));
 }
 
+const TOUCH_BUTTON_EVENT = 'nannymud:touch-button';
+
+export function dispatchTouchButton(action: 'attack' | 'block', pressed: boolean): void {
+  window.dispatchEvent(new CustomEvent(TOUCH_BUTTON_EVENT, { detail: { action, pressed } }));
+}
+
 export class PhaserInputAdapter {
   private bindings: KeyBindings;
 
@@ -50,6 +56,9 @@ export class PhaserInputAdapter {
     left: false, right: false, up: false, down: false,
     runningLeft: false, runningRight: false,
   };
+
+  private touchAttack = false;
+  private touchBlock = false;
 
   private keyboard: Phaser.Input.Keyboard.KeyboardPlugin | undefined;
   private windowBlurHandler: (() => void) | undefined;
@@ -68,6 +77,7 @@ export class PhaserInputAdapter {
     window.addEventListener(TOUCH_ABILITY_EVENT, this.onTouchAbility);
     window.addEventListener(TOUCH_PAUSE_EVENT, this.onTouchPause);
     window.addEventListener(TOUCH_JOYSTICK_EVENT, this.onTouchJoystick);
+    window.addEventListener(TOUCH_BUTTON_EVENT, this.onTouchButton);
   }
 
   updateBindings(bindings: KeyBindings): void {
@@ -103,6 +113,19 @@ export class PhaserInputAdapter {
 
   private onTouchJoystick = (e: Event): void => {
     this.joystick = (e as CustomEvent<TouchJoystickState>).detail;
+  };
+
+  private onTouchButton = (e: Event): void => {
+    const { action, pressed } = (e as CustomEvent<{ action: 'attack' | 'block'; pressed: boolean }>).detail;
+    const key = action === 'attack' ? this.bindings.attack : this.bindings.block;
+    if (pressed) {
+      this.justPressed.add(key);
+      if (action === 'attack') this.touchAttack = true;
+      else this.touchBlock = true;
+    } else {
+      if (action === 'attack') this.touchAttack = false;
+      else this.touchBlock = false;
+    }
   };
 
   private reset(): void {
@@ -151,8 +174,8 @@ export class PhaserInputAdapter {
       up: this.keys.has(b.up) || j.up,
       down: this.keys.has(b.down) || j.down,
       jump: this.keys.has(b.jump),
-      attack: this.keys.has(b.attack),
-      block: this.keys.has(b.block),
+      attack: this.keys.has(b.attack) || this.touchAttack,
+      block: this.keys.has(b.block) || this.touchBlock,
       grab: this.keys.has(b.grab),
       pause: this.keys.has(b.pause),
       leftJustPressed,
@@ -188,6 +211,7 @@ export class PhaserInputAdapter {
     window.removeEventListener(TOUCH_ABILITY_EVENT, this.onTouchAbility);
     window.removeEventListener(TOUCH_PAUSE_EVENT, this.onTouchPause);
     window.removeEventListener(TOUCH_JOYSTICK_EVENT, this.onTouchJoystick);
+    window.removeEventListener(TOUCH_BUTTON_EVENT, this.onTouchButton);
     this.reset();
   }
 }

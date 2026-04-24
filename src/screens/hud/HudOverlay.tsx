@@ -6,6 +6,7 @@ import { HudFooter } from './HudFooter';
 import { VIRTUAL_WIDTH, VIRTUAL_HEIGHT } from '../../game/constants';
 import { dispatchTouchPause } from '../../game/input/PhaserInputAdapter';
 import { TouchJoystick } from './TouchJoystick';
+import { TouchActionButtons } from './TouchActionButtons';
 import { useIsMobile } from '../../hooks/useIsMobile';
 
 interface Props {
@@ -130,6 +131,7 @@ export function HudOverlay({
           state={state}
         />
         {mobile && <TouchJoystick />}
+        {mobile && <TouchActionButtons />}
       </div>
       {/* Mobile pause button — outside the scaled div so it stays top-right at display coords */}
       <button
