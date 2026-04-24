@@ -236,6 +236,7 @@ export interface Actor {
   isAlive: boolean;
   deathTimeMs: number;
   score: number;
+  battleTeam?: BattleTeam;
 }
 
 export type ActorState =
