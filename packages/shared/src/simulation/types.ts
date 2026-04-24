@@ -390,6 +390,14 @@ export interface Wave {
   cleared: boolean;
 }
 
+export type BattleTeam = 'A' | 'B' | 'C' | 'D' | null;
+
+export interface BattleSlot {
+  guildId: GuildId;
+  type: 'human' | 'cpu' | 'off';
+  team: BattleTeam;
+}
+
 export interface SimState {
   tick: number;
   timeMs: number;
@@ -421,6 +429,16 @@ export interface SimState {
   nextLogId: number;
   controllers: Record<string, PlayerController>;
   matchStats: MatchStats;
+  /** True when created via createSurvivalState. Never mutated after init. */
+  survivalMode: boolean;
+  /** Running score total. Incremented when waves clear. Only meaningful when survivalMode. */
+  survivalScore: number;
+  /** True when created via createBattleState. Never mutated after init. */
+  battleMode: boolean;
+  /** The configured slot list. Used by BattleHUD8 to map actors to slots. */
+  battleSlots: BattleSlot[];
+  /** Countdown in ms. 0 = timer expired → resolve by HP. Only used when battleMode. */
+  battleTimer: number;
   /** SP VS only — CPU opponent difficulty (0..5). Undefined in MP / story. */
   difficulty?: number;
 }
