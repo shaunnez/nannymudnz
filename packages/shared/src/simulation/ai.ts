@@ -6,9 +6,10 @@ import { getEffectiveMoveSpeed } from './physics';
 
 
 function findTarget(actor: Actor, state: SimState): Actor | null {
-  const targets = actor.team === 'enemy'
+  const targets = (actor.team === 'enemy'
     ? [state.player, ...state.allies].filter(a => a.isAlive)
-    : state.enemies.filter(a => a.isAlive);
+    : state.enemies.filter(a => a.isAlive)
+  ).filter(a => !a.statusEffects.some(e => e.type === 'stealth'));
   if (targets.length === 0) return null;
   return targets.reduce((closest, t) => {
     const dCurrent = Math.hypot(t.x - actor.x, t.y - actor.y);
@@ -17,12 +18,59 @@ function findTarget(actor: Actor, state: SimState): Actor | null {
   });
 }
 
+function tickPetAI(actor: Actor, state: SimState): boolean {
+  if (actor.petAiMode === undefined) return false;
+
+  if (actor.petAiMode === 'passive') {
+    const owner = [state.player, state.opponent].filter(Boolean).find(a => a!.id === actor.summonedBy) ?? null;
+    if (owner) {
+      const dx = owner.x - actor.x;
+      if (Math.abs(dx) > 80) {
+        actor.vx = Math.sign(dx) * actor.moveSpeed;
+        actor.facing = Math.sign(dx) as -1 | 1;
+      } else {
+        actor.vx = 0;
+      }
+      const dy = owner.y - actor.y;
+      actor.vy = Math.abs(dy) > 40 ? Math.sign(dy) * actor.moveSpeed * 0.5 : 0;
+    }
+    return true;
+  }
+
+  if (actor.petAiMode === 'defensive') {
+    const owner = [state.player, state.opponent].filter(Boolean).find(a => a!.id === actor.summonedBy) ?? null;
+    if (!owner) return false;
+    const ownerUnderAttack = state.enemies.some(
+      e => e.isAlive && Math.abs(e.x - owner.x) < 120 && e.state === 'attacking',
+    );
+    if (!ownerUnderAttack) {
+      const dx = owner.x - actor.x;
+      if (Math.abs(dx) > 80) {
+        actor.vx = Math.sign(dx) * actor.moveSpeed;
+        actor.facing = Math.sign(dx) as -1 | 1;
+      } else {
+        actor.vx = 0;
+      }
+      const dy = owner.y - actor.y;
+      actor.vy = Math.abs(dy) > 40 ? Math.sign(dy) * actor.moveSpeed * 0.5 : 0;
+      return true;
+    }
+    // owner under attack: fall through to aggressive (return false = run normal AI)
+    return false;
+  }
+
+  // aggressive: run normal AI
+  return false;
+}
+
 export function tickAI(actor: Actor, state: SimState, dtSec: number, vfxEvents: VFXEvent[]): void {
   if (!actor.isAlive || isStunned(actor)) {
     actor.vx = 0;
     actor.vy = 0;
     return;
   }
+
+  if (tickPetAI(actor, state)) return;
 
   const def = ENEMY_DEFS[actor.kind];
   if (!def) return;
@@ -82,6 +130,7 @@ function stopMoving(actor: Actor): void {
 }
 
 function tryMeleeAttack(state: SimState, actor: Actor, target: Actor, damage: number, cooldownMs: number, vfxEvents: VFXEvent[]): boolean {
+  if (target.team === actor.team) return false;
   if (actor.aiState.lastActionMs < cooldownMs) return false;
   const def = ENEMY_DEFS[actor.kind];
   if (!def) return false;
@@ -102,10 +151,11 @@ function spawnProjectile(state: SimState, actor: Actor, target: Actor, damage: n
   const proj: Projectile = {
     id: `proj_${state.nextProjectileId++}`,
     ownerId: actor.id,
+    guildId: null,
     team: actor.team,
     x: actor.x,
     y: actor.y,
-    z: actor.z + 20,
+    z: actor.z + actor.height * 0.55,
     vx: (dx / dist) * speed,
     vy: (dy / dist) * speed,
     vz: 0,
@@ -140,7 +190,13 @@ function tickChaserAI(actor: Actor, target: Actor, state: SimState, _dtSec: numb
     return;
   }
 
-  if (dist > def.attackRange + 10) {
+  // Chebyshev-ish approach: keep closing until BOTH axes are inside the
+  // tight tolerances tryMeleeAttack will later enforce. Using Euclidean
+  // `dist` alone lets the actor stop at dist≈range with dy still out of
+  // the 30u depth tolerance, which reads as "drifts nearby but never hits".
+  const xClose = Math.abs(dx) <= def.attackRange;
+  const yClose = Math.abs(dy) <= 25;
+  if (!xClose || !yClose) {
     moveToward(actor, target.x, target.y, speed);
   } else {
     stopMoving(actor);
@@ -189,7 +245,7 @@ function tickPackerAI(actor: Actor, target: Actor, state: SimState, dtSec: numbe
       actor.vy = (dy / (dist || 1)) * speed;
       actor.animationId = 'jump';
 
-      if (Math.abs(target.x - actor.x) < 80 && Math.abs(target.y - actor.y) < 40) {
+      if (target.team !== actor.team && Math.abs(target.x - actor.x) < 80 && Math.abs(target.y - actor.y) < 40) {
         applyDamage(target, def.damage + 5, vfxEvents);
         target.state = 'knockdown';
         target.animationId = 'knockdown';

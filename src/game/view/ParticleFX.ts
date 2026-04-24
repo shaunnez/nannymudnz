@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import type { VFXEvent } from '@nannymud/shared/simulation/types';
-import { VIRTUAL_HEIGHT, DEPTH_SCALE, worldYToScreenY } from '../constants';
+import { DEPTH_SCALE, worldYToScreenY, getScreenYBand, type ScreenYBand } from '../constants';
+import { spawnGuildVfx } from './VfxRegistry';
 
 /**
  * Consumes per-tick VFXEvents emitted by the simulation and spawns short-lived
@@ -22,10 +23,10 @@ function hexToInt(hex: string): number {
   return (parseInt(m[1], 16) << 16) | (parseInt(m[2], 16) << 8) | parseInt(m[3], 16);
 }
 
-function worldCoords(event: VFXEvent): { x: number; y: number } {
+function worldCoords(event: VFXEvent, band: ScreenYBand): { x: number; y: number } {
   return {
     x: event.x,
-    y: worldYToScreenY(event.y, VIRTUAL_HEIGHT) - (event.z ?? 0) * DEPTH_SCALE,
+    y: worldYToScreenY(event.y, band.min, band.max) - (event.z ?? 0) * DEPTH_SCALE,
   };
 }
 
@@ -202,9 +203,11 @@ function spawnBlinkTrail(
 }
 
 export function consumeVfxEvents(scene: Phaser.Scene, events: VFXEvent[]): void {
+  const band = getScreenYBand(scene);
   for (const event of events) {
-    const { x, y } = worldCoords(event);
+    const { x, y } = worldCoords(event, band);
     const colorInt = hexToInt(event.color);
+    if (spawnGuildVfx(scene, event, x, y)) continue;
 
     switch (event.type) {
       case 'projectile_spawn':
@@ -261,7 +264,7 @@ export function consumeVfxEvents(scene: Phaser.Scene, events: VFXEvent[]): void 
 
       case 'blink_trail': {
         const x2 = event.x2 ?? event.x;
-        const y2End = worldYToScreenY(event.y2 ?? event.y, VIRTUAL_HEIGHT)
+        const y2End = worldYToScreenY(event.y2 ?? event.y, band.min, band.max)
           - (event.z ?? 0) * DEPTH_SCALE;
         spawnBlinkTrail(scene, x, y, x2, y2End, colorInt, 400);
         break;
@@ -325,6 +328,19 @@ export function consumeVfxEvents(scene: Phaser.Scene, events: VFXEvent[]): void 
 
       case 'aura_pulse': {
         spawnExpandingRing(scene, x, y, event.radius || 90, 1.27, colorInt, 0.35, 0.08, 2, true, 420);
+        break;
+      }
+
+      case 'zone_pulse': {
+        const r = event.radius || 60;
+        if (event.style === 'ring') {
+          // Large persistent zone (e.g. Eternal Night) — near-full-duration so
+          // overlapping pulses give a continuous solid circle effect.
+          spawnExpandingRing(scene, x, y, r, 1.0, colorInt, 0.55, 0.12, 2, false, 950);
+        } else {
+          // Puddle / trap marker — tight ring at fixed radius with a faint fill.
+          spawnExpandingRing(scene, x, y, r, 1.0, colorInt, 0.7, 0.25, 3, true, 850);
+        }
         break;
       }
     }

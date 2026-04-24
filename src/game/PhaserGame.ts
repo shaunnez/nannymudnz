@@ -1,13 +1,16 @@
 import Phaser from 'phaser';
-import type { GuildId, SimMode } from '@nannymud/shared/simulation/types';
+import type { Room } from '@colyseus/sdk';
+import type { GuildId, SimMode, MatchStats } from '@nannymud/shared/simulation/types';
+import type { MatchState } from '@nannymud/shared';
 import { VIRTUAL_WIDTH, VIRTUAL_HEIGHT } from './constants';
 import { BootScene } from './scenes/BootScene';
 import { GameplayScene } from './scenes/GameplayScene';
-import { HudScene } from './scenes/HudScene';
+
+export type NetMode = 'sp' | 'mp';
 
 export interface GameCallbacks {
-  onVictory: (score: number) => void;
-  onDefeat: () => void;
+  onVictory: (score: number, matchStats: MatchStats) => void;
+  onDefeat: (matchStats: MatchStats) => void;
   onQuit: () => void;
   toggleFullscreen: () => void;
   getIsFullscreen: () => boolean;
@@ -20,6 +23,12 @@ export interface GameBootConfig {
   stageId: string;
   seed?: number;
   callbacks: GameCallbacks;
+  /** 'sp' (default) runs local simulation. 'mp' mirrors `matchRoom.state.sim`. */
+  netMode?: NetMode;
+  /** Required when `netMode === 'mp'`. */
+  matchRoom?: Room<MatchState>;
+  /** SP VS only — CPU difficulty 0..5. Ignored in MP / story. */
+  difficulty?: number;
 }
 
 export function makePhaserGame(parent: HTMLElement, boot: GameBootConfig): Phaser.Game {
@@ -34,7 +43,7 @@ export function makePhaserGame(parent: HTMLElement, boot: GameBootConfig): Phase
       mode: Phaser.Scale.FIT,
       autoCenter: Phaser.Scale.CENTER_BOTH,
     },
-    scene: [BootScene, GameplayScene, HudScene],
+    scene: [BootScene, GameplayScene],
     disableContextMenu: true,
     input: { keyboard: true },
     render: { antialias: false },
@@ -46,6 +55,9 @@ export function makePhaserGame(parent: HTMLElement, boot: GameBootConfig): Phase
   game.registry.set('stageId', boot.stageId);
   game.registry.set('seed', boot.seed ?? null);
   game.registry.set('callbacks', boot.callbacks);
+  game.registry.set('netMode', boot.netMode ?? 'sp');
+  game.registry.set('matchRoom', boot.matchRoom ?? null);
+  game.registry.set('difficulty', boot.difficulty ?? 2);
 
   return game;
 }

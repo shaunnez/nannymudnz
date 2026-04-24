@@ -1,12 +1,18 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Phaser from 'phaser';
-import type { GuildId, SimMode, SimState } from '@nannymud/shared/simulation/types';
+import type { Room } from '@colyseus/sdk';
+import type { GuildId, SimMode, SimState, MatchStats } from '@nannymud/shared/simulation/types';
+import type { MatchState } from '@nannymud/shared';
 import { PauseOverlay } from './PauseOverlay';
+import { StoryGameOverOverlay } from './StoryGameOverOverlay';
+import { StoryVictoryOverlay } from './StoryVictoryOverlay';
 import { GuildDetails } from './GuildDetails';
+import { LoadingScreen } from './LoadingScreen';
 import { useFullscreen } from '../layout/useFullscreen';
 import { makePhaserGame, type GameCallbacks } from '../game/PhaserGame';
 import { HudOverlay } from './hud/HudOverlay';
 import { STAGES } from '../data/stages';
+import type { StageId } from '../data/stages';
 
 interface Props {
   mode: SimMode;
@@ -14,21 +20,28 @@ interface Props {
   p2?: GuildId;
   stageId: string;
   animateHud: boolean;
-  showLog: boolean;
-  onVictory: (score: number) => void;
-  onDefeat: () => void;
+  difficulty?: number;
+  /** When present, GameScreen runs in multiplayer mode and mirrors server state. */
+  matchRoom?: Room<MatchState>;
+  onVictory: (score: number, matchStats: MatchStats) => void;
+  onDefeat: (matchStats: MatchStats) => void;
   onQuit: () => void;
 }
 
 export function GameScreen({
-  mode, p1, p2, stageId, animateHud, showLog,
+  mode, p1, p2, stageId, animateHud, difficulty, matchRoom,
   onVictory, onDefeat, onQuit,
 }: Props) {
+  const netMode = matchRoom ? 'mp' : 'sp';
   const parentRef = useRef<HTMLDivElement>(null);
   const gameRef = useRef<Phaser.Game | null>(null);
   const [gameReady, setGameReady] = useState(false);
+  const [preloading, setPreloading] = useState(true);
+  const [loadProgress, setLoadProgress] = useState<number | undefined>(undefined);
   const [isPaused, setIsPaused] = useState(false);
   const [showMoves, setShowMoves] = useState(false);
+  const [showStoryGameOver, setShowStoryGameOver] = useState(false);
+  const [storyVictoryScore, setStoryVictoryScore] = useState<number | null>(null);
   const pausedByMovesRef = useRef(false);
 
   const { isFullscreen, toggle: toggleFullscreen } = useFullscreen();
@@ -49,8 +62,20 @@ export function GameScreen({
     if (!parent) return;
 
     const callbacks: GameCallbacks = {
-      onVictory: (score) => onVictoryRef.current(score),
-      onDefeat: () => onDefeatRef.current(),
+      onVictory: (score, matchStats) => {
+        if (mode === 'story') {
+          setStoryVictoryScore(score);
+        } else {
+          onVictoryRef.current(score, matchStats);
+        }
+      },
+      onDefeat: (matchStats) => {
+        if (mode === 'story') {
+          setShowStoryGameOver(true);
+        } else {
+          onDefeatRef.current(matchStats);
+        }
+      },
       onQuit: () => onQuitRef.current(),
       toggleFullscreen: () => toggleFullscreenRef.current(),
       getIsFullscreen: () => isFullscreenRef.current,
@@ -62,6 +87,9 @@ export function GameScreen({
       p2,
       stageId,
       callbacks,
+      netMode,
+      matchRoom,
+      difficulty,
     });
     gameRef.current = game;
     setGameReady(true);
@@ -71,13 +99,24 @@ export function GameScreen({
     };
     game.events.on('phase-change', onPhaseChange);
 
+    const onPreloadDone = () => setPreloading(false);
+    game.events.on('preload-done', onPreloadDone);
+    game.events.on('preload-progress', setLoadProgress);
+    // If Boot already ran by the time this listener is attached (HMR, slow
+    // commit), the sticky registry flag saves us from hanging on the overlay.
+    if (game.registry.get('preloadDone')) setPreloading(false);
+
     return () => {
       game.events.off('phase-change', onPhaseChange);
+      game.events.off('preload-done', onPreloadDone);
+      game.events.off('preload-progress', setLoadProgress);
       game.destroy(true);
       gameRef.current = null;
       setGameReady(false);
+      setPreloading(true);
+      setLoadProgress(undefined);
     };
-  }, [mode, p1, p2, stageId]);
+  }, [mode, p1, p2, stageId, netMode, matchRoom, difficulty]);
 
   useEffect(() => {
     const game = gameRef.current;
@@ -100,6 +139,26 @@ export function GameScreen({
     emitToGameplay('restart-requested');
   }, [emitToGameplay]);
 
+  const handleStoryRematch = useCallback(() => {
+    setShowStoryGameOver(false);
+    emitToGameplay('restart-requested');
+  }, [emitToGameplay]);
+
+  const handleStoryMenu = useCallback(() => {
+    setShowStoryGameOver(false);
+    onQuit();
+  }, [onQuit]);
+
+  const handleStoryVictoryRematch = useCallback(() => {
+    setStoryVictoryScore(null);
+    emitToGameplay('restart-requested');
+  }, [emitToGameplay]);
+
+  const handleStoryVictoryMenu = useCallback(() => {
+    setStoryVictoryScore(null);
+    onQuit();
+  }, [onQuit]);
+
   const closeMoves = useCallback(() => {
     setShowMoves(false);
     if (pausedByMovesRef.current) {
@@ -109,6 +168,8 @@ export function GameScreen({
   }, [emitToGameplay]);
 
   useEffect(() => {
+    // Tab-to-moves popup uses local pause, which the server doesn't honour in MP.
+    if (netMode === 'mp') return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== 'Tab') return;
       e.preventDefault();
@@ -129,7 +190,7 @@ export function GameScreen({
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [closeMoves, emitToGameplay, showMoves]);
+  }, [closeMoves, emitToGameplay, showMoves, netMode]);
 
   const stage = STAGES.find((s) => s.id === stageId);
   const stageName = stage?.name ?? 'Arena';
@@ -144,22 +205,49 @@ export function GameScreen({
       }}
     >
       <div ref={parentRef} style={{ width: '100%', height: '100%' }} />
-      {mode === 'vs' && gameReady && (
+      {gameReady && (
         <HudOverlay
           game={gameRef.current}
           stageName={stageName}
           animate={animateHud}
-          showLog={showLog}
+          inMp={netMode === 'mp'}
+          localSessionId={matchRoom?.sessionId}
+          hostSessionId={matchRoom?.state.hostSessionId}
         />
       )}
-      {isPaused && !showMoves && (
+      {netMode !== 'mp' && isPaused && !showMoves && (
         <PauseOverlay
           onResume={handleResume}
           onRestart={handleRestart}
           onQuit={onQuit}
+          onMoveList={() => setShowMoves(true)}
         />
       )}
-      {showMoves && <GuildDetails guildId={p1} onClose={closeMoves} />}
+      {netMode !== 'mp' && showMoves && <GuildDetails guildId={p1} onClose={closeMoves} />}
+      {showStoryGameOver && mode === 'story' && (
+        <StoryGameOverOverlay
+          onRematch={handleStoryRematch}
+          onMenu={handleStoryMenu}
+        />
+      )}
+      {storyVictoryScore !== null && mode === 'story' && (
+        <StoryVictoryOverlay
+          score={storyVictoryScore}
+          onRematch={handleStoryVictoryRematch}
+          onMenu={handleStoryVictoryMenu}
+        />
+      )}
+      {preloading && (
+        <div style={{ position: 'absolute', inset: 0 }}>
+          <LoadingScreen
+            p1={p1}
+            p2={p2 ?? 'knight'}
+            stageId={stageId as StageId}
+            showOpponent={mode === 'vs'}
+            progress={loadProgress}
+          />
+        </div>
+      )}
     </div>
   );
 }

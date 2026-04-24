@@ -1,0 +1,184 @@
+{
+  "character": {
+    "id": "abde910b-df7e-4a62-b087-9cf97efd2a1b",
+    "name": "Chef LF2-R",
+    "prompt": "chef guild support, utility combat chef, pink and white chef's whites with pink chef's toque, apron with stains and ladle tucked in belt, wielding a large iron ladle like a mace, cleaver at hip, cheerful posture, LF2-remastered arcade beat-em-up pixel art style, crisp clean pixel art with flat shading and bold black outlines, side-view fighting game sprite, readable silhouette, no background",
+    "size": {
+      "width": 128,
+      "height": 128
+    },
+    "template_id": "mannequin",
+    "directions": 8,
+    "view": "side",
+    "created_at": "2026-04-21T14:02:54.821286+00:00"
+  },
+  "frames": {
+    "rotations": {
+      "south": "rotations/south.png",
+      "south-east": "rotations/south-east.png",
+      "east": "rotations/east.png",
+      "north-east": "rotations/north-east.png",
+      "north": "rotations/north.png",
+      "north-west": "rotations/north-west.png",
+      "west": "rotations/west.png",
+      "south-west": "rotations/south-west.png"
+    },
+    "animations": {
+      "high_kick-a0b1448e": {
+        "east": [
+          "animations/high_kick-a0b1448e/east/frame_000.png",
+          "animations/high_kick-a0b1448e/east/frame_001.png",
+          "animations/high_kick-a0b1448e/east/frame_002.png",
+          "animations/high_kick-a0b1448e/east/frame_003.png",
+          "animations/high_kick-a0b1448e/east/frame_004.png",
+          "animations/high_kick-a0b1448e/east/frame_005.png",
+          "animations/high_kick-a0b1448e/east/frame_006.png"
+        ]
+      },
+      "animating-ed5acb91": {
+        "east": [
+          "animations/animating-ed5acb91/east/frame_000.png",
+          "animations/animating-ed5acb91/east/frame_001.png",
+          "animations/animating-ed5acb91/east/frame_002.png",
+          "animations/animating-ed5acb91/east/frame_003.png"
+        ]
+      },
+      "running-5f6ee3ff": {
+        "east": [
+          "animations/running-5f6ee3ff/east/frame_000.png",
+          "animations/running-5f6ee3ff/east/frame_001.png",
+          "animations/running-5f6ee3ff/east/frame_002.png",
+          "animations/running-5f6ee3ff/east/frame_003.png",
+          "animations/running-5f6ee3ff/east/frame_004.png",
+          "animations/running-5f6ee3ff/east/frame_005.png"
+        ]
+      },
+      "animating-9da40819": {
+        "east": [
+          "animations/animating-9da40819/east/frame_000.png",
+          "animations/animating-9da40819/east/frame_001.png",
+          "animations/animating-9da40819/east/frame_002.png",
+          "animations/animating-9da40819/east/frame_003.png",
+          "animations/animating-9da40819/east/frame_004.png",
+          "animations/animating-9da40819/east/frame_005.png",
+          "animations/animating-9da40819/east/frame_006.png"
+        ]
+      },
+      "animating-23b9df9e": {
+        "east": [
+          "animations/animating-23b9df9e/east/frame_000.png",
+          "animations/animating-23b9df9e/east/frame_001.png",
+          "animations/animating-23b9df9e/east/frame_002.png",
+          "animations/animating-23b9df9e/east/frame_003.png",
+          "animations/animating-23b9df9e/east/frame_004.png",
+          "animations/animating-23b9df9e/east/frame_005.png"
+        ]
+      },
+      "animating-28ee0bda": {
+        "east": [
+          "animations/animating-28ee0bda/east/frame_000.png",
+          "animations/animating-28ee0bda/east/frame_001.png",
+          "animations/animating-28ee0bda/east/frame_002.png",
+          "animations/animating-28ee0bda/east/frame_003.png",
+          "animations/animating-28ee0bda/east/frame_004.png",
+          "animations/animating-28ee0bda/east/frame_005.png",
+          "animations/animating-28ee0bda/east/frame_006.png",
+          "animations/animating-28ee0bda/east/frame_007.png",
+          "animations/animating-28ee0bda/east/frame_008.png"
+        ]
+      },
+      "animating-f3b90503": {
+        "east": [
+          "animations/animating-f3b90503/east/frame_000.png",
+          "animations/animating-f3b90503/east/frame_001.png",
+          "animations/animating-f3b90503/east/frame_002.png",
+          "animations/animating-f3b90503/east/frame_003.png",
+          "animations/animating-f3b90503/east/frame_004.png",
+          "animations/animating-f3b90503/east/frame_005.png"
+        ]
+      },
+      "crouching-f63316a2": {
+        "east": [
+          "animations/crouching-f63316a2/east/frame_000.png",
+          "animations/crouching-f63316a2/east/frame_001.png",
+          "animations/crouching-f63316a2/east/frame_002.png",
+          "animations/crouching-f63316a2/east/frame_003.png",
+          "animations/crouching-f63316a2/east/frame_004.png"
+        ]
+      },
+      "jab_attack-4f127b0c": {
+        "east": [
+          "animations/jab_attack-4f127b0c/east/frame_000.png",
+          "animations/jab_attack-4f127b0c/east/frame_001.png",
+          "animations/jab_attack-4f127b0c/east/frame_002.png"
+        ]
+      },
+      "cross_punch_attack-38d6a847": {
+        "east": [
+          "animations/cross_punch_attack-38d6a847/east/frame_000.png",
+          "animations/cross_punch_attack-38d6a847/east/frame_001.png",
+          "animations/cross_punch_attack-38d6a847/east/frame_002.png",
+          "animations/cross_punch_attack-38d6a847/east/frame_003.png",
+          "animations/cross_punch_attack-38d6a847/east/frame_004.png",
+          "animations/cross_punch_attack-38d6a847/east/frame_005.png"
+        ]
+      },
+      "animating-14ba314f": {
+        "east": [
+          "animations/animating-14ba314f/east/frame_000.png",
+          "animations/animating-14ba314f/east/frame_001.png",
+          "animations/animating-14ba314f/east/frame_002.png",
+          "animations/animating-14ba314f/east/frame_003.png",
+          "animations/animating-14ba314f/east/frame_004.png",
+          "animations/animating-14ba314f/east/frame_005.png",
+          "animations/animating-14ba314f/east/frame_006.png",
+          "animations/animating-14ba314f/east/frame_007.png"
+        ]
+      },
+      "uppercut-aabc200b": {
+        "east": [
+          "animations/uppercut-aabc200b/east/frame_000.png",
+          "animations/uppercut-aabc200b/east/frame_001.png",
+          "animations/uppercut-aabc200b/east/frame_002.png",
+          "animations/uppercut-aabc200b/east/frame_003.png",
+          "animations/uppercut-aabc200b/east/frame_004.png",
+          "animations/uppercut-aabc200b/east/frame_005.png",
+          "animations/uppercut-aabc200b/east/frame_006.png"
+        ]
+      },
+      "casting_a_fireball-ac7d51ce": {
+        "east": [
+          "animations/casting_a_fireball-ac7d51ce/east/frame_000.png",
+          "animations/casting_a_fireball-ac7d51ce/east/frame_001.png",
+          "animations/casting_a_fireball-ac7d51ce/east/frame_002.png",
+          "animations/casting_a_fireball-ac7d51ce/east/frame_003.png",
+          "animations/casting_a_fireball-ac7d51ce/east/frame_004.png",
+          "animations/casting_a_fireball-ac7d51ce/east/frame_005.png"
+        ]
+      },
+      "taking_a_punch-a5e7c28e": {
+        "east": [
+          "animations/taking_a_punch-a5e7c28e/east/frame_000.png",
+          "animations/taking_a_punch-a5e7c28e/east/frame_001.png",
+          "animations/taking_a_punch-a5e7c28e/east/frame_002.png",
+          "animations/taking_a_punch-a5e7c28e/east/frame_003.png",
+          "animations/taking_a_punch-a5e7c28e/east/frame_004.png",
+          "animations/taking_a_punch-a5e7c28e/east/frame_005.png"
+        ]
+      },
+      "falling_backward-2c56de4b": {
+        "east": [
+          "animations/falling_backward-2c56de4b/east/frame_000.png",
+          "animations/falling_backward-2c56de4b/east/frame_001.png",
+          "animations/falling_backward-2c56de4b/east/frame_002.png",
+          "animations/falling_backward-2c56de4b/east/frame_003.png",
+          "animations/falling_backward-2c56de4b/east/frame_004.png",
+          "animations/falling_backward-2c56de4b/east/frame_005.png",
+          "animations/falling_backward-2c56de4b/east/frame_006.png"
+        ]
+      }
+    }
+  },
+  "export_version": "2.0",
+  "export_date": "2026-04-22T09:10:11.911862"
+}

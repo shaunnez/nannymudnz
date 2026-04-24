@@ -1,0 +1,57 @@
+{
+  "stageId": "assembly",
+  "theme": "knightly assembly hall with warm torchlight and cool teal rune accents",
+  "source": "pixellab-first-pass",
+  "assets": {
+    "pillar_stone_knight_hall": {
+      "path": "/world/assembly/raw/pillar_stone_knight_hall.png",
+      "kind": "landmark",
+      "usage": "major pillar silhouette, backline architecture, possible foreground occlusion"
+    },
+    "brazier_wall_torch": {
+      "path": "/world/assembly/raw/brazier_wall_torch.png",
+      "kind": "light_source",
+      "usage": "wall torch accent, repeated hall lighting prop"
+    },
+    "banner_war_hanging": {
+      "path": "/world/assembly/raw/banner_war_hanging.png",
+      "kind": "dress_prop",
+      "usage": "heraldic banner, vertical accent between pillars"
+    },
+    "bench_broken": {
+      "path": "/world/assembly/raw/bench_broken.png",
+      "kind": "debris",
+      "usage": "low clutter prop, breakage flavor, possible throwable inspiration"
+    },
+    "dagger_ceremonial_pickup": {
+      "path": "/world/assembly/raw/dagger_ceremonial_pickup.png",
+      "kind": "pickup",
+      "usage": "prototype thrown-item or pickup art for restored item loop"
+    },
+    "archway_grand_stone": {
+      "path": "/world/assembly/raw/archway_grand_stone.png",
+      "kind": "landmark",
+      "usage": "rear-stage architectural frame or side landmark"
+    },
+    "window_stained_glass": {
+      "path": "/world/assembly/raw/window_stained_glass.png",
+      "kind": "backdrop",
+      "usage": "upper-wall stained glass accent and heraldic color break"
+    },
+    "dais_raised_stone": {
+      "path": "/world/assembly/raw/dais_raised_stone.png",
+      "kind": "landmark",
+      "usage": "ceremonial oath platform or rear-stage focal landmark"
+    },
+    "floor_chunk_flagstone_cracked": {
+      "path": "/world/assembly/raw/floor_chunk_flagstone_cracked.png",
+      "kind": "floor_prop",
+      "usage": "combat-plane floor dressing and cracked flagstone texture accent"
+    },
+    "weapon_rack_shields_spears": {
+      "path": "/world/assembly/raw/weapon_rack_shields_spears.png",
+      "kind": "dress_prop",
+      "usage": "side-pocket hall dressing with implied interactable energy"
+    }
+  }
+}

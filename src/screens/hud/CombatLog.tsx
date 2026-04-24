@@ -36,19 +36,18 @@ export function CombatLog({ entries, visible }: Props) {
       style={{
         flex: 1,
         minWidth: 0,
-        maxHeight: 148,
         overflowY: 'hidden',
-        padding: '8px 10px',
+        padding: '6px 10px',
         background: theme.panel,
         border: `1px solid ${theme.line}`,
         borderRadius: 4,
         fontFamily: theme.fontMono,
-        fontSize: 11,
-        lineHeight: 1.4,
+        fontSize: 13,
+        lineHeight: 1.35,
         color: theme.ink,
       }}
     >
-      {entries.slice(-12).map((e) => (
+      {entries.slice(-8).map((e) => (
         <div key={e.id}>
           <span style={{ color: TAG_COLOR[e.tag], marginRight: 6 }}>[{e.tag}]</span>
           <span style={{ color: TONE_COLOR[e.tone] }}>{e.text}</span>

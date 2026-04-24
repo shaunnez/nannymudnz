@@ -49,7 +49,7 @@ export const GUILD_META: Record<GuildId, GuildMeta> = {
     tag: 'Healer-Shifter',
     glyph: 'Dr',
     hue: 140,
-    bio: 'Keeper of the old groves. Shape becomes thought becomes shape again — bear on the press, wolf on the chase.',
+    bio: 'Keeper of the old groves. Shape becomes thought becomes shape again — wolf on the press, wolf on the hunt.',
     uiVitals: { Armor: 8, MR: 12, Move: 130 },
   },
   hunter: {

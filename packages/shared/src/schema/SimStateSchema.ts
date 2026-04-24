@@ -2,18 +2,17 @@ import { Schema, type, ArraySchema } from '@colyseus/schema';
 import type {
   Actor,
   LogEntry,
+  MatchStats,
   Pickup,
   PlayerController,
   Projectile,
   RoundState,
   SimMode,
-  VFXEvent,
   Wave,
 } from '../simulation/types';
 import { ActorSchema } from './ActorSchema';
 import { PickupSchema } from './PickupSchema';
 import { ProjectileSchema } from './ProjectileSchema';
-import { VFXEventSchema } from './VFXEventSchema';
 import { LogEntrySchema } from './LogEntrySchema';
 import { RoundStateSchema } from './RoundStateSchema';
 import { WaveSchema } from './WaveSchema';
@@ -31,8 +30,6 @@ export class SimStateSchema extends Schema {
     new ArraySchema<PickupSchema>() as unknown as Pickup[];
   @type({ array: ProjectileSchema }) projectiles: Projectile[] =
     new ArraySchema<ProjectileSchema>() as unknown as Projectile[];
-  @type({ array: VFXEventSchema }) vfxEvents: VFXEvent[] =
-    new ArraySchema<VFXEventSchema>() as unknown as VFXEvent[];
   @type({ array: WaveSchema }) waves: Wave[] =
     new ArraySchema<WaveSchema>() as unknown as Wave[];
 
@@ -66,4 +63,11 @@ export class SimStateSchema extends Schema {
   // these authoritatively; clients only ever see their own local input state
   // (PhaserInputAdapter), so nothing needs to be synced.
   controllers: Record<string, PlayerController> = {};
+
+  // Untracked: accumulated match statistics. Synced at match-end by the server
+  // room; not tick-synced through the schema diff stream.
+  matchStats: MatchStats = {
+    p1: { damageDealt: 0, damageTaken: 0, abilitiesCast: 0, maxCombo: 0, critHits: 0, totalHits: 0, healingDone: 0, _comboRun: 0 },
+    p2: { damageDealt: 0, damageTaken: 0, abilitiesCast: 0, maxCombo: 0, critHits: 0, totalHits: 0, healingDone: 0, _comboRun: 0 },
+  };
 }

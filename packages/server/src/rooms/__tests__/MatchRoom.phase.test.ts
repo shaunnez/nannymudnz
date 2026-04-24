@@ -12,7 +12,7 @@
  * follow-up once the CI environment is confirmed to support it.
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { MatchRoom } from '../MatchRoom.js';
 import { MatchState } from '@nannymud/shared';
 
@@ -38,7 +38,7 @@ function sendMsg(room: MatchRoom, client: StubClient, type: string, msg: unknown
 }
 
 /** Bootstrap a fresh MatchRoom in lobby state with no clients. */
-function createRoom(opts: { name?: string; rounds?: number } = {}) {
+function createRoom(opts: { name?: string; rounds?: number; visibility?: 'public' | 'private' } = {}) {
   const room = new MatchRoom();
   // Provide minimal state before calling onCreate
   room['state'] = new MatchState();
@@ -49,6 +49,8 @@ function createRoom(opts: { name?: string; rounds?: number } = {}) {
     if (!store.events[type]) store.events[type] = [];
     store.events[type].push(handler);
   };
+  // Stub setMetadata so tests don't crash without a real Colyseus server
+  room['setMetadata'] = vi.fn().mockResolvedValue(undefined);
   room.onCreate(opts);
   return room;
 }
@@ -252,5 +254,29 @@ describe('MatchRoom phase transitions (direct instantiation)', () => {
     joinRoom(room, client1, { name: 'Alice' });
     leaveRoom(room, client1);
     expect(room.state.players.get('session-alice')?.connected).toBe(false);
+  });
+
+  // -------------------------------------------------------------------------
+  // Metadata
+  // -------------------------------------------------------------------------
+
+  it('sets metadata on create with correct fields', () => {
+    const r = createRoom({ name: 'Arena', rounds: 5, visibility: 'public' });
+    expect(r['setMetadata']).toHaveBeenCalledOnce();
+    expect(r['setMetadata']).toHaveBeenCalledWith({
+      name: 'Arena',
+      rounds: 5,
+      visibility: 'public',
+      hostName: '',
+    });
+  });
+
+  it('updates metadata with hostName when first client joins', () => {
+    const r = createRoom({ name: 'Pit', rounds: 3, visibility: 'public' });
+    const c = makeClient('session-alice');
+    joinRoom(r, c, { name: 'Alice' });
+    expect(r['setMetadata']).toHaveBeenCalledTimes(2);
+    const secondCall = (r['setMetadata'] as ReturnType<typeof vi.fn>).mock.calls[1][0];
+    expect(secondCall.hostName).toBe('Alice');
   });
 });

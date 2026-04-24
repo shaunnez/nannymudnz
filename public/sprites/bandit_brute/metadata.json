@@ -1,0 +1,115 @@
+{
+  "guildId": "bandit_brute",
+  "frameSize": {
+    "w": 124,
+    "h": 124
+  },
+  "facing": "right",
+  "animations": {
+    "ability_3": {
+      "frames": 6,
+      "frameDurationMs": 90,
+      "loop": false,
+      "anchor": {
+        "x": 62,
+        "y": 92
+      },
+      "opaqueBounds": {
+        "left": 42,
+        "top": 41,
+        "right": 84,
+        "bottom": 91
+      }
+    },
+    "attack_1": {
+      "frames": 7,
+      "frameDurationMs": 80,
+      "loop": false,
+      "anchor": {
+        "x": 62,
+        "y": 93
+      },
+      "opaqueBounds": {
+        "left": 16,
+        "top": 37,
+        "right": 99,
+        "bottom": 92
+      }
+    },
+    "death": {
+      "frames": 7,
+      "frameDurationMs": 150,
+      "loop": false,
+      "anchor": {
+        "x": 62,
+        "y": 91
+      },
+      "opaqueBounds": {
+        "left": 33,
+        "top": 39,
+        "right": 98,
+        "bottom": 90
+      }
+    },
+    "hurt": {
+      "frames": 6,
+      "frameDurationMs": 100,
+      "loop": false,
+      "anchor": {
+        "x": 62,
+        "y": 95
+      },
+      "opaqueBounds": {
+        "left": 33,
+        "top": 39,
+        "right": 98,
+        "bottom": 94
+      }
+    },
+    "idle": {
+      "frames": 4,
+      "frameDurationMs": 180,
+      "loop": true,
+      "anchor": {
+        "x": 62,
+        "y": 93
+      },
+      "opaqueBounds": {
+        "left": 46,
+        "top": 36,
+        "right": 85,
+        "bottom": 92
+      }
+    },
+    "run": {
+      "frames": 6,
+      "frameDurationMs": 90,
+      "loop": true,
+      "anchor": {
+        "x": 62,
+        "y": 95
+      },
+      "opaqueBounds": {
+        "left": 33,
+        "top": 38,
+        "right": 77,
+        "bottom": 94
+      }
+    },
+    "walk": {
+      "frames": 6,
+      "frameDurationMs": 120,
+      "loop": true,
+      "anchor": {
+        "x": 62,
+        "y": 92
+      },
+      "opaqueBounds": {
+        "left": 45,
+        "top": 36,
+        "right": 86,
+        "bottom": 91
+      }
+    }
+  }
+}

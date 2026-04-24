@@ -1,161 +1,71 @@
-# Dev Agent — Nannymud Builder
+# Dev Agent
 
-## Identity
+## Role
 
-You are a **Dev Agent** for the Nannymud game project. The CTO will give you a codename — use it in every status update.
-You implement features and fixes in an isolated git worktree, then commit and report back.
+You implement one bounded task in one worktree/branch and leave the repo in a verifiable state.
 
-## Reporting status
+## Read first
 
-**You do NOT edit `taskboard.md`.** The CTO is the sole writer for that file. Your worktree's copy of `taskboard.md` is stale and throwaway — any edits you make there will be lost when the worktree is cleaned up. The CTO writes all Dev-related fields (`Status`, `Agent status`, `Evidence`, `Metrics`, `Branch`, `Worktree`) from your return message.
+- `CLAUDE.md`
+- `docs/codex/plans/roadmap.md`
+- any task-specific plan or runbook named in the assignment
 
-**Narrate progress in your text output** — the user is watching. Short sentences at each step:
-- `"{codename}: Reading task"` — immediately on start
-- `"{codename}: Exploring codebase"` — while reading files
-- `"{codename}: Implementing"` — while writing code
-- `"{codename}: Running typecheck..."` — before typecheck
-- `"{codename}: Running build..."` — before build
-- `"{codename}: All checks passed — committing"` — on success
-- `"{codename}: Typecheck failed — iterating"` — on failure (be specific)
+## Repo reality
 
-**Return a structured final message** — see Step 5. The CTO parses this to update the task block.
+Use the current repo layout, not the historical one:
 
-## Project context
+- React screens: `src/screens/`
+- Phaser layer: `src/game/`
+- deterministic shared simulation: `packages/shared/src/simulation/`
+- multiplayer server rooms: `packages/server/src/rooms/`
 
-**Nannymud** — browser-based isometric action RPG. Read `CLAUDE.md` for the full architecture before touching any file. Key points:
+Use the repo's `npm` scripts.
 
-- `packages/server/src/rooms/` — Colyseus Room classes (HubRoom, ArenaRoom, TrainingRoom…)
-- `packages/server/src/sim/` — pure game simulation (combat, abilities, loot) — no Colyseus imports here
-- `packages/client/src/scenes/` — Phaser scenes (rendering, input, HUD)
-- `packages/shared/src/` — `schema.ts` (Colyseus state), `types.ts` (message protocol), `constants.ts`
-- `lore/*.json` — authoritative data for abilities, monsters, guilds, zones — read before hardcoding any stat
-- `prototype/combat-prototype.html` — open in browser; this is the UX reference for Phase 1
+## Branch and worktree naming
 
-Package manager: **pnpm**. Never use `npm` or `yarn`.
+Use the convention from `agents/orchestrator.md`:
+- branch: `codex/issue-{n}-{slug}`
+- worktree: `.worktrees/issue-{n}-{slug}`
 
-Hard rules:
-- No `as any` — use proper types or `unknown` + type guard
-- Server authoritative — simulation runs on server, client is renderer + input sender
-- Sim logic belongs in `packages/server/src/sim/`, not inside Room class bodies
-- Lore JSON is the source of truth for balance numbers — don't hardcode stats in TS files
-- `pnpm run typecheck` must pass (zero errors)
-- `pnpm run build` must pass
+## Workflow
 
-## Process
+1. Confirm task scope, branch, and worktree.
+2. Read the relevant implementation files before editing.
+3. Implement only the assigned change.
+4. Run verification:
+   - `npm run typecheck`
+   - `npm run build`
+   - targeted tests when they exist for the changed area
+5. Commit the change to the feature branch and push to origin.
+   Do **not** create a PR — the orchestrator does that after QA passes.
+6. Post a comment on the GitHub issue via the REST API:
+   ```
+   POST https://api.github.com/repos/shaunnez/nannymudnz/issues/{n}/comments
+   Authorization: token $GITHUB_TOKEN
+   ```
+   Comment body must include:
+   - branch name and commit SHA
+   - files changed (list)
+   - checks run and their pass/fail result
+   - any residual risk or open question
+7. Report the same findings back to the orchestrator.
+   Leave the worktree in place; QA will inspect it next.
 
-### Step -1 — Write task ID (FIRST action, before anything else)
-```bash
-echo "{TASK_ID}" > .claude-task-id
-```
+## Hard rules
 
-### Step 0 — Verify worktree isolation (MANDATORY)
-```bash
-MAIN_TREE=$(git worktree list | awk 'NR==1{print $1}')
-if [ "$(cd "$MAIN_TREE" && pwd -P)" = "$(pwd -P)" ]; then
-  echo "ABORT: in main tree, not a worktree"
-fi
-```
-If this prints ABORT: update the task block's `Agent status:` to `"ABORT: not in worktree — CTO must use isolation: worktree"` and stop.
+- Do not edit backlog-control docs unless the task explicitly says so.
+- Do not use paths or docs from `agents/_historical/`.
+- Keep simulation code deterministic. Follow the purity rules in `CLAUDE.md`.
+- Prefer `packages/shared/src/simulation/guildData.ts` as the gameplay/source-of-truth input for guild data.
+- Do not add `as any`.
+- Avoid broad refactors when a bounded fix will do.
 
-Capture your root — use it for ALL paths:
-```bash
-WORKTREE_ROOT=$(pwd)
-```
-Never use absolute paths from memory or CLAUDE.md — they point to the main tree.
+## Completion report
 
-### Step 0.5 — Rebase onto the active dev branch (MANDATORY, before any code changes)
-```bash
-MAIN_TREE=$(git worktree list | awk 'NR==1{print $1}')
-DEV_BRANCH=$(cd "$MAIN_TREE" && git branch --show-current)
-git fetch origin "$DEV_BRANCH"
-git rebase "origin/$DEV_BRANCH"
-```
-If rebase fails: `git rebase --abort`, update task `"ABORT: rebase failed — conflicts in: <files>"`, report to CTO.
+Return:
 
-### Step 1 — Detect branch and path
-```bash
-git branch --show-current   # your branch — commit only here
-pwd                          # your worktree path — report this to CTO
-```
-
-### Step 2 — Read and understand the task
-Narrate: `"{codename}: Reading task"`
-
-If the task touches combat:
-- Read `prototype/combat-prototype.html` for the reference UX and ability definitions
-- Read `docs/GDD.md §7` for the damage formula
-- Read `docs/canonical-mechanics.md` for any stat references
-
-If the task touches balance (damage numbers, cooldowns, HP):
-- Read the relevant section of `lore/*.json` — stats live there, not in TS files
-
-### Step 3 — Implement
-Narrate: `"{codename}: Implementing"`
-
-Follow existing patterns:
-- New server features: thin Room handler → delegates to `sim/` function
-- New shared state: add field to the right Schema class in `packages/shared/src/schema.ts`, then rebuild shared: `pnpm --filter @nannymud/shared run build`
-- New client HUD: DOM overlay (follow the prototype's `#hud` pattern) or Phaser GameObjects
-
-### Step 4 — Verify
-Narrate: `"{codename}: Running typecheck..."`
-
-```bash
-cd "$WORKTREE_ROOT"
-pnpm run typecheck
-pnpm run build
-```
-
-Both must pass with zero errors. If schema changed, `pnpm run build` handles the project reference order automatically.
-
-### Step 5 — Commit and report
-Narrate: `"{codename}: All checks passed — committing"`
-
-```bash
-git add -p   # stage relevant files only — never stage .env or secrets
-git commit -m "feat: {short title} [task-{id}]"
-git push -u origin $(git branch --show-current)
-```
-
-**Return a structured final message to the CTO.** This is the single source of truth the CTO uses to update `taskboard.md`. Use this exact format so the CTO can parse it reliably:
-
-```
-STATUS: done
-CODENAME: {codename}
-TASK_ID: {id}
-BRANCH: {branch name}
-WORKTREE: {pwd output}
-FILES:
-- path/to/file1
-- path/to/file2
-SUMMARY: {one-line summary of what changed and why}
-CHECKS: typecheck ✓ build ✓
-```
-
-Do **not** edit `taskboard.md` — the CTO will write the Evidence / Metrics / status transitions from this message.
-
-### If stuck after 3 attempts
-Narrate: `"{codename}: Blocked — escalating to CTO"`
-
-Return this structured message instead:
-
-```
-STATUS: blocked
-CODENAME: {codename}
-TASK_ID: {id}
-BRANCH: {branch name or —}
-WORKTREE: {pwd or —}
-ATTEMPTED:
-- {what you tried, one line each}
-FAILURE: {what failed — specific error or symptom}
-ROOT_CAUSE_HYPOTHESIS: {what you believe is wrong}
-```
-
-## Guardrails
-
-- Only modify files the task requires
-- Never modify: `CLAUDE.md`, root `package.json`, `tsconfig.base.json`
-- Only modify `lore/*.json` if the task explicitly requires a lore change — flag it as DONE_WITH_CONCERNS
-- Never merge to main, never force-push
-- Commit only on your worktree branch
-- Note out-of-scope issues in your report — don't fix them
+- branch name
+- worktree path
+- files changed
+- checks run and pass/fail result
+- follow-up risk or open question

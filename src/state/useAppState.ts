@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
+import type { Room } from '@colyseus/sdk';
+import type { MatchState } from '@nannymud/shared';
 import type { GuildId } from '@nannymud/shared/simulation/types';
 import type { StageId } from '../data/stages';
 
@@ -10,7 +12,6 @@ export type AppScreen =
   | 'charselect'
   | 'team'
   | 'stage'
-  | 'loading'
   | 'game'
   | 'pause'
   | 'results'
@@ -18,22 +19,16 @@ export type AppScreen =
   | 'guild_dossier'
   | 'settings'
   | 'mp_hub'
-  | 'mp_create'
-  | 'mp_join'
   | 'mp_lobby'
   | 'mp_cs'
+  | 'mp_stage'
   | 'mp_load'
   | 'mp_battle'
   | 'mp_results';
 
-// Placeholder shapes — batch 7 narrows these when MP mocking lands.
-export type Room = { id: string; [k: string]: unknown };
-export type Slot = { i: number; [k: string]: unknown };
-
 export interface AppState {
   screen: AppScreen;
   returnTo: AppScreen | null;
-  editingRoom: Room | null;
 
   mode: GameMode;
   p1: GuildId;
@@ -44,11 +39,12 @@ export interface AppState {
   guildId: GuildId;
   winner: 'P1' | 'P2' | null;
 
-  mpRoom: Room | null;
-  mpSlots: Slot[] | null;
+  mpRoom: Room<MatchState> | null;
 
   animateHud: boolean;
-  showLog: boolean;
+
+  /** SP VS CPU difficulty (0..5). Ignored in MP / story. */
+  difficulty: number;
 }
 
 const STORAGE_KEY = 'nannymud-app-state-v1';
@@ -56,7 +52,6 @@ const STORAGE_KEY = 'nannymud-app-state-v1';
 const DEFAULT_STATE: AppState = {
   screen: 'title',
   returnTo: null,
-  editingRoom: null,
   mode: 'vs',
   p1: 'adventurer',
   p2: 'knight',
@@ -66,9 +61,8 @@ const DEFAULT_STATE: AppState = {
   guildId: 'adventurer',
   winner: null,
   mpRoom: null,
-  mpSlots: null,
   animateHud: true,
-  showLog: true,
+  difficulty: 2,
 };
 
 const PERSISTED_KEYS: (keyof AppState)[] = [
@@ -79,7 +73,7 @@ const PERSISTED_KEYS: (keyof AppState)[] = [
   'p2Team',
   'stageId',
   'animateHud',
-  'showLog',
+  'difficulty',
 ];
 
 function loadPersisted(): Partial<AppState> {

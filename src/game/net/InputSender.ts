@@ -1,4 +1,4 @@
-import type { Room } from 'colyseus.js';
+import type { Room } from '@colyseus/sdk';
 import type { InputState } from '@nannymud/shared/simulation/types';
 import type { InputEvent, InputMsg, MatchState } from '@nannymud/shared';
 

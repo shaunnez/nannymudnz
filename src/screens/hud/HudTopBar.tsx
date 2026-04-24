@@ -1,19 +1,28 @@
-import type { Actor, RoundState } from '@nannymud/shared/simulation/types';
+import type { Actor, RoundState, SimMode, SimState } from '@nannymud/shared/simulation/types';
 import { getGuild } from '@nannymud/shared/simulation/guildData';
 import { GUILD_META } from '../../data/guildMeta';
-import { theme, guildAccent } from '../../ui';
+import { theme, guildAccent, GuildMonogram } from '../../ui';
 import { MeterBar } from '../../ui/MeterBar';
 import { RoundTimer } from './RoundTimer';
+import { BossSlot } from './BossSlot';
+import { PlayerExtras } from './PlayerExtras';
 
 interface Props {
+  mode: SimMode;
   p1: Actor;
-  p2: Actor;
+  p2: Actor | null;
   round: RoundState | null;
   stageName: string;
   animate: boolean;
+  state: SimState;
 }
 
-export function HudTopBar({ p1, p2, round, stageName, animate }: Props) {
+export function HudTopBar({ mode, p1, p2, round, stageName, animate, state }: Props) {
+  const boss =
+    mode === 'story'
+      ? state.enemies.find((e) => e.isAlive && e.aiState.behavior === 'boss') ?? null
+      : null;
+
   return (
     <div
       style={{
@@ -21,45 +30,71 @@ export function HudTopBar({ p1, p2, round, stageName, animate }: Props) {
         top: 0,
         left: 0,
         right: 0,
-        height: 72,
+        height: 80,
         display: 'grid',
         gridTemplateColumns: '1fr auto 1fr',
         alignItems: 'center',
-        gap: 16,
-        padding: '6px 12px',
+        gap: 18,
+        padding: '6px 14px',
         background: theme.bg,
         borderBottom: `1px solid ${theme.line}`,
         pointerEvents: 'none',
       }}
     >
-      <PlayerSlot actor={p1} side="left" />
-      <div style={{ textAlign: 'center' }}>
-        <div
-          style={{
-            fontFamily: theme.fontDisplay,
-            fontSize: 11,
-            letterSpacing: 2,
-            color: theme.inkDim,
-            textTransform: 'uppercase',
-            marginBottom: 2,
-          }}
-        >
-          {stageName}
-        </div>
-        <RoundTimer round={round} animate={animate} />
+      <PlayerSlot actor={p1} side="left" label="P1" showExtras={true} petMode={state.allies.find(a => a.kind === 'wolf_pet')?.petAiMode} />
+
+      <div style={{ textAlign: 'center', minWidth: mode === 'vs' ? 140 : 0 }}>
+        {mode === 'vs' && (
+          <>
+            <div
+              style={{
+                fontFamily: theme.fontDisplay,
+                fontSize: 12,
+                letterSpacing: 3,
+                color: theme.inkDim,
+                textTransform: 'uppercase',
+                marginBottom: 2,
+              }}
+            >
+              {stageName}
+            </div>
+            <RoundTimer round={round} animate={animate} />
+          </>
+        )}
       </div>
-      <PlayerSlot actor={p2} side="right" />
+
+      {mode === 'story' ? (
+        <BossSlot boss={boss} />
+      ) : p2 ? (
+        <PlayerSlot actor={p2} side="right" label="P2" showExtras={true} />
+      ) : (
+        <div />
+      )}
     </div>
   );
 }
 
-function PlayerSlot({ actor, side }: { actor: Actor; side: 'left' | 'right' }) {
+function PlayerSlot({
+  actor,
+  side,
+  label,
+  showExtras,
+  petMode,
+}: {
+  actor: Actor;
+  side: 'left' | 'right';
+  label: string;
+  showExtras: boolean;
+  petMode?: string;
+}) {
   const guild = getGuild(actor.guildId!);
   const meta = GUILD_META[actor.guildId!];
   const accent = guildAccent(meta.hue);
   const teamColor = side === 'left' ? theme.team1 : theme.team2;
-  const align = side === 'left' ? 'flex-start' : 'flex-end';
   const row = side === 'left' ? 'row' : 'row-reverse';
+  const textAlign = side === 'left' ? 'left' : 'right';
+
+  const resourceName = guild?.resource?.name?.toUpperCase() ?? '';
 
   return (
     <div
@@ -67,56 +102,96 @@ function PlayerSlot({ actor, side }: { actor: Actor; side: 'left' | 'right' }) {
         display: 'flex',
         flexDirection: row,
         alignItems: 'center',
-        gap: 10,
-        justifyContent: align,
+        gap: 12,
+        minWidth: 0,
       }}
     >
       <div
         style={{
-          width: 48,
-          height: 48,
+          flex: '0 0 auto',
           borderRadius: 6,
-          background: theme.panel,
           border: `2px solid ${teamColor}`,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          fontFamily: theme.fontDisplay,
-          fontSize: 18,
-          fontWeight: 700,
-          color: accent,
+          overflow: 'hidden',
+          lineHeight: 0,
         }}
       >
-        {meta.glyph}
+        <GuildMonogram guildId={actor.guildId!} size={54} />
       </div>
-      <div style={{ minWidth: 220, textAlign: side === 'left' ? 'left' : 'right' }}>
+      <div style={{ flex: 1, minWidth: 0, textAlign }}>
         <div
           style={{
-            fontFamily: theme.fontDisplay,
-            fontSize: 14,
-            color: theme.ink,
-            textTransform: 'uppercase',
-            letterSpacing: 1,
+            display: 'flex',
+            flexDirection: row,
+            alignItems: 'baseline',
+            gap: 8,
+            justifyContent: side === 'left' ? 'flex-start' : 'flex-end',
           }}
         >
-          {guild.name}
+          <span
+            style={{
+              fontFamily: theme.fontMono,
+              fontSize: 11,
+              letterSpacing: 2,
+              color: teamColor,
+            }}
+          >
+            {label}
+          </span>
+          <span
+            style={{
+              fontFamily: theme.fontDisplay,
+              fontSize: 20,
+              color: theme.ink,
+              letterSpacing: '0.01em',
+            }}
+          >
+            {guild?.name}
+          </span>
+          <span
+            style={{
+              fontFamily: theme.fontMono,
+              fontSize: 10,
+              color: theme.inkDim,
+              letterSpacing: 2,
+            }}
+          >
+            {meta.tag.toUpperCase()}
+          </span>
         </div>
-        <div style={{ fontFamily: theme.fontMono, fontSize: 9, color: theme.inkDim, marginBottom: 4 }}>
-          {meta.tag.toUpperCase()}
+        <div style={{ marginTop: 2 }}>
+          <MeterBar value={actor.hp} max={actor.hpMax} color={teamColor} height={10} />
         </div>
-        <MeterBar value={actor.hp} max={actor.hpMax} color={teamColor} height={8} />
-        <div style={{ height: 3 }} />
-        <MeterBar value={actor.mp} max={actor.mpMax} color={accent} height={5} />
         <div
           style={{
+            marginTop: 2,
+            display: 'flex',
+            flexDirection: row,
+            alignItems: 'center',
+            gap: 8,
+          }}
+        >
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <MeterBar value={actor.mp} max={actor.mpMax} color={accent} height={5} />
+          </div>
+        </div>
+        <div
+          style={{
+            marginTop: 2,
+            display: 'flex',
+            flexDirection: row,
+            justifyContent: 'space-between',
             fontFamily: theme.fontMono,
             fontSize: 9,
             color: theme.inkDim,
-            marginTop: 2,
+            letterSpacing: 1,
           }}
         >
-          HP {Math.round(actor.hp)}/{actor.hpMax} · {guild.resource.name.toUpperCase()}{' '}
-          {Math.round(actor.mp)}/{actor.mpMax}
+          <span>HP {Math.round(actor.hp)}/{actor.hpMax}</span>
+          {showExtras && <PlayerExtras actor={actor} side={side} petMode={petMode} />}
+          <span>
+            <span style={{ color: accent }}>{resourceName}</span>{' '}
+            {Math.round(actor.mp)}/{actor.mpMax}
+          </span>
         </div>
       </div>
     </div>

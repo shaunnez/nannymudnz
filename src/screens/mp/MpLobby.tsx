@@ -1,9 +1,10 @@
-import { useEffect } from 'react';
-import type { Room } from 'colyseus.js';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import type { Room } from '@colyseus/sdk';
 import type { MatchState, MatchPhase } from '@nannymud/shared';
-import { theme, Btn } from '../../ui';
-import { useMatchState } from './useMatchState';
-import { RoomCodeBadge } from './RoomCodeBadge';
+import { theme, Btn, Chip } from '../../ui';
+import { useMatchState, getMatchSlots } from './useMatchState';
+import { usePhaseBounce } from './usePhaseBounce';
+import { MpLoading } from './MpLoading';
 
 interface Props {
   room: Room<MatchState>;
@@ -11,51 +12,109 @@ interface Props {
   onPhaseChange: (phase: MatchPhase) => void;
 }
 
+interface ChatMsg {
+  name: string;
+  text: string;
+  sys?: boolean;
+  isYou?: boolean;
+}
+
 export function MpLobby({ room, onLeave, onPhaseChange }: Props) {
   const state = useMatchState(room);
+  usePhaseBounce(state?.phase ?? 'lobby', 'lobby', onPhaseChange);
 
-  // Watch for phase transitions — parent will swap screens.
+  const [copied, setCopied] = useState(false);
+  const [chatInput, setChatInput] = useState('');
+  const [chatMessages, setChatMessages] = useState<ChatMsg[]>([
+    { name: 'system', text: 'Lobby open — share the room code to invite a friend.', sys: true },
+  ]);
+  const chatEndRef = useRef<HTMLDivElement>(null);
+  const chatInputRef = useRef<HTMLInputElement>(null);
+  const localNameRef = useRef('');
+
   useEffect(() => {
-    if (state.phase !== 'lobby') {
-      onPhaseChange(state.phase);
-    }
-  }, [state.phase, onPhaseChange]);
+    if (!state) return;
+    const s = Array.from(state.players.values()).find((p) => p.sessionId === room.sessionId);
+    if (s?.name) localNameRef.current = s.name;
+  }, [state, room.sessionId]);
 
-  const slots = Array.from(state.players.values());
-  const localSlot = slots.find((s) => s.sessionId === room.sessionId);
-  const opponentSlot = slots.find((s) => s.sessionId !== room.sessionId);
+  useEffect(() => {
+    const unsub = room.onMessage('chat', (msg: { name: string; text: string }) => {
+      setChatMessages((prev) => [
+        ...prev.slice(-99),
+        { name: msg.name, text: msg.text, isYou: msg.name === localNameRef.current },
+      ]);
+    });
+    return () => unsub();
+  }, [room]);
 
-  const isHost = room.sessionId === state.hostSessionId;
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [chatMessages]);
+
+  // Derived state — null-safe so hooks below can use them unconditionally.
+  const { localSlot, opponentSlot } = state
+    ? getMatchSlots(state, room.sessionId)
+    : { localSlot: null, opponentSlot: null };
+  const isHost = !!state && room.sessionId === state.hostSessionId;
   const currentReady = localSlot?.ready ?? false;
-  const bothPresent = slots.length === 2;
-  const bothReady = bothPresent && slots.every((s) => s.ready);
-  const canLaunch = isHost && bothPresent && bothReady;
+  const bothPresent = !!localSlot && !!opponentSlot;
+  const allReady = bothPresent && !!localSlot?.ready && !!opponentSlot?.ready;
+  const canLaunch = isHost && bothPresent && allReady;
+  const notReadyCount = [localSlot, opponentSlot].filter((s) => s && !s.ready).length;
+  const filledCount = [localSlot, opponentSlot].filter(Boolean).length;
+
+  const copyCode = useCallback(() => {
+    if (state?.code) navigator.clipboard?.writeText(state.code);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  }, [state?.code]);
+
+  const sendChat = useCallback(
+    (e: React.FormEvent) => {
+      e.preventDefault();
+      const text = chatInput.trim();
+      if (!text) return;
+      room.send('chat', { text });
+      setChatInput('');
+    },
+    [chatInput, room],
+  );
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const inChat = document.activeElement === chatInputRef.current;
+      if (e.key === 'Escape') { e.preventDefault(); onLeave(); return; }
+      if (inChat) return;
+      if (e.key === 'r' || e.key === 'R') {
+        e.preventDefault();
+        room.send('ready_toggle', { ready: !currentReady });
+      } else if (e.key === 'Enter' && canLaunch) {
+        e.preventDefault();
+        room.send('launch_battle', {});
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [canLaunch, currentReady, onLeave, room]);
+
+  if (!state) return <MpLoading />;
 
   return (
-    <div
-      style={{
-        width: '100%',
-        height: '100%',
-        display: 'flex',
-        flexDirection: 'column',
-      }}
-    >
+    <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
       {/* Header */}
       <div
         style={{
-          padding: '20px 36px',
-          display: 'grid',
-          gridTemplateColumns: '1fr auto 1fr',
-          alignItems: 'center',
+          padding: '16px 32px',
           borderBottom: `1px solid ${theme.lineSoft}`,
+          display: 'flex',
+          alignItems: 'center',
           gap: 16,
         }}
       >
-        <div style={{ justifySelf: 'start' }}>
-          <Btn size="md" onClick={onLeave}>← LEAVE</Btn>
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-          <span
+        <Btn size="md" onClick={onLeave}>← LEAVE</Btn>
+        <div style={{ flex: 1, textAlign: 'center' }}>
+          <div
             style={{
               fontFamily: theme.fontMono,
               fontSize: 10,
@@ -63,133 +122,265 @@ export function MpLobby({ room, onLeave, onPhaseChange }: Props) {
               letterSpacing: 3,
             }}
           >
-            MULTIPLAYER · LOBBY
-          </span>
-          <span
+            ROOM LOBBY · PRE-GAME · {filledCount}/2
+          </div>
+          <div
             style={{
               fontFamily: theme.fontDisplay,
               fontSize: 26,
               color: theme.ink,
-              textAlign: 'center',
+              letterSpacing: '-0.01em',
             }}
           >
-            {state.name || 'Waiting Room'}
-          </span>
+            {state.name || 'Untitled Room'}
+          </div>
         </div>
-        <div style={{ justifySelf: 'end' }}>
-          <RoomCodeBadge code={state.code} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div
+            style={{
+              fontFamily: theme.fontMono,
+              fontSize: 9,
+              color: theme.inkMuted,
+              letterSpacing: 2,
+            }}
+          >
+            CODE
+          </div>
+          <div
+            onClick={copyCode}
+            style={{
+              cursor: 'pointer',
+              padding: '8px 14px',
+              background: theme.bgDeep,
+              border: `1px solid ${theme.accent}`,
+              color: theme.accent,
+              fontFamily: theme.fontMono,
+              fontSize: 18,
+              letterSpacing: 6,
+            }}
+          >
+            #{state.code}
+          </div>
+          <span
+            style={{
+              fontFamily: theme.fontMono,
+              fontSize: 9,
+              color: copied ? theme.good : theme.inkMuted,
+              letterSpacing: 2,
+              width: 62,
+            }}
+          >
+            {copied ? 'COPIED ✓' : 'CLICK·COPY'}
+          </span>
         </div>
       </div>
 
-      {/* Body */}
+      {/* Meta strip */}
+      <div
+        style={{
+          padding: '10px 32px',
+          borderBottom: `1px solid ${theme.lineSoft}`,
+          display: 'flex',
+          gap: 12,
+          flexWrap: 'wrap',
+          alignItems: 'center',
+        }}
+      >
+        <Chip tone="accent" mono>1V1</Chip>
+        <Chip mono>BO{state.rounds}</Chip>
+        <Chip mono>{state.visibility.toUpperCase()}</Chip>
+      </div>
+
+      {/* Body — two columns */}
       <div
         style={{
           flex: 1,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: 48,
-          padding: '48px 64px',
+          display: 'grid',
+          gridTemplateColumns: '1.7fr 1fr',
+          overflow: 'hidden',
         }}
       >
-        {/* Player slot — local */}
-        <PlayerSlotCard
-          name={localSlot?.name ?? ''}
-          isYou
-          isHost={isHost}
-          ready={localSlot?.ready ?? false}
-          connected={localSlot?.connected ?? true}
-          empty={!localSlot}
-        />
-
-        {/* VS divider */}
+        {/* Left: slot cards + footer */}
         <div
           style={{
-            fontFamily: theme.fontDisplay,
-            fontSize: 48,
-            color: theme.inkMuted,
-            letterSpacing: 4,
-            flexShrink: 0,
+            padding: 24,
+            overflow: 'auto',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 10,
           }}
         >
-          VS
-        </div>
-
-        {/* Player slot — opponent */}
-        <PlayerSlotCard
-          name={opponentSlot?.name ?? ''}
-          isYou={false}
-          isHost={!isHost && !!opponentSlot && opponentSlot.sessionId === state.hostSessionId}
-          ready={opponentSlot?.ready ?? false}
-          connected={opponentSlot?.connected ?? true}
-          empty={!opponentSlot}
-        />
-      </div>
-
-      {/* Action bar */}
-      <div
-        style={{
-          padding: '20px 36px',
-          borderTop: `1px solid ${theme.lineSoft}`,
-          display: 'flex',
-          alignItems: 'center',
-          gap: 16,
-        }}
-      >
-        {/* Ready toggle */}
-        <ReadyBtn
-          ready={currentReady}
-          onToggle={() => room.send('ready_toggle', { ready: !currentReady })}
-        />
-
-        {/* Launch — host only */}
-        {isHost && (
-          <button
-            onClick={() => { if (canLaunch) room.send('launch_battle', {}); }}
-            disabled={!canLaunch}
+          <div
             style={{
-              padding: '12px 32px',
-              background: canLaunch ? theme.accent : theme.panel,
-              color: canLaunch ? theme.bgDeep : theme.inkMuted,
-              border: `1px solid ${canLaunch ? theme.accent : theme.line}`,
               fontFamily: theme.fontMono,
-              fontSize: 14,
+              fontSize: 10,
+              color: theme.accent,
               letterSpacing: 3,
-              cursor: canLaunch ? 'pointer' : 'not-allowed',
-              opacity: canLaunch ? 1 : 0.45,
-              borderRadius: 2,
-              transition: 'all 100ms ease',
             }}
           >
-            LAUNCH BATTLE →
-          </button>
-        )}
+            ▸ PLAYERS
+          </div>
 
-        <div style={{ flex: 1 }} />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <SlotCard
+              slot={localSlot ?? null}
+              isYou
+              showHost={isHost}
+              showKick={false}
+              slotIndex={0}
+            />
+            <SlotCard
+              slot={opponentSlot ?? null}
+              isYou={false}
+              showHost={!isHost && !!opponentSlot && opponentSlot.sessionId === state.hostSessionId}
+              showKick={isHost && !!opponentSlot}
+              onKick={() => opponentSlot && room.send('kick', { sessionId: opponentSlot.sessionId })}
+              slotIndex={1}
+            />
+          </div>
 
-        {/* Hint */}
+          {/* Footer actions */}
+          <div
+            style={{
+              marginTop: 'auto',
+              paddingTop: 16,
+              borderTop: `1px solid ${theme.lineSoft}`,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 12,
+              flexWrap: 'wrap',
+            }}
+          >
+            <div
+              style={{
+                flex: 1,
+                fontFamily: theme.fontMono,
+                fontSize: 10,
+                color: theme.inkMuted,
+                letterSpacing: 2,
+              }}
+            >
+              {allReady ? '▸ ALL PLAYERS READY' : `▸ WAITING FOR ${notReadyCount} PLAYER(S)`}
+            </div>
+            <Btn size="md" onClick={() => room.send('ready_toggle', { ready: !currentReady })}>
+              {currentReady ? '■ READY' : '□ READY UP'}
+            </Btn>
+            {isHost && (
+              <Btn
+                size="md"
+                primary
+                disabled={!canLaunch}
+                onClick={() => room.send('launch_battle', {})}
+              >
+                LAUNCH BATTLE →
+              </Btn>
+            )}
+          </div>
+        </div>
+
+        {/* Right: chat */}
         <div
           style={{
-            fontFamily: theme.fontMono,
-            fontSize: 10,
-            color: theme.inkMuted,
-            letterSpacing: 2,
+            borderLeft: `1px solid ${theme.lineSoft}`,
+            display: 'flex',
+            flexDirection: 'column',
           }}
         >
-          {!bothPresent
-            ? 'Waiting for opponent…'
-            : !bothReady
-            ? 'Both players must be ready'
-            : isHost
-            ? 'All ready — launch when set!'
-            : 'Waiting for host to launch…'}
+          <div
+            style={{
+              padding: '14px 18px',
+              borderBottom: `1px solid ${theme.lineSoft}`,
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+            }}
+          >
+            <span
+              style={{
+                fontFamily: theme.fontMono,
+                fontSize: 10,
+                color: theme.accent,
+                letterSpacing: 3,
+              }}
+            >
+              ▸ LOBBY CHAT
+            </span>
+            <span
+              style={{
+                fontFamily: theme.fontMono,
+                fontSize: 9,
+                color: theme.inkMuted,
+                letterSpacing: 2,
+              }}
+            >
+              {chatMessages.length} msg
+            </span>
+          </div>
+          <div
+            style={{
+              flex: 1,
+              overflow: 'auto',
+              padding: '12px 18px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 6,
+              fontFamily: theme.fontMono,
+              fontSize: 12,
+            }}
+          >
+            {chatMessages.map((m, i) => (
+              <div
+                key={i}
+                style={{
+                  color: m.sys ? theme.inkMuted : theme.inkDim,
+                  fontStyle: m.sys ? 'italic' : 'normal',
+                }}
+              >
+                {!m.sys && (
+                  <span style={{ color: m.isYou ? theme.accent : theme.ink }}>
+                    &lt;{m.name}&gt;{' '}
+                  </span>
+                )}
+                {m.text}
+              </div>
+            ))}
+            <div ref={chatEndRef} />
+          </div>
+          <form
+            onSubmit={sendChat}
+            style={{
+              padding: 12,
+              borderTop: `1px solid ${theme.lineSoft}`,
+              display: 'flex',
+              gap: 6,
+            }}
+          >
+            <input
+              ref={chatInputRef}
+              value={chatInput}
+              onChange={(e) => setChatInput(e.target.value)}
+              placeholder="say something…"
+              style={{
+                flex: 1,
+                padding: '8px 10px',
+                background: theme.bgDeep,
+                border: `1px solid ${theme.line}`,
+                color: theme.ink,
+                fontFamily: theme.fontMono,
+                fontSize: 12,
+                outline: 'none',
+                borderRadius: 2,
+              }}
+            />
+            <Btn size="sm">SEND</Btn>
+          </form>
         </div>
       </div>
 
       {/* Keyboard hints */}
       <div
         style={{
-          padding: '8px 36px',
+          padding: '8px 32px',
           borderTop: `1px solid ${theme.lineSoft}`,
           display: 'flex',
           gap: 24,
@@ -208,192 +399,158 @@ export function MpLobby({ room, onLeave, onPhaseChange }: Props) {
 }
 
 // ---------------------------------------------------------------------------
-// Sub-components
+// SlotCard
 // ---------------------------------------------------------------------------
 
-interface PlayerSlotCardProps {
-  name: string;
+interface SlotCardProps {
+  slot: {
+    name: string;
+    sessionId: string;
+    ready: boolean;
+    ping: number;
+    connected: boolean;
+  } | null;
   isYou: boolean;
-  isHost: boolean;
-  ready: boolean;
-  connected: boolean;
-  empty: boolean;
+  showHost: boolean;
+  showKick: boolean;
+  onKick?: () => void;
+  slotIndex: number;
 }
 
-function PlayerSlotCard({ name, isYou, isHost, ready, connected, empty }: PlayerSlotCardProps) {
-  const readyColor = ready ? theme.good : theme.warn;
+function SlotCard({ slot, isYou, showHost, showKick, onKick, slotIndex }: SlotCardProps) {
+  const avatarColor = isYou ? theme.accent : theme.warn;
+
+  if (!slot) {
+    return (
+      <div
+        style={{
+          padding: 14,
+          border: `1px dashed ${theme.line}`,
+          color: theme.inkMuted,
+          fontFamily: theme.fontMono,
+          fontSize: 11,
+          letterSpacing: 2,
+          textAlign: 'center',
+          minHeight: 84,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexDirection: 'column',
+          gap: 6,
+        }}
+      >
+        <div>EMPTY SLOT · WAITING…</div>
+        <div
+          style={{
+            fontSize: 10,
+            color: theme.inkMuted,
+            fontStyle: 'italic',
+            fontFamily: theme.fontBody,
+          }}
+        >
+          Share the room code to invite a friend
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
       style={{
-        flex: '0 0 280px',
-        padding: 28,
-        border: `1px solid ${ready ? theme.good + '55' : theme.lineSoft}`,
-        background: theme.panel,
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 16,
+        padding: 10,
+        border: `1px solid ${isYou ? `${theme.accent}55` : theme.line}`,
+        background: isYou ? `${theme.accent}0a` : theme.panel,
+        display: 'grid',
+        gridTemplateColumns: 'auto 1fr auto',
+        gap: 12,
         alignItems: 'center',
-        transition: 'border-color 200ms ease',
-      }}
-    >
-      {empty ? (
-        <>
-          <div
-            style={{
-              width: 72,
-              height: 72,
-              border: `2px dashed ${theme.line}`,
-              borderRadius: '50%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: theme.inkMuted,
-              fontFamily: theme.fontDisplay,
-              fontSize: 28,
-            }}
-          >
-            ?
-          </div>
-          <div
-            style={{
-              fontFamily: theme.fontMono,
-              fontSize: 11,
-              color: theme.inkMuted,
-              letterSpacing: 3,
-              textAlign: 'center',
-            }}
-          >
-            EMPTY SLOT
-          </div>
-          <div
-            style={{
-              fontFamily: theme.fontBody,
-              fontSize: 12,
-              color: theme.inkMuted,
-              textAlign: 'center',
-              fontStyle: 'italic',
-            }}
-          >
-            Share the room code to invite a friend
-          </div>
-        </>
-      ) : (
-        <>
-          {/* Avatar placeholder */}
-          <div
-            style={{
-              width: 72,
-              height: 72,
-              borderRadius: '50%',
-              background: isYou ? `${theme.accent}22` : `${theme.warn}22`,
-              border: `2px solid ${isYou ? theme.accent : theme.warn}`,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontFamily: theme.fontDisplay,
-              fontSize: 28,
-              color: isYou ? theme.accent : theme.warn,
-            }}
-          >
-            {name.slice(0, 1).toUpperCase() || '?'}
-          </div>
-
-          {/* Name + tags */}
-          <div style={{ textAlign: 'center' }}>
-            <div
-              style={{
-                fontFamily: theme.fontDisplay,
-                fontSize: 20,
-                color: theme.ink,
-                letterSpacing: '-0.01em',
-              }}
-            >
-              {name}
-            </div>
-            <div
-              style={{
-                display: 'flex',
-                gap: 6,
-                justifyContent: 'center',
-                marginTop: 6,
-                flexWrap: 'wrap',
-              }}
-            >
-              {isYou && (
-                <Tag color={theme.accent}>YOU</Tag>
-              )}
-              {isHost && (
-                <Tag color={theme.warn}>HOST</Tag>
-              )}
-            </div>
-          </div>
-
-          {/* Connection status */}
-          {!connected && (
-            <div
-              style={{
-                fontFamily: theme.fontMono,
-                fontSize: 10,
-                color: theme.bad,
-                letterSpacing: 2,
-                padding: '4px 10px',
-                border: `1px solid ${theme.bad}55`,
-                background: `${theme.bad}18`,
-              }}
-            >
-              DISCONNECTED — WAITING…
-            </div>
-          )}
-
-          {/* Ready badge */}
-          <div
-            style={{
-              fontFamily: theme.fontMono,
-              fontSize: 12,
-              color: readyColor,
-              letterSpacing: 3,
-              padding: '6px 18px',
-              border: `1px solid ${readyColor}55`,
-              background: `${readyColor}12`,
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
-            }}
-          >
-            <span>{ready ? '✓' : '○'}</span>
-            <span>{ready ? 'READY' : 'NOT READY'}</span>
-          </div>
-        </>
-      )}
-    </div>
-  );
-}
-
-interface ReadyBtnProps {
-  ready: boolean;
-  onToggle: () => void;
-}
-
-function ReadyBtn({ ready, onToggle }: ReadyBtnProps) {
-  return (
-    <button
-      onClick={onToggle}
-      style={{
-        padding: '12px 28px',
-        background: ready ? `${theme.good}22` : theme.panel,
-        color: ready ? theme.good : theme.ink,
-        border: `1px solid ${ready ? theme.good : theme.line}`,
-        fontFamily: theme.fontMono,
-        fontSize: 14,
-        letterSpacing: 3,
-        cursor: 'pointer',
+        minHeight: 84,
         borderRadius: 2,
-        transition: 'all 120ms ease',
       }}
     >
-      {ready ? '✓ READY' : '○ NOT READY'}
-    </button>
+      <div
+        style={{
+          width: 56,
+          height: 56,
+          borderRadius: '50%',
+          background: `${avatarColor}22`,
+          border: `2px solid ${avatarColor}`,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontFamily: theme.fontDisplay,
+          fontSize: 22,
+          color: avatarColor,
+          flexShrink: 0,
+        }}
+      >
+        {slot.name.slice(0, 1).toUpperCase() || '?'}
+      </div>
+
+      <div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <span style={{ fontFamily: theme.fontDisplay, fontSize: 15, color: theme.ink }}>
+            {slot.name}
+          </span>
+          {isYou && <Tag color={theme.accent}>YOU</Tag>}
+          {showHost && <Tag color={theme.warn}>HOST</Tag>}
+        </div>
+        <div
+          style={{
+            fontFamily: theme.fontMono,
+            fontSize: 9,
+            color: theme.inkMuted,
+            letterSpacing: 1,
+            marginTop: 3,
+          }}
+        >
+          {slot.ping}ms · slot {String(slotIndex + 1).padStart(2, '0')}
+        </div>
+        {!slot.connected && (
+          <div
+            style={{
+              fontFamily: theme.fontMono,
+              fontSize: 9,
+              color: theme.bad,
+              letterSpacing: 2,
+              marginTop: 3,
+            }}
+          >
+            RECONNECTING…
+          </div>
+        )}
+      </div>
+
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
+        <span
+          style={{
+            fontFamily: theme.fontMono,
+            fontSize: 10,
+            letterSpacing: 2,
+            color: slot.ready ? theme.good : theme.inkMuted,
+            border: `1px solid ${slot.ready ? theme.good : theme.lineSoft}`,
+            padding: '2px 8px',
+          }}
+        >
+          {slot.ready ? '■ READY' : '□ WAIT'}
+        </span>
+        {showKick && onKick && (
+          <span
+            onClick={onKick}
+            style={{
+              cursor: 'pointer',
+              fontFamily: theme.fontMono,
+              fontSize: 9,
+              color: theme.inkMuted,
+              letterSpacing: 2,
+              opacity: 0.6,
+            }}
+          >
+            [ KICK ]
+          </span>
+        )}
+      </div>
+    </div>
   );
 }
 

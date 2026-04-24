@@ -13,6 +13,7 @@ export class MatchState extends Schema {
   @type('string') hostSessionId = '';
   @type({ map: PlayerSlot }) players = new MapSchema<PlayerSlot>();
   @type('string') stageId = '';
+  @type('number') hoveredStageIdx: number = 0;
   @type('number') seed = 0;
   @type(SimStateSchema) sim?: SimStateSchema;
   @type('string') matchWinnerSessionId = '';

@@ -70,7 +70,12 @@ export function tickProjectile(proj: Projectile, dtSec: number): boolean {
   proj.x += proj.vx * dtSec;
   proj.y += proj.vy * dtSec;
   proj.z += proj.vz * dtSec;
-  proj.vz -= GRAVITY * 0.1 * dtSec;
+  // Only thrown physical objects (rocks, clubs) arc under gravity. Magical
+  // bolts, shards, and arrows fly flat — they spawn with vz=0 and shouldn't
+  // sink on their depth-plane pass.
+  if (proj.type.startsWith('thrown_')) {
+    proj.vz -= GRAVITY * 0.1 * dtSec;
+  }
 
   const dist = Math.sqrt(proj.vx * proj.vx + proj.vy * proj.vy) * dtSec;
   proj.traveled += dist;

@@ -1,0 +1,27 @@
+{
+  "stageId": "docks",
+  "theme": "vampire docks at night, thick fog, weathered timber, iron lanterns, rusted anchors, salt-bleached crates",
+  "source": "pixellab-first-pass",
+  "assets": {
+    "post_mooring_dock": {
+      "path": "/world/docks/raw/post_mooring_dock.png",
+      "kind": "landmark",
+      "usage": "mooring post repeated along dock edge backline"
+    },
+    "lamp_fog_iron": {
+      "path": "/world/docks/raw/lamp_fog_iron.png",
+      "kind": "light_source",
+      "usage": "fog lamp on tall post, dim amber glow accent between posts"
+    },
+    "anchor_rusted_large": {
+      "path": "/world/docks/raw/anchor_rusted_large.png",
+      "kind": "floor_prop",
+      "usage": "large anchor floor prop near posts"
+    },
+    "crate_stack_dock": {
+      "path": "/world/docks/raw/crate_stack_dock.png",
+      "kind": "dress_prop",
+      "usage": "cargo crate stack mid-stage clutter prop"
+    }
+  }
+}

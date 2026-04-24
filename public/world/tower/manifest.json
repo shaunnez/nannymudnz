@@ -1,0 +1,27 @@
+{
+  "stageId": "tower",
+  "theme": "mage tower with levitating glass floors, arcane crystals, rune pillars, violet flame",
+  "source": "pixellab-first-pass",
+  "assets": {
+    "pillar_arcane_rune": {
+      "path": "/world/tower/raw/pillar_arcane_rune.png",
+      "kind": "landmark",
+      "usage": "tall arcane pillar repeated along backline, glowing ring accent"
+    },
+    "crystal_cluster_arcane": {
+      "path": "/world/tower/raw/crystal_cluster_arcane.png",
+      "kind": "dress_prop",
+      "usage": "crystal formation at pillar bases or as mid-stage landmarks"
+    },
+    "tome_pile_floating": {
+      "path": "/world/tower/raw/tome_pile_floating.png",
+      "kind": "floor_prop",
+      "usage": "arcane book scatter prop near pillars"
+    },
+    "brazier_arcane_violet": {
+      "path": "/world/tower/raw/brazier_arcane_violet.png",
+      "kind": "light_source",
+      "usage": "violet flame brazier, repeated hall lighting accent"
+    }
+  }
+}

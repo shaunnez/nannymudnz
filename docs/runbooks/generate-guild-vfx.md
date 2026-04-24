@@ -9,8 +9,9 @@ This runbook is VFX-first, not character-first. It assumes the guild already has
 ## Source Of Truth
 
 - ability identity: `src/simulation/guildData.ts`
-- current runtime hooks: `src/simulation/simulation.ts` and `src/simulation/combat.ts`
-- current renderer behavior: `src/rendering/particles.ts` and `src/rendering/gameRenderer.ts`
+- current runtime hooks: `packages/shared/src/simulation/simulation.ts` and `packages/shared/src/simulation/combat.ts`
+- current Phaser renderer behavior: `src/game/view/ParticleFX.ts` and `src/game/view/VfxRegistry.ts`
+- existing examples: `public/vfx/knight/` and `public/vfx/leper/`
 
 ## Step 1 - Map the guild to runtime hooks
 
@@ -25,6 +26,9 @@ Supported hook families today:
 - `blink_trail`
 - `damage_number`
 - `status_text`
+- `status_mark`
+- `channel_pulse`
+- `aura_pulse`
 
 If an ability has no hook yet, do not generate the asset blindly. Write down the missing hook and decide whether to add it before generation.
 
@@ -55,7 +59,7 @@ Create:
 
 `public/vfx/<guildId>/`
 
-Keep generated sheets and any per-guild notes there.
+Keep generated sheets, `metadata.json`, and any per-guild notes there.
 
 ## Step 4 - Generate the first hook-compatible batch
 
@@ -71,6 +75,16 @@ Author prompts from:
 - guild `color`
 
 Do not rely on old lore notes for slot mapping.
+
+For Pixellab generation, use:
+
+- transparent background
+- `view: side`
+- medium or high detail
+- selective outline or lineless depending on the guild silhouette
+- a canvas that matches the intended size tier
+
+Prompt for readable combat silhouettes first, not painterly flourish.
 
 ## Step 5 - Name assets by effect, not by slot alone
 
@@ -94,15 +108,28 @@ Do this before moving on to the next guild.
 
 ## Step 7 - Integrate after the pack exists
 
-Only after the effect pack exists should we wire up:
+Once the effect pack exists, make sure the runtime contract is complete:
 
-- VFX metadata loading
-- sprite VFX rendering
-- event-to-asset routing
+- `public/vfx/<guildId>/metadata.json` includes frame count, timing, anchor, and scale per asset
+- `packages/shared/src/simulation/simulation.ts` maps the ability hook to `assetKey`
+- `src/game/view/VfxRegistry.ts` loads the new guild folder
+- `src/game/view/ParticleFX.ts` falls back procedurally if an asset is missing
 
-## Leper-first note
+Current runtime behavior:
 
-For Leper, the likely immediate batch is:
+- if a `VFXEvent` carries `guildId` and `assetKey`, Phaser will prefer the sprite strip
+- if the asset is missing or unloaded, the old procedural effect still renders
+
+## First live packs
+
+Knight and Leper already have first-pass packs wired into the runtime. Use them as templates for:
+
+- naming
+- anchor placement
+- scale tuning
+- metadata structure
+
+For Leper, the immediate batch is:
 
 - `Plague Vomit`
 - `Diseased Claw`

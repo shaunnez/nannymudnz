@@ -27,3 +27,13 @@ dist-ssr
 dist
 assets-old
 .bolt
+
+# PixelLab raw frame exports — large, regenerable from .pixellab-batch.json
+# via scripts/download-pixellab-sprites.py. Composited sheets
+# (public/sprites/<id>/*.png + metadata.json) stay tracked.
+public/sprites/*/raw/
+public/world/*/raw/
+
+.superpowers
+.claude/worktrees
+.playwright-cli

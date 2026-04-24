@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import type { Projectile } from '@nannymud/shared/simulation/types';
-import { VIRTUAL_HEIGHT, worldYToScreenY } from '../constants';
+import { DEPTH_SCALE, worldYToScreenY, getScreenYBand, type ScreenYBand } from '../constants';
 
 function hexToInt(hex: string): number {
   const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
@@ -10,6 +10,10 @@ function hexToInt(hex: string): number {
 
 function isArrowLike(type: string): boolean {
   return type === 'arrow' || type.includes('shot') || type.includes('bolt') || type.includes('volley');
+}
+
+function isHarpoon(type: string): boolean {
+  return type === 'harpoon';
 }
 
 /**
@@ -24,22 +28,30 @@ export class ProjectileView {
 
   private graphics: Phaser.GameObjects.Graphics;
   private fillColor: number;
-  private readonly shape: 'arrow' | 'throw' | 'orb';
+  private readonly shape: 'arrow' | 'harpoon' | 'throw' | 'orb';
   private readonly rawColor: string;
   private readonly radius: number;
+  private readonly band: ScreenYBand;
 
   constructor(scene: Phaser.Scene, proj: Projectile) {
     this.projectileId = proj.id;
     this.rawColor = proj.color;
     this.fillColor = hexToInt(proj.color);
     this.radius = proj.radius;
-    this.shape = isArrowLike(proj.type) ? 'arrow' : proj.type.includes('throw') ? 'throw' : 'orb';
+    this.shape = isHarpoon(proj.type)
+      ? 'harpoon'
+      : isArrowLike(proj.type)
+        ? 'arrow'
+        : proj.type.includes('throw')
+          ? 'throw'
+          : 'orb';
+    this.band = getScreenYBand(scene);
 
     this.graphics = scene.add.graphics();
   }
 
   syncFrom(proj: Projectile): void {
-    const screenY = worldYToScreenY(proj.y, VIRTUAL_HEIGHT) - proj.z * 0.5;
+    const screenY = worldYToScreenY(proj.y, this.band.min, this.band.max) - proj.z * DEPTH_SCALE;
     this.graphics.setPosition(proj.x, screenY);
     this.graphics.setDepth(proj.y + 0.5); // draw above same-plane actors (matches canvas order)
     this.redraw(proj);
@@ -48,6 +60,22 @@ export class ProjectileView {
   private redraw(proj: Projectile): void {
     const g = this.graphics;
     g.clear();
+
+    if (this.shape === 'harpoon') {
+      const angle = Math.atan2(proj.vy, proj.vx);
+      g.rotation = angle;
+      g.lineStyle(3, 0x5b3a29, 1);
+      g.lineBetween(-24, 0, 13, 0);
+      g.fillStyle(0xcbd5e1, 1);
+      g.fillTriangle(13, 0, 1, -7, 1, 7);
+      g.lineStyle(3, 0xcbd5e1, 1);
+      g.lineBetween(-2, -6, 6, 0);
+      g.lineBetween(-2, 6, 6, 0);
+      g.lineStyle(2, 0x7f1d1d, 0.85);
+      g.lineBetween(-18, -5, -24, 0);
+      g.lineBetween(-18, 5, -24, 0);
+      return;
+    }
 
     if (this.shape === 'arrow') {
       const angle = Math.atan2(proj.vy, proj.vx);

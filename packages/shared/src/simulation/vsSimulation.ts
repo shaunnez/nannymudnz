@@ -2,8 +2,11 @@ import type { SimState, GuildId, Actor, RoundState } from './types';
 import { createInitialState, createPlayerActor } from './simulation';
 import { appendLog } from './combatLog';
 import { getGuild } from './guildData';
+import { WORLD_WIDTH, GROUND_Y_MIN, GROUND_Y_MAX } from './constants';
 
-const OPPONENT_SPAWN_X_OFFSET = 160;
+// LF2-style spacing: fighters start at opposite quarters of the ~900px view so
+// the match opens with room to approach instead of already in melee range.
+const OPPONENT_SPAWN_X_OFFSET = 500;
 const ROUND_TIME_MS = 60_000;
 
 export function createVsState(
@@ -12,12 +15,14 @@ export function createVsState(
   _stageId: string,
   seed: number,
   humanOpponent = false,
+  difficulty = 2,
 ): SimState {
   const state = createInitialState(p1, seed);
   state.mode = 'vs';
   state.waves = [];
   state.currentWave = -1;
   state.bossSpawned = false;
+  if (!humanOpponent) state.difficulty = difficulty;
 
   const opponent = buildOpponent(p2, state.player.x + OPPONENT_SPAWN_X_OFFSET, humanOpponent);
   state.opponent = opponent;
@@ -46,23 +51,19 @@ function buildOpponent(guildId: GuildId, x: number, humanOpponent = false): Acto
   const a = createPlayerActor(guildId);
   a.id = 'opponent';
   a.team = 'enemy';
-  // MP: both combatants are human; story/single VS: only p1 is human.
-  a.isPlayer = humanOpponent;
+  // Both SP CPU and MP opponents are driven through the player-input pipeline
+  // (synthesized input for CPU, real input for MP), so both flag as isPlayer
+  // to keep combat / animation routing symmetric. The guild-based enemy
+  // `tickAI` path in ai.ts is not used for VS opponents — it expects an
+  // enemy `kind` that's absent on guild actors.
+  a.isPlayer = true;
   a.x = x;
   a.facing = -1;
-  a.aiState = humanOpponent
-    ? {
-        // Neutralised: no target, no behavior drives. handlePlayerInput
-        // will take the wheel each tick.
-        ...a.aiState,
-        behavior: 'chaser',
-        targetId: null,
-      }
-    : {
-        ...a.aiState,
-        behavior: 'chaser',
-        targetId: 'player',
-      };
+  a.aiState = {
+    ...a.aiState,
+    behavior: 'chaser',
+    targetId: humanOpponent ? null : 'player',
+  };
   return a;
 }
 
@@ -170,6 +171,45 @@ export function resetActorsForRound(state: SimState): void {
   if (!state.opponent) return;
   resetActorState(state.player);
   resetActorState(state.opponent);
+  randomizeRespawnPositions(state, state.player, state.opponent);
+}
+
+const RESPAWN_HALF_SPAN = 250;  // half the nominal gap between respawn points
+const RESPAWN_JITTER_X = 120;   // ± wiggle on each x
+const RESPAWN_DEPTH_MARGIN = 30;
+const MIN_X_FROM_EDGE = 40;
+
+/**
+ * Scatter both fighters around the centre of the previous encounter rather
+ * than leaving them at their KO positions — prevents the "one fighter spawns
+ * in the corner next round" feel and keeps rematches interesting. Determinism
+ * is preserved via state.rng().
+ */
+function randomizeRespawnPositions(state: SimState, p1: Actor, p2: Actor): void {
+  const center = Math.max(
+    MIN_X_FROM_EDGE + RESPAWN_HALF_SPAN,
+    Math.min(WORLD_WIDTH - MIN_X_FROM_EDGE - RESPAWN_HALF_SPAN, (p1.x + p2.x) / 2),
+  );
+
+  // Random side assignment so the "left fighter" isn't always P1.
+  const p1OnLeft = state.rng() < 0.5;
+  const p1Side = p1OnLeft ? -1 : 1;
+  const p2Side = -p1Side;
+
+  const jitter = (): number => (state.rng() - 0.5) * 2 * RESPAWN_JITTER_X;
+
+  const depthRange = GROUND_Y_MAX - GROUND_Y_MIN - 2 * RESPAWN_DEPTH_MARGIN;
+
+  p1.x = clampX(center + p1Side * RESPAWN_HALF_SPAN + jitter());
+  p2.x = clampX(center + p2Side * RESPAWN_HALF_SPAN + jitter());
+  p1.y = GROUND_Y_MIN + RESPAWN_DEPTH_MARGIN + state.rng() * depthRange;
+  p2.y = GROUND_Y_MIN + RESPAWN_DEPTH_MARGIN + state.rng() * depthRange;
+  p1.facing = p2.x >= p1.x ? 1 : -1;
+  p2.facing = p1.facing === 1 ? -1 : 1;
+}
+
+function clampX(x: number): number {
+  return Math.max(MIN_X_FROM_EDGE, Math.min(WORLD_WIDTH - MIN_X_FROM_EDGE, x));
 }
 
 function resetActorState(a: Actor): void {
@@ -201,5 +241,5 @@ function resetActorState(a: Actor): void {
   a.bloodtally = 0;
   a.shapeshiftForm = 'none';
   a.miasmaActive = false;
-  a.nocturneActive = false;
+  a.statusEffects = a.statusEffects.filter(e => e.type !== 'stealth');
 }

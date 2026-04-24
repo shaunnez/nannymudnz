@@ -1,49 +1,84 @@
 import Phaser from 'phaser';
-import type { AnimationId, GuildId } from '@nannymud/shared/simulation/types';
+import type { ActorKind, AnimationId } from '@nannymud/shared/simulation/types';
 
 /**
- * Per-guild sprite metadata as emitted by scripts/composite-pixellab-sprites.py.
+ * Per-actor sprite metadata as emitted by scripts/composite-pixellab-sprites.py.
  * Each PNG next to metadata.json is a horizontal strip of `frames` tiles,
  * each `frameSize.w × frameSize.h`. Frame 0 faces `facing` (right/left),
  * the ActorView flips the whole sprite via scaleX when the actor faces the
  * other way.
+ *
+ * The `guildId` field in the JSON is kept for backwards compatibility with
+ * existing guild metadata.json files, but the registry indexes by ActorKind
+ * so both player guilds and enemies share a single sprite pipeline.
  */
-interface GuildMetadata {
-  guildId: GuildId;
+interface ActorSpriteMetadata {
+  guildId: ActorKind;
   frameSize: { w: number; h: number };
   facing: 'right' | 'left';
-  animations: Partial<Record<AnimationId, {
-    frames: number;
-    frameDurationMs: number;
-    loop: boolean;
-    anchor: { x: number; y: number };
-  }>>;
+  animations: Partial<Record<AnimationId, ActorAnimationMetadata>>;
 }
 
-const SPRITE_GUILDS: GuildId[] = ['knight', 'leper', 'vampire'];
+interface SpriteOpaqueBounds {
+  left: number;
+  top: number;
+  right: number;
+  bottom: number;
+}
+
+interface ActorAnimationMetadata {
+  frames: number;
+  frameDurationMs: number;
+  loop: boolean;
+  anchor: { x: number; y: number };
+  opaqueBounds?: SpriteOpaqueBounds;
+}
+
+interface AnimationLayout {
+  anchor: { x: number; y: number };
+  opaqueBounds: SpriteOpaqueBounds;
+}
+
+const SPRITE_ACTORS: ActorKind[] = [
+  // Player guilds
+  'adventurer', 'champion', 'chef', 'cultist', 'darkmage',
+  'druid', 'hunter', 'knight', 'leper', 'mage', 'master',
+  'monk', 'prophet', 'vampire', 'viking',
+  // Enemies + summons — entries added as sprite bundles land in public/sprites/
+  'plains_bandit',
+  'wolf',
+  'bandit_archer',
+  'bandit_king',
+  'drowned_spawn',
+  'rotting_husk',
+  'wolf_pet',
+  'bandit_brute',
+];
 
 // Populated as metadata loads complete. ActorView reads from here to pick an
-// anchor offset and to check whether a guild has sprite coverage.
-const loadedMetadata = new Map<GuildId, GuildMetadata>();
+// anchor offset and to check whether an actor kind has sprite coverage.
+const loadedMetadata = new Map<ActorKind, ActorSpriteMetadata>();
+const measuredLayouts = new Map<string, AnimationLayout>();
+const referenceBodyHeights = new Map<ActorKind, number>();
 
-export function getGuildMetadata(guildId: GuildId): GuildMetadata | undefined {
-  return loadedMetadata.get(guildId);
+export function getActorMetadata(actorId: ActorKind): ActorSpriteMetadata | undefined {
+  return loadedMetadata.get(actorId);
 }
 
-export function guildHasSprites(guildId: GuildId): boolean {
-  return loadedMetadata.has(guildId);
+export function hasSprites(actorId: ActorKind): boolean {
+  return loadedMetadata.has(actorId);
 }
 
-export function animationKey(guildId: GuildId, animId: AnimationId): string {
-  return `${guildId}:${animId}`;
+export function animationKey(actorId: ActorKind, animId: AnimationId): string {
+  return `${actorId}:${animId}`;
 }
 
-export function textureKey(guildId: GuildId, animId: AnimationId): string {
-  return `tex:${guildId}:${animId}`;
+export function textureKey(actorId: ActorKind, animId: AnimationId): string {
+  return `tex:${actorId}:${animId}`;
 }
 
-function metadataKey(guildId: GuildId): string {
-  return `meta:${guildId}`;
+function metadataKey(actorId: ActorKind): string {
+  return `meta:${actorId}`;
 }
 
 /**
@@ -54,21 +89,23 @@ function metadataKey(guildId: GuildId): string {
  * preload, so the progress bar keeps ticking and the loader's `complete`
  * event fires after everything has finished.
  */
-export function queueGuildSprites(scene: Phaser.Scene): void {
-  for (const guildId of SPRITE_GUILDS) {
-    scene.load.json(metadataKey(guildId), `sprites/${guildId}/metadata.json`);
+export function queueActorSprites(scene: Phaser.Scene): void {
+  measuredLayouts.clear();
+  referenceBodyHeights.clear();
+  for (const actorId of SPRITE_ACTORS) {
+    scene.load.json(metadataKey(actorId), `sprites/${actorId}/metadata.json`);
   }
 
-  for (const guildId of SPRITE_GUILDS) {
-    const key = metadataKey(guildId);
+  for (const actorId of SPRITE_ACTORS) {
+    const key = metadataKey(actorId);
     scene.load.on(`filecomplete-json-${key}`, () => {
-      const meta = scene.cache.json.get(key) as GuildMetadata | undefined;
+      const meta = scene.cache.json.get(key) as ActorSpriteMetadata | undefined;
       if (!meta) return;
-      loadedMetadata.set(guildId, meta);
+      loadedMetadata.set(actorId, meta);
       for (const animId of Object.keys(meta.animations) as AnimationId[]) {
         scene.load.spritesheet(
-          textureKey(guildId, animId),
-          `sprites/${guildId}/${animId}.png`,
+          textureKey(actorId, animId),
+          `sprites/${actorId}/${animId}.png`,
           { frameWidth: meta.frameSize.w, frameHeight: meta.frameSize.h },
         );
       }
@@ -77,18 +114,18 @@ export function queueGuildSprites(scene: Phaser.Scene): void {
 }
 
 /**
- * Registers Phaser animations for every guild whose metadata finished loading.
+ * Registers Phaser animations for every actor whose metadata finished loading.
  * Called once from BootScene.create after preload completes. Safe to call
  * multiple times — skips animations that already exist on scene.anims.
  */
-export function registerGuildAnimations(scene: Phaser.Scene): void {
-  for (const [guildId, meta] of loadedMetadata) {
+export function registerActorAnimations(scene: Phaser.Scene): void {
+  for (const [actorId, meta] of loadedMetadata) {
     for (const [animIdRaw, animMeta] of Object.entries(meta.animations)) {
       if (!animMeta) continue;
       const animId = animIdRaw as AnimationId;
-      const key = animationKey(guildId, animId);
+      const key = animationKey(actorId, animId);
       if (scene.anims.exists(key)) continue;
-      const texKey = textureKey(guildId, animId);
+      const texKey = textureKey(actorId, animId);
       if (!scene.textures.exists(texKey)) continue;
       const frameRate = 1000 / Math.max(1, animMeta.frameDurationMs);
       scene.anims.create({
@@ -102,6 +139,156 @@ export function registerGuildAnimations(scene: Phaser.Scene): void {
       });
     }
   }
+}
+
+function fullFrameBounds(frameSize: { w: number; h: number }): SpriteOpaqueBounds {
+  return {
+    left: 0,
+    top: 0,
+    right: frameSize.w - 1,
+    bottom: frameSize.h - 1,
+  };
+}
+
+function trimVerticalBounds(
+  rowCounts: number[],
+  rawTop: number,
+  rawBottom: number,
+): { top: number; bottom: number } {
+  const maxRowPixels = rowCounts.reduce((max, count) => Math.max(max, count), 0);
+  if (maxRowPixels <= 0) return { top: rawTop, bottom: rawBottom };
+  const threshold = Math.max(2, Math.ceil(maxRowPixels * 0.15));
+  let top = rawTop;
+  while (top <= rawBottom && rowCounts[top] < threshold) top += 1;
+  let bottom = rawBottom;
+  while (bottom >= top && rowCounts[bottom] < threshold) bottom -= 1;
+  return {
+    top: Math.min(top, rawBottom),
+    bottom: Math.max(bottom, top),
+  };
+}
+
+function measureAnimationLayout(
+  scene: Phaser.Scene,
+  actorId: ActorKind,
+  animId: AnimationId,
+  meta: ActorSpriteMetadata,
+  animMeta: ActorAnimationMetadata,
+): AnimationLayout | null {
+  const texKey = textureKey(actorId, animId);
+  if (!scene.textures.exists(texKey)) return null;
+  const texture = scene.textures.get(texKey);
+  const source = texture.getSourceImage() as CanvasImageSource | null;
+  if (!source || typeof document === 'undefined') return null;
+
+  const { w, h } = meta.frameSize;
+  const canvas = document.createElement('canvas');
+  canvas.width = w;
+  canvas.height = h;
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  if (!ctx) return null;
+
+  let minLeft = w;
+  let minTop = h;
+  let maxRight = -1;
+  let maxBottom = -1;
+  const rowCounts = new Array<number>(h).fill(0);
+
+  for (let frame = 0; frame < animMeta.frames; frame += 1) {
+    ctx.clearRect(0, 0, w, h);
+    ctx.drawImage(source, frame * w, 0, w, h, 0, 0, w, h);
+    const pixels = ctx.getImageData(0, 0, w, h).data;
+    for (let y = 0; y < h; y += 1) {
+      const rowOffset = y * w * 4;
+      for (let x = 0; x < w; x += 1) {
+        if (pixels[rowOffset + x * 4 + 3] === 0) continue;
+        rowCounts[y] += 1;
+        if (x < minLeft) minLeft = x;
+        if (y < minTop) minTop = y;
+        if (x > maxRight) maxRight = x;
+        if (y > maxBottom) maxBottom = y;
+      }
+    }
+  }
+
+  if (maxRight < minLeft || maxBottom < minTop) {
+    return {
+      anchor: {
+        x: animMeta.anchor?.x ?? Math.floor(w / 2),
+        y: animMeta.anchor?.y ?? h - 1,
+      },
+      opaqueBounds: fullFrameBounds(meta.frameSize),
+    };
+  }
+
+  const trimmed = trimVerticalBounds(rowCounts, minTop, maxBottom);
+  return {
+    anchor: {
+      x: animMeta.anchor?.x ?? Math.floor(w / 2),
+      y: trimmed.bottom + 1,
+    },
+    opaqueBounds: {
+      left: minLeft,
+      top: trimmed.top,
+      right: maxRight,
+      bottom: trimmed.bottom,
+    },
+  };
+}
+
+export function getAnimationLayout(
+  scene: Phaser.Scene,
+  actorId: ActorKind,
+  animId: AnimationId,
+): AnimationLayout | null {
+  const key = animationKey(actorId, animId);
+  const cached = measuredLayouts.get(key);
+  if (cached) return cached;
+
+  const meta = loadedMetadata.get(actorId);
+  const animMeta = meta?.animations[animId];
+  if (!meta || !animMeta) return null;
+
+  const opaqueBounds = animMeta.opaqueBounds;
+  const measured = opaqueBounds
+    ? {
+        anchor: {
+          x: animMeta.anchor?.x ?? Math.floor(meta.frameSize.w / 2),
+          y: animMeta.anchor?.y ?? opaqueBounds.bottom + 1,
+        },
+        opaqueBounds,
+      }
+    : measureAnimationLayout(scene, actorId, animId, meta, animMeta);
+
+  const layout = measured ?? {
+    anchor: {
+      x: animMeta.anchor?.x ?? Math.floor(meta.frameSize.w / 2),
+      y: animMeta.anchor?.y ?? meta.frameSize.h - 1,
+    },
+    opaqueBounds: fullFrameBounds(meta.frameSize),
+  };
+  measuredLayouts.set(key, layout);
+  return layout;
+}
+
+export function getReferenceBodyHeight(
+  scene: Phaser.Scene,
+  actorId: ActorKind,
+): number | null {
+  const cached = referenceBodyHeights.get(actorId);
+  if (cached !== undefined) return cached;
+
+  const referenceAnim =
+    resolveAnimation(actorId, 'idle')
+    ?? resolveAnimation(actorId, 'walk')
+    ?? resolveAnimation(actorId, 'run');
+  if (!referenceAnim) return null;
+
+  const layout = getAnimationLayout(scene, actorId, referenceAnim);
+  if (!layout) return null;
+  const bodyHeight = Math.max(1, layout.anchor.y - layout.opaqueBounds.top);
+  referenceBodyHeights.set(actorId, bodyHeight);
+  return bodyHeight;
 }
 
 /**
@@ -139,10 +326,10 @@ const FALLBACK: Record<AnimationId, readonly AnimationId[]> = {
 };
 
 export function resolveAnimation(
-  guildId: GuildId,
+  actorId: ActorKind,
   requested: AnimationId,
 ): AnimationId | null {
-  const meta = loadedMetadata.get(guildId);
+  const meta = loadedMetadata.get(actorId);
   if (!meta) return null;
   const chain = FALLBACK[requested] ?? ['idle'];
   for (const id of chain) {

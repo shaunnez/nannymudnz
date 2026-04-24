@@ -115,7 +115,7 @@ export class PhaserInputAdapter {
       attackJustPressed: this.justPressed.has(b.attack),
       blockJustPressed: this.justPressed.has(b.block),
       grabJustPressed: this.justPressed.has(b.grab),
-      pauseJustPressed: this.justPressed.has(b.pause),
+      pauseJustPressed: this.justPressed.has(b.pause) || this.justPressed.has('Escape'),
       fullscreenToggleJustPressed: this.justPressed.has(b.fullscreen),
       lastLeftPressMs: this.lastLeftPressMs,
       lastRightPressMs: this.lastRightPressMs,

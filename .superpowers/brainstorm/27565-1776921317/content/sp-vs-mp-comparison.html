@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>CharSelect: SP vs MP Comparison</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #0f0f13;
+    color: #e8e8f0;
+    font-family: 'Courier New', monospace;
+    padding: 20px;
+    font-size: 13px;
+  }
+  h1 { font-size: 18px; color: #e8e8f0; letter-spacing: 3px; margin-bottom: 6px; text-transform: uppercase; }
+  .subtitle { color: #5a5a70; font-size: 11px; letter-spacing: 2px; margin-bottom: 20px; }
+
+  .split { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+
+  .screen-wrap { border: 1px solid #2a2a38; }
+  .screen-label {
+    background: #1a1a22;
+    padding: 8px 14px;
+    font-size: 10px;
+    letter-spacing: 3px;
+    color: #5a5a70;
+    border-bottom: 1px solid #2a2a38;
+    display: flex;
+    justify-content: space-between;
+  }
+  .screen-label .badge {
+    background: #2a2a38;
+    color: #9090a8;
+    padding: 2px 8px;
+    font-size: 9px;
+    letter-spacing: 1px;
+  }
+  .screen-label .badge.sp { color: #6b8cff; border: 1px solid #6b8cff44; }
+  .screen-label .badge.mp { color: #ffaa44; border: 1px solid #ffaa4444; }
+
+  /* Mini screen layout */
+  .mini-screen {
+    display: grid;
+    grid-template-columns: 120px 1fr 120px;
+    height: 420px;
+    overflow: hidden;
+  }
+
+  /* Side panels */
+  .side-panel {
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
+  }
+  .side-panel.left { border-right: 1px solid #2a2a38; background: #1a1a22; }
+  .side-panel.right { border-left: 1px solid #2a2a38; }
+  .panel-role {
+    font-size: 8px;
+    letter-spacing: 2px;
+    color: #6b8cff;
+  }
+  .panel-role.muted { color: #5a5a70; }
+  .panel-status { font-size: 8px; letter-spacing: 1px; color: #ffaa44; margin-top: -4px; }
+  .panel-status.good { color: #44cc88; }
+
+  /* Monogram mock */
+  .monogram {
+    background: #2a2a38;
+    border: 1px solid #3a3a50;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    color: #6b8cff;
+    flex-shrink: 0;
+  }
+  .monogram.sm { width: 96px; height: 96px; font-size: 18px; }
+
+  .panel-name { font-size: 11px; color: #e8e8f0; font-family: Georgia, serif; }
+  .panel-sub { font-size: 9px; color: #9090a8; font-style: italic; }
+  .panel-bio {
+    font-size: 8px;
+    color: #9090a8;
+    line-height: 1.5;
+    font-style: italic;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  /* Vitals table (SP only) */
+  .vitals { display: flex; flex-direction: column; gap: 3px; }
+  .vital-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 4px 8px;
+    background: #1e1e2a;
+    border: 1px solid #2a2a38;
+    font-size: 8px;
+    letter-spacing: 1px;
+  }
+  .vital-row.em { background: #6b8cff11; border-color: #6b8cff44; color: #6b8cff; }
+  .vital-val { color: #e8e8f0; font-family: Georgia, serif; }
+
+  /* VIEW DETAILS btn (SP only) */
+  .view-btn {
+    padding: 5px 10px;
+    border: 1px solid #6b8cff;
+    color: #6b8cff;
+    background: transparent;
+    font-size: 8px;
+    letter-spacing: 2px;
+    cursor: pointer;
+  }
+
+  /* ULT section (SP only) */
+  .ult-section {
+    margin-top: auto;
+    border-top: 1px solid #2a2a38;
+    padding-top: 8px;
+  }
+  .ult-label { font-size: 8px; color: #5a5a70; letter-spacing: 2px; margin-bottom: 3px; }
+  .ult-name { font-size: 10px; color: #6b8cff; font-family: Georgia, serif; }
+  .ult-desc { font-size: 8px; color: #9090a8; line-height: 1.4; }
+
+  /* LOCK IN btn (MP only) */
+  .lock-btn {
+    margin-top: auto;
+    padding: 8px 10px;
+    background: #6b8cff;
+    color: #0f0f13;
+    border: none;
+    font-family: monospace;
+    font-size: 9px;
+    letter-spacing: 2px;
+    cursor: pointer;
+  }
+
+  /* Center grid */
+  .grid-area {
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    overflow: hidden;
+  }
+  .guild-grid { display: grid; gap: 4px; }
+  .guild-grid.sp { grid-template-columns: repeat(5, 38px); gap: 4px; }
+  .guild-grid.mp { grid-template-columns: repeat(5, 34px); gap: 3px; }
+
+  .tile {
+    background: #1a1a22;
+    border: 1px solid #2a2a38;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 2px;
+    gap: 2px;
+  }
+  .tile.active { border-color: #6b8cff; outline: 1px solid #6b8cff; }
+  .tile-icon { background: #2a2a38; display: flex; align-items: center; justify-content: center; color: #5a5a70; }
+  .tile-icon.sp { width: 34px; height: 34px; font-size: 10px; }
+  .tile-icon.mp { width: 30px; height: 30px; font-size: 9px; }
+  .tile-name.sp { font-size: 7px; color: #9090a8; letter-spacing: 1px; }
+  .tile-name.mp { font-size: 5px; color: #9090a8; letter-spacing: 1px; }
+
+  /* Stats strip */
+  .stats-strip {
+    margin-top: auto;
+    padding: 8px 10px;
+    border: 1px solid #2a2a38;
+    background: #1a1a22;
+  }
+  .stats-strip-name { font-size: 10px; color: #6b8cff; font-family: Georgia, serif; margin-bottom: 5px; }
+  .stat-bars { display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; }
+  .stat-bar-col { display: flex; flex-direction: column; gap: 2px; }
+  .stat-bar-label { font-size: 6px; color: #5a5a70; letter-spacing: 1px; }
+  .stat-bar-pips { display: flex; gap: 1px; }
+  .pip { width: 3px; height: 4px; background: #2a2a38; border: 1px solid #3a3a50; }
+  .pip.filled { background: #6b8cff; border-color: #6b8cff; }
+
+  /* MP bio strip */
+  .bio-strip {
+    margin-top: auto;
+    padding: 8px 10px;
+    border: 1px solid #2a2a38;
+    background: #1a1a22;
+  }
+  .bio-strip-name { font-size: 10px; color: #6b8cff; font-family: Georgia, serif; margin-bottom: 5px; }
+  .bio-text { font-size: 8px; color: #9090a8; font-style: italic; line-height: 1.4; }
+
+  /* Diff annotation */
+  .diff-list {
+    margin-top: 20px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .diff-section { }
+  .diff-section h3 { font-size: 10px; letter-spacing: 2px; color: #5a5a70; margin-bottom: 8px; text-transform: uppercase; }
+  .diff-item {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 6px;
+    align-items: flex-start;
+  }
+  .diff-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: 2px; }
+  .diff-dot.missing { background: #ff4466; }
+  .diff-dot.smaller { background: #ffaa44; }
+  .diff-dot.match { background: #44cc88; }
+  .diff-text { font-size: 10px; color: #9090a8; line-height: 1.4; }
+  .diff-text strong { color: #e8e8f0; }
+</style>
+</head>
+<body>
+  <h1>CharSelect: SP vs MP</h1>
+  <p class="subtitle">Current state — what's different between the two screens</p>
+
+  <div class="split">
+
+    <!-- SP Screen -->
+    <div class="screen-wrap">
+      <div class="screen-label">
+        <span>SINGLE PLAYER / VS CPU &nbsp;·&nbsp; CharSelect.tsx</span>
+        <span class="badge sp">REFERENCE</span>
+      </div>
+      <div class="mini-screen">
+        <!-- Left panel - SP rich -->
+        <div class="side-panel left">
+          <div class="panel-role">P1 · HUMAN ◆</div>
+          <div class="panel-status">SELECTING…</div>
+          <div class="monogram sm">⚔</div>
+          <div class="panel-name">Nomad</div>
+          <div class="panel-sub">The Wandering Blade</div>
+          <div class="panel-bio">A masterless swordsman who roams the land, collecting techniques from fallen opponents.</div>
+          <div class="vitals">
+            <div class="vital-row em"><span>CHI</span><span class="vital-val">100</span></div>
+            <div class="vital-row"><span>HP</span><span class="vital-val">480</span></div>
+            <div class="vital-row"><span>ARMOR</span><span class="vital-val">12</span></div>
+            <div class="vital-row"><span>MR</span><span class="vital-val">8</span></div>
+            <div class="vital-row"><span>MOVE</span><span class="vital-val">7</span></div>
+          </div>
+          <button class="view-btn">VIEW DETAILS</button>
+          <div class="ult-section">
+            <div class="ult-label">ULT · ↓↑↓↑J</div>
+            <div class="ult-name">Void Cleave</div>
+            <div class="ult-desc">Tears open space, dealing massive AOE damage.</div>
+          </div>
+        </div>
+
+        <!-- Center - SP grid -->
+        <div class="grid-area">
+          <div class="guild-grid sp">
+            <!-- Row 1 -->
+            <div class="tile active">
+              <div class="tile-icon sp">⚔</div>
+              <div class="tile-name sp">NOMAD</div>
+            </div>
+            <div class="tile"><div class="tile-icon sp">🔥</div><div class="tile-name sp">PYRO</div></div>
+            <div class="tile"><div class="tile-icon sp">❄</div><div class="tile-name sp">FROST</div></div>
+            <div class="tile"><div class="tile-icon sp">⚡</div><div class="tile-name sp">VOLT</div></div>
+            <div class="tile"><div class="tile-icon sp">🌿</div><div class="tile-name sp">GROVE</div></div>
+            <!-- Row 2 -->
+            <div class="tile"><div class="tile-icon sp">💀</div><div class="tile-name sp">REAPER</div></div>
+            <div class="tile"><div class="tile-icon sp">🛡</div><div class="tile-name sp">IRON</div></div>
+            <div class="tile"><div class="tile-icon sp">👁</div><div class="tile-name sp">SEER</div></div>
+            <div class="tile"><div class="tile-icon sp">🐉</div><div class="tile-name sp">DRAKE</div></div>
+            <div class="tile"><div class="tile-icon sp">🌊</div><div class="tile-name sp">TIDE</div></div>
+            <!-- Row 3 -->
+            <div class="tile"><div class="tile-icon sp">🌙</div><div class="tile-name sp">LUNA</div></div>
+            <div class="tile"><div class="tile-icon sp">⚗</div><div class="tile-name sp">ALCH</div></div>
+            <div class="tile"><div class="tile-icon sp">🎭</div><div class="tile-name sp">JEST</div></div>
+            <div class="tile"><div class="tile-icon sp">🦅</div><div class="tile-name sp">HAWK</div></div>
+            <div class="tile"><div class="tile-icon sp">🗡</div><div class="tile-name sp">ROGUE</div></div>
+          </div>
+
+          <!-- Stats strip SP -->
+          <div class="stats-strip">
+            <div class="stats-strip-name">Nomad</div>
+            <div class="stat-bars">
+              <div class="stat-bar-col">
+                <div class="stat-bar-label">STR</div>
+                <div class="stat-bar-pips">
+                  <div class="pip filled"></div><div class="pip filled"></div><div class="pip filled"></div>
+                  <div class="pip filled"></div><div class="pip filled"></div><div class="pip filled"></div>
+                  <div class="pip filled"></div><div class="pip"></div><div class="pip"></div><div class="pip"></div>
+                </div>
+              </div>
+              <div class="stat-bar-col">
+                <div class="stat-bar-label">SPD</div>
+                <div class="stat-bar-pips">
+                  <div class="pip filled"></div><div class="pip filled"></div><div class="pip filled"></div>
+                  <div class="pip filled"></div><div class="pip filled"></div><div class="pip"></div>
+                  <div class="pip"></div><div class="pip"></div><div class="pip"></div><div class="pip"></div>
+                </div>
+              </div>
+              <div class="stat-bar-col">
+                <div class="stat-bar-label">DEF</div>
+                <div class="stat-bar-pips">
+                  <div class="pip filled"></div><div class="pip filled"></div><div class="pip filled"></div>
+                  <div class="pip"></div><div class="pip"></div><div class="pip"></div>
+                  <div class="pip"></div><div class="pip"></div><div class="pip"></div><div class="pip"></div>
+                </div>
+              </div>
+              <div class="stat-bar-col">
+                <div class="stat-bar-label">RNG</div>
+                <div class="stat-bar-pips">
+                  <div class="pip filled"></div><div class="pip filled"></div><div class="pip filled"></div>
+                  <div class="pip filled"></div><div class="pip filled"></div><div class="pip filled"></div>
+                  <div class="pip"></div><div class="pip"></div><div class="pip"></div><div class="pip"></div>
+                </div>
+              </div>
+              <div class="stat-bar-col">
+                <div class="stat-bar-label">UT</div>
+                <div class="stat-bar-pips">
+                  <div class="pip filled"></div><div class="pip filled"></div><div class="pip filled"></div>
+                  <div class="pip filled"></div><div class="pip filled"></div><div class="pip filled"></div>
+                  <div class="pip filled"></div><div class="pip filled"></div><div class="pip"></div><div class="pip"></div>
+                </div>
+              </div>
+              <div class="stat-bar-col">
+                <div class="stat-bar-label">CMB</div>
+                <div class="stat-bar-pips">
+                  <div class="pip filled"></div><div class="pip filled"></div><div class="pip filled"></div>
+                  <div class="pip filled"></div><div class="pip"></div><div class="pip"></div>
+                  <div class="pip"></div><div class="pip"></div><div class="pip"></div><div class="pip"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right panel - SP rich CPU -->
+        <div class="side-panel right">
+          <div class="panel-role muted">CPU · OPPONENT</div>
+          <div class="panel-status" style="color:#ffaa44">SELECTING…</div>
+          <div class="monogram sm" style="color:#ffaa44">🐉</div>
+          <div class="panel-name">Drake</div>
+          <div class="panel-sub">Dragonblood Heir</div>
+          <div class="panel-bio">Ancient draconic power flows through this warrior's veins, granting terrible strength.</div>
+          <div class="vitals">
+            <div class="vital-row em" style="background:#ffaa4411;border-color:#ffaa4444;color:#ffaa44"><span>FURY</span><span class="vital-val">120</span></div>
+            <div class="vital-row"><span>HP</span><span class="vital-val">540</span></div>
+            <div class="vital-row"><span>ARMOR</span><span class="vital-val">18</span></div>
+            <div class="vital-row"><span>MR</span><span class="vital-val">6</span></div>
+            <div class="vital-row"><span>MOVE</span><span class="vital-val">5</span></div>
+          </div>
+          <button class="view-btn" style="border-color:#ffaa44;color:#ffaa44">VIEW DETAILS</button>
+          <div class="ult-section">
+            <div class="ult-label">ULT · →→J</div>
+            <div class="ult-name" style="color:#ffaa44">Dragon Breath</div>
+            <div class="ult-desc">Unleashes a cone of flame, burning all enemies in front.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MP Screen -->
+    <div class="screen-wrap">
+      <div class="screen-label">
+        <span>MULTIPLAYER &nbsp;·&nbsp; MpCharSelect.tsx</span>
+        <span class="badge mp">CURRENT (MISALIGNED)</span>
+      </div>
+      <div class="mini-screen">
+        <!-- Left panel - MP bare -->
+        <div class="side-panel left">
+          <div class="panel-role" style="font-size:7px">P1 · YOU ◆</div>
+          <div class="monogram sm">⚔</div>
+          <div class="panel-name" style="font-size:10px">Nomad</div>
+          <div class="panel-status">SELECTING…</div>
+          <!-- No bio, no vitals, no view details, no ult -->
+          <button class="lock-btn">LOCK IN ↵</button>
+        </div>
+
+        <!-- Center - MP grid (smaller tiles) -->
+        <div class="grid-area">
+          <div class="guild-grid mp">
+            <!-- Row 1 — note smaller tiles and smaller font -->
+            <div class="tile active">
+              <div class="tile-icon mp">⚔</div>
+              <div class="tile-name mp">NOMAD</div>
+            </div>
+            <div class="tile"><div class="tile-icon mp">🔥</div><div class="tile-name mp">PYRO</div></div>
+            <div class="tile"><div class="tile-icon mp">❄</div><div class="tile-name mp">FROST</div></div>
+            <div class="tile"><div class="tile-icon mp">⚡</div><div class="tile-name mp">VOLT</div></div>
+            <div class="tile"><div class="tile-icon mp">🌿</div><div class="tile-name mp">GROVE</div></div>
+            <!-- Row 2 -->
+            <div class="tile"><div class="tile-icon mp">💀</div><div class="tile-name mp">REAPER</div></div>
+            <div class="tile"><div class="tile-icon mp">🛡</div><div class="tile-name mp">IRON</div></div>
+            <div class="tile"><div class="tile-icon mp">👁</div><div class="tile-name mp">SEER</div></div>
+            <div class="tile"><div class="tile-icon mp">🐉</div><div class="tile-name mp">DRAKE</div></div>
+            <div class="tile"><div class="tile-icon mp">🌊</div><div class="tile-name mp">TIDE</div></div>
+            <!-- Row 3 -->
+            <div class="tile"><div class="tile-icon mp">🌙</div><div class="tile-name mp">LUNA</div></div>
+            <div class="tile"><div class="tile-icon mp">⚗</div><div class="tile-name mp">ALCH</div></div>
+            <div class="tile"><div class="tile-icon mp">🎭</div><div class="tile-name mp">JEST</div></div>
+            <div class="tile"><div class="tile-icon mp">🦅</div><div class="tile-name mp">HAWK</div></div>
+            <div class="tile"><div class="tile-icon mp">🗡</div><div class="tile-name mp">ROGUE</div></div>
+          </div>
+
+          <!-- Bio strip MP (no stat bars) -->
+          <div class="bio-strip">
+            <div class="bio-strip-name">Nomad</div>
+            <div class="bio-text">A masterless swordsman who roams the land, collecting techniques from fallen opponents and leaving legends in his wake.</div>
+          </div>
+        </div>
+
+        <!-- Right panel - MP bare opponent -->
+        <div class="side-panel right">
+          <div class="panel-role muted" style="font-size:7px">OPP · EMPTY</div>
+          <div class="bio-text" style="margin-top:8px;font-style:italic;color:#5a5a70;font-size:9px">Waiting for opponent to join…</div>
+          <!-- No vitals, no guild info, no ult -->
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Differences breakdown -->
+  <div class="diff-list">
+    <div class="diff-section">
+      <h3>🔴 Missing in MP</h3>
+      <div class="diff-item">
+        <div class="diff-dot missing"></div>
+        <div class="diff-text"><strong>Vitals table</strong> — HP, Armor, MR, Move, resource max rows in side panel</div>
+      </div>
+      <div class="diff-item">
+        <div class="diff-dot missing"></div>
+        <div class="diff-text"><strong>VIEW DETAILS button</strong> — opens full guild dossier modal</div>
+      </div>
+      <div class="diff-item">
+        <div class="diff-dot missing"></div>
+        <div class="diff-text"><strong>ULT section</strong> — ultimate ability name, combo, and description at panel bottom</div>
+      </div>
+      <div class="diff-item">
+        <div class="diff-dot missing"></div>
+        <div class="diff-text"><strong>Guild bio</strong> — shown in side panel (SP), not just the center strip</div>
+      </div>
+      <div class="diff-item">
+        <div class="diff-dot missing"></div>
+        <div class="diff-text"><strong>Stat bars</strong> — 6-stat pip chart in center strip (MP shows bio text instead)</div>
+      </div>
+      <div class="diff-item">
+        <div class="diff-dot missing"></div>
+        <div class="diff-text"><strong>Active panel highlighting</strong> — background tint when panel is "your" cursor</div>
+      </div>
+    </div>
+    <div class="diff-section">
+      <h3>🟡 Size / style mismatches</h3>
+      <div class="diff-item">
+        <div class="diff-dot smaller"></div>
+        <div class="diff-text"><strong>Tile size</strong> — SP 190px · MP 175px (15px smaller)</div>
+      </div>
+      <div class="diff-item">
+        <div class="diff-dot smaller"></div>
+        <div class="diff-text"><strong>Tile gap</strong> — SP 20px · MP 16px</div>
+      </div>
+      <div class="diff-item">
+        <div class="diff-dot smaller"></div>
+        <div class="diff-text"><strong>Tile name font</strong> — SP 20px · MP 14px (below the tile)</div>
+      </div>
+      <div class="diff-item">
+        <div class="diff-dot smaller"></div>
+        <div class="diff-text"><strong>Tile marker font</strong> — SP 20px · MP 10px (P1 / OPP overlays)</div>
+      </div>
+      <div class="diff-item">
+        <div class="diff-dot smaller"></div>
+        <div class="diff-text"><strong>Panel role label</strong> — SP 14px · MP 11px</div>
+      </div>
+      <div class="diff-item">
+        <div class="diff-dot smaller"></div>
+        <div class="diff-text"><strong>Lock button</strong> — MP uses raw &lt;button&gt;, SP uses shared AccentBtn</div>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>

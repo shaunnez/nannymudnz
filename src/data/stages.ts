@@ -8,6 +8,8 @@ export interface StageMeta {
   hue: number;
   blurb: string;
   enabled: boolean;
+  /** Path under /public to a 16:9 preview image, or null if no art yet. */
+  preview: string | null;
 }
 
 export const STAGES: StageMeta[] = [
@@ -17,62 +19,71 @@ export const STAGES: StageMeta[] = [
     hue: 210,
     blurb: 'Flagstones under torchlight. The Knights swore here — mind the pillars.',
     enabled: true,
+    preview: '/world/assembly/preview.png',
   },
   {
     id: 'market',
     name: 'Night Market',
     hue: 40,
     blurb: 'Paper lanterns and slick cobbles. The stalls are open. The knives, also.',
-    enabled: false,
+    enabled: true,
+    preview: '/world/market/preview.png',
   },
   {
     id: 'kitchen',
     name: 'Rot-Kitchen',
     hue: 95,
     blurb: 'The Lepers took the stoves. The stew is old and moves on its own.',
-    enabled: false,
+    enabled: true,
+    preview: '/world/kitchen/preview.png',
   },
   {
     id: 'tower',
     name: 'Mage Tower',
     hue: 260,
     blurb: 'Levitating glass floors. Do not step where the runes are singing.',
-    enabled: false,
+    enabled: true,
+    preview: '/world/tower/preview.png',
   },
   {
     id: 'grove',
     name: 'Moonwake Grove',
     hue: 140,
     blurb: 'The old trees listen. Tread polite. The Druids are watching.',
-    enabled: false,
+    enabled: true,
+    preview: '/world/grove/preview.png',
   },
   {
     id: 'catacombs',
     name: 'Drowned Catacombs',
     hue: 300,
     blurb: 'Stalactites, saltwater, and names written in a dead vowel.',
-    enabled: false,
+    enabled: true,
+    preview: '/world/catacombs/preview.png',
   },
   {
     id: 'throne',
     name: 'Red Throne',
     hue: 15,
     blurb: 'The throne counts. Every retreat is a step into the pit.',
-    enabled: false,
+    enabled: true,
+    preview: '/world/throne/preview.png',
   },
   {
     id: 'docks',
     name: 'Vampire Docks',
     hue: 330,
     blurb: 'Fog off the pier. Nothing docks here that returns.',
-    enabled: false,
+    enabled: true,
+    preview: '/world/docks/preview.png',
   },
   {
     id: 'rooftops',
     name: 'Monastery Rooftops',
     hue: 185,
     blurb: 'Slate tiles, thin air, one misstep to the courtyard below.',
-    enabled: false,
+    enabled: true,
+    preview: '/world/rooftops/preview.png',
   },
 ];
 

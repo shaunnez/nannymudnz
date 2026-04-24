@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { STAGES } from '../data/stages';
 import type { StageId } from '../data/stages';
 import { theme, Btn } from '../ui';
+import { StageTile, StageDetailPanel } from './StagePanels';
 
 interface Props {
   initialStage: StageId;
@@ -20,7 +21,6 @@ export function StageSelect({ initialStage, onBack, onReady }: Props) {
   const [cursor, setCursor] = useState(startIdx);
 
   const cur = STAGES[cursor];
-  const accent = `oklch(0.70 0.16 ${cur.hue})`;
   const canCommit = cur.enabled;
 
   const move = useCallback((dx: number, dy: number) => {
@@ -81,205 +81,26 @@ export function StageSelect({ initialStage, onBack, onReady }: Props) {
 
       <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1fr 420px', overflow: 'hidden' }}>
         <div style={{ padding: 36, display: 'grid', gridTemplateColumns: `repeat(${COLS}, 1fr)`, gridTemplateRows: `repeat(${ROWS}, 1fr)`, gap: 14 }}>
-          {STAGES.map((s, i) => {
-            const acc = `oklch(0.70 0.16 ${s.hue})`;
-            const active = i === cursor;
-            const locked = !s.enabled;
-            return (
-              <div
-                key={s.id}
-                onMouseEnter={() => setCursor(i)}
-                onClick={() => { if (!locked) onReady(s.id); }}
-                style={{
-                  position: 'relative',
-                  border: `1px solid ${active ? acc : theme.lineSoft}`,
-                  background: `linear-gradient(145deg, ${acc}22, ${theme.panel} 70%)`,
-                  outline: active ? `1px solid ${acc}` : 'none',
-                  outlineOffset: 2,
-                  cursor: locked ? 'not-allowed' : 'pointer',
-                  overflow: 'hidden',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'flex-end',
-                  padding: 16,
-                  opacity: locked ? 0.55 : 1,
-                  transition: 'border-color 120ms ease',
-                }}
-              >
-                <div
-                  style={{
-                    position: 'absolute',
-                    inset: 0,
-                    background: `repeating-linear-gradient(135deg, transparent 0 14px, ${acc}15 14px 15px)`,
-                    pointerEvents: 'none',
-                  }}
-                />
-                <div
-                  style={{
-                    position: 'absolute',
-                    top: 10,
-                    left: 12,
-                    fontFamily: theme.fontMono,
-                    fontSize: 10,
-                    color: theme.inkMuted,
-                    letterSpacing: 2,
-                  }}
-                >
-                  {String(i + 1).padStart(2, '0')}
-                </div>
-                <div
-                  style={{
-                    position: 'absolute',
-                    top: 10,
-                    right: 12,
-                    fontFamily: theme.fontMono,
-                    fontSize: 10,
-                    color: acc,
-                    letterSpacing: 2,
-                  }}
-                >
-                  HUE {s.hue}°
-                </div>
-                <div style={{ position: 'relative' }}>
-                  <div
-                    style={{
-                      fontFamily: theme.fontDisplay,
-                      fontSize: 26,
-                      color: theme.ink,
-                      letterSpacing: '-0.01em',
-                      lineHeight: 1.05,
-                    }}
-                  >
-                    {s.name}
-                  </div>
-                  <div
-                    style={{
-                      marginTop: 4,
-                      fontFamily: theme.fontMono,
-                      fontSize: 10,
-                      color: locked ? theme.warn : theme.inkMuted,
-                      letterSpacing: 2,
-                    }}
-                  >
-                    {locked ? 'LOCKED · SOON' : active ? '◆ SELECTED' : 'READY'}
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        <div
-          style={{
-            borderLeft: `1px solid ${theme.lineSoft}`,
-            padding: '28px 30px',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 16,
-            overflow: 'auto',
-          }}
-        >
-          <div>
-            <div style={{ fontFamily: theme.fontMono, fontSize: 10, color: accent, letterSpacing: 3 }}>
-              {canCommit ? 'AVAILABLE' : 'COMING SOON'}
-            </div>
-            <div
-              style={{
-                fontFamily: theme.fontDisplay,
-                fontSize: 42,
-                color: theme.ink,
-                letterSpacing: '-0.02em',
-                lineHeight: 1,
-                marginTop: 6,
-              }}
-            >
-              {cur.name}
-            </div>
-          </div>
-
-          <div
-            style={{
-              position: 'relative',
-              aspectRatio: '16 / 9',
-              border: `1px solid ${theme.lineSoft}`,
-              background: `linear-gradient(145deg, ${accent}22, ${theme.panel} 70%)`,
-              overflow: 'hidden',
-            }}
-          >
-            <div
-              style={{
-                position: 'absolute',
-                inset: 0,
-                background: `repeating-linear-gradient(135deg, transparent 0 18px, ${accent}12 18px 19px)`,
-              }}
+          {STAGES.map((s, i) => (
+            <StageTile
+              key={s.id}
+              stage={s}
+              index={i}
+              active={i === cursor}
+              isHost={true}
+              onMouseEnter={() => setCursor(i)}
+              onClick={() => { if (s.enabled) onReady(s.id); }}
             />
-            <div
-              style={{
-                position: 'absolute',
-                bottom: 10,
-                right: 14,
-                fontFamily: theme.fontMono,
-                fontSize: 10,
-                color: theme.inkMuted,
-                letterSpacing: 2,
-              }}
-            >
-              [ stage preview ]
-            </div>
-          </div>
-
-          <div
-            style={{
-              fontFamily: theme.fontBody,
-              fontSize: 13,
-              color: theme.inkDim,
-              lineHeight: 1.55,
-              fontStyle: 'italic',
-            }}
-          >
-            {cur.blurb}
-          </div>
-
-          <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: 6 }}>
-            {STAGES.map((s, i) => {
-              const act = i === cursor;
-              const acc = `oklch(0.70 0.16 ${s.hue})`;
-              return (
-                <div
-                  key={s.id}
-                  onClick={() => { if (s.enabled) onReady(s.id); else setCursor(i); }}
-                  onMouseEnter={() => setCursor(i)}
-                  style={{
-                    display: 'grid',
-                    gridTemplateColumns: '24px 10px 1fr auto',
-                    gap: 10,
-                    alignItems: 'center',
-                    padding: '6px 4px',
-                    borderBottom: `1px solid ${theme.lineSoft}`,
-                    cursor: s.enabled ? 'pointer' : 'default',
-                  }}
-                >
-                  <span style={{ fontFamily: theme.fontMono, fontSize: 10, color: act ? accent : theme.inkMuted }}>
-                    {String(i + 1).padStart(2, '0')}
-                  </span>
-                  <span style={{ width: 8, height: 8, background: acc, opacity: act ? 1 : s.enabled ? 0.55 : 0.25 }} />
-                  <span
-                    style={{
-                      fontFamily: theme.fontDisplay,
-                      fontSize: 13,
-                      color: act ? accent : s.enabled ? theme.ink : theme.inkMuted,
-                    }}
-                  >
-                    {s.name}
-                  </span>
-                  <span style={{ fontFamily: theme.fontMono, fontSize: 9, color: theme.inkMuted, letterSpacing: 2 }}>
-                    {s.enabled ? (act ? '◆' : '') : 'SOON'}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
+          ))}
         </div>
+
+        <StageDetailPanel
+          stages={STAGES}
+          cursor={cursor}
+          isHost={true}
+          onHover={(i) => setCursor(i)}
+          onCommit={(i) => onReady(STAGES[i].id)}
+        />
       </div>
 
       <div

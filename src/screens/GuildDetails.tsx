@@ -1,7 +1,7 @@
 import { GUILDS } from '@nannymud/shared/simulation/guildData';
 import { GUILD_META } from '../data/guildMeta';
 import type { GuildId, AbilityDef } from '@nannymud/shared/simulation/types';
-import { theme, guildAccent, ModalShell, SpriteStrip, ComboDisplay } from '../ui';
+import { theme, guildAccent, ModalShell, SpriteStrip, ComboDisplay, AbilityPreview } from '../ui';
 
 interface Props {
   guildId: GuildId;
@@ -75,6 +75,14 @@ export function GuildDetails({ guildId, onClose }: Props) {
               accent={accent}
             />
           ))}
+          <AbilityCard
+            key={guild.rmb.id}
+            ability={guild.rmb}
+            guildId={guildId}
+            animationId="attack_2"
+            accent={accent}
+            isRmb
+          />
         </div>
       </div>
     </ModalShell>
@@ -133,9 +141,10 @@ interface AbilityCardProps {
   guildId: GuildId;
   animationId: string;
   accent: string;
+  isRmb?: boolean;
 }
 
-function AbilityCard({ ability, guildId, animationId, accent }: AbilityCardProps) {
+function AbilityCard({ ability, guildId, animationId, accent, isRmb }: AbilityCardProps) {
   return (
     <div
       style={{
@@ -143,7 +152,7 @@ function AbilityCard({ ability, guildId, animationId, accent }: AbilityCardProps
         gap: 10,
         padding: 8,
         background: theme.panel,
-        border: `1px solid ${theme.lineSoft}`,
+        border: `1px solid ${isRmb ? accent : theme.lineSoft}`,
       }}
     >
       <div
@@ -159,7 +168,7 @@ function AbilityCard({ ability, guildId, animationId, accent }: AbilityCardProps
           justifyContent: 'center',
         }}
       >
-        <SpriteStrip guildId={guildId} animationId={animationId} scale={1.15} />
+        <AbilityPreview guildId={guildId} abilityId={ability.id} animationId={animationId} spriteScale={1.15} vfxScale={1.2} />
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 0 }}>
         <div style={{ fontFamily: theme.fontDisplay, fontSize: 16, color: accent, lineHeight: 1.15 }}>{ability.name}</div>

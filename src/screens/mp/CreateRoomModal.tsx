@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import type { Room } from 'colyseus.js';
+import type { Room } from '@colyseus/sdk';
 import type { MatchState } from '@nannymud/shared';
 import { theme, ModalShell } from '../../ui';
 import { hostRoom } from '../../game/net/ColyseusClient';
@@ -16,6 +16,7 @@ type RoundsOption = (typeof ROUNDS_OPTIONS)[number];
 export function CreateRoomModal({ playerName, onCancel, onCreated }: Props) {
   const [roomName, setRoomName] = useState('Room');
   const [rounds, setRounds] = useState<RoundsOption>(3);
+  const [visibility, setVisibility] = useState<'public' | 'private'>('public');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -34,11 +35,12 @@ export function CreateRoomModal({ playerName, onCancel, onCreated }: Props) {
       const room = await hostRoom({
         name: roomName.trim(),
         rounds,
-        visibility: 'private',
+        visibility,
         playerName,
       });
       onCreated(room);
     } catch (err) {
+      console.log(err)
       setError(err instanceof Error ? err.message : 'Failed to create room. Check your connection.');
       setLoading(false);
     }
@@ -139,67 +141,37 @@ export function CreateRoomModal({ playerName, onCancel, onCreated }: Props) {
             VISIBILITY
           </div>
           <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
-            {/* Private — always selected, only functional option */}
-            <label
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8,
-                cursor: 'pointer',
-                fontFamily: theme.fontBody,
-                fontSize: 14,
-                color: theme.ink,
-              }}
-            >
-              <span
+            {(['private', 'public'] as const).map((v) => (
+              <label
+                key={v}
+                onClick={() => !loading && setVisibility(v)}
                 style={{
-                  width: 14,
-                  height: 14,
-                  borderRadius: '50%',
-                  border: `2px solid ${theme.accent}`,
-                  background: theme.accent,
-                  display: 'inline-block',
-                  flexShrink: 0,
-                }}
-              />
-              Private
-            </label>
-
-            {/* Public — visually disabled, coming soon */}
-            <label
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8,
-                cursor: 'default',
-                fontFamily: theme.fontBody,
-                fontSize: 14,
-                color: theme.inkMuted,
-                opacity: 0.45,
-              }}
-            >
-              <span
-                style={{
-                  width: 14,
-                  height: 14,
-                  borderRadius: '50%',
-                  border: `2px solid ${theme.inkMuted}`,
-                  display: 'inline-block',
-                  flexShrink: 0,
-                }}
-              />
-              Public
-              <span
-                style={{
-                  fontFamily: theme.fontMono,
-                  fontSize: 9,
-                  letterSpacing: 2,
-                  marginLeft: 4,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  cursor: loading ? 'not-allowed' : 'pointer',
+                  fontFamily: theme.fontBody,
+                  fontSize: 14,
+                  color: loading ? theme.inkMuted : theme.ink,
+                  opacity: loading ? 0.5 : 1,
+                  userSelect: 'none',
                 }}
               >
-                — SOON
-              </span>
-            </label>
+                <span
+                  style={{
+                    width: 14,
+                    height: 14,
+                    borderRadius: '50%',
+                    border: `2px solid ${visibility === v ? theme.accent : theme.line}`,
+                    background: visibility === v ? theme.accent : 'transparent',
+                    display: 'inline-block',
+                    flexShrink: 0,
+                    transition: 'all 100ms ease',
+                  }}
+                />
+                {v.charAt(0).toUpperCase() + v.slice(1)}
+              </label>
+            ))}
           </div>
         </div>
 

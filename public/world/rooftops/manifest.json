@@ -1,0 +1,27 @@
+{
+  "stageId": "rooftops",
+  "theme": "monastery rooftops at height, grey slate tiles, stone chimneys, brass bell, prayer flags, gargoyles",
+  "source": "pixellab-first-pass",
+  "assets": {
+    "chimney_stone_smoke": {
+      "path": "/world/rooftops/raw/chimney_stone_smoke.png",
+      "kind": "landmark",
+      "usage": "stone chimney repeated across rooftop backline"
+    },
+    "bell_post_brass": {
+      "path": "/world/rooftops/raw/bell_post_brass.png",
+      "kind": "landmark",
+      "usage": "bell post focal mid-stage landmark"
+    },
+    "flags_prayer_string": {
+      "path": "/world/rooftops/raw/flags_prayer_string.png",
+      "kind": "backdrop",
+      "usage": "wide prayer flag strip hung between chimneys above horizon"
+    },
+    "gargoyle_stone_roof": {
+      "path": "/world/rooftops/raw/gargoyle_stone_roof.png",
+      "kind": "dress_prop",
+      "usage": "gargoyle perched at parapet edge, corner accent"
+    }
+  }
+}

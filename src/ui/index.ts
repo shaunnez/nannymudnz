@@ -8,4 +8,6 @@ export { MeterBar } from './MeterBar';
 export { GuildMonogram } from './GuildMonogram';
 export { ModalShell } from './ModalShell';
 export { SpriteStrip } from './SpriteStrip';
+export { VfxStrip } from './VfxStrip';
+export { AbilityPreview } from './AbilityPreview';
 export { ComboDisplay } from './ComboDisplay';

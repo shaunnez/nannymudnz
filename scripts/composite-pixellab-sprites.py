@@ -22,8 +22,11 @@ from PIL import Image
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
-# PixelLab folder-name (prefix before the hash) -> our AnimationId
+# PixelLab folder-name (prefix before the hash) -> our AnimationId.
+# Covers both the legacy humanoid names used by the original guild batches
+# and the newer template IDs used by NPC batches + the quadruped (dog) set.
 FOLDER_PREFIX_MAP = {
+    # Legacy humanoid names (original guild exports)
     "jab_attack": "attack_1",
     "cross_punch_attack": "attack_2",
     "uppercut": "attack_3",
@@ -33,6 +36,30 @@ FOLDER_PREFIX_MAP = {
     "casting_a_fireball": "ability_1",
     "high_kick": "ability_2",
     "crouching": "ability_5",
+    # Newer humanoid template IDs (NPC batches)
+    "breathing_idle": "idle",
+    "walking_6_frames": "walk",
+    "running_6_frames": "run",
+    "lead_jab": "attack_1",
+    "cross_punch": "attack_2",
+    "surprise_uppercut": "attack_3",
+    "taking_punch": "hurt",
+    "falling_back_death": "death",
+    "jumping_1": "jump",
+    "fight_stance_idle_8_frames": "block",
+    "throw_object": "ability_4",
+    "pushing": "ability_3",
+    "fireball": "ability_1",
+    # Quadruped (dog) templates — wolf/wolf_pet
+    "idle": "idle",
+    "walk_6_frames": "walk",
+    "bark": "attack_1",
+    "barking": "attack_1",
+    "fast_walk": "walk",
+    "walking": "walk",
+    # `sneaking` was the death proxy before custom death anims landed; now
+    # explicit per-actor overrides claim the real death + jump folders and
+    # sneaking goes unclassified (emits a warning, not an error).
 }
 
 # For "animating-XXX" folders (generic slug), disambiguate by frame count.
@@ -99,6 +126,60 @@ GUILD_OVERRIDES: dict[str, dict[str, str]] = {
         "animating-b032c96f": "ability_3",
         "animating-dd84aa95": "ability_4",
     },
+    "champion": {
+        "animating-2961e264": "walk",
+        "animating-8861d11a": "ability_3",
+        "animating-7f448037": "ability_4",
+    },
+    "darkmage": {
+        "animating-1611c8a6": "walk",
+        "animating-9ee78b2d": "ability_3",
+        "animating-310fc723": "ability_4",
+    },
+    "chef": {
+        "animating-f3b90503": "walk",
+        "animating-23b9df9e": "ability_3",
+        "animating-9da40819": "ability_4",
+    },
+    "master": {
+        "animating-585b0ab7": "walk",
+        "animating-21c438d2": "ability_3",
+        "animating-e84a5630": "ability_4",
+    },
+    # NPC pilots
+    "plains_bandit": {
+        "animating-f5b91e9a": "walk",
+    },
+    "wolf": {
+        "animation-ca1af2c4": "idle",
+        "gray_wolf_lying_on_side_dying_legs_outstretched_li-17d7c198": "death",
+        "gray_wolf_mid-leap_pouncing_forward_front_paws_out-38fd30a9": "jump",
+    },
+    # NPC batch
+    "bandit_archer": {
+        "animating-17d8f1b4": "walk",
+        "casting_a_fireball-4a256321": "attack_1",
+    },
+    "bandit_king": {
+        "animating-0122c7cd": "walk",
+        "cross_punch_attack-28e0228b": "attack_1",
+    },
+    "drowned_spawn": {
+        "animating-30730639": "walk",
+    },
+    "rotting_husk": {
+        "animating-98bbf456": "walk",
+    },
+    "wolf_pet": {
+        "animation-04b4aeb3": "idle",
+        "tawny_wolf_pup_lying_limp_on_side_legs_bent_softly-3e5307df": "death",
+        "tawny_wolf_pup_mid-leap_pouncing_playfully_front_p-0877f4fa": "jump",
+    },
+    "bandit_brute": {
+        "animating-0316d789": "ability_3",
+        "animating-0dbe1428": "walk",
+        "animating-e3fd9d1e": "attack_1",
+    },
 }
 
 LOOP_ANIMS = {"idle", "walk", "run", "block", "ability_5"}
@@ -141,21 +222,68 @@ def maybe_resize(frame: Image.Image, target_size: int | None) -> Image.Image:
     return frame.resize((target_size, target_size), resample=Image.Resampling.NEAREST)
 
 
+def measure_opaque_bounds(frames: list[Image.Image], frame_size: tuple[int, int]) -> dict[str, int]:
+    w, h = frame_size
+    min_left = w
+    min_top = h
+    max_right = -1
+    max_bottom = -1
+    row_counts = [0] * h
+
+    for frame in frames:
+        alpha = frame.getchannel("A")
+        bbox = alpha.getbbox()
+        if bbox is None:
+            continue
+        left, top, right, bottom = bbox
+        min_left = min(min_left, left)
+        min_top = min(min_top, top)
+        max_right = max(max_right, right - 1)
+        max_bottom = max(max_bottom, bottom - 1)
+
+        for y in range(top, bottom):
+            row_count = 0
+            for x in range(left, right):
+                if alpha.getpixel((x, y)):
+                    row_count += 1
+            row_counts[y] += row_count
+
+    if max_right < min_left or max_bottom < min_top:
+        return {"left": 0, "top": 0, "right": w - 1, "bottom": h - 1}
+
+    max_row_pixels = max(row_counts)
+    threshold = max(2, int(max_row_pixels * 0.15 + 0.9999))
+    trimmed_top = min_top
+    while trimmed_top <= max_bottom and row_counts[trimmed_top] < threshold:
+        trimmed_top += 1
+    trimmed_bottom = max_bottom
+    while trimmed_bottom >= trimmed_top and row_counts[trimmed_bottom] < threshold:
+        trimmed_bottom -= 1
+
+    return {
+        "left": min_left,
+        "top": min(trimmed_top, max_bottom),
+        "right": max_right,
+        "bottom": max(trimmed_bottom, trimmed_top),
+    }
+
+
 def composite_strip(
     frame_paths: list[Path],
     out_path: Path,
     target_size: int | None,
-) -> tuple[int, int, int]:
+) -> tuple[int, int, int, dict[str, int]]:
     frames = [maybe_resize(Image.open(p).convert("RGBA"), target_size) for p in frame_paths]
     w, h = frames[0].size
     for i, frame in enumerate(frames):
         if frame.size != (w, h):
             raise RuntimeError(f"frame {i} of {out_path.stem} has size {frame.size}, expected {(w, h)}")
+    opaque_bounds = measure_opaque_bounds(frames, (w, h))
     strip = Image.new("RGBA", (w * len(frames), h), (0, 0, 0, 0))
     for i, frame in enumerate(frames):
         strip.paste(frame, (i * w, 0), frame)
     strip.save(out_path, format="PNG", optimize=True)
-    return w, h, len(frames)
+    return w, h, len(frames), opaque_bounds
 
 
 def classify(folder_name: str, frame_count: int, guild_overrides: dict[str, str]) -> str | None:
@@ -164,6 +292,12 @@ def classify(folder_name: str, frame_count: int, guild_overrides: dict[str, str]
     prefix = folder_name.rsplit("-", 1)[0]
     if prefix in FOLDER_PREFIX_MAP:
         return FOLDER_PREFIX_MAP[prefix]
+    # Normalize dashes↔underscores: newer PixelLab template IDs use dashes
+    # (e.g., "lead-jab"), older exports used underscores (e.g., "jab_attack").
+    # Try both forms so one FOLDER_PREFIX_MAP entry covers either export.
+    normalized = prefix.replace("-", "_")
+    if normalized in FOLDER_PREFIX_MAP:
+        return FOLDER_PREFIX_MAP[normalized]
     if prefix == "animating":
         return FRAMECOUNT_AMBIGUOUS_MAP.get(frame_count)
     return None
@@ -211,7 +345,7 @@ def main() -> int:
     animations_meta: dict[str, dict] = {}
     for anim_id, (folder, paths) in sorted(classified.items()):
         out = out_dir / f"{anim_id}.png"
-        w, h, frame_count = composite_strip(paths, out, target_size)
+        w, h, frame_count, opaque_bounds = composite_strip(paths, out, target_size)
         if frame_size is None:
             frame_size = (w, h)
         elif frame_size != (w, h):
@@ -220,7 +354,8 @@ def main() -> int:
             "frames": frame_count,
             "frameDurationMs": DURATIONS_MS[anim_id],
             "loop": anim_id in LOOP_ANIMS,
-            "anchor": {"x": w // 2, "y": h - 12},
+            "anchor": {"x": w // 2, "y": opaque_bounds["bottom"] + 1},
+            "opaqueBounds": opaque_bounds,
         }
         print(f"  {anim_id:10s} {frame_count} frames  <-  {folder}")
 

@@ -1,7 +1,8 @@
-import { Client, Room } from 'colyseus.js';
+import { Client, Room } from '@colyseus/sdk';
 import type { MatchState } from '@nannymud/shared';
 
-const WS_URL = (import.meta as Record<string, unknown> & { env?: Record<string, string> }).env?.VITE_COLYSEUS_URL ?? 'ws://localhost:2567';
+const WS_URL = import.meta.env.VITE_COLYSEUS_URL ?? 'ws://localhost:2567';
+const HTTP_URL = WS_URL.replace(/^ws/, 'http');
 
 let client: Client | null = null;
 
@@ -26,8 +27,23 @@ export async function hostRoom(opts: HostRoomOpts): Promise<Room<MatchState>> {
   });
 }
 
-export async function joinByCode(code: string, playerName: string): Promise<Room<MatchState>> {
-  return await getClient().joinById<MatchState>(code, { name: playerName });
+export async function joinRoom(id: string, playerName: string): Promise<Room<MatchState>> {
+  return await getClient().joinById<MatchState>(id, { name: playerName });
+}
+
+export interface PublicRoom {
+  roomId: string;
+  name: string;
+  hostName: string;
+  rounds: number;
+  clients: number;
+  maxClients: number;
+}
+
+export async function getPublicRooms(): Promise<PublicRoom[]> {
+  const res = await fetch(`${HTTP_URL}/api/public-rooms`);
+  if (!res.ok) throw new Error('Failed to fetch rooms');
+  return res.json() as Promise<PublicRoom[]>;
 }
 
 // Test hook: allow tests to inject a mock client

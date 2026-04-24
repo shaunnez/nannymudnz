@@ -1,4 +1,23 @@
 export type DamageType = 'physical' | 'magical' | 'nature' | 'holy' | 'shadow' | 'necrotic' | 'psychic';
+
+export type GroundZoneVfxStyle = 'ring' | 'puddle';
+
+export interface GroundZone {
+  id: string;
+  x: number;
+  y: number;
+  radius: number;
+  remainingMs: number;
+  ownerTeam: 'player' | 'enemy';
+  effects: Partial<Record<StatusEffectType, { magnitude: number; durationMs: number }>>;
+  damagePerTick: number;
+  damageType: DamageType;
+  vfxColor: string;
+  vfxStyle: GroundZoneVfxStyle;
+  nextPulseMsDown: number;
+  triggerOnce?: boolean;
+  triggerDamage?: number;
+}
 export type StatusEffectType =
   | 'slow' | 'root' | 'stun' | 'silence' | 'knockback' | 'blind' | 'taunt'
   | 'shield' | 'hot' | 'dot' | 'lifesteal' | 'armor_shred' | 'magic_shred'
@@ -23,7 +42,7 @@ export type ActorKind =
   | 'viking' | 'prophet' | 'vampire' | 'cultist' | 'champion' | 'darkmage'
   | 'chef' | 'leper' | 'master'
   | 'plains_bandit' | 'bandit_archer' | 'wolf' | 'bandit_brute' | 'bandit_king'
-  | 'wolf_pet' | 'drowned_spawn' | 'rotting_husk' | 'bear_form' | 'wolf_form';
+  | 'wolf_pet' | 'drowned_spawn' | 'rotting_husk' | 'wolf_form';
 
 export type AnimationId =
   | 'idle' | 'walk' | 'run' | 'jump' | 'fall' | 'land'
@@ -86,6 +105,25 @@ export interface ResourceDef {
   color: string;
 }
 
+export interface GuildAbilityStrategy {
+  priority: number;
+  useAtCloseRange?: boolean;
+  useAtLongRange?: boolean;
+  maxHpPct?: number;
+  minHpPct?: number;
+  retreatToUse?: boolean;
+  minResourcePct?: number;
+}
+
+export interface GuildStrategy {
+  preferRange: 'close' | 'mid' | 'long';
+  aggressionPct: number;
+  blockOnReaction: boolean;
+  resourceStrategy: 'spend' | 'hoard';
+  retreatBelowHpPct?: number;
+  abilities: Partial<Record<number | 'rmb', GuildAbilityStrategy>>;
+}
+
 export interface GuildDef {
   id: GuildId;
   name: string;
@@ -102,6 +140,8 @@ export interface GuildDef {
   rmb: AbilityDef;
   damageType: DamageType;
   description: string;
+  strategy: GuildStrategy;
+  rangedBasic?: { range: number; speed: number; damageType: DamageType; vfxColor: string };
 }
 
 export type AIBehavior = 'chaser' | 'archer' | 'packer' | 'brute' | 'boss';
@@ -180,14 +220,17 @@ export interface Actor {
   aiState: AIState;
   bossPhase: number;
   summonedByPlayer: boolean;
+  summonedBy?: string;
+  petAiMode?: 'aggressive' | 'defensive' | 'passive';
+  baseHpMax?: number;
+  baseMoveSpeed?: number;
   bloodtally?: number;
   chiOrbs?: number;
   sanity?: number;
-  shapeshiftForm?: 'none' | 'bear' | 'wolf';
+  shapeshiftForm?: 'none' | 'wolf';
   primedClass?: string;
   dishes?: string[];
   miasmaActive?: boolean;
-  nocturneActive?: boolean;
   fivePointPalmTarget?: string;
   isAlive: boolean;
   deathTimeMs: number;
@@ -211,6 +254,13 @@ export interface AIState {
   windupActive: boolean;
   windupTimeMs: number;
   lungeMs: number;
+  // VS-mode CPU only. Hysteresis state for pursuit — committed horizontal
+  // direction (-1 = move left, 0 = stop/engage, 1 = move right). Held across
+  // ticks so the CPU doesn't oscillate start/stop as |dx| flutters near the
+  // attack-range boundary. SP-only; not mirrored in AIStateSchema.
+  pursuitDir?: -1 | 0 | 1;
+  // Cooldown between CPU ability fires (ms remaining).
+  abilityCooldownMs?: number;
 }
 
 export interface Pickup {
@@ -226,6 +276,7 @@ export interface Pickup {
 export interface Projectile {
   id: string;
   ownerId: string;
+  guildId: GuildId | null;
   team: ActorTeam;
   x: number;
   y: number;
@@ -258,7 +309,9 @@ export type VFXEventType =
   | 'ability_name'
   | 'status_mark'
   | 'channel_pulse'
-  | 'aura_pulse';
+  | 'aura_pulse'
+  | 'zone_pulse'
+  | 'summon_spawn';
 
 export interface VFXEvent {
   type: VFXEventType;
@@ -268,6 +321,7 @@ export interface VFXEvent {
   z?: number;
   facing?: 1 | -1;
   radius?: number;
+  style?: GroundZoneVfxStyle;
   vx?: number;
   vy?: number;
   x2?: number;
@@ -306,6 +360,22 @@ export interface RoundState {
 
 export type SimMode = 'story' | 'vs';
 
+export interface ActorMatchStats {
+  damageDealt: number;
+  damageTaken: number;
+  abilitiesCast: number;
+  maxCombo: number;
+  critHits: number;
+  totalHits: number;
+  healingDone: number;
+  _comboRun: number;
+}
+
+export interface MatchStats {
+  p1: ActorMatchStats;
+  p2: ActorMatchStats;
+}
+
 export interface WaveEnemy {
   kind: ActorKind;
   count: number;
@@ -328,6 +398,7 @@ export interface SimState {
   allies: Actor[];
   pickups: Pickup[];
   projectiles: Projectile[];
+  groundZones: GroundZone[];
   vfxEvents: VFXEvent[];
   waves: Wave[];
   currentWave: number;
@@ -349,6 +420,9 @@ export interface SimState {
   combatLog: LogEntry[];
   nextLogId: number;
   controllers: Record<string, PlayerController>;
+  matchStats: MatchStats;
+  /** SP VS only — CPU opponent difficulty (0..5). Undefined in MP / story. */
+  difficulty?: number;
 }
 
 export interface InputState {
@@ -373,7 +447,7 @@ export interface InputState {
   lastRightPressMs: number;
   runningLeft: boolean;
   runningRight: boolean;
-  testAbilitySlot: number | null;
+  testAbilitySlot: number | 'rmb' | null;
 }
 
 export interface ComboBuffer {
@@ -390,8 +464,11 @@ export interface PlayerController {
   parryWindowMs: number;
   channelMs: number;
   channelingAbility: string | null;
+  castingAbility: string | null;
+  castMs: number;
   groundTargetX: number;
   groundTargetY: number;
   attackChain: number;
   runningDir: number;
+  fromStealthAttack?: boolean;
 }

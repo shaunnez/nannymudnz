@@ -14,14 +14,15 @@ interface Props {
   onResume: () => void;
   onRestart: () => void;
   onQuit: () => void;
+  onMoveList?: () => void;
 }
 
-export function PauseOverlay({ onResume, onRestart, onQuit }: Props) {
+export function PauseOverlay({ onResume, onRestart, onQuit, onMoveList }: Props) {
   const items: MenuItem[] = [
     { label: 'RESUME', sub: 'return to combat', fn: onResume, primary: true },
     { label: 'RESTART', sub: 'reset current match', fn: onRestart },
     { label: 'SETTINGS', sub: 'controls · audio · video', disabled: true },
-    { label: 'MOVE LIST', sub: 'your guild reference', disabled: true },
+    { label: 'MOVE LIST', sub: 'your guild reference', fn: onMoveList, disabled: !onMoveList },
     { label: 'QUIT TO MENU', sub: 'abandon match', fn: onQuit, bad: true },
   ];
 

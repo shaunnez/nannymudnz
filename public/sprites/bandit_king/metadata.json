@@ -1,0 +1,64 @@
+{
+  "guildId": "bandit_king",
+  "frameSize": {
+    "w": 124,
+    "h": 124
+  },
+  "facing": "right",
+  "animations": {
+    "attack_1": {
+      "frames": 6,
+      "frameDurationMs": 80,
+      "loop": false,
+      "anchor": {
+        "x": 62,
+        "y": 112
+      }
+    },
+    "death": {
+      "frames": 7,
+      "frameDurationMs": 150,
+      "loop": false,
+      "anchor": {
+        "x": 62,
+        "y": 112
+      }
+    },
+    "hurt": {
+      "frames": 6,
+      "frameDurationMs": 100,
+      "loop": false,
+      "anchor": {
+        "x": 62,
+        "y": 112
+      }
+    },
+    "idle": {
+      "frames": 4,
+      "frameDurationMs": 180,
+      "loop": true,
+      "anchor": {
+        "x": 62,
+        "y": 112
+      }
+    },
+    "run": {
+      "frames": 6,
+      "frameDurationMs": 90,
+      "loop": true,
+      "anchor": {
+        "x": 62,
+        "y": 112
+      }
+    },
+    "walk": {
+      "frames": 6,
+      "frameDurationMs": 120,
+      "loop": true,
+      "anchor": {
+        "x": 62,
+        "y": 112
+      }
+    }
+  }
+}

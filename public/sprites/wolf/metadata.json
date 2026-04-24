@@ -1,0 +1,100 @@
+{
+  "guildId": "wolf",
+  "frameSize": {
+    "w": 124,
+    "h": 124
+  },
+  "facing": "right",
+  "animations": {
+    "attack_1": {
+      "frames": 6,
+      "frameDurationMs": 80,
+      "loop": false,
+      "anchor": {
+        "x": 62,
+        "y": 84
+      },
+      "opaqueBounds": {
+        "left": 30,
+        "top": 47,
+        "right": 92,
+        "bottom": 83
+      }
+    },
+    "death": {
+      "frames": 4,
+      "frameDurationMs": 150,
+      "loop": false,
+      "anchor": {
+        "x": 62,
+        "y": 87
+      },
+      "opaqueBounds": {
+        "left": 15,
+        "top": 43,
+        "right": 105,
+        "bottom": 86
+      }
+    },
+    "idle": {
+      "frames": 8,
+      "frameDurationMs": 180,
+      "loop": true,
+      "anchor": {
+        "x": 62,
+        "y": 86
+      },
+      "opaqueBounds": {
+        "left": 32,
+        "top": 45,
+        "right": 88,
+        "bottom": 85
+      }
+    },
+    "jump": {
+      "frames": 4,
+      "frameDurationMs": 120,
+      "loop": false,
+      "anchor": {
+        "x": 62,
+        "y": 85
+      },
+      "opaqueBounds": {
+        "left": 19,
+        "top": 40,
+        "right": 99,
+        "bottom": 84
+      }
+    },
+    "run": {
+      "frames": 6,
+      "frameDurationMs": 90,
+      "loop": true,
+      "anchor": {
+        "x": 62,
+        "y": 80
+      },
+      "opaqueBounds": {
+        "left": 15,
+        "top": 50,
+        "right": 92,
+        "bottom": 79
+      }
+    },
+    "walk": {
+      "frames": 6,
+      "frameDurationMs": 120,
+      "loop": true,
+      "anchor": {
+        "x": 62,
+        "y": 85
+      },
+      "opaqueBounds": {
+        "left": 30,
+        "top": 46,
+        "right": 88,
+        "bottom": 84
+      }
+    }
+  }
+}

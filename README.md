@@ -1,65 +1,114 @@
 # Nannymud
 
-A browser-native, single-player 2.5D side-scrolling beat-'em-up in the style of Little Fighter 2. Pick one of 15 guild characters and fight through 6 waves of enemies on the Plains of Nan, ending in a 3-phase boss battle against the Bandit King.
+A browser-native 2.5D side-scrolling beat-'em-up in the style of Little Fighter 2. Pick one of 15 guild characters and fight through 6 waves of enemies on the Plains of Nan, ending in a 3-phase boss battle against the Bandit King — or challenge a friend to a 1v1 multiplayer match.
 
-## What it is
+![Built with](https://img.shields.io/badge/Built%20with-Vite%20%7C%20React%20%7C%20Phaser%203%20%7C%20Colyseus-8b5cf6)
 
-- **15 playable guilds** — Adventurer, Knight, Mage, Druid, Hunter, Monk, Viking, Prophet, Vampire, Cultist, Champion, Darkmage, Chef, Leper, Master
-- **6 enemy waves** — Plains Bandits, Bandit Archers, Wolves, Bandit Brutes, and the Bandit King boss
-- **Full 2.5D combat** — depth plane dodging, fake-Z elevation, LF2-style attack connection rules
-- **Rich combat system** — combo chains, block/parry, knockdown/getup with i-frames, environmental pickups
-- **Synth audio** — procedural music and SFX via Web Audio API, no external files needed
-- **No backend** — runs entirely in the browser, settings persist via localStorage
+## Modes
+
+- **Story** — single-player run: 6 waves of escalating enemies on a scrolling stage, boss fight at the end.
+- **VS** — local 1v1 against an AI (pick both guilds).
+- **Multiplayer 1v1** — server-authoritative online match over WebSocket. Host creates a room, friend joins via code. Best-of-three rounds with randomized respawn positions.
+
+## Playable guilds (15)
+
+Adventurer, Knight, Mage, Druid, Hunter, Monk, Viking, Prophet, Vampire, Cultist, Champion, Darkmage, Chef, Leper, Master — each with five combo abilities plus a guild-specific utility.
 
 ## Controls
 
-| Action | Default Key |
+| Action | Default key |
 |---|---|
 | Move left / right | ← → |
-| Move up / down (depth) | ↑ ↓ |
+| Move up / down (depth plane) | ↑ ↓ |
 | Jump | Space |
 | Attack | J |
 | Block / Defend | K |
 | Grab / Throw | L |
-| Pause | Esc |
+| Pause | P |
+| Fullscreen | F |
 | Run | Double-tap ← or → |
 | Combo abilities | ↓↓J, →→J, ↓↑J, ←→J, ↓↑↓↑J |
-| Guild RMB utility | K + J |
+| Guild utility | K + J |
 
-## Install & Run
+Keybinds are remappable in-game and persist via localStorage.
+
+## Getting started
 
 ```bash
 npm install
-npm run dev
+npm run dev   # starts Vite client (5173) and Colyseus MP server (2567)
 ```
 
-Open your browser to the URL printed by Vite (usually `http://localhost:5173`).
+Open `http://localhost:5173`. Single-player works offline; multiplayer requires the dev server on 2567 (automatically started by `npm run dev`).
 
-## Build
+To run only one side:
 
 ```bash
-npm run build
+npm run dev:client   # client only (SP works; MP menus show, but Join will fail)
+npm run dev:server   # Colyseus server only
 ```
 
-Output goes to `dist/`. Serve with any static file server — no server-side code required.
+## Building for production
 
-## Architecture
+```bash
+npm run build      # client bundle → dist/
+npm run preview    # serve the built dist/ locally
+```
 
-The codebase is split into three layers that never reach across each other:
+The client is a static bundle; host it on any static file server (Vercel, Netlify, S3+CloudFront, nginx). For multiplayer, the Colyseus server under `packages/server/` needs a Node host — configure the client via `VITE_COLYSEUS_URL` to point at it (e.g. `wss://mp.example.com`).
 
-- **`src/simulation/`** — Pure TypeScript simulation: combat resolution, ability execution, AI state machines, status effects, HP/MP accounting, wave progression. No DOM or canvas dependencies. Can be moved to a server runtime without changes.
-- **`src/rendering/`** — Canvas 2D drawing: background, actors (via a swap-friendly `ActorRendererImpl` abstraction), HUD, particles. Reads simulation state; never writes it.
-- **`src/input/`** — Translates browser KeyboardEvents into an `InputState` struct that the simulation consumes.
-- **`src/audio/`** — Web Audio API synth sounds; entirely independent of simulation and rendering.
+## Project structure
 
-Swapping placeholder art for real sprites requires only implementing the `ActorRendererImpl` interface in `src/rendering/actorRenderer.ts` and pointing `GameRenderer` at the new implementation.
+```
+src/                 # Vite + React + Phaser client
+packages/shared/     # pure-TS simulation, Colyseus schema, wire protocol
+packages/server/     # Colyseus MatchRoom + Node entry point
+public/sprites/      # per-guild animation strips (PixelLab generated)
+scripts/             # sprite compositing + PixelLab batch tooling
+docs/                # design specs and implementation plans
+```
 
-## Known Limitations
+The simulation is deterministic and shared between client (single-player) and server (authoritative multiplayer). Rendering, input, and audio are separate layers that never mutate simulation state. See `CLAUDE.md` for the developer-facing architecture notes.
 
-- Placeholder art only (colored rectangles with initials)
-- No mobile / touch support
-- No multiplayer (single-player only)
-- No character leveling or progression between runs
-- Boss phase 3 stomp AoE is simplified to melee range rather than a true shockwave
-- Druid bear/wolf form ability slots share the same 5 combos (forms swap active ability set conceptually but use the same input grammar)
-- Cultist sanity system drives the MP bar display; the self-damage-at-80%-sanity penalty is implemented but the visual feedback is text-only
+## Tech stack
+
+- **Vite 5** — dev server and production bundler
+- **React 18** — menus, screens, and pause overlay
+- **Phaser 3** — game canvas, rendering, animation, scene management
+- **TypeScript** — strict mode across client, shared, server
+- **Colyseus** — authoritative room-based multiplayer (WebSocket + @colyseus/schema state sync)
+- **Web Audio API** — procedural music and SFX (no audio files)
+- **npm workspaces** — monorepo with `packages/shared` and `packages/server`
+- **Vitest** — unit and determinism tests
+- **ESLint (flat config)** — linting; enforces the "no browser APIs in simulation" boundary
+
+## Testing
+
+```bash
+npm test           # one-shot
+npm run test:watch # watch mode
+npm run typecheck  # tsc --noEmit across all packages
+npm run lint       # ESLint
+```
+
+The golden test at `packages/shared/src/simulation/__tests__/golden.test.ts` is the determinism gate for multiplayer. If you change simulation code and it fails, the change introduced non-determinism — fix the code rather than the snapshot.
+
+## Art
+
+Character sprites are generated with [PixelLab AI](https://pixellab.ai/) via `scripts/composite-pixellab-sprites.py` and live under `public/sprites/<guildId>/`. Backgrounds and VFX are procedurally drawn (Phaser Graphics + tweens). No external audio files — everything is synthesized in `src/audio/audioManager.ts`.
+
+## Known limitations
+
+- No mobile / touch input
+- No character progression between runs
+- Boss phase 3 stomp AoE is simplified to melee range (true shockwave is TODO)
+- MP rematch flow doesn't yet carry score across the "return to lobby" step
+- `@supabase/supabase-js` is a dependency but not currently wired up (reserved for future profiles/leaderboards)
+
+## Contributing
+
+If you're a human contributor: read `CLAUDE.md` — it's written for an LLM assistant but is the most accurate architecture map of the codebase. Plans for in-flight work are under `docs/superpowers/plans/`.
+
+## License
+
+TBD.

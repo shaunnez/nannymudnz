@@ -1,59 +1,12 @@
 {
   "guildId": "knight",
-  "frameSize": {
-    "w": 96,
-    "h": 96
-  },
+  "frameSize": { "w": 96, "h": 96 },
   "assets": {
-    "holy_rebuke_burst": {
-      "frames": 6,
-      "frameDurationMs": 120,
-      "loop": false,
-      "anchor": {
-        "x": 48,
-        "y": 76
-      },
-      "scale": 1.65
-    },
-    "valorous_strike_impact": {
-      "frames": 5,
-      "frameDurationMs": 95,
-      "loop": false,
-      "anchor": {
-        "x": 28,
-        "y": 68
-      },
-      "scale": 1.2
-    },
-    "taunt_shout": {
-      "frames": 6,
-      "frameDurationMs": 115,
-      "loop": false,
-      "anchor": {
-        "x": 48,
-        "y": 74
-      },
-      "scale": 1.55
-    },
-    "shield_wall_barrier": {
-      "frames": 6,
-      "frameDurationMs": 120,
-      "loop": false,
-      "anchor": {
-        "x": 48,
-        "y": 78
-      },
-      "scale": 1.45
-    },
-    "last_stand_aura": {
-      "frames": 8,
-      "frameDurationMs": 125,
-      "loop": false,
-      "anchor": {
-        "x": 48,
-        "y": 80
-      },
-      "scale": 1.6
-    }
+    "holy_rebuke_burst":      { "frames": 1, "frameDurationMs": 450, "loop": false, "frameSize": {"w":160,"h":160}, "anchor": {"x":80,"y":80}, "scale": 1.65 },
+    "valorous_strike_impact": { "frames": 5, "frameDurationMs": 95,  "loop": false, "anchor": {"x":28,"y":68}, "scale": 1.2 },
+    "taunt_shout":            { "frames": 1, "frameDurationMs": 400, "loop": false, "anchor": {"x":48,"y":48}, "scale": 1.5 },
+    "shield_wall_barrier":    { "frames": 1, "frameDurationMs": 400, "loop": false, "anchor": {"x":48,"y":48}, "scale": 1.45 },
+    "last_stand_aura":        { "frames": 1, "frameDurationMs": 450, "loop": false, "frameSize": {"w":160,"h":160}, "anchor": {"x":80,"y":80}, "scale": 1.6 },
+    "shield_block_flash":     { "frames": 1, "frameDurationMs": 350, "loop": false, "anchor": {"x":48,"y":48}, "scale": 1.3 }
   }
 }

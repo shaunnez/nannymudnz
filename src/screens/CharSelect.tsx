@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import type { ReactNode } from 'react';
 import { GUILDS } from '@nannymud/shared/simulation/guildData';
 import type { GuildId, Stats } from '@nannymud/shared/simulation/types';
 import { GUILD_META } from '../data/guildMeta';
-import { theme, guildAccent, Btn, Chip, GuildMonogram, ComboDisplay } from '../ui';
+import { theme, guildAccent, Btn, Chip, GuildMonogram } from '../ui';
 import { GuildDetails } from './GuildDetails';
 import type { GameMode } from '../state/useAppState';
+import { SidePanel, StatBar } from './CharSelectPanels';
 
 interface Props {
   mode: GameMode;
@@ -15,12 +15,12 @@ interface Props {
   onReady: (p1: GuildId, p2: GuildId) => void;
 }
 
-type Slot = 'p1' | 'opp';
+type Slot = 'p1' | 'cpu';
 
 const COLS = 5;
 const ROWS = 3;
-const TILE_VS = 175;
-const TILE_SOLO = 160;
+const TILE_SIZE = 160;
+const TILE_GAP = 20;
 
 function pickRandom<T>(list: readonly T[], exclude?: T): T {
   const pool = exclude ? list.filter((x) => x !== exclude) : list;
@@ -33,67 +33,42 @@ export function CharSelect({ mode, initialP1, initialP2, onBack, onReady }: Prop
 
   const [cursors, setCursors] = useState<Record<Slot, number>>(() => {
     const p1Idx = Math.max(0, ids.indexOf(initialP1));
-    const oppIdx = hasOpponent
-      ? ids.indexOf(initialP2 !== initialP1 ? initialP2 : ids[(p1Idx + 2) % ids.length])
-      : 0;
-    return { p1: p1Idx, opp: Math.max(0, oppIdx) };
+    const cpuIdx = Math.max(
+      0,
+      ids.indexOf(initialP2 !== initialP1 ? initialP2 : ids[(p1Idx + 2) % ids.length]),
+    );
+    return { p1: p1Idx, cpu: cpuIdx };
   });
 
-  const [picks, setPicks] = useState<Record<Slot, GuildId>>(() => ({
-    p1: initialP1,
-    opp: hasOpponent
-      ? initialP2 !== initialP1 ? initialP2 : pickRandom(ids, initialP1)
-      : pickRandom(ids, initialP1),
+  // null = not yet explicitly clicked. For non-VS, cpu is pre-seeded (never shown,
+  // just passed to onReady so the caller always gets two valid IDs).
+  const [picks, setPicks] = useState<Record<Slot, GuildId | null>>(() => ({
+    p1: null,
+    cpu: hasOpponent ? null : pickRandom(ids, initialP1),
   }));
 
-  const [locked, setLocked] = useState<Record<Slot, boolean>>(() => ({
-    p1: false,
-    // Non-VS modes: opponent is spawned by game logic; treat as pre-resolved so READY gates only on P1.
-    opp: !hasOpponent,
-  }));
-
-  const [active, setActive] = useState<Slot>('p1');
+  const [activeSlot, setActiveSlot] = useState<Slot>('p1');
   const [detailsFor, setDetailsFor] = useState<GuildId | null>(null);
-  const canMove = !locked[active];
+
+  // READY enables when both slots have an explicit click-pick.
+  // Non-VS: only p1 needs a pick; cpu was pre-seeded above.
+  const readyToGo = hasOpponent
+    ? picks.p1 !== null && picks.cpu !== null
+    : picks.p1 !== null;
 
   const move = useCallback(
     (dx: number, dy: number) => {
-      if (!canMove) return;
       setCursors((c) => {
-        const cur = c[active];
+        const cur = c[activeSlot];
         const r = Math.floor(cur / COLS);
         const col = cur % COLS;
         const nr = Math.max(0, Math.min(ROWS - 1, r + dy));
         const nc = Math.max(0, Math.min(COLS - 1, col + dx));
-        const nextIdx = nr * COLS + nc;
-        if (!hasOpponent) {
-          setPicks((p) => ({ ...p, p1: ids[nextIdx] }));
-        }
-        return { ...c, [active]: nextIdx };
+        return { ...c, [activeSlot]: nr * COLS + nc };
       });
     },
-    [active, canMove, hasOpponent, ids],
+    [activeSlot],
   );
-
-  const lockActive = useCallback(() => {
-    if (locked[active]) return;
-    const chosen = ids[cursors[active]];
-    setPicks((p) => ({ ...p, [active]: chosen }));
-    setLocked((l) => ({ ...l, [active]: true }));
-    if (hasOpponent) {
-      setActive((cur) => {
-        const other: Slot = cur === 'p1' ? 'opp' : 'p1';
-        return locked[other] ? cur : other;
-      });
-    }
-  }, [active, cursors, hasOpponent, ids, locked]);
-
-  const unlockActive = useCallback(() => {
-    setLocked((l) => ({ ...l, [active]: false }));
-  }, [active]);
-
-  // In non-VS, opp is pre-locked and p1 has no lock gate — commit directly from READY/Enter.
-  const readyToCommit = hasOpponent ? locked.p1 && locked.opp : true;
 
   useEffect(() => {
     if (detailsFor) return;
@@ -104,32 +79,30 @@ export function CharSelect({ mode, initialP1, initialP2, onBack, onReady }: Prop
       else if (e.key === 'ArrowDown') { e.preventDefault(); move(0, 1); }
       else if (e.key === 'Tab') {
         e.preventDefault();
-        if (hasOpponent) setActive((p) => (p === 'p1' ? 'opp' : 'p1'));
+        if (hasOpponent) setActiveSlot((s) => (s === 'p1' ? 'cpu' : 'p1'));
       } else if (e.key === 'Enter') {
         e.preventDefault();
-        if (!hasOpponent) {
-          onReady(picks.p1, picks.opp);
-          return;
+        if (readyToGo) {
+          onReady(picks.p1!, picks.cpu!);
+        } else {
+          setPicks((p) => ({ ...p, [activeSlot]: ids[cursors[activeSlot]] }));
         }
-        if (readyToCommit) onReady(picks.p1, picks.opp);
-        else lockActive();
       } else if (e.key === 'Backspace' || e.key === 'Escape') {
         e.preventDefault();
-        if (locked[active]) unlockActive();
-        else onBack();
+        onBack();
       }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [active, cursors, detailsFor, hasOpponent, ids, locked, lockActive, move, onBack, onReady, picks, readyToCommit, unlockActive]);
+  }, [activeSlot, cursors, detailsFor, hasOpponent, ids, move, onBack, onReady, picks, readyToGo]);
 
-  const hoveredId = ids[cursors[active]];
+  const hoveredId = ids[cursors[activeSlot]];
   const hoveredGuild = GUILDS.find((g) => g.id === hoveredId)!;
   const hoveredMeta = GUILD_META[hoveredId];
 
-  const bodyColumns = hasOpponent ? '280px 1fr 280px' : '320px 1fr';
-  const tileSize = hasOpponent ? TILE_VS : TILE_SOLO;
-  const tileGap = hasOpponent ? 16 : 22;
+  const bodyColumns = '280px 1fr 280px';
+  const tileSize = TILE_SIZE;
+  const tileGap = TILE_GAP;
 
   return (
     <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
@@ -156,15 +129,15 @@ export function CharSelect({ mode, initialP1, initialP2, onBack, onReady }: Prop
         </div>
         <div style={{ justifySelf: 'end', display: 'flex', gap: 8 }}>
           {hasOpponent && (
-            <Btn size="md" onClick={() => setActive((p) => (p === 'p1' ? 'opp' : 'p1'))}>
-              SWITCH · {active === 'p1' ? 'P1' : 'CPU'}
+            <Btn size="md" onClick={() => setActiveSlot((s) => (s === 'p1' ? 'cpu' : 'p1'))}>
+              {activeSlot === 'p1' ? 'SWITCH CPU' : 'SWITCH P1'}
             </Btn>
           )}
           <Btn
             size="md"
             primary
-            disabled={!readyToCommit}
-            onClick={() => onReady(picks.p1, picks.opp)}
+            disabled={!readyToGo}
+            onClick={() => onReady(picks.p1!, picks.cpu!)}
           >
             READY →
           </Btn>
@@ -181,15 +154,20 @@ export function CharSelect({ mode, initialP1, initialP2, onBack, onReady }: Prop
       >
         <SidePanel
           role="P1"
-          guildId={locked.p1 ? picks.p1 : ids[cursors.p1]}
-          locked={hasOpponent ? locked.p1 : false}
-          active={active === 'p1'}
-          onView={() => setDetailsFor(locked.p1 ? picks.p1 : ids[cursors.p1])}
+          guildId={picks.p1 ?? ids[cursors.p1]}
+          locked={picks.p1 !== null}
+          active={activeSlot === 'p1'}
+          statusText={
+            picks.p1 !== null ? 'PICKED' :
+            activeSlot !== 'p1' ? 'NOT PICKED' :
+            undefined
+          }
+          onView={() => setDetailsFor(picks.p1 ?? ids[cursors.p1])}
         />
 
         <div
           style={{
-            padding: '28px 36px',
+            padding: '20px 30px',
             display: 'flex',
             flexDirection: 'column',
             gap: 18,
@@ -208,8 +186,8 @@ export function CharSelect({ mode, initialP1, initialP2, onBack, onReady }: Prop
               const meta = GUILD_META[g.id];
               const acc = guildAccent(meta.hue);
               const p1Here = cursors.p1 === i;
-              const oppHere = hasOpponent && cursors.opp === i;
-              const isActiveTile = (active === 'p1' ? p1Here : oppHere);
+              const cpuHere = hasOpponent && cursors.cpu === i;
+              const isActiveTile = activeSlot === 'p1' ? p1Here : cpuHere;
               const p1Picked = !hasOpponent && picks.p1 === g.id;
               return (
                 <div
@@ -217,36 +195,27 @@ export function CharSelect({ mode, initialP1, initialP2, onBack, onReady }: Prop
                   onMouseEnter={() => {
                     // Hover moves the active cursor so the panel + preview strip update.
                     // Clicks set the sticky pick separately.
-                    if (!canMove) return;
-                    setCursors((c) => ({ ...c, [active]: i }));
+                    setCursors((c) => ({ ...c, [activeSlot]: i }));
                   }}
                   onClick={() => {
-                    if (locked[active]) return;
-                    setCursors((c) => ({ ...c, [active]: i }));
-                    setPicks((p) => ({ ...p, [active]: g.id }));
-                    if (hasOpponent) {
-                      // VS: lock this slot and swap to the other player.
-                      setLocked((l) => ({ ...l, [active]: true }));
-                      const other: Slot = active === 'p1' ? 'opp' : 'p1';
-                      if (!locked[other]) setActive(other);
-                    }
-                    // Non-VS: just preview — no lock. Commit happens via READY / Enter.
+                    setCursors((c) => ({ ...c, [activeSlot]: i }));
+                    setPicks((p) => ({ ...p, [activeSlot]: g.id }));
                   }}
                   style={{
                     position: 'relative',
                     width: tileSize,
-                    cursor: locked[active] ? 'default' : 'pointer',
+                    cursor: 'pointer',
                     outline: p1Picked ? `2px solid ${theme.accent}` : 'none',
                     outlineOffset: 4,
                   }}
                 >
-                  <GuildMonogram guildId={g.id} size={tileSize} selected={p1Here || oppHere} />
+                  <GuildMonogram guildId={g.id} size={tileSize} selected={p1Here || cpuHere} />
                   <div
                     style={{
                       textAlign: 'center',
                       marginTop: 8,
                       fontFamily: theme.fontMono,
-                      fontSize: 14,
+                      fontSize: 20,
                       color: isActiveTile ? acc : theme.inkDim,
                       letterSpacing: 2,
                     }}
@@ -260,31 +229,31 @@ export function CharSelect({ mode, initialP1, initialP2, onBack, onReady }: Prop
                         top: 4,
                         left: 4,
                         fontFamily: theme.fontMono,
-                        fontSize: 10,
+                        fontSize: 20,
                         color: acc,
                         letterSpacing: 2,
                         textShadow: `0 0 4px ${theme.bgDeep}`,
                         zIndex: 2,
                       }}
                     >
-                      ◆ P1{locked.p1 ? '·L' : ''}
+                      ◆ P1{picks.p1 === g.id ? '·✓' : ''}
                     </div>
                   )}
-                  {oppHere && (
+                  {cpuHere && (
                     <div
                       style={{
                         position: 'absolute',
                         top: 4,
                         right: 4,
                         fontFamily: theme.fontMono,
-                        fontSize: 10,
+                        fontSize: 20,
                         color: acc,
                         letterSpacing: 2,
                         textShadow: `0 0 4px ${theme.bgDeep}`,
                         zIndex: 2,
                       }}
                     >
-                      ◆ CPU{locked.opp ? '·L' : ''}
+                      ◆ CPU{picks.cpu === g.id ? '·✓' : ''}
                     </div>
                   )}
                 </div>
@@ -301,9 +270,6 @@ export function CharSelect({ mode, initialP1, initialP2, onBack, onReady }: Prop
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 10 }}>
-              {/* <span style={{ fontFamily: theme.fontMono, fontSize: 10, color: theme.inkMuted, letterSpacing: 2 }}>
-                {active === 'p1' ? 'P1 · HOVER' : 'CPU · HOVER'}
-              </span> */}
               <span
                 style={{
                   fontFamily: theme.fontDisplay,
@@ -313,21 +279,11 @@ export function CharSelect({ mode, initialP1, initialP2, onBack, onReady }: Prop
               >
                 {hoveredGuild.name}
               </span>
-              {/* <span
-                style={{
-                  fontFamily: theme.fontBody,
-                  fontSize: 12,
-                  color: theme.inkDim,
-                  fontStyle: 'italic',
-                }}
-              >
-                {hoveredMeta.sub}
-              </span> */}
               <span style={{ marginLeft: 'auto' }}>
                 <Chip tone="accent" mono>{hoveredMeta.tag}</Chip>
               </span>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 10 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 30 }}>
               {(Object.entries(hoveredGuild.stats) as [keyof Stats, number][]).map(([k, v]) => (
                 <StatBar key={k} label={k} value={v} max={20} hue={hoveredMeta.hue} />
               ))}
@@ -335,14 +291,59 @@ export function CharSelect({ mode, initialP1, initialP2, onBack, onReady }: Prop
           </div>
         </div>
 
-        {hasOpponent && (
-          <SidePanel
-            role="CPU"
-            guildId={locked.opp ? picks.opp : ids[cursors.opp]}
-            locked={locked.opp}
-            active={active === 'opp'}
-            onView={() => setDetailsFor(locked.opp ? picks.opp : ids[cursors.opp])}
-          />
+        {hasOpponent ? (
+          picks.cpu !== null || activeSlot === 'cpu' ? (
+            <SidePanel
+              role="CPU"
+              guildId={picks.cpu ?? ids[cursors.cpu]}
+              locked={picks.cpu !== null}
+              active={activeSlot === 'cpu'}
+              statusText={picks.cpu !== null ? 'PICKED' : undefined}
+              onView={() => setDetailsFor(picks.cpu ?? ids[cursors.cpu])}
+            />
+          ) : (
+            <div
+              style={{
+                padding: 24,
+                borderLeft: `1px solid ${theme.lineSoft}`,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 12,
+              }}
+            >
+              <div style={{ fontFamily: theme.fontMono, fontSize: 12, letterSpacing: 3, color: theme.inkMuted }}>
+                CPU · OPPONENT
+              </div>
+              <div style={{ fontFamily: theme.fontBody, fontSize: 15, color: theme.inkMuted, fontStyle: 'italic' }}>
+                Click "SWITCH CPU" to pick opponent
+              </div>
+            </div>
+          )
+        ) : (
+          picks.p1 !== null ? (
+            <SidePanel
+              role="P1"
+              guildId={picks.p1}
+              locked={true}
+              active={false}
+              statusText="SELECTED"
+              onView={() => setDetailsFor(picks.p1!)}
+            />
+          ) : (
+            <div
+              style={{
+                padding: 24,
+                borderLeft: `1px solid ${theme.lineSoft}`,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 12,
+              }}
+            >
+              <div style={{ fontFamily: theme.fontBody, fontSize: 15, color: theme.inkMuted, fontStyle: 'italic' }}>
+                Click a guild to select
+              </div>
+            </div>
+          )
         )}
       </div>
 
@@ -361,246 +362,9 @@ export function CharSelect({ mode, initialP1, initialP2, onBack, onReady }: Prop
         }}
       >
         <span>◀▶▲▼ MOVE</span>
-        <span>↵ LOCK / READY</span>
+        <span>{hasOpponent ? '↵ PICK / READY' : '↵ PICK'}</span>
         {hasOpponent && <span>TAB SWITCH</span>}
         <span>ESC BACK</span>
-      </div>
-    </div>
-  );
-}
-
-interface SidePanelProps {
-  role: 'P1' | 'CPU';
-  guildId: GuildId;
-  locked: boolean;
-  active: boolean;
-  onView: () => void;
-}
-
-function SidePanel({ role, guildId, locked, active, onView }: SidePanelProps) {
-  const guild = GUILDS.find((g) => g.id === guildId)!;
-  const meta = GUILD_META[guildId];
-  const accent = guildAccent(meta.hue);
-  const ult = guild.abilities[4];
-  const labelColor = role === 'P1' ? theme.accent : theme.warn;
-
-  return (
-    <div
-      style={{
-        padding: 24,
-        borderRight: role === 'P1' ? `1px solid ${theme.lineSoft}` : 'none',
-        borderLeft: role === 'CPU' ? `1px solid ${theme.lineSoft}` : 'none',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 12,
-        background: active ? theme.panel : 'transparent',
-        overflow: 'auto',
-      }}
-    >
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-        <span
-          style={{
-            fontFamily: theme.fontMono,
-            fontSize: 11,
-            letterSpacing: 3,
-            color: active ? labelColor : theme.inkMuted,
-          }}
-        >
-          {role === 'P1' ? 'P1 · HUMAN' : 'CPU · OPPONENT'}{active ? ' ◆' : ''}
-        </span>
-        <span
-          style={{
-            fontFamily: theme.fontMono,
-            fontSize: 10,
-            color: locked ? theme.good : theme.warn,
-          }}
-        >
-          {locked ? 'LOCKED' : 'SELECTING…'}
-        </span>
-      </div>
-      <GuildMonogram guildId={guildId} size={180} selected={locked} />
-      <div style={{ marginBottom: 6 }}>
-        <div
-          style={{
-            fontFamily: theme.fontDisplay,
-            fontSize: 34,
-            color: theme.ink,
-            letterSpacing: '-0.01em',
-            lineHeight: 1.05,
-          }}
-        >
-          {guild.name}
-        </div>
-        <div style={{ fontFamily: theme.fontBody, fontSize: 11, color: theme.inkDim, fontStyle: 'italic' }}>
-          {meta.sub}
-        </div>
-      </div>
-      <div
-        style={{
-          fontFamily: theme.fontBody,
-          fontSize: 12,
-          color: theme.inkDim,
-          lineHeight: 1.55,
-          minHeight: 'calc(12px * 1.55 * 4)',
-          display: '-webkit-box',
-          WebkitLineClamp: 4,
-          WebkitBoxOrient: 'vertical',
-          overflow: 'hidden',
-        }}
-      >
-        {meta.bio}
-      </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-        <VitalRow label={guild.resource.name} value={String(guild.resource.max)} accent={accent} emphasized />
-        <VitalRow label="HP" value={String(guild.hpMax)} accent={accent} />
-        <VitalRow label="ARMOR" value={String(meta.uiVitals.Armor)} accent={accent} />
-        <VitalRow label="MR" value={String(meta.uiVitals.MR)} accent={accent} />
-        <VitalRow label="MOVE" value={String(meta.uiVitals.Move)} accent={accent} />
-      </div>
-      <AccentBtn accent={accent} onClick={onView}>VIEW DETAILS</AccentBtn>
-      <div style={{ marginTop: 'auto', borderTop: `1px solid ${theme.lineSoft}`, paddingTop: 10 }}>
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 6,
-            fontFamily: theme.fontMono,
-            fontSize: 10,
-            color: theme.inkMuted,
-            letterSpacing: 2,
-            marginBottom: 6,
-          }}
-        >
-          <span>ULT ·</span>
-          <ComboDisplay combo={ult.combo} size={12} color={theme.ink} />
-        </div>
-        <div style={{ fontFamily: theme.fontDisplay, fontSize: 16, color: accent }}>{ult.name}</div>
-        <div style={{ fontFamily: theme.fontBody, fontSize: 11, color: theme.inkDim }}>
-          {ult.description}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-interface VitalRowProps {
-  label: string;
-  value: string;
-  accent: string;
-  emphasized?: boolean;
-}
-
-function VitalRow({ label, value, accent, emphasized }: VitalRowProps) {
-  const fg = emphasized ? accent : theme.ink;
-  const border = emphasized ? accent : theme.lineSoft;
-  const bg = emphasized ? `${accent}14` : theme.panel;
-  return (
-    <div
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        padding: '10px 14px',
-        background: bg,
-        border: `1px solid ${border}`,
-      }}
-    >
-      <span
-        style={{
-          fontFamily: theme.fontMono,
-          fontSize: emphasized ? 11 : 13,
-          color: emphasized ? accent : theme.ink,
-          fontWeight: emphasized ? 400 : 700,
-          letterSpacing: 2,
-        }}
-      >
-        {label.toUpperCase()}
-      </span>
-      <span
-        style={{
-          fontFamily: theme.fontDisplay,
-          fontSize: emphasized ? 17 : 13,
-          color: fg,
-          lineHeight: 1,
-        }}
-      >
-        {value}
-      </span>
-    </div>
-  );
-}
-
-interface AccentBtnProps {
-  accent: string;
-  onClick: () => void;
-  children: ReactNode;
-}
-
-function AccentBtn({ accent, onClick, children }: AccentBtnProps) {
-  const [hover, setHover] = useState(false);
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)}
-      style={{
-        padding: '10px 20px',
-        fontSize: 12,
-        background: hover ? `${accent}22` : 'transparent',
-        color: accent,
-        border: `1px solid ${accent}`,
-        fontFamily: theme.fontMono,
-        letterSpacing: 2,
-        textTransform: 'uppercase',
-        cursor: 'pointer',
-        borderRadius: 2,
-        transition: 'all 120ms ease',
-        boxShadow: hover ? `0 0 0 1px ${accent}55` : 'none',
-      }}
-    >
-      {children}
-    </button>
-  );
-}
-
-interface StatBarProps {
-  label: string;
-  value: number;
-  max: number;
-  hue: number;
-}
-
-function StatBar({ label, value, max, hue }: StatBarProps) {
-  const accent = guildAccent(hue);
-  return (
-    <div>
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          fontFamily: theme.fontMono,
-          fontSize: 10,
-          color: theme.inkMuted,
-          letterSpacing: 1,
-          marginBottom: 3,
-        }}
-      >
-        <span>{label}</span>
-        <span style={{ color: theme.ink }}>{value}</span>
-      </div>
-      <div style={{ display: 'flex', gap: 2 }}>
-        {Array.from({ length: max }).map((_, i) => (
-          <div
-            key={i}
-            style={{
-              flex: 1,
-              height: 6,
-              background: i < value ? accent : theme.bgDeep,
-              border: `1px solid ${i < value ? accent : theme.lineSoft}`,
-            }}
-          />
-        ))}
       </div>
     </div>
   );

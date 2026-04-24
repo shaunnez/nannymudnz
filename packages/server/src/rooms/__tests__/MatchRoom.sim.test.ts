@@ -6,7 +6,7 @@
  * message handlers and calls `room.tick(dt)` manually.
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { MatchRoom } from '../MatchRoom.js';
 import { MatchState } from '@nannymud/shared';
 import type { InputMsg } from '@nannymud/shared';
@@ -48,6 +48,7 @@ function createRoom(opts: { name?: string; rounds?: number } = {}) {
     store.events[type].push(handler);
   };
   stubTimers(room);
+  room['setMetadata'] = vi.fn().mockResolvedValue(undefined);
   room.onCreate(opts);
   return room;
 }

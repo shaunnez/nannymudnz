@@ -1,0 +1,27 @@
+{
+  "stageId": "throne",
+  "theme": "red throne room with crimson banners, ornate throne, execution block, iron cage, pit backdrop",
+  "source": "pixellab-first-pass",
+  "assets": {
+    "throne_crimson_ornate": {
+      "path": "/world/throne/raw/throne_crimson_ornate.png",
+      "kind": "landmark",
+      "usage": "centrepiece rear-stage throne, the dominant focal landmark"
+    },
+    "block_execution_wood": {
+      "path": "/world/throne/raw/block_execution_wood.png",
+      "kind": "floor_prop",
+      "usage": "low execution block floor prop, implied threat"
+    },
+    "pillar_crimson_banner": {
+      "path": "/world/throne/raw/pillar_crimson_banner.png",
+      "kind": "landmark",
+      "usage": "banner pillar repeated flanking the throne"
+    },
+    "cage_iron_floor": {
+      "path": "/world/throne/raw/cage_iron_floor.png",
+      "kind": "dress_prop",
+      "usage": "iron cage prop, corner dressing or mid-stage hazard hint"
+    }
+  }
+}
