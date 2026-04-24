@@ -398,6 +398,12 @@ function getAbilityAssetKey(abilityId: string, eventType: VFXEvent['type']): str
     // Darkmage projectile impacts
     case 'grasping_shadow':  return eventType === 'hit_spark'  ? 'grasping_shadow_burst'   : undefined;
     case 'shadow_bolt':      return eventType === 'hit_spark'  ? 'shadow_bolt_impact'      : undefined;
+    // Vampire misplaced-PNG abilities
+    case 'hemorrhage':  return eventType === 'hit_spark' ? 'hemorrhage_burst'  : undefined;
+    case 'shadow_step': return eventType === 'aoe_pop'   ? 'shadow_step_flash' : undefined;
+    case 'mist_step':   return eventType === 'aoe_pop'   ? 'mist_step_flash'   : undefined;
+    // Cultist misplaced-PNG ability
+    case 'whispers':    return eventType === 'hit_spark' ? 'whispers_aura'     : undefined;
     default:
       return undefined;
   }

@@ -4,6 +4,9 @@
   "assets": {
     "blood_drain_glow":   { "frames": 1, "frameDurationMs": 400, "loop": false, "anchor": {"x":48,"y":48}, "scale": 1.35 },
     "fang_strike_impact": { "frames": 1, "frameDurationMs": 380, "loop": false, "anchor": {"x":48,"y":60}, "scale": 1.25 },
-    "nocturne_aura":      { "frames": 1, "frameDurationMs": 450, "loop": false, "frameSize": {"w":160,"h":160}, "anchor": {"x":80,"y":80}, "scale": 1.6 }
+    "nocturne_aura":      { "frames": 1, "frameDurationMs": 450, "loop": false, "frameSize": {"w":160,"h":160}, "anchor": {"x":80,"y":80}, "scale": 1.6 },
+    "hemorrhage_burst":   { "frames": 1, "frameDurationMs": 320, "loop": false, "anchor": {"x":48,"y":48}, "scale": 1.2 },
+    "shadow_step_flash":  { "frames": 1, "frameDurationMs": 300, "loop": false, "anchor": {"x":48,"y":48}, "scale": 1.25 },
+    "mist_step_flash":    { "frames": 1, "frameDurationMs": 280, "loop": false, "anchor": {"x":48,"y":48}, "scale": 1.15 }
   }
 }
