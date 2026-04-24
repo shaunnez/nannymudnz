@@ -1,13 +1,13 @@
 import type {
   SimState, Actor, InputState, GuildId, Projectile, DamageType,
   AbilityDef, ActorKind, AnimationId, PlayerController, StatusEffectType, VFXEvent, GroundZone,
-  MatchStats, BattleSlot,
+  MatchStats,
 } from './types';
 import { getGuild, DRUID_WOLF_ABILITIES, DRUID_WOLF_RMB } from './guildData';
 import { makeRng } from './rng';
 import { ENEMY_DEFS, STAGE_WAVES } from './enemyData';
 import {
-  PLAYER_SPAWN_X, PLAYER_SPAWN_Y, ENEMY_SPAWN_Y_RANGE, WORLD_WIDTH, GROUND_Y_MIN, GROUND_Y_MAX,
+  PLAYER_SPAWN_X, PLAYER_SPAWN_Y, ENEMY_SPAWN_Y_RANGE,
   DOUBLE_TAP_MS, COMBO_ATTACK_WINDOW_MS, KNOCKDOWN_THRESHOLD,
   PICKUP_GRAB_RANGE, HP_REGEN_RATE, HP_DARK_REGEN_RATE, BLOCK_STAMINA_DRAIN,
   PARRY_WINDOW_MS, DODGE_DURATION_MS, DODGE_DISTANCE, DODGE_INVULN_MS, RUN_SPEED_MULT,
@@ -24,6 +24,7 @@ import { tickAI, spawnEnemyAt } from './ai';
 import { synthesizeVsCpuInput, createEmptyCpuInput } from './vsAI';
 import { tickRound } from './vsSimulation';
 import { appendLog as appendCombatLog } from './combatLog';
+import { tickSurvivalWaves } from './survivalWaves';
 
 export function createPlayerActor(guildId: GuildId): Actor {
   const guild = getGuild(guildId);
@@ -114,7 +115,7 @@ export function revertWolfForm(actor: Actor): void {
   actor.statusEffects = actor.statusEffects.filter(e => !(e.type === 'damage_boost' && e.source === 'wolf_form'));
 }
 
-function createEnemyActor(kind: string, x: number, y: number, state: SimState): Actor {
+export function createEnemyActor(kind: string, x: number, y: number, state: SimState): Actor {
   const def = ENEMY_DEFS[kind];
   if (!def) throw new Error(`Unknown enemy: ${kind}`);
 
@@ -227,33 +228,6 @@ export function createSurvivalState(guildId: GuildId, seed: number = Date.now())
     currentWave: 0,
     survivalMode: true,
     survivalScore: 0,
-  };
-}
-
-// eslint-disable-next-line no-restricted-globals -- seed chosen once at boot, outside tick loop
-export function createBattleState(
-  humanGuildId: GuildId,
-  slots: BattleSlot[],
-  _stageId: string,
-  seed: number = Date.now(),
-): SimState {
-  const base = createInitialState(humanGuildId, seed);
-
-  const cpuSlots = slots.filter(s => s.type === 'cpu');
-  const enemies: Actor[] = cpuSlots.map((slot, i) => {
-    const spawnX = WORLD_WIDTH * 0.35 + i * 120;
-    const spawnY = GROUND_Y_MIN + base.rng() * (GROUND_Y_MAX - GROUND_Y_MIN);
-    return createEnemyActor(slot.guildId as ActorKind, spawnX, spawnY, base);
-  });
-
-  return {
-    ...base,
-    enemies,
-    waves: [],
-    currentWave: 0,
-    battleMode: true,
-    battleSlots: slots,
-    battleTimer: 180_000,
   };
 }
 
@@ -1812,7 +1786,9 @@ export function tickSimulation(
 
   const ctrl = getOrCreateController(state, 'player', input);
 
-  if (!state.battleMode) {
+  if (state.survivalMode) {
+    tickSurvivalWaves(state);
+  } else if (!state.battleMode) {
     tickWaves(state);
   }
 
