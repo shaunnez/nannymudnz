@@ -9,6 +9,7 @@ import { StoryGameOverOverlay } from './StoryGameOverOverlay';
 import { StoryVictoryOverlay } from './StoryVictoryOverlay';
 import { GuildDetails } from './GuildDetails';
 import { LoadingScreen } from './LoadingScreen';
+import { BattleLoadingScreen } from './BattleLoadingScreen';
 import { useFullscreen } from '../layout/useFullscreen';
 import { makePhaserGame, type GameCallbacks } from '../game/PhaserGame';
 import { HudOverlay } from './hud/HudOverlay';
@@ -282,13 +283,21 @@ export function GameScreen({
       )}
       {preloading && (
         <div style={{ position: 'absolute', inset: 0 }}>
-          <LoadingScreen
-            p1={p1}
-            p2={p2 ?? 'knight'}
-            stageId={stageId as StageId}
-            showOpponent={mode === 'vs'}
-            progress={loadProgress}
-          />
+          {battleMode && battleSlots ? (
+            <BattleLoadingScreen
+              slots={battleSlots}
+              stageId={stageId as StageId}
+              humanProgress={loadProgress ?? 0}
+            />
+          ) : (
+            <LoadingScreen
+              p1={p1}
+              p2={p2 ?? 'knight'}
+              stageId={stageId as StageId}
+              showOpponent={mode === 'vs'}
+              progress={loadProgress}
+            />
+          )}
         </div>
       )}
     </div>
