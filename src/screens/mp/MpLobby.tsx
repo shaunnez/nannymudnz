@@ -367,7 +367,7 @@ export function MpLobby({ room, onLeave, onPhaseChange }: Props) {
                 border: `1px solid ${theme.line}`,
                 color: theme.ink,
                 fontFamily: theme.fontMono,
-                fontSize: 12,
+                fontSize: 16,
                 outline: 'none',
                 borderRadius: 2,
               }}
