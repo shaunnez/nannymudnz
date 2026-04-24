@@ -103,8 +103,8 @@ export function CharSelect({ mode, initialP1, initialP2, onBack, onReady }: Prop
 
   const mobile = useIsMobile();
   const bodyColumns = '280px 1fr 280px';
-  const tileSize = mobile ? 110 : TILE_SIZE;
-  const tileGap = mobile ? 10 : TILE_GAP;
+  const tileSize = mobile ? 144 : TILE_SIZE;
+  const tileGap = mobile ? 18 : TILE_GAP;
 
   return (
     <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
@@ -165,14 +165,15 @@ export function CharSelect({ mode, initialP1, initialP2, onBack, onReady }: Prop
             undefined
           }
           onView={() => setDetailsFor(picks.p1 ?? ids[cursors.p1])}
+          hideAvatar={mobile}
         />
 
         <div
           style={{
-            padding: mobile ? '12px 16px' : '20px 30px',
+            padding: mobile ? '18px 27px' : '20px 30px',
             display: 'flex',
             flexDirection: 'column',
-            gap: mobile ? 10 : 18,
+            gap: mobile ? 16 : 18,
             overflow: 'auto',
           }}
         >
@@ -304,6 +305,7 @@ export function CharSelect({ mode, initialP1, initialP2, onBack, onReady }: Prop
               active={activeSlot === 'cpu'}
               statusText={picks.cpu !== null ? 'PICKED' : undefined}
               onView={() => setDetailsFor(picks.cpu ?? ids[cursors.cpu])}
+              hideAvatar={mobile}
             />
           ) : (
             <div
@@ -332,6 +334,7 @@ export function CharSelect({ mode, initialP1, initialP2, onBack, onReady }: Prop
               active={false}
               statusText="SELECTED"
               onView={() => setDetailsFor(picks.p1!)}
+              hideAvatar={mobile}
             />
           ) : (
             <div

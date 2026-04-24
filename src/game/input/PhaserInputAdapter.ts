@@ -13,6 +13,12 @@ import { loadKeyBindings, type KeyBindings } from '../../input/keyBindings';
  */
 const TOUCH_ABILITY_EVENT = 'nannymud:touch-ability';
 const TOUCH_PAUSE_EVENT = 'nannymud:touch-pause';
+const TOUCH_JOYSTICK_EVENT = 'nannymud:touch-joystick';
+
+export interface TouchJoystickState {
+  left: boolean; right: boolean; up: boolean; down: boolean;
+  runningLeft: boolean; runningRight: boolean;
+}
 
 /** Fire from React to trigger an ability slot tap (1–6). */
 export function dispatchTouchAbility(slot: number): void {
@@ -22,6 +28,11 @@ export function dispatchTouchAbility(slot: number): void {
 /** Fire from React to trigger the pause action. */
 export function dispatchTouchPause(): void {
   window.dispatchEvent(new CustomEvent(TOUCH_PAUSE_EVENT));
+}
+
+/** Fire from the virtual joystick with current directional state. */
+export function dispatchTouchJoystick(state: TouchJoystickState): void {
+  window.dispatchEvent(new CustomEvent(TOUCH_JOYSTICK_EVENT, { detail: state }));
 }
 
 export class PhaserInputAdapter {
@@ -34,6 +45,11 @@ export class PhaserInputAdapter {
   private lastRightPressMs = 0;
   private runningLeft = false;
   private runningRight = false;
+
+  private joystick: TouchJoystickState = {
+    left: false, right: false, up: false, down: false,
+    runningLeft: false, runningRight: false,
+  };
 
   private keyboard: Phaser.Input.Keyboard.KeyboardPlugin | undefined;
   private windowBlurHandler: (() => void) | undefined;
@@ -51,6 +67,7 @@ export class PhaserInputAdapter {
     window.addEventListener('blur', this.windowBlurHandler);
     window.addEventListener(TOUCH_ABILITY_EVENT, this.onTouchAbility);
     window.addEventListener(TOUCH_PAUSE_EVENT, this.onTouchPause);
+    window.addEventListener(TOUCH_JOYSTICK_EVENT, this.onTouchJoystick);
   }
 
   updateBindings(bindings: KeyBindings): void {
@@ -82,6 +99,10 @@ export class PhaserInputAdapter {
 
   private onTouchPause = (): void => {
     this.justPressed.add(this.bindings.pause);
+  };
+
+  private onTouchJoystick = (e: Event): void => {
+    this.joystick = (e as CustomEvent<TouchJoystickState>).detail;
   };
 
   private reset(): void {
@@ -123,11 +144,12 @@ export class PhaserInputAdapter {
       this.runningRight = false;
     }
 
+    const j = this.joystick;
     return {
-      left: this.keys.has(leftKey),
-      right: this.keys.has(rightKey),
-      up: this.keys.has(b.up),
-      down: this.keys.has(b.down),
+      left: this.keys.has(leftKey) || j.left,
+      right: this.keys.has(rightKey) || j.right,
+      up: this.keys.has(b.up) || j.up,
+      down: this.keys.has(b.down) || j.down,
       jump: this.keys.has(b.jump),
       attack: this.keys.has(b.attack),
       block: this.keys.has(b.block),
@@ -143,8 +165,8 @@ export class PhaserInputAdapter {
       fullscreenToggleJustPressed: this.justPressed.has(b.fullscreen),
       lastLeftPressMs: this.lastLeftPressMs,
       lastRightPressMs: this.lastRightPressMs,
-      runningLeft: this.runningLeft,
-      runningRight: this.runningRight,
+      runningLeft: this.runningLeft || j.runningLeft,
+      runningRight: this.runningRight || j.runningRight,
       testAbilitySlot,
     };
   }
@@ -165,6 +187,7 @@ export class PhaserInputAdapter {
     }
     window.removeEventListener(TOUCH_ABILITY_EVENT, this.onTouchAbility);
     window.removeEventListener(TOUCH_PAUSE_EVENT, this.onTouchPause);
+    window.removeEventListener(TOUCH_JOYSTICK_EVENT, this.onTouchJoystick);
     this.reset();
   }
 }

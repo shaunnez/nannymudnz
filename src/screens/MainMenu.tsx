@@ -86,7 +86,7 @@ export function MainMenu({ onPick, difficulty, onDifficultyChange }: Props) {
       <div
         style={{
           flex: '0 0 46%',
-          padding: mobile ? '20px 24px' : '52px 48px',
+          padding: mobile ? '47px 48px' : '52px 48px',
           display: 'flex',
           flexDirection: 'column',
           minHeight: 0,
@@ -106,30 +106,30 @@ export function MainMenu({ onPick, difficulty, onDifficultyChange }: Props) {
         <div
           style={{
             fontFamily: theme.fontDisplay,
-            fontSize: mobile ? 26 : 36,
+            fontSize: 36,
             color: theme.ink,
             letterSpacing: '-0.02em',
-            marginBottom: mobile ? 10 : 22,
+            marginBottom: mobile ? 20 : 22,
           }}
         >
           Choose your engagement
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column' }}>
-          {MENU_ITEMS.map((m, i) => {
+          {MENU_ITEMS.filter((m) => !(mobile && m.id === 'set')).map((m, i) => {
             const active = i === sel;
             const disabledColor = theme.inkMuted;
             return (
               <div
                 key={m.id}
                 onMouseEnter={() => setSel(i)}
-                onClick={() => activate(i)}
+                onClick={() => { if (m.enabled && m.target) onPick(m.target, m.mode); }}
                 style={{
                   display: 'grid',
                   gridTemplateColumns: '34px 1fr auto',
                   gap: 14,
                   alignItems: 'center',
-                  padding: mobile ? '8px 0' : '16px 0',
+                  padding: mobile ? '14px 0' : '16px 0',
                   borderBottom: `1px solid ${theme.lineSoft}`,
                   cursor: m.enabled && m.target ? 'pointer' : 'default',
                   opacity: m.enabled ? 1 : 0.45,
