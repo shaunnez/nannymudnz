@@ -191,7 +191,9 @@ export function MpCharSelect({ room, onLeave, onPhaseChange }: Props) {
               const acc = guildAccent(meta.hue);
               const isActive = cursorIdx === i;
               const localLockedHere = isLocked && localSlot?.guildId === g.id;
+              const localPickHere = !isLocked && localPick === g.id;
               const oppLockedHere = opponentSlot?.locked && opponentSlot.guildId === g.id;
+              const isHighlighted = isActive || localLockedHere || localPickHere;
 
               return (
                 <div
@@ -206,24 +208,24 @@ export function MpCharSelect({ room, onLeave, onPhaseChange }: Props) {
                     position: 'relative',
                     width: TILE_SIZE,
                     cursor: isLocked ? 'default' : 'pointer',
-                    outline: isActive ? `2px solid ${acc}` : 'none',
+                    outline: isHighlighted ? `2px solid ${acc}` : 'none',
                     outlineOffset: 3,
                   }}
                 >
-                  <GuildMonogram guildId={g.id} size={TILE_SIZE} selected={isActive} />
+                  <GuildMonogram guildId={g.id} size={TILE_SIZE} selected={isHighlighted} />
                   <div
                     style={{
                       textAlign: 'center',
                       marginTop: 8,
                       fontFamily: theme.fontMono,
                       fontSize: 20,
-                      color: isActive ? acc : theme.inkDim,
+                      color: isHighlighted ? acc : theme.inkDim,
                       letterSpacing: 2,
                     }}
                   >
                     {g.name.toUpperCase()}
                   </div>
-                  {localLockedHere && (
+                  {(localLockedHere || localPickHere) && (
                     <div
                       style={{
                         position: 'absolute',
@@ -237,7 +239,7 @@ export function MpCharSelect({ room, onLeave, onPhaseChange }: Props) {
                         zIndex: 2,
                       }}
                     >
-                      ◆ P1
+                      ◆ P1{localPickHere && !isLocked ? '·✓' : ''}
                     </div>
                   )}
                   {oppLockedHere && (

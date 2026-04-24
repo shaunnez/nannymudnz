@@ -188,7 +188,9 @@ export function CharSelect({ mode, initialP1, initialP2, onBack, onReady }: Prop
               const p1Here = cursors.p1 === i;
               const cpuHere = hasOpponent && cursors.cpu === i;
               const isActiveTile = activeSlot === 'p1' ? p1Here : cpuHere;
-              const p1Picked = !hasOpponent && picks.p1 === g.id;
+              const p1PickedHere = picks.p1 === g.id;
+              const cpuPickedHere = hasOpponent && picks.cpu === g.id;
+              const outlineColor = p1PickedHere ? theme.accent : cpuPickedHere ? theme.warn : null;
               return (
                 <div
                   key={g.id}
@@ -205,24 +207,24 @@ export function CharSelect({ mode, initialP1, initialP2, onBack, onReady }: Prop
                     position: 'relative',
                     width: tileSize,
                     cursor: 'pointer',
-                    outline: p1Picked ? `2px solid ${theme.accent}` : 'none',
+                    outline: outlineColor ? `2px solid ${outlineColor}` : 'none',
                     outlineOffset: 4,
                   }}
                 >
-                  <GuildMonogram guildId={g.id} size={tileSize} selected={p1Here || cpuHere} />
+                  <GuildMonogram guildId={g.id} size={tileSize} selected={p1Here || cpuHere || p1PickedHere || cpuPickedHere} />
                   <div
                     style={{
                       textAlign: 'center',
                       marginTop: 8,
                       fontFamily: theme.fontMono,
                       fontSize: 20,
-                      color: isActiveTile ? acc : theme.inkDim,
+                      color: (isActiveTile || p1PickedHere || cpuPickedHere) ? acc : theme.inkDim,
                       letterSpacing: 2,
                     }}
                   >
                     {g.name.toUpperCase()}
                   </div>
-                  {p1Here && (
+                  {(p1Here || p1PickedHere) && (
                     <div
                       style={{
                         position: 'absolute',
@@ -236,10 +238,10 @@ export function CharSelect({ mode, initialP1, initialP2, onBack, onReady }: Prop
                         zIndex: 2,
                       }}
                     >
-                      ◆ P1{picks.p1 === g.id ? '·✓' : ''}
+                      ◆ P1{p1PickedHere ? '·✓' : ''}
                     </div>
                   )}
-                  {cpuHere && (
+                  {(cpuHere || cpuPickedHere) && (
                     <div
                       style={{
                         position: 'absolute',
@@ -253,7 +255,7 @@ export function CharSelect({ mode, initialP1, initialP2, onBack, onReady }: Prop
                         zIndex: 2,
                       }}
                     >
-                      ◆ CPU{picks.cpu === g.id ? '·✓' : ''}
+                      ◆ CPU{cpuPickedHere ? '·✓' : ''}
                     </div>
                   )}
                 </div>
