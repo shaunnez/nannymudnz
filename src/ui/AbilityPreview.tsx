@@ -8,6 +8,7 @@ interface Props {
   animationId: string;
   spriteScale?: number;
   vfxScale?: number;
+  spriteGuildId?: string;
 }
 
 type PreviewEffect =
@@ -25,6 +26,8 @@ type PreviewEffect =
   | 'mage_ice_nova'
   | 'mage_blink'
   | 'mage_meteor'
+  | 'mage_frostbolt'
+  | 'mage_arcane_shard'
   | 'druid_wild_growth'
   | 'druid_channeling'
   | 'druid_shapeshift'
@@ -106,10 +109,12 @@ function getAbilityPreviewSpec(guildId: GuildId, abilityId: string): AbilityPrev
       }
     case 'mage':
       switch (abilityId) {
-        case 'ice_nova': return { effect: 'mage_ice_nova' };
-        case 'blink':    return { effect: 'mage_blink' };
-        case 'meteor':   return { effect: 'mage_meteor' };
-        default:         return {};
+        case 'ice_nova':     return { effect: 'mage_ice_nova' };
+        case 'blink':        return { effect: 'mage_blink' };
+        case 'meteor':       return { effect: 'mage_meteor' };
+        case 'frostbolt':    return { effect: 'mage_frostbolt' };
+        case 'arcane_shard': return { effect: 'mage_arcane_shard' };
+        default:             return {};
       }
     case 'druid':
       switch (abilityId) {
@@ -276,6 +281,10 @@ function getSpriteTransform(
       y += 4; break;
     case 'mage_ice_nova':
       scale *= 1.04 + Math.sin(progress * TAU) * 0.02; y += 4; break;
+    case 'mage_frostbolt':
+      x = -4 + Math.sin(progress * TAU) * 1.5; y += 4; break;
+    case 'mage_arcane_shard':
+      x = -3 + Math.sin(progress * TAU) * 2; y += 4; break;
     case 'mage_blink':
       x = -4 + Math.sin(progress * TAU) * 3; y += 4; break;
     case 'mage_meteor':
@@ -591,6 +600,38 @@ function PreviewOverlay({
         </>
       );
       break;
+    case 'mage_frostbolt': {
+      const bx = 16 + progress * 90;
+      const by = 60;
+      content = (
+        <>
+          {[1,2,3].map(i => {
+            const tx = bx - i * 12;
+            return <ellipse key={i} cx={tx} cy={by} rx={5 - i} ry={2.5 - i * 0.5} fill="#bae6fd" opacity={0.55 - i * 0.12} />;
+          })}
+          <ellipse cx={bx - 4} cy={by} rx="12" ry="3.5" fill="#93c5fd" opacity="0.82" />
+          <ellipse cx={bx} cy={by} rx="7" ry="4.5" fill="#e0f2fe" opacity="0.95" />
+          <circle cx={bx + 3} cy={by} r="2.5" fill="#fff" opacity="0.92" />
+        </>
+      );
+      break;
+    }
+    case 'mage_arcane_shard': {
+      const sx = 14 + progress * 92;
+      const sy = 60;
+      content = (
+        <>
+          {[1,2,3].map(i => {
+            const tx = sx - i * 10;
+            return <ellipse key={i} cx={tx} cy={sy} rx={3.5 - i * 0.5} ry={2 - i * 0.4} fill="#d946ef" opacity={0.5 - i * 0.12} />;
+          })}
+          <polygon points={`${sx + 13},${sy} ${sx - 5},${sy - 6} ${sx - 3},${sy} ${sx - 5},${sy + 6}`} fill="#c084fc" opacity="0.92" />
+          <polygon points={`${sx + 10},${sy} ${sx - 3},${sy - 4} ${sx - 2},${sy} ${sx - 3},${sy + 4}`} fill="#e879f9" opacity="0.88" />
+          <circle cx={sx + 8} cy={sy} r="2.5" fill="#fdf4ff" opacity="0.92" />
+        </>
+      );
+      break;
+    }
     case 'mage_meteor':
       content = (
         <>
@@ -1240,6 +1281,7 @@ export function AbilityPreview({
   animationId,
   spriteScale = 1.1,
   vfxScale = 1.35,
+  spriteGuildId,
 }: Props) {
   const preview = getAbilityPreviewSpec(guildId, abilityId);
   const progress = useLoopProgress(1200);
@@ -1255,7 +1297,11 @@ export function AbilityPreview({
             ? 'drop-shadow(0 0 16px rgba(239,68,68,0.55)) sepia(0.6) saturate(3) hue-rotate(-15deg) brightness(0.92)'
             : preview.effect === 'mage_ice_nova'
               ? 'drop-shadow(0 0 12px rgba(147,197,253,0.6)) sepia(0.3) saturate(2) hue-rotate(160deg) brightness(1.08)'
-              : preview.effect === 'druid_shapeshift'
+              : preview.effect === 'mage_frostbolt'
+                ? 'drop-shadow(0 0 10px rgba(147,197,253,0.55)) sepia(0.2) saturate(2) hue-rotate(170deg) brightness(1.06)'
+                : preview.effect === 'mage_arcane_shard'
+                  ? 'drop-shadow(0 0 12px rgba(192,132,252,0.6)) sepia(0.4) saturate(3) hue-rotate(220deg) brightness(0.98)'
+                  : preview.effect === 'druid_shapeshift'
                 ? 'drop-shadow(0 0 12px rgba(76,175,80,0.55)) sepia(0.3) saturate(2) hue-rotate(80deg) brightness(1.06)'
                 : preview.effect === 'champion_skullsplitter'
                   ? 'drop-shadow(0 0 16px rgba(220,38,38,0.6)) sepia(0.8) saturate(4) hue-rotate(-20deg) brightness(0.88)'
@@ -1324,7 +1370,7 @@ export function AbilityPreview({
             zIndex: 2,
           }}
         >
-          <SpriteStrip guildId={guildId} animationId={animationId} scale={1} />
+          <SpriteStrip guildId={spriteGuildId ?? guildId} animationId={animationId} scale={1} />
         </div>
         <PreviewOverlay effect={preview.effect} progress={progress} scale={vfxScale} />
       </div>

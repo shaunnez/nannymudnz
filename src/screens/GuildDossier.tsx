@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { GUILDS } from '@nannymud/shared/simulation/guildData';
+import { GUILDS, DRUID_WOLF_ABILITIES, DRUID_WOLF_RMB } from '@nannymud/shared/simulation/guildData';
 import { GUILD_META } from '../data/guildMeta';
 import type { GuildId, Stats, AbilityDef } from '@nannymud/shared/simulation/types';
 import { theme, guildAccent, Btn, Chip, SectionLabel, GuildMonogram, SpriteStrip, ComboDisplay, MeterBar, AbilityPreview } from '../ui';
@@ -19,15 +19,26 @@ export function GuildDossier({ guildId, onBack, onPrev, onNext }: Props) {
   const meta = GUILD_META[guildId];
   const accent = guildAccent(meta.hue);
 
+  const [druidForm, setDruidForm] = useState<'druid' | 'wolf'>('druid');
+  useEffect(() => { setDruidForm('druid'); }, [guildId]);
+
   const abilityEntries = useMemo(
-    () => [
-      ...guild.abilities.map((a, i) => ({ ability: a, slot: String(i + 1).padStart(2, '0'), isRmb: false })),
-      { ability: guild.rmb, slot: 'RMB', isRmb: true },
-    ],
-    [guild],
+    () => {
+      if (guildId === 'druid' && druidForm === 'wolf') {
+        return [
+          ...DRUID_WOLF_ABILITIES.map((a, i) => ({ ability: a, slot: String(i + 1).padStart(2, '0'), isRmb: false })),
+          { ability: DRUID_WOLF_RMB, slot: 'RMB', isRmb: true },
+        ];
+      }
+      return [
+        ...guild.abilities.map((a, i) => ({ ability: a, slot: String(i + 1).padStart(2, '0'), isRmb: false })),
+        { ability: guild.rmb, slot: 'RMB', isRmb: true },
+      ];
+    },
+    [guild, guildId, druidForm],
   );
   const [abilityIdx, setAbilityIdx] = useState(0);
-  useEffect(() => { setAbilityIdx(0); }, [guildId]);
+  useEffect(() => { setAbilityIdx(0); }, [guildId, druidForm]);
   const currentAbility = abilityEntries[Math.min(abilityIdx, abilityEntries.length - 1)];
 
   useEffect(() => {
@@ -174,15 +185,41 @@ export function GuildDossier({ guildId, onBack, onPrev, onNext }: Props) {
             overflow: 'hidden',
           }}
         >
-          <SectionLabel kicker="ABILITIES" right={`${abilityIdx + 1} / ${abilityEntries.length}`}>
-            Kit breakdown
-          </SectionLabel>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{ flex: 1 }}>
+              <SectionLabel kicker={guildId === 'druid' && druidForm === 'wolf' ? 'WOLF FORM' : 'ABILITIES'} right={`${abilityIdx + 1} / ${abilityEntries.length}`}>
+                Kit breakdown
+              </SectionLabel>
+            </div>
+            {guildId === 'druid' && (['druid', 'wolf'] as const).map((form) => (
+              <button
+                key={form}
+                type="button"
+                onClick={() => setDruidForm(form)}
+                style={{
+                  appearance: 'none',
+                  border: `1px solid ${druidForm === form ? accent : theme.lineSoft}`,
+                  background: druidForm === form ? `${accent}18` : theme.panel,
+                  color: druidForm === form ? accent : theme.inkDim,
+                  fontFamily: theme.fontMono,
+                  fontSize: 10,
+                  letterSpacing: 2,
+                  padding: '5px 10px',
+                  cursor: 'pointer',
+                  flexShrink: 0,
+                }}
+              >
+                {form === 'druid' ? 'DRUID' : 'WOLF'}
+              </button>
+            ))}
+          </div>
 
           <AbilityPager
             entry={currentAbility}
             guildId={guildId}
             abilityIndex={abilityIdx}
             accent={accent}
+            spriteGuildId={guildId === 'druid' && druidForm === 'wolf' ? 'wolf' : undefined}
           />
 
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', justifyContent: 'center', marginTop: 'auto' }}>
@@ -234,19 +271,25 @@ export function GuildDossier({ guildId, onBack, onPrev, onNext }: Props) {
 
 interface AbilityEntry { ability: AbilityDef; slot: string; isRmb: boolean; }
 
+const WOLF_DOSSIER_ANIM: Record<number, string> = { 0: 'attack_1', 1: 'run', 2: 'idle', 3: 'attack_1', 4: 'idle' };
+
 function AbilityPager({
   entry,
   guildId,
   abilityIndex,
   accent,
+  spriteGuildId,
 }: {
   entry: AbilityEntry;
   guildId: GuildId;
   abilityIndex: number;
   accent: string;
+  spriteGuildId?: string;
 }) {
   const { ability: a, slot, isRmb } = entry;
-  const animId = isRmb ? 'attack_2' : `ability_${abilityIndex + 1}`;
+  const animId = spriteGuildId
+    ? (isRmb ? 'idle' : (WOLF_DOSSIER_ANIM[abilityIndex] ?? 'idle'))
+    : isRmb ? 'attack_2' : `ability_${abilityIndex + 1}`;
   return (
     <div
       style={{
@@ -286,7 +329,7 @@ function AbilityPager({
           overflow: 'hidden',
         }}
       >
-        <AbilityPreview guildId={guildId} abilityId={a.id} animationId={animId} spriteScale={2.2} vfxScale={1.7} />
+        <AbilityPreview guildId={guildId} abilityId={a.id} animationId={animId} spriteScale={2.2} vfxScale={1.7} spriteGuildId={spriteGuildId} />
       </div>
 
       <div style={{ fontFamily: theme.fontBody, fontSize: 16, color: theme.inkDim, lineHeight: 1.6 }}>

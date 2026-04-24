@@ -123,40 +123,35 @@ export function MoveList({ initialGuild, onBack, onDossier }: Props) {
               <div style={{ fontFamily: theme.fontDisplay, fontSize: 30, color: theme.ink, letterSpacing: '-0.02em', lineHeight: 1 }}>
                 {guild.name}
               </div>
-              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
                 <Chip mono tone="accent">{guild.resource.name.toUpperCase()} · {guild.resource.max}</Chip>
                 <Chip mono>HP · {guild.hpMax}</Chip>
                 <Chip mono>ARM · {meta.uiVitals.Armor}</Chip>
                 <Chip mono>MR · {meta.uiVitals.MR}</Chip>
                 <Chip mono>MV · {meta.uiVitals.Move}</Chip>
+                {sel === 'druid' && (['druid', 'wolf'] as const).map((form) => (
+                  <button
+                    key={form}
+                    type="button"
+                    onClick={() => setDruidForm(form)}
+                    style={{
+                      appearance: 'none',
+                      border: `1px solid ${druidForm === form ? accent : theme.lineSoft}`,
+                      background: druidForm === form ? `${accent}18` : theme.panel,
+                      color: druidForm === form ? accent : theme.inkDim,
+                      fontFamily: theme.fontMono,
+                      fontSize: 11,
+                      letterSpacing: 3,
+                      padding: '4px 12px',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    {form === 'druid' ? 'DRUID' : 'WOLF'}
+                  </button>
+                ))}
               </div>
             </div>
           </div>
-
-          {sel === 'druid' && (
-            <div style={{ display: 'flex', gap: 8 }}>
-              {(['druid', 'wolf'] as const).map((form) => (
-                <button
-                  key={form}
-                  type="button"
-                  onClick={() => setDruidForm(form)}
-                  style={{
-                    appearance: 'none',
-                    border: `1px solid ${druidForm === form ? accent : theme.lineSoft}`,
-                    background: druidForm === form ? `${accent}18` : theme.panel,
-                    color: druidForm === form ? accent : theme.inkDim,
-                    fontFamily: theme.fontMono,
-                    fontSize: 11,
-                    letterSpacing: 3,
-                    padding: '6px 14px',
-                    cursor: 'pointer',
-                  }}
-                >
-                  {form === 'druid' ? 'DRUID FORM' : 'WOLF FORM'}
-                </button>
-              ))}
-            </div>
-          )}
 
           <SectionLabel
             kicker={sel === 'druid' && druidForm === 'wolf' ? 'WOLF FORM' : 'ABILITIES'}
@@ -168,7 +163,15 @@ export function MoveList({ initialGuild, onBack, onDossier }: Props) {
           <div style={{ display: 'flex', flexDirection: 'column' }}>
             <MoveHeader />
             {(sel === 'druid' && druidForm === 'wolf' ? DRUID_WOLF_ABILITIES : guild.abilities).map((a, i) => (
-              <MoveRow key={a.id} slot={SLOT_LABELS[i]} ability={a} accent={accent} guildId={sel} abilityIndex={i} />
+              <MoveRow
+                key={a.id}
+                slot={SLOT_LABELS[i]}
+                ability={a}
+                accent={accent}
+                guildId={sel}
+                abilityIndex={i}
+                spriteGuildId={sel === 'druid' && druidForm === 'wolf' ? 'wolf' : undefined}
+              />
             ))}
             <MoveRow
               slot="6"
@@ -176,6 +179,7 @@ export function MoveList({ initialGuild, onBack, onDossier }: Props) {
               accent={accent}
               guildId={sel}
               abilityIndex={-1}
+              spriteGuildId={sel === 'druid' && druidForm === 'wolf' ? 'wolf' : undefined}
             />
           </div>
         </div>
@@ -231,22 +235,26 @@ function MoveHeader() {
   );
 }
 
+const WOLF_ANIM: Record<number, string> = { 0: 'attack_1', 1: 'run', 2: 'idle', 3: 'attack_1', 4: 'idle' };
+
 function MoveRow({
   slot,
   ability,
   accent,
   guildId,
   abilityIndex,
+  spriteGuildId,
 }: {
   slot: string;
   ability: AbilityDef;
   accent: string;
   guildId: GuildId;
   abilityIndex: number;
+  spriteGuildId?: string;
 }) {
-  const animationId = abilityIndex >= 0
-    ? `ability_${abilityIndex + 1}`
-    : 'basic_attack';
+  const animationId = spriteGuildId
+    ? (abilityIndex >= 0 ? (WOLF_ANIM[abilityIndex] ?? 'idle') : 'idle')
+    : abilityIndex >= 0 ? `ability_${abilityIndex + 1}` : 'basic_attack';
   const cdLabel = ability.cooldownMs > 0
     ? `${(ability.cooldownMs / 1000).toFixed(ability.cooldownMs < 10000 ? 1 : 0)}s`
     : '—';
@@ -270,6 +278,7 @@ function MoveRow({
           animationId={animationId}
           spriteScale={0.9}
           vfxScale={1.1}
+          spriteGuildId={spriteGuildId}
         />
       </div>
       <span style={{ fontFamily: theme.fontMono, fontSize: 22, color: accent, letterSpacing: 2, lineHeight: 1 }}>
