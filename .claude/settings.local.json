@@ -96,7 +96,14 @@
       "PowerShell(Stop-Process -Id 16048,34432,38792,45860 -Force -ErrorAction SilentlyContinue)",
       "PowerShell(\"killed\")",
       "Bash(cat)",
-      "Read(//tmp/**)"
+      "Read(//tmp/**)",
+      "Bash(npx vitest *)",
+      "Bash(awk '/function getAbilityAssetKey/,/^}/')",
+      "Bash(npx tsx *)",
+      "Bash(cp /c/Users/nimbl/projects/nannymud/public/vfx/cultist/hemorrhage_burst.png /c/Users/nimbl/projects/nannymud/public/vfx/vampire/hemorrhage_burst.png)",
+      "Bash(cp /c/Users/nimbl/projects/nannymud/public/vfx/darkmage/shadow_step_flash.png /c/Users/nimbl/projects/nannymud/public/vfx/vampire/shadow_step_flash.png)",
+      "Bash(cp /c/Users/nimbl/projects/nannymud/public/vfx/cultist/mist_step_flash.png /c/Users/nimbl/projects/nannymud/public/vfx/vampire/mist_step_flash.png)",
+      "Bash(cp /c/Users/nimbl/projects/nannymud/public/vfx/darkmage/whispers_aura.png /c/Users/nimbl/projects/nannymud/public/vfx/cultist/whispers_aura.png)"
     ]
   }
 }
