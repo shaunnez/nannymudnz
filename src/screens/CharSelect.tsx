@@ -15,7 +15,7 @@ interface Props {
   onReady: (p1: GuildId, p2: GuildId) => void;
 }
 
-type Slot = 'p1' | 'opp';
+type Slot = 'p1' | 'cpu';
 
 const COLS = 5;
 const ROWS = 3;
@@ -33,64 +33,42 @@ export function CharSelect({ mode, initialP1, initialP2, onBack, onReady }: Prop
 
   const [cursors, setCursors] = useState<Record<Slot, number>>(() => {
     const p1Idx = Math.max(0, ids.indexOf(initialP1));
-    const oppIdx = hasOpponent
-      ? ids.indexOf(initialP2 !== initialP1 ? initialP2 : ids[(p1Idx + 2) % ids.length])
-      : 0;
-    return { p1: p1Idx, opp: Math.max(0, oppIdx) };
+    const cpuIdx = Math.max(
+      0,
+      ids.indexOf(initialP2 !== initialP1 ? initialP2 : ids[(p1Idx + 2) % ids.length]),
+    );
+    return { p1: p1Idx, cpu: cpuIdx };
   });
 
-  const [picks, setPicks] = useState<Record<Slot, GuildId>>(() => ({
-    p1: initialP1,
-    opp: hasOpponent
-      ? initialP2 !== initialP1 ? initialP2 : pickRandom(ids, initialP1)
-      : pickRandom(ids, initialP1),
+  // null = not yet explicitly clicked. For non-VS, cpu is pre-seeded (never shown,
+  // just passed to onReady so the caller always gets two valid IDs).
+  const [picks, setPicks] = useState<Record<Slot, GuildId | null>>(() => ({
+    p1: null,
+    cpu: hasOpponent ? null : pickRandom(ids, initialP1),
   }));
 
-  const [locked, setLocked] = useState<Record<Slot, boolean>>(() => ({
-    p1: false,
-    // Non-VS modes: opponent is spawned by game logic; treat as pre-resolved so READY gates only on P1.
-    opp: !hasOpponent,
-  }));
-
-  const [active, setActive] = useState<Slot>('p1');
+  const [activeSlot, setActiveSlot] = useState<Slot>('p1');
   const [detailsFor, setDetailsFor] = useState<GuildId | null>(null);
-  const canMove = !locked[active];
+
+  // READY enables when both slots have an explicit click-pick.
+  // Non-VS: only p1 needs a pick; cpu was pre-seeded above.
+  const readyToGo = hasOpponent
+    ? picks.p1 !== null && picks.cpu !== null
+    : picks.p1 !== null;
 
   const move = useCallback(
     (dx: number, dy: number) => {
-      if (!canMove) return;
       setCursors((c) => {
-        const cur = c[active];
+        const cur = c[activeSlot];
         const r = Math.floor(cur / COLS);
         const col = cur % COLS;
         const nr = Math.max(0, Math.min(ROWS - 1, r + dy));
         const nc = Math.max(0, Math.min(COLS - 1, col + dx));
-        const nextIdx = nr * COLS + nc;
-        return { ...c, [active]: nextIdx };
+        return { ...c, [activeSlot]: nr * COLS + nc };
       });
     },
-    [active, canMove],
+    [activeSlot],
   );
-
-  const lockActive = useCallback(() => {
-    if (locked[active]) return;
-    const chosen = ids[cursors[active]];
-    setPicks((p) => ({ ...p, [active]: chosen }));
-    setLocked((l) => ({ ...l, [active]: true }));
-    if (hasOpponent) {
-      setActive((cur) => {
-        const other: Slot = cur === 'p1' ? 'opp' : 'p1';
-        return locked[other] ? cur : other;
-      });
-    }
-  }, [active, cursors, hasOpponent, ids, locked]);
-
-  const unlockActive = useCallback(() => {
-    setLocked((l) => ({ ...l, [active]: false }));
-  }, [active]);
-
-  // In non-VS, opp is pre-locked and p1 has no lock gate — commit directly from READY/Enter.
-  const readyToCommit = hasOpponent ? locked.p1 && locked.opp : true;
 
   useEffect(() => {
     if (detailsFor) return;
@@ -101,26 +79,24 @@ export function CharSelect({ mode, initialP1, initialP2, onBack, onReady }: Prop
       else if (e.key === 'ArrowDown') { e.preventDefault(); move(0, 1); }
       else if (e.key === 'Tab') {
         e.preventDefault();
-        if (hasOpponent) setActive((p) => (p === 'p1' ? 'opp' : 'p1'));
+        if (hasOpponent) setActiveSlot((s) => (s === 'p1' ? 'cpu' : 'p1'));
       } else if (e.key === 'Enter') {
         e.preventDefault();
-        if (!hasOpponent) {
-          setPicks((p) => ({ ...p, p1: ids[cursors.p1] }));
-          return;
+        if (readyToGo) {
+          onReady(picks.p1!, picks.cpu!);
+        } else {
+          setPicks((p) => ({ ...p, [activeSlot]: ids[cursors[activeSlot]] }));
         }
-        if (readyToCommit) onReady(picks.p1, picks.opp);
-        else lockActive();
       } else if (e.key === 'Backspace' || e.key === 'Escape') {
         e.preventDefault();
-        if (locked[active]) unlockActive();
-        else onBack();
+        onBack();
       }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [active, cursors, detailsFor, hasOpponent, ids, locked, lockActive, move, onBack, onReady, picks, readyToCommit, unlockActive]);
+  }, [activeSlot, cursors, detailsFor, hasOpponent, ids, move, onBack, onReady, picks, readyToGo]);
 
-  const hoveredId = ids[cursors[active]];
+  const hoveredId = ids[cursors[activeSlot]];
   const hoveredGuild = GUILDS.find((g) => g.id === hoveredId)!;
   const hoveredMeta = GUILD_META[hoveredId];
 
@@ -153,15 +129,15 @@ export function CharSelect({ mode, initialP1, initialP2, onBack, onReady }: Prop
         </div>
         <div style={{ justifySelf: 'end', display: 'flex', gap: 8 }}>
           {hasOpponent && (
-            <Btn size="md" onClick={() => setActive((p) => (p === 'p1' ? 'opp' : 'p1'))}>
-              SWITCH · {active === 'p1' ? 'P1' : 'CPU'}
+            <Btn size="md" onClick={() => setActiveSlot((s) => (s === 'p1' ? 'cpu' : 'p1'))}>
+              SWITCH · {activeSlot === 'p1' ? 'P1' : 'CPU'}
             </Btn>
           )}
           <Btn
             size="md"
             primary
-            disabled={!readyToCommit}
-            onClick={() => onReady(picks.p1, picks.opp)}
+            disabled={!readyToGo}
+            onClick={() => onReady(picks.p1!, picks.cpu!)}
           >
             READY →
           </Btn>
@@ -178,11 +154,11 @@ export function CharSelect({ mode, initialP1, initialP2, onBack, onReady }: Prop
       >
         <SidePanel
           role="P1"
-          guildId={locked.p1 ? picks.p1 : ids[cursors.p1]}
-          locked={hasOpponent ? locked.p1 : false}
-          active={active === 'p1'}
+          guildId={picks.p1 ?? ids[cursors.p1]}
+          locked={hasOpponent ? picks.p1 !== null : false}
+          active={activeSlot === 'p1'}
           statusText={!hasOpponent ? 'HOVER' : undefined}
-          onView={() => setDetailsFor(locked.p1 ? picks.p1 : ids[cursors.p1])}
+          onView={() => setDetailsFor(picks.p1 ?? ids[cursors.p1])}
         />
 
         <div
@@ -206,8 +182,8 @@ export function CharSelect({ mode, initialP1, initialP2, onBack, onReady }: Prop
               const meta = GUILD_META[g.id];
               const acc = guildAccent(meta.hue);
               const p1Here = cursors.p1 === i;
-              const oppHere = hasOpponent && cursors.opp === i;
-              const isActiveTile = (active === 'p1' ? p1Here : oppHere);
+              const cpuHere = hasOpponent && cursors.cpu === i;
+              const isActiveTile = activeSlot === 'p1' ? p1Here : cpuHere;
               const p1Picked = !hasOpponent && picks.p1 === g.id;
               return (
                 <div
@@ -215,30 +191,21 @@ export function CharSelect({ mode, initialP1, initialP2, onBack, onReady }: Prop
                   onMouseEnter={() => {
                     // Hover moves the active cursor so the panel + preview strip update.
                     // Clicks set the sticky pick separately.
-                    if (!canMove) return;
-                    setCursors((c) => ({ ...c, [active]: i }));
+                    setCursors((c) => ({ ...c, [activeSlot]: i }));
                   }}
                   onClick={() => {
-                    if (locked[active]) return;
-                    setCursors((c) => ({ ...c, [active]: i }));
-                    setPicks((p) => ({ ...p, [active]: g.id }));
-                    if (hasOpponent) {
-                      // VS: lock this slot and swap to the other player.
-                      setLocked((l) => ({ ...l, [active]: true }));
-                      const other: Slot = active === 'p1' ? 'opp' : 'p1';
-                      if (!locked[other]) setActive(other);
-                    }
-                    // Stage: click commits picks.p1 to the right-hand SELECTED panel. No lock.
+                    setCursors((c) => ({ ...c, [activeSlot]: i }));
+                    setPicks((p) => ({ ...p, [activeSlot]: g.id }));
                   }}
                   style={{
                     position: 'relative',
                     width: tileSize,
-                    cursor: locked[active] ? 'default' : 'pointer',
+                    cursor: 'pointer',
                     outline: p1Picked ? `2px solid ${theme.accent}` : 'none',
                     outlineOffset: 4,
                   }}
                 >
-                  <GuildMonogram guildId={g.id} size={tileSize} selected={p1Here || oppHere} />
+                  <GuildMonogram guildId={g.id} size={tileSize} selected={p1Here || cpuHere} />
                   <div
                     style={{
                       textAlign: 'center',
@@ -265,10 +232,10 @@ export function CharSelect({ mode, initialP1, initialP2, onBack, onReady }: Prop
                         zIndex: 2,
                       }}
                     >
-                      ◆ P1{locked.p1 ? '·L' : ''}
+                      ◆ P1{picks.p1 === g.id ? '·✓' : ''}
                     </div>
                   )}
-                  {oppHere && (
+                  {cpuHere && (
                     <div
                       style={{
                         position: 'absolute',
@@ -282,7 +249,7 @@ export function CharSelect({ mode, initialP1, initialP2, onBack, onReady }: Prop
                         zIndex: 2,
                       }}
                     >
-                      ◆ CPU{locked.opp ? '·L' : ''}
+                      ◆ CPU{picks.cpu === g.id ? '·✓' : ''}
                     </div>
                   )}
                 </div>
@@ -323,19 +290,19 @@ export function CharSelect({ mode, initialP1, initialP2, onBack, onReady }: Prop
         {hasOpponent ? (
           <SidePanel
             role="CPU"
-            guildId={locked.opp ? picks.opp : ids[cursors.opp]}
-            locked={locked.opp}
-            active={active === 'opp'}
-            onView={() => setDetailsFor(locked.opp ? picks.opp : ids[cursors.opp])}
+            guildId={picks.cpu ?? ids[cursors.cpu]}
+            locked={picks.cpu !== null}
+            active={activeSlot === 'cpu'}
+            onView={() => setDetailsFor(picks.cpu ?? ids[cursors.cpu])}
           />
         ) : (
           <SidePanel
             role="P1"
-            guildId={picks.p1}
-            locked={true}
+            guildId={picks.p1 ?? ids[cursors.p1]}
+            locked={picks.p1 !== null}
             active={false}
             statusText="SELECTED"
-            onView={() => setDetailsFor(picks.p1)}
+            onView={() => setDetailsFor(picks.p1 ?? ids[cursors.p1])}
           />
         )}
       </div>
@@ -355,7 +322,7 @@ export function CharSelect({ mode, initialP1, initialP2, onBack, onReady }: Prop
         }}
       >
         <span>◀▶▲▼ MOVE</span>
-        <span>{hasOpponent ? '↵ LOCK / READY' : '↵ SELECT'}</span>
+        <span>{hasOpponent ? '↵ PICK / READY' : '↵ SELECT'}</span>
         {hasOpponent && <span>TAB SWITCH</span>}
         <span>ESC BACK</span>
       </div>
