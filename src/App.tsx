@@ -20,7 +20,10 @@ import { getMatchSlots } from './screens/mp/useMatchState';
 import { ScalingFrame } from './layout/ScalingFrame';
 import { Scanlines, theme } from './ui';
 import { useAppState, type AppScreen } from './state/useAppState';
-import type { GuildId, MatchStats } from '@nannymud/shared/simulation/types';
+import type { GuildId, MatchStats, BattStatEntry } from '@nannymud/shared/simulation/types';
+import { BattleConfigScreen } from './screens/BattleConfigScreen';
+import { BattleResultsScreen } from './screens/BattleResultsScreen';
+import { MobileWelcome } from './screens/MobileWelcome';
 
 const PHASE_TO_SCREEN: Record<MatchPhase, AppScreen> = {
   lobby: 'mp_lobby',
@@ -36,6 +39,8 @@ export default function App() {
   const [finalScore, setFinalScore] = useState(0);
   const [finalMatchStats, setFinalMatchStats] = useState<MatchStats | null>(null);
   const [mpMatchStats, setMpMatchStats] = useState<MatchStats | null>(null);
+  const [battlePlayerWon, setBattlePlayerWon] = useState(false);
+  const [finalBattStats, setFinalBattStats] = useState<Record<string, BattStatEntry> | null>(null);
 
   // URL routing: /multiplayer → mp_hub on initial mount.
   useEffect(() => {
@@ -119,6 +124,8 @@ export default function App() {
   }, [state.mpRoom, set, go]);
 
   return (
+    <>
+    <MobileWelcome />
     <ScalingFrame>
       <div
         style={{
@@ -151,6 +158,17 @@ export default function App() {
             onBack={() => go('menu')}
             onReady={(p1, p2) => {
               set({ p1, p2 });
+              go(state.mode === 'batt' ? 'battleconfig' : 'stage');
+            }}
+          />
+        )}
+
+        {state.screen === 'battleconfig' && (
+          <BattleConfigScreen
+            humanGuildId={state.p1}
+            onBack={() => go('charselect')}
+            onReady={(slots) => {
+              set({ battleSlots: slots });
               go('stage');
             }}
           />
@@ -175,6 +193,8 @@ export default function App() {
             stageId={state.stageId}
             animateHud={state.animateHud}
             difficulty={state.difficulty}
+            battleMode={state.mode === 'batt'}
+            battleSlots={state.mode === 'batt' ? state.battleSlots : undefined}
             onVictory={(score, matchStats) => {
               setFinalScore(score);
               setFinalMatchStats(matchStats);
@@ -186,6 +206,11 @@ export default function App() {
               setFinalMatchStats(matchStats);
               set({ winner: 'P2' });
               go('results');
+            }}
+            onBattleEnd={(playerWon, battStats) => {
+              setBattlePlayerWon(playerWon);
+              setFinalBattStats(battStats ?? null);
+              go('battresults');
             }}
             onQuit={() => go('menu')}
           />
@@ -231,6 +256,16 @@ export default function App() {
             winner={state.winner ?? 'P2'}
             score={finalScore}
             matchStats={finalMatchStats ?? undefined}
+            onRematch={() => go('game')}
+            onMenu={() => go('menu')}
+          />
+        )}
+
+        {state.screen === 'battresults' && (
+          <BattleResultsScreen
+            slots={state.battleSlots}
+            battStats={finalBattStats}
+            playerWon={battlePlayerWon}
             onRematch={() => go('game')}
             onMenu={() => go('menu')}
           />
@@ -330,6 +365,7 @@ export default function App() {
         <Scanlines />
       </div>
     </ScalingFrame>
+    </>
   );
 }
 

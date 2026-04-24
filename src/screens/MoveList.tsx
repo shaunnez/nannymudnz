@@ -4,6 +4,7 @@ import { GUILD_META } from '../data/guildMeta';
 import type { GuildId, AbilityDef } from '@nannymud/shared/simulation/types';
 import { theme, guildAccent, Btn, Chip, SectionLabel, GuildMonogram, ComboDisplay } from '../ui';
 import { AbilityPreview } from '../ui/AbilityPreview';
+import { useIsMobile } from '../hooks/useIsMobile';
 
 interface Props {
   initialGuild?: GuildId;
@@ -16,6 +17,7 @@ const SLOT_LABELS = ['01', '02', '03', '04', '05'];
 export function MoveList({ initialGuild, onBack, onDossier }: Props) {
   const [sel, setSel] = useState<GuildId>(initialGuild ?? GUILDS[0].id);
   const [druidForm, setDruidForm] = useState<'druid' | 'wolf'>('druid');
+  const mobile = useIsMobile();
   useEffect(() => { setDruidForm('druid'); }, [sel]);
 
   const guild = useMemo(() => GUILDS.find((g) => g.id === sel)!, [sel]);
@@ -42,7 +44,7 @@ export function MoveList({ initialGuild, onBack, onDossier }: Props) {
     <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
       <div
         style={{
-          padding: '18px 36px',
+          padding: mobile ? '10px 18px' : '18px 36px',
           borderBottom: `1px solid ${theme.lineSoft}`,
           display: 'grid',
           gridTemplateColumns: '1fr auto 1fr',
@@ -81,7 +83,7 @@ export function MoveList({ initialGuild, onBack, onDossier }: Props) {
                   gridTemplateColumns: '44px 1fr auto',
                   gap: 14,
                   alignItems: 'center',
-                  padding: '8px 22px',
+                  padding: mobile ? '5px 14px' : '8px 22px',
                   borderBottom: `1px solid ${theme.lineSoft}`,
                   cursor: 'pointer',
                   background: isActive ? `${acc}12` : 'transparent',
@@ -113,7 +115,7 @@ export function MoveList({ initialGuild, onBack, onDossier }: Props) {
           })}
         </div>
 
-        <div style={{ padding: 32, overflow: 'auto', display: 'flex', flexDirection: 'column', gap: 18 }}>
+        <div style={{ padding: mobile ? 16 : 32, overflow: 'auto', display: 'flex', flexDirection: 'column', gap: mobile ? 10 : 18 }}>
           <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: 18, alignItems: 'center' }}>
             <GuildMonogram guildId={sel} size={88} selected />
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>

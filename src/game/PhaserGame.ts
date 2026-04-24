@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import type { Room } from '@colyseus/sdk';
-import type { GuildId, SimMode, MatchStats } from '@nannymud/shared/simulation/types';
+import type { GuildId, SimMode, MatchStats, BattleSlot, BattStatEntry } from '@nannymud/shared/simulation/types';
 import type { MatchState } from '@nannymud/shared';
 import { VIRTUAL_WIDTH, VIRTUAL_HEIGHT } from './constants';
 import { BootScene } from './scenes/BootScene';
@@ -9,8 +9,8 @@ import { GameplayScene } from './scenes/GameplayScene';
 export type NetMode = 'sp' | 'mp';
 
 export interface GameCallbacks {
-  onVictory: (score: number, matchStats: MatchStats) => void;
-  onDefeat: (matchStats: MatchStats) => void;
+  onVictory: (score: number, matchStats: MatchStats, battStats?: Record<string, BattStatEntry> | null) => void;
+  onDefeat: (matchStats: MatchStats, battStats?: Record<string, BattStatEntry> | null) => void;
   onQuit: () => void;
   toggleFullscreen: () => void;
   getIsFullscreen: () => boolean;
@@ -29,6 +29,10 @@ export interface GameBootConfig {
   matchRoom?: Room<MatchState>;
   /** SP VS only — CPU difficulty 0..5. Ignored in MP / story. */
   difficulty?: number;
+  /** True when game mode is 'batt'. Initialises sim via createBattleState. */
+  battleMode?: boolean;
+  /** Required when battleMode is true. */
+  battleSlots?: BattleSlot[];
 }
 
 export function makePhaserGame(parent: HTMLElement, boot: GameBootConfig): Phaser.Game {
@@ -58,6 +62,8 @@ export function makePhaserGame(parent: HTMLElement, boot: GameBootConfig): Phase
   game.registry.set('netMode', boot.netMode ?? 'sp');
   game.registry.set('matchRoom', boot.matchRoom ?? null);
   game.registry.set('difficulty', boot.difficulty ?? 2);
+  game.registry.set('battleMode', boot.battleMode ?? false);
+  game.registry.set('battleSlots', boot.battleSlots ?? []);
 
   return game;
 }

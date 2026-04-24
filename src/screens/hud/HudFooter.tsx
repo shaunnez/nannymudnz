@@ -26,11 +26,11 @@ export function HudFooter({ mode, p1, p2, simTimeMs, state }: Props) {
         padding: '8px 14px 10px',
         background: theme.bg,
         borderTop: `1px solid ${theme.line}`,
-        pointerEvents: 'none',
+        pointerEvents: 'auto',
       }}
     >
       <div style={{ flex: 1, minWidth: 0 }}>
-        <AbilityStripSection actor={p1} side="p1" showKeys simTimeMs={simTimeMs} label="P1" />
+        <AbilityStripSection actor={p1} side="p1" showKeys simTimeMs={simTimeMs} label="P1" interactive />
       </div>
       <div style={{ flex: 1, minWidth: 0 }}>
         {mode === 'story' ? (
@@ -49,12 +49,14 @@ function AbilityStripSection({
   showKeys,
   simTimeMs,
   label,
+  interactive = false,
 }: {
   actor: Actor;
   side: 'p1' | 'p2';
   showKeys: boolean;
   simTimeMs: number;
   label: string;
+  interactive?: boolean;
 }) {
   const color = side === 'p1' ? theme.team1 : theme.team2;
   const align = side === 'p1' ? 'flex-start' : 'flex-end';
@@ -70,7 +72,7 @@ function AbilityStripSection({
       >
         {label} · ABILITIES
       </div>
-      <AbilityStrip actor={actor} side={side} showKeys={showKeys} simTimeMs={simTimeMs} />
+      <AbilityStrip actor={actor} side={side} showKeys={showKeys} simTimeMs={simTimeMs} interactive={interactive} />
     </div>
   );
 }

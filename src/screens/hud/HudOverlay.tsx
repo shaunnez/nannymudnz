@@ -4,6 +4,10 @@ import type { SimState } from '@nannymud/shared/simulation/types';
 import { HudTopBar } from './HudTopBar';
 import { HudFooter } from './HudFooter';
 import { VIRTUAL_WIDTH, VIRTUAL_HEIGHT } from '../../game/constants';
+import { dispatchTouchPause } from '../../game/input/PhaserInputAdapter';
+import { TouchJoystick } from './TouchJoystick';
+import { TouchActionButtons } from './TouchActionButtons';
+import { useIsMobile } from '../../hooks/useIsMobile';
 
 interface Props {
   game: Phaser.Game | null;
@@ -67,6 +71,7 @@ export function HudOverlay({
     };
   }, [game]);
 
+  const mobile = useIsMobile();
   const state = stateRef.current;
   if (!state) return null;
 
@@ -125,7 +130,37 @@ export function HudOverlay({
           simTimeMs={state.timeMs}
           state={state}
         />
+        {mobile && <TouchJoystick />}
+        {mobile && <TouchActionButtons />}
       </div>
+      {/* Mobile pause button — outside the scaled div so it stays top-right at display coords */}
+      <button
+        onClick={dispatchTouchPause}
+        style={{
+          position: 'absolute',
+          top: 14,
+          right: 22,
+          width: 52,
+          height: 52,
+          background: 'rgba(0,0,0,0.55)',
+          border: '1px solid rgba(255,255,255,0.2)',
+          borderRadius: 6,
+          color: '#fff',
+          fontSize: 14,
+          fontWeight: 700,
+          cursor: 'pointer',
+          pointerEvents: 'auto',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          WebkitTapHighlightColor: 'transparent',
+          userSelect: 'none',
+          zIndex: 10,
+        }}
+        aria-label="Pause"
+      >
+        ❙❙
+      </button>
     </div>
   );
 }

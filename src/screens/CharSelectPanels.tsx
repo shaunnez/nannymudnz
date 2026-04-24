@@ -13,9 +13,10 @@ export interface SidePanelProps {
   statusText?: string;
   roleLabel?: string;
   onView: () => void;
+  hideAvatar?: boolean;
 }
 
-export function SidePanel({ role, guildId, locked, active, statusText, roleLabel, onView }: SidePanelProps) {
+export function SidePanel({ role, guildId, locked, active, statusText, roleLabel, onView, hideAvatar }: SidePanelProps) {
   const guild = GUILDS.find((g) => g.id === guildId)!;
   const meta = GUILD_META[guildId];
   const accent = guildAccent(meta.hue);
@@ -56,7 +57,7 @@ export function SidePanel({ role, guildId, locked, active, statusText, roleLabel
           {statusText ?? (locked ? 'LOCKED' : 'SELECTING…')}
         </span>
       </div>
-      <GuildMonogram guildId={guildId} size={180} selected={locked} />
+      {!hideAvatar && <GuildMonogram guildId={guildId} size={180} selected={locked} />}
       <div style={{ marginBottom: 6 }}>
         <div
           style={{

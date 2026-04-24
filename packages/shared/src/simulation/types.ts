@@ -232,9 +232,11 @@ export interface Actor {
   dishes?: string[];
   miasmaActive?: boolean;
   fivePointPalmTarget?: string;
+  lastAttackedBy?: string;
   isAlive: boolean;
   deathTimeMs: number;
   score: number;
+  battleTeam?: BattleTeam;
 }
 
 export type ActorState =
@@ -398,6 +400,13 @@ export interface BattleSlot {
   team: BattleTeam;
 }
 
+export interface BattStatEntry {
+  kills: number;
+  deaths: number;
+  dmgDealt: number;
+  healing: number;
+}
+
 export interface SimState {
   tick: number;
   timeMs: number;
@@ -429,18 +438,16 @@ export interface SimState {
   nextLogId: number;
   controllers: Record<string, PlayerController>;
   matchStats: MatchStats;
-  /** True when created via createSurvivalState. Never mutated after init. */
-  survivalMode: boolean;
-  /** Running score total. Incremented when waves clear. Only meaningful when survivalMode. */
-  survivalScore: number;
-  /** True when created via createBattleState. Never mutated after init. */
-  battleMode: boolean;
-  /** The configured slot list. Used by BattleHUD8 to map actors to slots. */
-  battleSlots: BattleSlot[];
-  /** Countdown in ms. 0 = timer expired → resolve by HP. Only used when battleMode. */
-  battleTimer: number;
   /** SP VS only — CPU opponent difficulty (0..5). Undefined in MP / story. */
   difficulty?: number;
+  /** True when created via createSurvivalState. Never mutated after init. */
+  survivalMode: boolean;
+  /** Running score. Incremented when waves clear. Only meaningful when survivalMode. */
+  survivalScore: number;
+  battleMode: boolean;
+  battleSlots: BattleSlot[];
+  battleTimer: number;
+  battStats: Record<string, BattStatEntry> | null;
 }
 
 export interface InputState {

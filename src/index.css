@@ -12,13 +12,20 @@
   box-sizing: border-box;
 }
 
+html {
+  overscroll-behavior: none;
+  touch-action: none;
+}
+
 body {
   margin: 0;
   padding: 0;
   background: #0b0f14;
   color: #e6edf3;
   font-family: var(--font-body);
-  overflow-x: hidden;
+  overflow: hidden;
+  overscroll-behavior: none;
+  touch-action: none;
 }
 
 canvas {

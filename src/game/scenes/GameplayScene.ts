@@ -10,6 +10,8 @@ import {
   forceResume,
 } from '@nannymud/shared/simulation/simulation';
 import { createVsState } from '@nannymud/shared/simulation/vsSimulation';
+import { createBattleState } from '@nannymud/shared/simulation/battleSimulation';
+import type { BattleSlot } from '@nannymud/shared/simulation/types';
 import { FULLSCREEN_EXIT_EVENT } from '../../layout/fullscreenConstants';
 import { PhaserInputAdapter } from '../input/PhaserInputAdapter';
 import { BackgroundView } from '../view/BackgroundView';
@@ -121,6 +123,9 @@ export class GameplayScene extends Phaser.Scene {
       if (!p2) throw new Error('VS mode requires a p2 guild');
       const difficulty = (this.game.registry.get('difficulty') as number | null) ?? 2;
       this.simState = createVsState(guildId, p2, stageId, seed, false, difficulty);
+    } else if (this.game.registry.get('battleMode')) {
+      const battleSlots = this.game.registry.get('battleSlots') as BattleSlot[];
+      this.simState = createBattleState(guildId, battleSlots, stageId, seed);
     } else {
       this.simState = createInitialState(guildId, seed);
     }
@@ -246,14 +251,14 @@ export class GameplayScene extends Phaser.Scene {
         const score = this.simState.score;
         this.audio.stopMusic();
         this.audio.playVictory();
-        this.time.delayedCall(1500, () => this.callbacks.onVictory(score, this.simState.matchStats));
+        this.time.delayedCall(1500, () => this.callbacks.onVictory(score, this.simState.matchStats, this.simState.battStats));
         return;
       }
       if (this.simState.phase === 'defeat') {
         this.phaseHandoffFired = true;
         this.audio.stopMusic();
         this.audio.playDefeat();
-        this.time.delayedCall(1500, () => this.callbacks.onDefeat(this.simState.matchStats));
+        this.time.delayedCall(1500, () => this.callbacks.onDefeat(this.simState.matchStats, this.simState.battStats));
         return;
       }
     }

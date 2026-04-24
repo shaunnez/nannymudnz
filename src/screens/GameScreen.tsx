@@ -1,16 +1,19 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Phaser from 'phaser';
 import type { Room } from '@colyseus/sdk';
-import type { GuildId, SimMode, SimState, MatchStats } from '@nannymud/shared/simulation/types';
+import type { GuildId, SimMode, SimState, MatchStats, BattleSlot, BattStatEntry } from '@nannymud/shared/simulation/types';
 import type { MatchState } from '@nannymud/shared';
 import { PauseOverlay } from './PauseOverlay';
+import { theme } from '../ui';
 import { StoryGameOverOverlay } from './StoryGameOverOverlay';
 import { StoryVictoryOverlay } from './StoryVictoryOverlay';
 import { GuildDetails } from './GuildDetails';
 import { LoadingScreen } from './LoadingScreen';
+import { BattleLoadingScreen } from './BattleLoadingScreen';
 import { useFullscreen } from '../layout/useFullscreen';
 import { makePhaserGame, type GameCallbacks } from '../game/PhaserGame';
 import { HudOverlay } from './hud/HudOverlay';
+import { BattleHUD8 } from './BattleHUD8';
 import { STAGES } from '../data/stages';
 import type { StageId } from '../data/stages';
 
@@ -23,14 +26,20 @@ interface Props {
   difficulty?: number;
   /** When present, GameScreen runs in multiplayer mode and mirrors server state. */
   matchRoom?: Room<MatchState>;
-  onVictory: (score: number, matchStats: MatchStats) => void;
-  onDefeat: (matchStats: MatchStats) => void;
+  /** When present, initialises the sim as battle mode. */
+  battleMode?: boolean;
+  battleSlots?: BattleSlot[];
+  onVictory: (score: number, matchStats: MatchStats, battStats?: Record<string, BattStatEntry> | null) => void;
+  onDefeat: (matchStats: MatchStats, battStats?: Record<string, BattStatEntry> | null) => void;
+  /** Called when battle match ends. playerWon is true when all enemies KO or player had highest HP. */
+  onBattleEnd?: (playerWon: boolean, battStats?: Record<string, BattStatEntry> | null) => void;
   onQuit: () => void;
 }
 
 export function GameScreen({
   mode, p1, p2, stageId, animateHud, difficulty, matchRoom,
-  onVictory, onDefeat, onQuit,
+  battleMode, battleSlots,
+  onVictory, onDefeat, onBattleEnd, onQuit,
 }: Props) {
   const netMode = matchRoom ? 'mp' : 'sp';
   const parentRef = useRef<HTMLDivElement>(null);
@@ -40,6 +49,7 @@ export function GameScreen({
   const [loadProgress, setLoadProgress] = useState<number | undefined>(undefined);
   const [isPaused, setIsPaused] = useState(false);
   const [showMoves, setShowMoves] = useState(false);
+  const [showMpQuit, setShowMpQuit] = useState(false);
   const [showStoryGameOver, setShowStoryGameOver] = useState(false);
   const [storyVictoryScore, setStoryVictoryScore] = useState<number | null>(null);
   const pausedByMovesRef = useRef(false);
@@ -53,27 +63,33 @@ export function GameScreen({
   const onVictoryRef = useRef(onVictory);
   const onDefeatRef = useRef(onDefeat);
   const onQuitRef = useRef(onQuit);
+  const onBattleEndRef = useRef(onBattleEnd);
   useEffect(() => { onVictoryRef.current = onVictory; }, [onVictory]);
   useEffect(() => { onDefeatRef.current = onDefeat; }, [onDefeat]);
   useEffect(() => { onQuitRef.current = onQuit; }, [onQuit]);
+  useEffect(() => { onBattleEndRef.current = onBattleEnd; }, [onBattleEnd]);
 
   useEffect(() => {
     const parent = parentRef.current;
     if (!parent) return;
 
     const callbacks: GameCallbacks = {
-      onVictory: (score, matchStats) => {
-        if (mode === 'story') {
+      onVictory: (score, matchStats, battStats) => {
+        if (battleMode) {
+          onBattleEndRef.current?.(true, battStats);
+        } else if (mode === 'story') {
           setStoryVictoryScore(score);
         } else {
-          onVictoryRef.current(score, matchStats);
+          onVictoryRef.current(score, matchStats, battStats);
         }
       },
-      onDefeat: (matchStats) => {
-        if (mode === 'story') {
+      onDefeat: (matchStats, battStats) => {
+        if (battleMode) {
+          onBattleEndRef.current?.(false, battStats);
+        } else if (mode === 'story') {
           setShowStoryGameOver(true);
         } else {
-          onDefeatRef.current(matchStats);
+          onDefeatRef.current(matchStats, battStats);
         }
       },
       onQuit: () => onQuitRef.current(),
@@ -90,6 +106,8 @@ export function GameScreen({
       netMode,
       matchRoom,
       difficulty,
+      battleMode,
+      battleSlots,
     });
     gameRef.current = game;
     setGameReady(true);
@@ -192,6 +210,23 @@ export function GameScreen({
     return () => window.removeEventListener('keydown', onKey);
   }, [closeMoves, emitToGameplay, showMoves, netMode]);
 
+  useEffect(() => {
+    if (netMode !== 'mp') return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'p' || e.key === 'P' || e.key === 'Escape') {
+        e.preventDefault();
+        setShowMpQuit((s) => !s);
+      }
+    };
+    const onTouchPause = () => setShowMpQuit((s) => !s);
+    window.addEventListener('keydown', onKey);
+    window.addEventListener('nannymud:touch-pause', onTouchPause);
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      window.removeEventListener('nannymud:touch-pause', onTouchPause);
+    };
+  }, [netMode]);
+
   const stage = STAGES.find((s) => s.id === stageId);
   const stageName = stage?.name ?? 'Arena';
 
@@ -205,7 +240,7 @@ export function GameScreen({
       }}
     >
       <div ref={parentRef} style={{ width: '100%', height: '100%' }} />
-      {gameReady && (
+      {gameReady && !battleMode && (
         <HudOverlay
           game={gameRef.current}
           stageName={stageName}
@@ -213,6 +248,12 @@ export function GameScreen({
           inMp={netMode === 'mp'}
           localSessionId={matchRoom?.sessionId}
           hostSessionId={matchRoom?.state.hostSessionId}
+        />
+      )}
+      {gameReady && battleMode && battleSlots && (
+        <BattleHUD8
+          game={gameRef.current}
+          slots={battleSlots}
         />
       )}
       {netMode !== 'mp' && isPaused && !showMoves && (
@@ -224,6 +265,9 @@ export function GameScreen({
         />
       )}
       {netMode !== 'mp' && showMoves && <GuildDetails guildId={p1} onClose={closeMoves} />}
+      {netMode === 'mp' && showMpQuit && (
+        <MpQuitOverlay onStay={() => setShowMpQuit(false)} onQuit={onQuit} />
+      )}
       {showStoryGameOver && mode === 'story' && (
         <StoryGameOverOverlay
           onRematch={handleStoryRematch}
@@ -239,15 +283,86 @@ export function GameScreen({
       )}
       {preloading && (
         <div style={{ position: 'absolute', inset: 0 }}>
-          <LoadingScreen
-            p1={p1}
-            p2={p2 ?? 'knight'}
-            stageId={stageId as StageId}
-            showOpponent={mode === 'vs'}
-            progress={loadProgress}
-          />
+          {battleMode && battleSlots ? (
+            <BattleLoadingScreen
+              slots={battleSlots}
+              stageId={stageId as StageId}
+              humanProgress={loadProgress ?? 0}
+            />
+          ) : (
+            <LoadingScreen
+              p1={p1}
+              p2={p2 ?? 'knight'}
+              stageId={stageId as StageId}
+              showOpponent={mode === 'vs'}
+              progress={loadProgress}
+            />
+          )}
         </div>
       )}
+    </div>
+  );
+}
+
+function MpQuitOverlay({ onStay, onQuit }: { onStay: () => void; onQuit: () => void }) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' || e.key === 'p' || e.key === 'P') { e.preventDefault(); onStay(); }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onStay]);
+
+  return (
+    <div
+      onClick={onStay}
+      style={{
+        position: 'absolute', inset: 0,
+        background: 'rgba(0,0,0,0.72)',
+        backdropFilter: 'blur(2px)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        zIndex: 10,
+      }}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          width: 420,
+          background: theme.panel,
+          border: `1px solid ${theme.line}`,
+          padding: 36,
+          fontFamily: theme.fontBody,
+        }}
+      >
+        <div style={{ fontFamily: theme.fontMono, fontSize: 11, color: theme.inkMuted, letterSpacing: 4, marginBottom: 4 }}>
+          MULTIPLAYER
+        </div>
+        <div style={{ fontFamily: theme.fontDisplay, fontSize: 38, color: theme.ink, letterSpacing: '-0.02em', marginBottom: 28 }}>
+          Quit match?
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div
+            onClick={onStay}
+            style={{ cursor: 'pointer', padding: '14px 0', borderBottom: `1px solid ${theme.lineSoft}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+          >
+            <div>
+              <div style={{ fontFamily: theme.fontDisplay, fontSize: 19, color: theme.accent }}>STAY IN MATCH</div>
+              <div style={{ fontFamily: theme.fontBody, fontSize: 11, color: theme.inkMuted, marginTop: 2 }}>return to the fight</div>
+            </div>
+            <span style={{ fontFamily: theme.fontMono, fontSize: 10, color: theme.accent }}>→</span>
+          </div>
+          <div
+            onClick={onQuit}
+            style={{ cursor: 'pointer', padding: '14px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+          >
+            <div>
+              <div style={{ fontFamily: theme.fontDisplay, fontSize: 19, color: theme.bad }}>QUIT TO MENU</div>
+              <div style={{ fontFamily: theme.fontBody, fontSize: 11, color: theme.inkMuted, marginTop: 2 }}>forfeit and disconnect</div>
+            </div>
+            <span style={{ fontFamily: theme.fontMono, fontSize: 10, color: theme.bad }}>→</span>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

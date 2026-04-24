@@ -1,7 +1,7 @@
 import type {
   SimState, Actor, InputState, GuildId, Projectile, DamageType,
   AbilityDef, ActorKind, AnimationId, PlayerController, StatusEffectType, VFXEvent, GroundZone,
-  MatchStats, BattleSlot,
+  MatchStats,
 } from './types';
 import { getGuild, DRUID_WOLF_ABILITIES, DRUID_WOLF_RMB } from './guildData';
 import { makeRng } from './rng';
@@ -12,7 +12,6 @@ import {
   PICKUP_GRAB_RANGE, HP_REGEN_RATE, HP_DARK_REGEN_RATE, BLOCK_STAMINA_DRAIN,
   PARRY_WINDOW_MS, DODGE_DURATION_MS, DODGE_DISTANCE, DODGE_INVULN_MS, RUN_SPEED_MULT,
   ATTACK_Y_TOLERANCE,
-  WORLD_WIDTH, GROUND_Y_MIN, GROUND_Y_MAX,
 } from './constants';
 import {
   calcDamage, checkCrit, applyDamage, applyHeal, addStatusEffect,
@@ -25,6 +24,7 @@ import { tickAI, spawnEnemyAt } from './ai';
 import { synthesizeVsCpuInput, createEmptyCpuInput } from './vsAI';
 import { tickRound } from './vsSimulation';
 import { appendLog as appendCombatLog } from './combatLog';
+import { tickSurvivalWaves } from './survivalWaves';
 
 export function createPlayerActor(guildId: GuildId): Actor {
   const guild = getGuild(guildId);
@@ -115,7 +115,7 @@ export function revertWolfForm(actor: Actor): void {
   actor.statusEffects = actor.statusEffects.filter(e => !(e.type === 'damage_boost' && e.source === 'wolf_form'));
 }
 
-function createEnemyActor(kind: string, x: number, y: number, state: SimState): Actor {
+export function createEnemyActor(kind: string, x: number, y: number, state: SimState): Actor {
   const def = ENEMY_DEFS[kind];
   if (!def) throw new Error(`Unknown enemy: ${kind}`);
 
@@ -216,6 +216,7 @@ export function createInitialState(guildId: GuildId, seed: number = Date.now()):
     battleMode: false,
     battleSlots: [],
     battleTimer: 0,
+    battStats: null,
   };
 }
 
@@ -227,33 +228,6 @@ export function createSurvivalState(guildId: GuildId, seed: number = Date.now())
     currentWave: 0,
     survivalMode: true,
     survivalScore: 0,
-  };
-}
-
-// eslint-disable-next-line no-restricted-globals -- seed chosen once at boot, outside tick loop
-export function createBattleState(
-  humanGuildId: GuildId,
-  slots: BattleSlot[],
-  _stageId: string,
-  seed: number = Date.now(),
-): SimState {
-  const base = createInitialState(humanGuildId, seed);
-
-  const cpuSlots = slots.filter(s => s.type === 'cpu');
-  const enemies: Actor[] = cpuSlots.map((slot, i) => {
-    const spawnX = WORLD_WIDTH * 0.35 + i * 120;
-    const spawnY = GROUND_Y_MIN + base.rng() * (GROUND_Y_MAX - GROUND_Y_MIN);
-    return createEnemyActor(slot.guildId as ActorKind, spawnX, spawnY, base);
-  });
-
-  return {
-    ...base,
-    enemies,
-    waves: [],
-    currentWave: 0,
-    battleMode: true,
-    battleSlots: slots,
-    battleTimer: 180_000,
   };
 }
 
@@ -288,12 +262,23 @@ function trackDamage(state: SimState, attackerId: string, targetId: string, amou
     ms[tSide].damageTaken += amount;
     ms[tSide]._comboRun = 0;
   }
+  if (state.battleMode && state.battStats) {
+    const entry = state.battStats[attackerId];
+    if (entry) entry.dmgDealt += amount;
+    const allActors = [state.player, ...state.enemies, ...state.allies];
+    const target = allActors.find((a) => a.id === targetId);
+    if (target) target.lastAttackedBy = attackerId;
+  }
 }
 
 function trackHeal(state: SimState, actorId: string, amount: number): void {
   if (amount <= 0) return;
   const side = statSide(actorId);
   if (side) state.matchStats[side].healingDone += amount;
+  if (state.battleMode && state.battStats) {
+    const entry = state.battStats[actorId];
+    if (entry) entry.healing += amount;
+  }
 }
 
 function trackAbility(state: SimState, actorId: string): void {
@@ -1801,7 +1786,11 @@ export function tickSimulation(
 
   const ctrl = getOrCreateController(state, 'player', input);
 
-  tickWaves(state);
+  if (state.survivalMode) {
+    tickSurvivalWaves(state);
+  } else if (!state.battleMode) {
+    tickWaves(state);
+  }
 
   if (state.player.isAlive) {
     handlePlayerInput(state, input, ctrl, dtMs);
@@ -1831,7 +1820,14 @@ export function tickSimulation(
       deadEnemies.push(enemy);
       continue;
     }
-    tickAI(enemy, state, dtSec, state.vfxEvents);
+    if (state.battleMode && enemy.isPlayer) {
+      // Battle CPU: guild actor driven by synthesized VS input, not tickAI.
+      const oppCtrl = getOrCreateController(state, enemy.id, createEmptyCpuInput());
+      const cpuInput = synthesizeVsCpuInput(state, enemy, oppCtrl.input, dtMs, 2);
+      handlePlayerInput(state, cpuInput, oppCtrl, dtMs, enemy);
+    } else {
+      tickAI(enemy, state, dtSec, state.vfxEvents);
+    }
     tickPhysics(enemy, dtSec);
     tickKnockdown(enemy, dtSec);
     tickGetup(enemy, dtSec);
@@ -1844,6 +1840,13 @@ export function tickSimulation(
       dead.deathTimeMs = state.timeMs;
       spawnPickup(state, dead);
       state.score += dead.hpMax;
+      if (state.battleMode && state.battStats) {
+        const deadEntry = state.battStats[dead.id];
+        if (deadEntry) deadEntry.deaths++;
+        const killerId = dead.lastAttackedBy ?? 'player';
+        const killerEntry = state.battStats[killerId];
+        if (killerEntry) killerEntry.kills++;
+      }
     }
   }
 
@@ -1855,15 +1858,32 @@ export function tickSimulation(
 
   updateCamera(state);
 
-  for (const wave of state.waves) {
-    if (wave.triggered && !wave.cleared) {
-      const aliveEnemies = state.enemies.filter(e => e.isAlive);
-      if (aliveEnemies.length === 0) {
-        wave.cleared = true;
-        state.cameraLocked = false;
-        const waveIdx = state.waves.indexOf(wave);
-        if (waveIdx === state.waves.length - 1 && state.bossSpawned) {
-          state.phase = 'victory';
+  if (state.battleMode) {
+    state.battleTimer = Math.max(0, state.battleTimer - dtMs);
+
+    // Foes = enemies NOT on the player's team. Null/undefined battleTeam
+    // means no team — always a foe.
+    const foes = state.enemies.filter(
+      (e) => !(e.battleTeam != null && state.player.battleTeam != null && e.battleTeam === state.player.battleTeam),
+    );
+
+    if (foes.length > 0 && foes.every((e) => !e.isAlive)) {
+      state.phase = 'victory';
+    } else if (state.battleTimer === 0) {
+      const maxFoeHp = foes.reduce((m, e) => Math.max(m, e.hp), 0);
+      state.phase = state.player.hp > maxFoeHp ? 'victory' : 'defeat';
+    }
+  } else {
+    for (const wave of state.waves) {
+      if (wave.triggered && !wave.cleared) {
+        const aliveEnemies = state.enemies.filter(e => e.isAlive);
+        if (aliveEnemies.length === 0) {
+          wave.cleared = true;
+          state.cameraLocked = false;
+          const waveIdx = state.waves.indexOf(wave);
+          if (waveIdx === state.waves.length - 1 && state.bossSpawned) {
+            state.phase = 'victory';
+          }
         }
       }
     }

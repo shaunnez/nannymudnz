@@ -2,12 +2,14 @@ import type { Actor, AbilityDef } from '@nannymud/shared/simulation/types';
 import { getGuild, DRUID_WOLF_ABILITIES, DRUID_WOLF_RMB } from '@nannymud/shared/simulation/guildData';
 import { theme } from '../../ui';
 import { ComboDisplay } from '../../ui/ComboDisplay';
+import { dispatchTouchAbility } from '../../game/input/PhaserInputAdapter';
 
 interface Props {
   actor: Actor;
   side: 'p1' | 'p2';
   showKeys: boolean;
   simTimeMs: number;
+  interactive?: boolean;
 }
 
 const KEY_LABELS = ['1', '2', '3', '4', '5', '6'];
@@ -67,7 +69,7 @@ function getMasterDisplayAbility(primedClass: string, slotId: string): AbilityDe
   return [...guild.abilities, guild.rmb].find(a => a.id === targetId);
 }
 
-export function AbilityStrip({ actor, side, showKeys, simTimeMs }: Props) {
+export function AbilityStrip({ actor, side, showKeys, simTimeMs, interactive = false }: Props) {
   const guild = getGuild(actor.guildId!);
   const shapeshifted = actor.shapeshiftForm === 'wolf';
   const cards = shapeshifted
@@ -90,9 +92,11 @@ export function AbilityStrip({ actor, side, showKeys, simTimeMs }: Props) {
         const unaffordable = actor.mp < a.cost;
         const dim = onCd || unaffordable;
 
+        const slot = i + 1;
         return (
           <div
             key={a.id}
+            onPointerDown={interactive ? (e) => { e.preventDefault(); dispatchTouchAbility(slot); } : undefined}
             style={{
               position: 'relative',
               width: 68,
@@ -106,6 +110,9 @@ export function AbilityStrip({ actor, side, showKeys, simTimeMs }: Props) {
               fontSize: 11,
               color: theme.ink,
               overflow: 'hidden',
+              pointerEvents: interactive ? 'auto' : 'none',
+              cursor: interactive ? 'pointer' : 'default',
+              WebkitTapHighlightColor: 'transparent',
             }}
           >
             {showKeys && (

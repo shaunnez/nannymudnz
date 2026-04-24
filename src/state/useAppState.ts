@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { Room } from '@colyseus/sdk';
 import type { MatchState } from '@nannymud/shared';
-import type { GuildId } from '@nannymud/shared/simulation/types';
+import type { GuildId, BattleSlot } from '@nannymud/shared/simulation/types';
 import type { StageId } from '../data/stages';
 
 export type GameMode = 'vs' | 'stage' | 'surv' | 'batt' | 'champ';
@@ -10,6 +10,8 @@ export type AppScreen =
   | 'title'
   | 'menu'
   | 'charselect'
+  | 'battleconfig'
+  | 'battresults'
   | 'team'
   | 'stage'
   | 'game'
@@ -45,6 +47,7 @@ export interface AppState {
 
   /** SP VS CPU difficulty (0..5). Ignored in MP / story. */
   difficulty: number;
+  battleSlots: BattleSlot[];
 }
 
 const STORAGE_KEY = 'nannymud-app-state-v1';
@@ -63,6 +66,7 @@ const DEFAULT_STATE: AppState = {
   mpRoom: null,
   animateHud: true,
   difficulty: 2,
+  battleSlots: [],
 };
 
 const PERSISTED_KEYS: (keyof AppState)[] = [

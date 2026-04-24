@@ -19,6 +19,22 @@ import { getGuild } from './guildData';
  * so the golden / vs tests stay reproducible.
  */
 
+function areTeammateActors(a: Actor, b: Actor): boolean {
+  return a.battleTeam != null && b.battleTeam != null && a.battleTeam === b.battleTeam;
+}
+
+function findVsTarget(state: SimState, opp: Actor): Actor | null {
+  const candidates = [state.player, ...state.enemies].filter(
+    (a) => a.isAlive && a.id !== opp.id && !areTeammateActors(a, opp),
+  );
+  if (candidates.length === 0) return null;
+  return candidates.reduce((closest, t) => {
+    const dc = Math.hypot(t.x - opp.x, t.y - opp.y);
+    const db = Math.hypot(closest.x - opp.x, closest.y - opp.y);
+    return dc < db ? t : closest;
+  });
+}
+
 // Default basic-attack reach in `performBasicAttack` is 55 (no pickup) — see
 // simulation.ts. Keep in sync if that constant moves.
 const BASIC_ATTACK_RANGE = 55;
@@ -101,7 +117,9 @@ export function synthesizeVsCpuInput(
   dtMs: number,
   difficulty: number,
 ): InputState {
-  const player = state.player;
+  const player = state.battleMode
+    ? (findVsTarget(state, opp) ?? state.player)
+    : state.player;
   const tuning = getTuning(difficulty);
 
   // Snapshot previous button states so we can compute JustPressed edges.
