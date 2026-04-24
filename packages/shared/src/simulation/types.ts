@@ -16,6 +16,7 @@ export interface GroundZone {
   vfxStyle: GroundZoneVfxStyle;
   nextPulseMsDown: number;
   triggerOnce?: boolean;
+  triggerDamage?: number;
 }
 export type StatusEffectType =
   | 'slow' | 'root' | 'stun' | 'silence' | 'knockback' | 'blind' | 'taunt'

@@ -498,19 +498,23 @@ function detonateGroundTarget(player: Actor, ability: AbilityDef, state: SimStat
   }
 
   if (ability.id === 'bear_trap') {
+    const trapId = `bear_trap_${player.id}`;
+    // Lift existing trap before placing a new one
+    state.groundZones = state.groundZones.filter(z => z.id !== trapId);
     state.groundZones.push({
-      id: `gz_${state.nextEffectId++}`,
+      id: trapId,
       x: cx,
       y: cy,
       radius: 40,
-      remainingMs: 8000,
+      remainingMs: 300000,
       ownerTeam: player.team === 'player' ? 'enemy' : 'player',
-      effects: { root: { magnitude: 1, durationMs: 1500 } },
+      effects: { root: { magnitude: 1, durationMs: 2000 } },
       damagePerTick: 0,
+      triggerDamage: 40,
       damageType: 'physical',
       vfxColor: '#78350f',
       vfxStyle: 'puddle',
-      nextPulseMsDown: 1000,
+      nextPulseMsDown: 1500,
       triggerOnce: true,
     });
   }
@@ -1604,6 +1608,10 @@ function tickGroundZones(state: SimState, dtMs: number): void {
       }
 
       if (zone.triggerOnce) {
+        if (zone.triggerDamage) {
+          applyDamage(actor, zone.triggerDamage, state.vfxEvents, false);
+          state.vfxEvents.push({ type: 'hit_spark', color: zone.vfxColor, x: actor.x, y: actor.y, z: actor.z + 10 });
+        }
         triggered = true;
         break;
       }
