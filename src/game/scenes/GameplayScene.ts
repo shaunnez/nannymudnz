@@ -19,6 +19,8 @@ import { PickupView } from '../view/PickupView';
 import { consumeVfxEvents } from '../view/ParticleFX';
 import type { Actor, Projectile, Pickup, InputState, VFXEvent } from '@nannymud/shared/simulation/types';
 import { WORLD_WIDTH } from '@nannymud/shared/simulation/constants';
+import { getGuild, DRUID_BEAR_ABILITIES, DRUID_BEAR_RMB } from '@nannymud/shared/simulation/guildData';
+import { worldYToScreenY, getScreenYBand } from '../constants';
 import type { GameCallbacks, NetMode } from '../PhaserGame';
 import { InputSender } from '../net/InputSender';
 import { StateSync, type ActorSnapshot } from '../net/StateSync';
@@ -47,6 +49,8 @@ export class GameplayScene extends Phaser.Scene {
   private phaseHandoffFired = false;
   private audio!: AudioManager;
   private bossMusicStarted = false;
+
+  private castingIndicator: Phaser.GameObjects.Graphics | null = null;
 
   // MP-only net state
   private netMode: NetMode = 'sp';
@@ -225,6 +229,7 @@ export class GameplayScene extends Phaser.Scene {
     this.reconcileActors(null);
     this.reconcileProjectiles();
     this.reconcilePickups();
+    this.updateCastingIndicator(this.simState.player.id);
     consumeVfxEvents(this, this.simState.vfxEvents);
     this.game.registry.set('simState', this.simState);
     this.events.emit('sim-tick', this.simState);
@@ -392,6 +397,56 @@ export class GameplayScene extends Phaser.Scene {
         this.actorViews.delete(id);
       }
     }
+  }
+
+  private updateCastingIndicator(playerId: string): void {
+    const player = this.simState.player;
+    const ctrl = this.simState.controllers?.[playerId];
+
+    if (player.state !== 'casting' || !ctrl?.castingAbility || !player.guildId) {
+      this.castingIndicator?.clear();
+      return;
+    }
+
+    const guild = getGuild(player.guildId);
+    const allAbilities = player.shapeshiftForm === 'bear'
+      ? [...DRUID_BEAR_ABILITIES, DRUID_BEAR_RMB]
+      : [...guild.abilities, guild.rmb];
+    const ability = allAbilities.find(a => a.id === ctrl.castingAbility);
+    if (!ability || !ability.aoeRadius) { this.castingIndicator?.clear(); return; }
+
+    if (!this.castingIndicator) {
+      this.castingIndicator = this.add.graphics().setDepth(5000);
+    }
+
+    const band = getScreenYBand(this);
+    const sx = ctrl.groundTargetX;
+    const sy = worldYToScreenY(ctrl.groundTargetY, band.min, band.max);
+    const r = ability.aoeRadius;
+    const pulse = 0.5 + Math.sin(this.simState.timeMs / 120) * 0.25;
+    const color = parseInt(ability.vfxColor.slice(1), 16);
+
+    this.castingIndicator.clear();
+
+    // Dashed outer ring showing blast radius
+    const segs = 24;
+    const step = (Math.PI * 2) / segs;
+    this.castingIndicator.lineStyle(3, color, 0.55 + pulse * 0.3);
+    for (let i = 0; i < segs; i += 2) {
+      this.castingIndicator.beginPath();
+      this.castingIndicator.arc(sx, sy, r, i * step, (i + 1) * step, false);
+      this.castingIndicator.strokePath();
+    }
+
+    // Faint fill so the target zone is visible
+    this.castingIndicator.fillStyle(color, 0.08 + pulse * 0.04);
+    this.castingIndicator.fillCircle(sx, sy, r);
+
+    // Cross-hair at center
+    const ch = 8;
+    this.castingIndicator.lineStyle(2, color, 0.7 + pulse * 0.25);
+    this.castingIndicator.lineBetween(sx - ch, sy, sx + ch, sy);
+    this.castingIndicator.lineBetween(sx, sy - ch * 0.5, sx, sy + ch * 0.5);
   }
 
   private reconcileProjectiles(): void {
