@@ -76,7 +76,7 @@ export function TouchJoystick() {
       onTouchCancel={onTouchEnd}
       style={{
         position: 'absolute',
-        left: 14,
+        right: 14,
         bottom: 148,
         width: BASE_R * 2,
         height: BASE_R * 2,

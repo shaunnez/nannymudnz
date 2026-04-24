@@ -96,7 +96,7 @@ export function AbilityStrip({ actor, side, showKeys, simTimeMs, interactive = f
         return (
           <div
             key={a.id}
-            onClick={interactive ? () => dispatchTouchAbility(slot) : undefined}
+            onPointerDown={interactive ? (e) => { e.preventDefault(); dispatchTouchAbility(slot); } : undefined}
             style={{
               position: 'relative',
               width: 68,
