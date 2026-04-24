@@ -1,6 +1,31 @@
-import { Server, matchMaker } from 'colyseus';
+import { Server, matchMaker, Room } from 'colyseus';
+import type { Client } from 'colyseus';
 import { createServer } from 'node:http';
 import { MatchRoom } from './rooms/MatchRoom.js';
+
+/** Transient room: client connects, receives public room list, then leaves. No HTTP needed. */
+class QueryRoom extends Room {
+  maxClients = 1;
+
+  async onJoin(client: Client) {
+    try {
+      const rooms = await matchMaker.query({});
+      const publicRooms = rooms
+        .filter((r) => r.metadata?.visibility === 'public')
+        .map((r) => ({
+          roomId: r.roomId,
+          name: r.metadata?.name ?? '',
+          hostName: r.metadata?.hostName ?? '',
+          rounds: r.metadata?.rounds ?? 3,
+          clients: r.clients,
+          maxClients: r.maxClients,
+        }));
+      client.send('rooms', publicRooms);
+    } catch {
+      client.send('rooms', []);
+    }
+  }
+}
 
 const app = createServer();
 const gameServer = new Server({
@@ -34,6 +59,7 @@ const gameServer = new Server({
 });
 
 gameServer.define('match', MatchRoom).filterBy(['code', 'visibility']);
+gameServer.define('query', QueryRoom);
 
 const port = Number(process.env.PORT ?? 2567);
 

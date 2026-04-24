@@ -2,7 +2,6 @@ import { Client, Room } from '@colyseus/sdk';
 import type { MatchState } from '@nannymud/shared';
 
 const WS_URL = import.meta.env.VITE_COLYSEUS_URL ?? 'ws://localhost:2567';
-const HTTP_URL = WS_URL.replace(/^ws/, 'http');
 
 let client: Client | null = null;
 
@@ -41,9 +40,19 @@ export interface PublicRoom {
 }
 
 export async function getPublicRooms(): Promise<PublicRoom[]> {
-  const res = await fetch(`${HTTP_URL}/api/public-rooms`);
-  if (!res.ok) throw new Error('Failed to fetch rooms');
-  return res.json() as Promise<PublicRoom[]>;
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error('Room query timed out')), 6000);
+    getClient().joinOrCreate<void>('query').then((room) => {
+      room.onMessage<PublicRoom[]>('rooms', (rooms) => {
+        clearTimeout(timer);
+        resolve(rooms);
+        room.leave().catch(() => {});
+      });
+    }).catch((err) => {
+      clearTimeout(timer);
+      reject(err instanceof Error ? err : new Error('Failed to query rooms'));
+    });
+  });
 }
 
 // Test hook: allow tests to inject a mock client
