@@ -4,6 +4,10 @@ import type { SimState, BattleSlot } from '@nannymud/shared/simulation/types';
 import { GUILDS } from '@nannymud/shared/simulation/guildData';
 import { theme, GuildMonogram } from '../ui';
 import { VIRTUAL_WIDTH, VIRTUAL_HEIGHT } from '../game/constants';
+import { HudFooter } from './hud/HudFooter';
+import { TouchJoystick } from './hud/TouchJoystick';
+import { TouchActionButtons } from './hud/TouchActionButtons';
+import { useIsMobile } from '../hooks/useIsMobile';
 
 interface Props {
   game: Phaser.Game | null;
@@ -50,6 +54,8 @@ export function BattleHUD8({ game, slots }: Props) {
     game.events.on('sim-tick', onTick);
     return () => { game.events.off('sim-tick', onTick); };
   }, [game]);
+
+  const mobile = useIsMobile();
 
   const state = stateRef.current;
   if (!state) return null;
@@ -103,8 +109,17 @@ export function BattleHUD8({ game, slots }: Props) {
 
         {/* BOTTOM bar */}
         {bottom.length > 0 && (
-          <PlayerBarRow slots={bottom} slotOffset={4} getActor={getActor} isTop={false} />
+          <PlayerBarRow slots={bottom} slotOffset={4} getActor={getActor} isTop={false} bottomOffset={128} />
         )}
+        <HudFooter
+          mode="vs"
+          p1={state.player}
+          p2={null}
+          simTimeMs={state.timeMs}
+          state={state}
+        />
+        {mobile && <TouchJoystick />}
+        {mobile && <TouchActionButtons />}
       </div>
     </div>
   );
