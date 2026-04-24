@@ -16,7 +16,7 @@ interface Props {
   progress?: number;
 }
 
-const TIPS = [
+export const TIPS = [
   'Depth (↑↓) is your dodge axis — step past an attack instead of blocking it.',
   'Hold K to block; release into J to counter. Frames favor the reader.',
   'Double-tap a direction to run. Stamina does not care about your opinion.',
