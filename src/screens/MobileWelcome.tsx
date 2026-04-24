@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { theme } from '../ui';
 import { useIsMobile } from '../hooks/useIsMobile';
 
@@ -11,78 +11,20 @@ function isStandaloneApp(): boolean {
   );
 }
 
-function isPortrait(): boolean {
-  return window.innerHeight > window.innerWidth;
-}
-
 export function MobileWelcome() {
   const mobile = useIsMobile();
-  const [portrait, setPortrait] = useState(isPortrait);
   const [dismissed, setDismissed] = useState(
     () => localStorage.getItem(DISMISSED_KEY) === '1',
   );
 
-  useEffect(() => {
-    const check = () => setPortrait(isPortrait());
-    window.addEventListener('resize', check);
-    return () => window.removeEventListener('resize', check);
-  }, []);
-
   if (!mobile) return null;
   if (isStandaloneApp()) return null;
+  if (dismissed) return null;
 
   const dismiss = () => {
     localStorage.setItem(DISMISSED_KEY, '1');
     setDismissed(true);
   };
-
-  // Portrait — fullscreen block, not dismissable
-  if (portrait) {
-    return (
-      <div
-        style={{
-          position: 'fixed',
-          inset: 0,
-          background: theme.bg,
-          zIndex: 9999,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: 20,
-          padding: 40,
-        }}
-      >
-        <div style={{ fontSize: 64, lineHeight: 1 }}>↻</div>
-        <div
-          style={{
-            fontFamily: theme.fontDisplay,
-            fontSize: 28,
-            color: theme.ink,
-            letterSpacing: '-0.02em',
-            textAlign: 'center',
-          }}
-        >
-          Rotate your device
-        </div>
-        <div
-          style={{
-            fontFamily: theme.fontBody,
-            fontSize: 15,
-            color: theme.inkDim,
-            textAlign: 'center',
-            lineHeight: 1.6,
-            maxWidth: 280,
-          }}
-        >
-          Nannymud is designed for landscape play.
-        </div>
-      </div>
-    );
-  }
-
-  // Landscape + not installed + not dismissed — install prompt
-  if (dismissed) return null;
 
   return (
     <div
@@ -110,12 +52,7 @@ export function MobileWelcome() {
         }}
       >
         {/* Header */}
-        <div
-          style={{
-            padding: '14px 20px',
-            borderBottom: `1px solid ${theme.lineSoft}`,
-          }}
-        >
+        <div style={{ padding: '14px 20px', borderBottom: `1px solid ${theme.lineSoft}` }}>
           <div style={{ fontFamily: theme.fontMono, fontSize: 10, color: theme.inkMuted, letterSpacing: 3 }}>
             NANNYMUD
           </div>
@@ -127,15 +64,14 @@ export function MobileWelcome() {
         {/* Body */}
         <div style={{ padding: '20px 20px 8px', display: 'flex', flexDirection: 'column', gap: 16 }}>
           <div style={{ fontFamily: theme.fontBody, fontSize: 14, color: theme.inkDim, lineHeight: 1.6 }}>
-            Add to your home screen for fullscreen mode, no browser bar, and the best experience.
+            Add to your home screen for fullscreen mode with no browser bar. You can play in portrait too, but landscape is where it's at.
           </div>
 
-          {/* Steps */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {[
               { icon: '📤', text: 'Tap the Share button in Safari' },
               { icon: '➕', text: 'Tap "Add to Home Screen"' },
-              { icon: '✓', text: 'Tap "Add" — done' },
+              { icon: '✓',  text: 'Tap "Add" — done' },
             ].map((step, i) => (
               <div
                 key={i}

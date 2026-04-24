@@ -138,8 +138,8 @@ export function HudOverlay({
         onClick={dispatchTouchPause}
         style={{
           position: 'absolute',
-          top: 8,
-          right: 8,
+          top: 14,
+          right: 22,
           width: 52,
           height: 52,
           background: 'rgba(0,0,0,0.55)',
