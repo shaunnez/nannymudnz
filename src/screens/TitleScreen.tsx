@@ -51,7 +51,7 @@ export function TitleScreen({ onStart }: Props) {
           letterSpacing: 2,
         }}
       >
-        LYSATOR · LINKÖPING · EST. 1990 · BUILD 0.4.2
+        LYSATOR · LINKÖPING · EST. 1990 · BUILD {__APP_VERSION__}
       </div>
       <div
         style={{
