@@ -41,7 +41,7 @@ export function HudTopBar({ mode, p1, p2, round, stageName, animate, state }: Pr
         pointerEvents: 'none',
       }}
     >
-      <PlayerSlot actor={p1} side="left" label="P1" showExtras={mode === 'story'} />
+      <PlayerSlot actor={p1} side="left" label="P1" showExtras={true} petMode={state.allies.find(a => a.kind === 'wolf_pet')?.petAiMode} />
 
       <div style={{ textAlign: 'center', minWidth: mode === 'vs' ? 140 : 0 }}>
         {mode === 'vs' && (
@@ -66,7 +66,7 @@ export function HudTopBar({ mode, p1, p2, round, stageName, animate, state }: Pr
       {mode === 'story' ? (
         <BossSlot boss={boss} />
       ) : p2 ? (
-        <PlayerSlot actor={p2} side="right" label="P2" showExtras={false} />
+        <PlayerSlot actor={p2} side="right" label="P2" showExtras={true} />
       ) : (
         <div />
       )}
@@ -79,11 +79,13 @@ function PlayerSlot({
   side,
   label,
   showExtras,
+  petMode,
 }: {
   actor: Actor;
   side: 'left' | 'right';
   label: string;
   showExtras: boolean;
+  petMode?: string;
 }) {
   const guild = getGuild(actor.guildId!);
   const meta = GUILD_META[actor.guildId!];
@@ -185,7 +187,7 @@ function PlayerSlot({
           }}
         >
           <span>HP {Math.round(actor.hp)}/{actor.hpMax}</span>
-          {showExtras && <PlayerExtras actor={actor} side={side} />}
+          {showExtras && <PlayerExtras actor={actor} side={side} petMode={petMode} />}
           <span>
             <span style={{ color: accent }}>{resourceName}</span>{' '}
             {Math.round(actor.mp)}/{actor.mpMax}

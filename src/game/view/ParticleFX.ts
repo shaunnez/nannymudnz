@@ -330,6 +330,19 @@ export function consumeVfxEvents(scene: Phaser.Scene, events: VFXEvent[]): void 
         spawnExpandingRing(scene, x, y, event.radius || 90, 1.27, colorInt, 0.35, 0.08, 2, true, 420);
         break;
       }
+
+      case 'zone_pulse': {
+        const r = event.radius || 60;
+        if (event.style === 'ring') {
+          // Large persistent zone (e.g. Eternal Night) — near-full-duration so
+          // overlapping pulses give a continuous solid circle effect.
+          spawnExpandingRing(scene, x, y, r, 1.0, colorInt, 0.55, 0.12, 2, false, 950);
+        } else {
+          // Puddle / trap marker — tight ring at fixed radius with a faint fill.
+          spawnExpandingRing(scene, x, y, r, 1.0, colorInt, 0.7, 0.25, 3, true, 850);
+        }
+        break;
+      }
     }
   }
 }

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { GUILDS } from '@nannymud/shared/simulation/guildData';
+import { GUILDS, DRUID_BEAR_ABILITIES, DRUID_BEAR_RMB } from '@nannymud/shared/simulation/guildData';
 import { GUILD_META } from '../data/guildMeta';
 import type { GuildId, AbilityDef } from '@nannymud/shared/simulation/types';
 import { theme, guildAccent, Btn, Chip, SectionLabel, GuildMonogram, ComboDisplay } from '../ui';
@@ -131,7 +131,7 @@ export function MoveList({ initialGuild, onBack, onDossier }: Props) {
             </div>
           </div>
 
-          <SectionLabel kicker="ABILITIES" right={`${guild.abilities.length} + RMB`}>
+          <SectionLabel kicker="ABILITIES" right={`${guild.abilities.length} + 6`}>
             Combat moves
           </SectionLabel>
 
@@ -140,8 +140,23 @@ export function MoveList({ initialGuild, onBack, onDossier }: Props) {
             {guild.abilities.map((a, i) => (
               <MoveRow key={a.id} slot={SLOT_LABELS[i]} ability={a} accent={accent} guildId={sel} abilityIndex={i} />
             ))}
-            <MoveRow slot="R" ability={guild.rmb} accent={accent} guildId={sel} abilityIndex={-1} />
+            <MoveRow slot="6" ability={guild.rmb} accent={accent} guildId={sel} abilityIndex={-1} />
           </div>
+
+          {sel === 'druid' && (
+            <>
+              <SectionLabel kicker="BEAR FORM" right="5 + 6">
+                Abilities while shapeshifted
+              </SectionLabel>
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <MoveHeader />
+                {DRUID_BEAR_ABILITIES.map((a, i) => (
+                  <MoveRow key={a.id} slot={SLOT_LABELS[i]} ability={a} accent={accent} guildId={sel} abilityIndex={i} />
+                ))}
+                <MoveRow slot="6" ability={DRUID_BEAR_RMB} accent={accent} guildId={sel} abilityIndex={-1} />
+              </div>
+            </>
+          )}
         </div>
       </div>
 
@@ -222,12 +237,12 @@ function MoveRow({
         display: 'grid',
         gridTemplateColumns: TABLE_COLS,
         gap: 14,
-        padding: '14px 6px',
+        padding: '10px 6px',
         borderBottom: `1px solid ${theme.lineSoft}`,
         alignItems: 'start',
       }}
     >
-      <div style={{ width: 96, height: 96, flexShrink: 0 }}>
+      <div style={{ width: 64, height: 64, flexShrink: 0 }}>
         <AbilityPreview
           guildId={guildId}
           abilityId={ability.id}

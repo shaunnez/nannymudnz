@@ -16,7 +16,30 @@ npm run build       # client build to dist/
 npm run typecheck   # tsc on src/ + packages/shared/
 npm run lint        # ESLint flat config
 npm test            # Vitest — ALL tests must pass, golden sim test is the determinism gate
+npx tsx scripts/balance-runner.ts  # headless 15×15 guild win-rate matrix (~3-5 min); writes scripts/balance-output.csv
 ```
+
+## Balance tooling
+
+`scripts/balance-runner.ts` runs 20 bot-vs-bot matches per guild pairing (4500 total) at max AI difficulty and outputs a win-rate matrix. Use it whenever guild stats or AI strategy configs change.
+
+**To run a balance pass:**
+
+```bash
+npx tsx scripts/balance-runner.ts   # run from repo root or the bot-optimization worktree
+```
+
+Output: 15×15 win-rate matrix printed to stdout + `scripts/balance-output.csv`.
+
+**Tuning levers (in `packages/shared/src/simulation/guildData.ts`):**
+
+1. **Strategy** (`strategy` block on each guild) — adjust `priority`, range conditions (`useAtCloseRange`/`useAtLongRange`), `retreatBelowHpPct`, `blockOnReaction`, `preferRange`. Free to change; doesn't affect human gameplay feel.
+2. **Stats** — `hpMax`, `armor`, `magicResist`, `moveSpeed` on the guild object.
+3. **Ability params** — `baseDamage`, `cost`, `cooldownMs` on individual `AbilityDef` entries.
+
+**Target:** all 15 guilds within 40–60% overall win rate. Current baseline is committed at `scripts/balance-output.csv`.
+
+**Trigger phrase for Claude:** "run a balance pass" — Claude will edit strategy/stats, iterate the runner until guilds converge, and commit the updated CSV.
 
 ## Top layout
 

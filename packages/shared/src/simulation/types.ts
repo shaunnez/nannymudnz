@@ -1,6 +1,6 @@
 export type DamageType = 'physical' | 'magical' | 'nature' | 'holy' | 'shadow' | 'necrotic' | 'psychic';
 
-export type GroundZoneVfxStyle = 'dome' | 'puddle' | 'ring';
+export type GroundZoneVfxStyle = 'ring' | 'puddle';
 
 export interface GroundZone {
   id: string;

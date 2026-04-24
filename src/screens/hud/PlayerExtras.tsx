@@ -4,9 +4,10 @@ import { theme } from '../../ui';
 interface Props {
   actor: Actor;
   side: 'left' | 'right';
+  petMode?: string;
 }
 
-export function PlayerExtras({ actor, side }: Props) {
+export function PlayerExtras({ actor, side, petMode }: Props) {
   const parts: React.ReactNode[] = [];
 
   if (actor.guildId === 'monk' && typeof actor.chiOrbs === 'number') {
@@ -47,6 +48,10 @@ export function PlayerExtras({ actor, side }: Props) {
 
   if (actor.miasmaActive) {
     parts.push(<TextChip key="miasma" label="MIASMA" value="ON" color={theme.bad} />);
+  }
+
+  if (actor.guildId === 'hunter' && petMode) {
+    parts.push(<TextChip key="pet" label="PET" value={petMode.toUpperCase()} color={theme.accent} />);
   }
 
   if (parts.length === 0) return null;

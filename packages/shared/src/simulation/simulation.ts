@@ -492,7 +492,7 @@ function detonateGroundTarget(player: Actor, ability: AbilityDef, state: SimStat
       damagePerTick: 8,
       damageType: 'shadow',
       vfxColor: '#1a0033',
-      vfxStyle: 'dome',
+      vfxStyle: 'ring',
       nextPulseMsDown: 1000,
     });
   }
@@ -835,6 +835,9 @@ function fireAbility(player: Actor, ability: AbilityDef, state: SimState, ctrl: 
   }
 
   if (ability.isGroundTarget && !ability.isChannel) {
+    // Default target to in front of the player at cast range if never explicitly set
+    ctrl.groundTargetX = player.x + player.facing * Math.min(ability.range || 200, 280);
+    ctrl.groundTargetY = player.y;
     if (ability.castTimeMs > 0) {
       player.state = 'casting';
       player.animationId = 'channel';
