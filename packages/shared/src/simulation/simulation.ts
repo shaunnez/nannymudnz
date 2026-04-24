@@ -210,6 +210,10 @@ export function createInitialState(guildId: GuildId, seed: number = Date.now()):
     nextLogId: 1,
     controllers: {},
     matchStats: makeEmptyMatchStats(),
+    battleMode: false,
+    battleSlots: [],
+    battleTimer: 0,
+    battStats: null,
   };
 }
 
@@ -244,12 +248,23 @@ function trackDamage(state: SimState, attackerId: string, targetId: string, amou
     ms[tSide].damageTaken += amount;
     ms[tSide]._comboRun = 0;
   }
+  if (state.battleMode && state.battStats) {
+    const entry = state.battStats[attackerId];
+    if (entry) entry.dmgDealt += amount;
+    const allActors = [state.player, ...state.enemies, ...state.allies];
+    const target = allActors.find((a) => a.id === targetId);
+    if (target) target.lastAttackedBy = attackerId;
+  }
 }
 
 function trackHeal(state: SimState, actorId: string, amount: number): void {
   if (amount <= 0) return;
   const side = statSide(actorId);
   if (side) state.matchStats[side].healingDone += amount;
+  if (state.battleMode && state.battStats) {
+    const entry = state.battStats[actorId];
+    if (entry) entry.healing += amount;
+  }
 }
 
 function trackAbility(state: SimState, actorId: string): void {
@@ -1757,7 +1772,9 @@ export function tickSimulation(
 
   const ctrl = getOrCreateController(state, 'player', input);
 
-  tickWaves(state);
+  if (!state.battleMode) {
+    tickWaves(state);
+  }
 
   if (state.player.isAlive) {
     handlePlayerInput(state, input, ctrl, dtMs);
@@ -1787,7 +1804,14 @@ export function tickSimulation(
       deadEnemies.push(enemy);
       continue;
     }
-    tickAI(enemy, state, dtSec, state.vfxEvents);
+    if (state.battleMode && enemy.isPlayer) {
+      // Battle CPU: guild actor driven by synthesized VS input, not tickAI.
+      const oppCtrl = getOrCreateController(state, enemy.id, createEmptyCpuInput());
+      const cpuInput = synthesizeVsCpuInput(state, enemy, oppCtrl.input, dtMs, 2);
+      handlePlayerInput(state, cpuInput, oppCtrl, dtMs, enemy);
+    } else {
+      tickAI(enemy, state, dtSec, state.vfxEvents);
+    }
     tickPhysics(enemy, dtSec);
     tickKnockdown(enemy, dtSec);
     tickGetup(enemy, dtSec);
@@ -1800,6 +1824,13 @@ export function tickSimulation(
       dead.deathTimeMs = state.timeMs;
       spawnPickup(state, dead);
       state.score += dead.hpMax;
+      if (state.battleMode && state.battStats) {
+        const deadEntry = state.battStats[dead.id];
+        if (deadEntry) deadEntry.deaths++;
+        const killerId = dead.lastAttackedBy ?? 'player';
+        const killerEntry = state.battStats[killerId];
+        if (killerEntry) killerEntry.kills++;
+      }
     }
   }
 
@@ -1811,15 +1842,26 @@ export function tickSimulation(
 
   updateCamera(state);
 
-  for (const wave of state.waves) {
-    if (wave.triggered && !wave.cleared) {
-      const aliveEnemies = state.enemies.filter(e => e.isAlive);
-      if (aliveEnemies.length === 0) {
-        wave.cleared = true;
-        state.cameraLocked = false;
-        const waveIdx = state.waves.indexOf(wave);
-        if (waveIdx === state.waves.length - 1 && state.bossSpawned) {
-          state.phase = 'victory';
+  if (state.battleMode) {
+    state.battleTimer = Math.max(0, state.battleTimer - dtMs);
+
+    if (state.enemies.length > 0 && state.enemies.every((e) => !e.isAlive)) {
+      state.phase = 'victory';
+    } else if (state.battleTimer === 0) {
+      const maxEnemyHp = state.enemies.reduce((m, e) => Math.max(m, e.hp), 0);
+      state.phase = state.player.hp > maxEnemyHp ? 'victory' : 'defeat';
+    }
+  } else {
+    for (const wave of state.waves) {
+      if (wave.triggered && !wave.cleared) {
+        const aliveEnemies = state.enemies.filter(e => e.isAlive);
+        if (aliveEnemies.length === 0) {
+          wave.cleared = true;
+          state.cameraLocked = false;
+          const waveIdx = state.waves.indexOf(wave);
+          if (waveIdx === state.waves.length - 1 && state.bossSpawned) {
+            state.phase = 'victory';
+          }
         }
       }
     }

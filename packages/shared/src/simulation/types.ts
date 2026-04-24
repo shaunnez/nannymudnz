@@ -232,6 +232,7 @@ export interface Actor {
   dishes?: string[];
   miasmaActive?: boolean;
   fivePointPalmTarget?: string;
+  lastAttackedBy?: string;
   isAlive: boolean;
   deathTimeMs: number;
   score: number;
@@ -390,6 +391,21 @@ export interface Wave {
   cleared: boolean;
 }
 
+export type BattleTeam = 'A' | 'B' | 'C' | 'D' | null;
+
+export interface BattleSlot {
+  guildId: GuildId;
+  type: 'human' | 'cpu' | 'off';
+  team: BattleTeam;
+}
+
+export interface BattStatEntry {
+  kills: number;
+  deaths: number;
+  dmgDealt: number;
+  healing: number;
+}
+
 export interface SimState {
   tick: number;
   timeMs: number;
@@ -423,6 +439,10 @@ export interface SimState {
   matchStats: MatchStats;
   /** SP VS only — CPU opponent difficulty (0..5). Undefined in MP / story. */
   difficulty?: number;
+  battleMode: boolean;
+  battleSlots: BattleSlot[];
+  battleTimer: number;
+  battStats: Record<string, BattStatEntry> | null;
 }
 
 export interface InputState {
