@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Phaser from 'phaser';
 import type { Room } from '@colyseus/sdk';
-import type { GuildId, SimMode, SimState, MatchStats } from '@nannymud/shared/simulation/types';
+import type { GuildId, SimMode, SimState, MatchStats, BattleSlot, BattStatEntry } from '@nannymud/shared/simulation/types';
 import type { MatchState } from '@nannymud/shared';
 import { PauseOverlay } from './PauseOverlay';
 import { StoryGameOverOverlay } from './StoryGameOverOverlay';
@@ -11,6 +11,7 @@ import { LoadingScreen } from './LoadingScreen';
 import { useFullscreen } from '../layout/useFullscreen';
 import { makePhaserGame, type GameCallbacks } from '../game/PhaserGame';
 import { HudOverlay } from './hud/HudOverlay';
+import { BattleHUD8 } from './BattleHUD8';
 import { STAGES } from '../data/stages';
 import type { StageId } from '../data/stages';
 
@@ -23,14 +24,20 @@ interface Props {
   difficulty?: number;
   /** When present, GameScreen runs in multiplayer mode and mirrors server state. */
   matchRoom?: Room<MatchState>;
-  onVictory: (score: number, matchStats: MatchStats) => void;
-  onDefeat: (matchStats: MatchStats) => void;
+  /** When present, initialises the sim as battle mode. */
+  battleMode?: boolean;
+  battleSlots?: BattleSlot[];
+  onVictory: (score: number, matchStats: MatchStats, battStats?: Record<string, BattStatEntry> | null) => void;
+  onDefeat: (matchStats: MatchStats, battStats?: Record<string, BattStatEntry> | null) => void;
+  /** Called when battle match ends. playerWon is true when all enemies KO or player had highest HP. */
+  onBattleEnd?: (playerWon: boolean, battStats?: Record<string, BattStatEntry> | null) => void;
   onQuit: () => void;
 }
 
 export function GameScreen({
   mode, p1, p2, stageId, animateHud, difficulty, matchRoom,
-  onVictory, onDefeat, onQuit,
+  battleMode, battleSlots,
+  onVictory, onDefeat, onBattleEnd, onQuit,
 }: Props) {
   const netMode = matchRoom ? 'mp' : 'sp';
   const parentRef = useRef<HTMLDivElement>(null);
@@ -53,27 +60,33 @@ export function GameScreen({
   const onVictoryRef = useRef(onVictory);
   const onDefeatRef = useRef(onDefeat);
   const onQuitRef = useRef(onQuit);
+  const onBattleEndRef = useRef(onBattleEnd);
   useEffect(() => { onVictoryRef.current = onVictory; }, [onVictory]);
   useEffect(() => { onDefeatRef.current = onDefeat; }, [onDefeat]);
   useEffect(() => { onQuitRef.current = onQuit; }, [onQuit]);
+  useEffect(() => { onBattleEndRef.current = onBattleEnd; }, [onBattleEnd]);
 
   useEffect(() => {
     const parent = parentRef.current;
     if (!parent) return;
 
     const callbacks: GameCallbacks = {
-      onVictory: (score, matchStats) => {
-        if (mode === 'story') {
+      onVictory: (score, matchStats, battStats) => {
+        if (battleMode) {
+          onBattleEndRef.current?.(true, battStats);
+        } else if (mode === 'story') {
           setStoryVictoryScore(score);
         } else {
-          onVictoryRef.current(score, matchStats);
+          onVictoryRef.current(score, matchStats, battStats);
         }
       },
-      onDefeat: (matchStats) => {
-        if (mode === 'story') {
+      onDefeat: (matchStats, battStats) => {
+        if (battleMode) {
+          onBattleEndRef.current?.(false, battStats);
+        } else if (mode === 'story') {
           setShowStoryGameOver(true);
         } else {
-          onDefeatRef.current(matchStats);
+          onDefeatRef.current(matchStats, battStats);
         }
       },
       onQuit: () => onQuitRef.current(),
@@ -90,6 +103,8 @@ export function GameScreen({
       netMode,
       matchRoom,
       difficulty,
+      battleMode,
+      battleSlots,
     });
     gameRef.current = game;
     setGameReady(true);
@@ -205,7 +220,7 @@ export function GameScreen({
       }}
     >
       <div ref={parentRef} style={{ width: '100%', height: '100%' }} />
-      {gameReady && (
+      {gameReady && !battleMode && (
         <HudOverlay
           game={gameRef.current}
           stageName={stageName}
@@ -213,6 +228,12 @@ export function GameScreen({
           inMp={netMode === 'mp'}
           localSessionId={matchRoom?.sessionId}
           hostSessionId={matchRoom?.state.hostSessionId}
+        />
+      )}
+      {gameReady && battleMode && battleSlots && (
+        <BattleHUD8
+          game={gameRef.current}
+          slots={battleSlots}
         />
       )}
       {netMode !== 'mp' && isPaused && !showMoves && (
