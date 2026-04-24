@@ -115,14 +115,15 @@ interface BarRowProps {
   slotOffset: number;
   getActor: (i: number) => import('@nannymud/shared/simulation/types').Actor | null;
   isTop: boolean;
+  bottomOffset?: number;
 }
 
-function PlayerBarRow({ slots, slotOffset, getActor, isTop }: BarRowProps) {
+function PlayerBarRow({ slots, slotOffset, getActor, isTop, bottomOffset = 0 }: BarRowProps) {
   return (
     <div style={{
       position: 'absolute',
       top: isTop ? 0 : undefined,
-      bottom: isTop ? undefined : 0,
+      bottom: isTop ? undefined : bottomOffset,
       left: 0, right: 0,
       display: 'grid',
       gridTemplateColumns: `repeat(${slots.length}, 1fr)`,
@@ -141,33 +142,68 @@ function PlayerBarRow({ slots, slotOffset, getActor, isTop }: BarRowProps) {
         const mpPct = actor ? actor.mp / Math.max(1, actor.mpMax) : 0;
         const isDead = actor ? !actor.isAlive : true;
         const hpColor = hpPct > 0.35 ? theme.good : hpPct > 0.15 ? theme.warn : theme.bad;
+        const guild = GUILDS.find((g) => g.id === slot.guildId);
+        const guildName = guild?.name ?? slot.guildId;
 
         return (
           <div key={i} style={{
-            padding: '4px 5px',
+            padding: '5px 6px',
             border: `1px solid ${borderColor}`,
             background: isDead ? `${theme.bad}11` : (isHuman ? `${theme.accent}08` : theme.bgDeep),
-            opacity: isDead ? 0.5 : 1,
+            opacity: isDead ? 0.4 : 1,
             display: 'grid', gridTemplateColumns: '26px 1fr', gap: 5,
+            alignItems: 'start',
           }}>
             <GuildMonogram guildId={slot.guildId} size={26} selected={isHuman} dim={isDead} />
             <div style={{ minWidth: 0 }}>
+              {/* Name + KO row */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span style={{
                   fontFamily: theme.fontMono, fontSize: 8,
                   color: isHuman ? theme.accent : (slot.team ? teamColor : theme.ink),
-                  letterSpacing: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                  letterSpacing: 1,
+                  overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                 }}>
-                  {GUILDS.find((g) => g.id === slot.guildId)?.name.slice(0, 7).toUpperCase() ?? slot.guildId}
+                  {guildName.slice(0, 9).toUpperCase()}
                 </span>
-                {isDead && <span style={{ fontFamily: theme.fontMono, fontSize: 7, color: theme.bad, letterSpacing: 1 }}>KO</span>}
+                {isDead && (
+                  <span style={{ fontFamily: theme.fontMono, fontSize: 7, color: theme.bad, letterSpacing: 1, flexShrink: 0 }}>
+                    KO
+                  </span>
+                )}
               </div>
-              <div style={{ marginTop: 2 }}>
-                <div style={{ height: 5, background: theme.line, position: 'relative', overflow: 'hidden' }}>
-                  <div style={{ position: 'absolute', inset: 0, width: `${hpPct * 100}%`, background: hpColor, transition: 'width 200ms linear' }} />
+              {/* HP bar */}
+              <div style={{ marginTop: 3 }}>
+                <div style={{ height: 10, background: theme.line, position: 'relative', overflow: 'hidden', borderRadius: 1 }}>
+                  <div style={{
+                    position: 'absolute', inset: 0,
+                    width: `${hpPct * 100}%`,
+                    background: hpColor,
+                    transition: 'width 150ms linear',
+                  }} />
                 </div>
-                <div style={{ height: 3, background: theme.line, position: 'relative', overflow: 'hidden', marginTop: 2 }}>
-                  <div style={{ position: 'absolute', inset: 0, width: `${mpPct * 100}%`, background: theme.accent, transition: 'width 200ms linear' }} />
+                <div style={{
+                  fontFamily: theme.fontMono, fontSize: 7, color: theme.inkDim,
+                  letterSpacing: 1, marginTop: 2,
+                }}>
+                  HP {actor ? actor.hp : 0}/{actor ? actor.hpMax : 0}
+                </div>
+              </div>
+              {/* MP bar */}
+              <div style={{ marginTop: 3 }}>
+                <div style={{ height: 5, background: theme.line, position: 'relative', overflow: 'hidden', borderRadius: 1 }}>
+                  <div style={{
+                    position: 'absolute', inset: 0,
+                    width: `${mpPct * 100}%`,
+                    background: theme.accent,
+                    transition: 'width 150ms linear',
+                  }} />
+                </div>
+                <div style={{
+                  fontFamily: theme.fontMono, fontSize: 7, color: theme.inkDim,
+                  letterSpacing: 1, marginTop: 2,
+                }}>
+                  MP {actor ? actor.mp : 0}/{actor ? actor.mpMax : 0}
                 </div>
               </div>
             </div>
