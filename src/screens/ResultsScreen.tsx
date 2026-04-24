@@ -1,6 +1,6 @@
 import { useEffect, useMemo } from 'react';
 import { GUILDS } from '@nannymud/shared/simulation/guildData';
-import type { GuildId } from '@nannymud/shared/simulation/types';
+import type { GuildId, MatchStats } from '@nannymud/shared/simulation/types';
 import { GUILD_META } from '../data/guildMeta';
 import { theme, guildAccent, Btn, Chip, GuildMonogram, SectionLabel } from '../ui';
 
@@ -9,11 +9,12 @@ interface Props {
   p2: GuildId;
   winner: 'P1' | 'P2';
   score: number;
+  matchStats?: MatchStats;
   onRematch: () => void;
   onMenu: () => void;
 }
 
-export function ResultsScreen({ p1, p2, winner, score, onRematch, onMenu }: Props) {
+export function ResultsScreen({ p1, p2, winner, score, matchStats, onRematch, onMenu }: Props) {
   const p1Guild = useMemo(() => GUILDS.find((g) => g.id === p1)!, [p1]);
   const p2Guild = useMemo(() => GUILDS.find((g) => g.id === p2)!, [p2]);
 
@@ -24,8 +25,22 @@ export function ResultsScreen({ p1, p2, winner, score, onRematch, onMenu }: Prop
   const accW = guildAccent(winMeta.hue);
   const accL = guildAccent(loseMeta.hue);
 
-  // Seeded-ish rollout from score so rematches feel different but the same score feels the same.
   const stats = useMemo(() => {
+    if (matchStats) {
+      const ms1 = winner === 'P1' ? matchStats.p1 : matchStats.p2;
+      const ms2 = winner === 'P1' ? matchStats.p2 : matchStats.p1;
+      const critPct1 = ms1.totalHits > 0 ? Math.round((ms1.critHits / ms1.totalHits) * 100) : 0;
+      const critPct2 = ms2.totalHits > 0 ? Math.round((ms2.critHits / ms2.totalHits) * 100) : 0;
+      return [
+        { k: 'DAMAGE DEALT', a: ms1.damageDealt, b: ms2.damageDealt },
+        { k: 'DAMAGE TAKEN', a: ms1.damageTaken, b: ms2.damageTaken },
+        { k: 'ABILITIES CAST', a: ms1.abilitiesCast, b: ms2.abilitiesCast },
+        { k: 'MAX COMBO', a: ms1.maxCombo, b: ms2.maxCombo },
+        { k: 'CRIT %', a: `${critPct1}%`, b: `${critPct2}%` },
+        { k: 'HEALING', a: ms1.healingDone, b: ms2.healingDone },
+      ];
+    }
+    // Fallback for when no real stats are available
     const seed = Math.max(1, score);
     const mix = (n: number) => Math.abs(Math.sin(seed * (n + 1) * 12.9898) * 43758.5453) % 1;
     const dealt = 420 + Math.floor(mix(1) * 320);
@@ -43,7 +58,7 @@ export function ResultsScreen({ p1, p2, winner, score, onRematch, onMenu }: Prop
       { k: 'CRIT %', a: `${critPct}%`, b: `${Math.max(5, critPct - 8)}%` },
       { k: 'HEALING', a: flip ? healing : 0, b: flip ? 0 : healing },
     ];
-  }, [score, winner]);
+  }, [score, winner, matchStats]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {

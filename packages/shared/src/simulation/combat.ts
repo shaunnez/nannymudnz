@@ -40,9 +40,9 @@ export function applyDamage(
   amount: number,
   vfxEvents: VFXEvent[],
   isCrit = false,
-): void {
-  if (!target.isAlive) return;
-  if (target.invulnerableMs > 0) return;
+): number {
+  if (!target.isAlive) return 0;
+  if (target.invulnerableMs > 0) return 0;
 
   const hasShield = target.statusEffects.find(e => e.type === 'shield' && e.magnitude > 0);
   if (hasShield) {
@@ -58,7 +58,7 @@ export function applyDamage(
     .reduce((acc, e) => acc * (1 - e.magnitude), 1);
   amount = Math.round(amount * damageReduction);
 
-  if (amount <= 0) return;
+  if (amount <= 0) return 0;
 
   target.hp = Math.max(0, target.hp - amount);
   target.hpDark = Math.max(target.hp, target.hpDark - amount * 0.1);
@@ -80,14 +80,16 @@ export function applyDamage(
     target.state = 'dead';
     target.animationId = 'death';
   }
+
+  return amount;
 }
 
 export function applyHeal(
   target: Actor,
   amount: number,
   vfxEvents: VFXEvent[],
-): void {
-  if (!target.isAlive) return;
+): number {
+  if (!target.isAlive) return 0;
   const actual = Math.min(amount, target.hpMax - target.hp);
   target.hp = Math.min(target.hpMax, target.hp + actual);
   target.hpDark = Math.min(target.hpMax, target.hpDark + actual * 0.5);
@@ -110,6 +112,7 @@ export function applyHeal(
       isHeal: true,
     });
   }
+  return actual;
 }
 
 export function addStatusEffect(

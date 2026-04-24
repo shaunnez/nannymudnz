@@ -243,14 +243,14 @@ export class GameplayScene extends Phaser.Scene {
         const score = this.simState.score;
         this.audio.stopMusic();
         this.audio.playVictory();
-        this.time.delayedCall(1500, () => this.callbacks.onVictory(score));
+        this.time.delayedCall(1500, () => this.callbacks.onVictory(score, this.simState.matchStats));
         return;
       }
       if (this.simState.phase === 'defeat') {
         this.phaseHandoffFired = true;
         this.audio.stopMusic();
         this.audio.playDefeat();
-        this.time.delayedCall(1500, () => this.callbacks.onDefeat());
+        this.time.delayedCall(1500, () => this.callbacks.onDefeat(this.simState.matchStats));
         return;
       }
     }

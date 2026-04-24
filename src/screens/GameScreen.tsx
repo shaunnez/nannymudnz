@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Phaser from 'phaser';
 import type { Room } from '@colyseus/sdk';
-import type { GuildId, SimMode, SimState } from '@nannymud/shared/simulation/types';
+import type { GuildId, SimMode, SimState, MatchStats } from '@nannymud/shared/simulation/types';
 import type { MatchState } from '@nannymud/shared';
 import { PauseOverlay } from './PauseOverlay';
 import { StoryGameOverOverlay } from './StoryGameOverOverlay';
@@ -23,8 +23,8 @@ interface Props {
   difficulty?: number;
   /** When present, GameScreen runs in multiplayer mode and mirrors server state. */
   matchRoom?: Room<MatchState>;
-  onVictory: (score: number) => void;
-  onDefeat: () => void;
+  onVictory: (score: number, matchStats: MatchStats) => void;
+  onDefeat: (matchStats: MatchStats) => void;
   onQuit: () => void;
 }
 
@@ -62,18 +62,18 @@ export function GameScreen({
     if (!parent) return;
 
     const callbacks: GameCallbacks = {
-      onVictory: (score) => {
+      onVictory: (score, matchStats) => {
         if (mode === 'story') {
           setStoryVictoryScore(score);
         } else {
-          onVictoryRef.current(score);
+          onVictoryRef.current(score, matchStats);
         }
       },
-      onDefeat: () => {
+      onDefeat: (matchStats) => {
         if (mode === 'story') {
           setShowStoryGameOver(true);
         } else {
-          onDefeatRef.current();
+          onDefeatRef.current(matchStats);
         }
       },
       onQuit: () => onQuitRef.current(),

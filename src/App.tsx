@@ -19,6 +19,7 @@ import { GUILDS } from '@nannymud/shared/simulation/guildData';
 import { ScalingFrame } from './layout/ScalingFrame';
 import { Scanlines, theme } from './ui';
 import { useAppState, type AppScreen } from './state/useAppState';
+import type { MatchStats } from '@nannymud/shared/simulation/types';
 
 const PHASE_TO_SCREEN: Record<MatchPhase, AppScreen> = {
   lobby: 'mp_lobby',
@@ -32,6 +33,7 @@ const PHASE_TO_SCREEN: Record<MatchPhase, AppScreen> = {
 export default function App() {
   const { state, go, set } = useAppState();
   const [finalScore, setFinalScore] = useState(0);
+  const [finalMatchStats, setFinalMatchStats] = useState<MatchStats | null>(null);
 
   // URL routing: /multiplayer → mp_hub on initial mount.
   useEffect(() => {
@@ -161,13 +163,15 @@ export default function App() {
             stageId={state.stageId}
             animateHud={state.animateHud}
             difficulty={state.difficulty}
-            onVictory={(score) => {
+            onVictory={(score, matchStats) => {
               setFinalScore(score);
+              setFinalMatchStats(matchStats);
               set({ winner: 'P1' });
               go('results');
             }}
-            onDefeat={() => {
+            onDefeat={(matchStats) => {
               setFinalScore(0);
+              setFinalMatchStats(matchStats);
               set({ winner: 'P2' });
               go('results');
             }}
@@ -214,6 +218,7 @@ export default function App() {
             p2={state.p2}
             winner={state.winner ?? 'P2'}
             score={finalScore}
+            matchStats={finalMatchStats ?? undefined}
             onRematch={() => go('game')}
             onMenu={() => go('menu')}
           />

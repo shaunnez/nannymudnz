@@ -1,6 +1,7 @@
 import type {
   SimState, Actor, InputState, GuildId, Projectile, DamageType,
   AbilityDef, ActorKind, AnimationId, PlayerController, StatusEffectType, VFXEvent, GroundZone,
+  MatchStats,
 } from './types';
 import { getGuild, DRUID_WOLF_ABILITIES, DRUID_WOLF_RMB } from './guildData';
 import { makeRng } from './rng';
@@ -208,7 +209,52 @@ export function createInitialState(guildId: GuildId, seed: number = Date.now()):
     combatLog: [],
     nextLogId: 1,
     controllers: {},
+    matchStats: makeEmptyMatchStats(),
   };
+}
+
+function emptyActorStats() {
+  return { damageDealt: 0, damageTaken: 0, abilitiesCast: 0, maxCombo: 0, critHits: 0, totalHits: 0, healingDone: 0, _comboRun: 0 };
+}
+
+function makeEmptyMatchStats(): MatchStats {
+  return { p1: emptyActorStats(), p2: emptyActorStats() };
+}
+
+function statSide(actorId: string): 'p1' | 'p2' | null {
+  if (actorId === 'player') return 'p1';
+  if (actorId === 'opponent') return 'p2';
+  return null;
+}
+
+function trackDamage(state: SimState, attackerId: string, targetId: string, amount: number, isCrit: boolean): void {
+  if (amount <= 0) return;
+  const ms = state.matchStats;
+  const aSide = statSide(attackerId);
+  const tSide = statSide(targetId);
+  if (aSide) {
+    const as = ms[aSide];
+    as.damageDealt += amount;
+    as.totalHits++;
+    if (isCrit) as.critHits++;
+    as._comboRun++;
+    if (as._comboRun > as.maxCombo) as.maxCombo = as._comboRun;
+  }
+  if (tSide) {
+    ms[tSide].damageTaken += amount;
+    ms[tSide]._comboRun = 0;
+  }
+}
+
+function trackHeal(state: SimState, actorId: string, amount: number): void {
+  if (amount <= 0) return;
+  const side = statSide(actorId);
+  if (side) state.matchStats[side].healingDone += amount;
+}
+
+function trackAbility(state: SimState, actorId: string): void {
+  const side = statSide(actorId);
+  if (side) state.matchStats[side].abilitiesCast++;
 }
 
 export function getOrCreateController(state: SimState, playerId: string, input: InputState): PlayerController {
@@ -467,7 +513,7 @@ function detonateGroundTarget(player: Actor, ability: AbilityDef, state: SimStat
   for (const target of enemies) {
     const isCrit = checkCrit(player, state.rng);
     const dmg = Math.round(calcDamage(ability, player.stats, target, isCrit, state.rng) * dmgMult);
-    applyDamage(target, dmg, state.vfxEvents, isCrit);
+    trackDamage(state, player.id, target.id, applyDamage(target, dmg, state.vfxEvents, isCrit), isCrit);
     applyEffects(ability, target, player, state);
     if (ability.knockdown || dmg >= KNOCKDOWN_THRESHOLD) {
       applyKnockback(target, ability.knockbackForce || 100, player.facing, ability.knockdown, state.vfxEvents);
@@ -547,6 +593,7 @@ function fireAbility(player: Actor, ability: AbilityDef, state: SimState, ctrl: 
   }
 
   player.abilityCooldowns.set(cdKey, now + ability.cooldownMs);
+  trackAbility(state, player.id);
   const abilityAnimId = getAbilityAnimationId(player, ability);
   if (abilityAnimId && !ability.isChannel) {
     player.state = 'attacking';
@@ -582,7 +629,7 @@ function fireAbility(player: Actor, ability: AbilityDef, state: SimState, ctrl: 
 
   if (ability.isHeal) {
     const healAmt = Math.round((ability.baseDamage + ability.scaleAmount * (ability.scaleStat ? player.stats[ability.scaleStat] : 0)) * dmgMult);
-    applyHeal(player, healAmt, state.vfxEvents);
+    trackHeal(state, player.id, applyHeal(player, healAmt, state.vfxEvents));
     pushAbilityVfx(state.vfxEvents, player, ability, {
       type: 'heal_glow',
       x: player.x - 10,
@@ -606,7 +653,7 @@ function fireAbility(player: Actor, ability: AbilityDef, state: SimState, ctrl: 
       case 'monk': {
         const targets = [...state.enemies, ...(state.opponent ? [state.opponent] : [])]
           .filter(e => e.isAlive && Math.abs(e.x - player.x) < 120 && Math.abs(e.y - player.y) < ATTACK_Y_TOLERANCE);
-        for (const t of targets) applyDamage(t, 25, state.vfxEvents, false);
+        for (const t of targets) trackDamage(state, player.id, t.id, applyDamage(t, 25, state.vfxEvents, false), false);
         player.x = Math.max(0, Math.min(player.x + player.facing * 80, 4000));
         state.vfxEvents.push({ type: 'hit_spark', x: player.x, y: player.y, color: '#fde68a' });
         break;
@@ -739,7 +786,7 @@ function fireAbility(player: Actor, ability: AbilityDef, state: SimState, ctrl: 
     for (const target of aoeTargets) {
       const isCrit = checkCrit(player, state.rng);
       const dmg = Math.round(calcDamage(ability, player.stats, target, isCrit, state.rng) * dmgMult);
-      applyDamage(target, dmg, state.vfxEvents, isCrit);
+      trackDamage(state, player.id, target.id, applyDamage(target, dmg, state.vfxEvents, isCrit), isCrit);
       applyEffects(ability, target, player, state);
       if (ability.knockdown && dmg >= KNOCKDOWN_THRESHOLD) {
         applyKnockback(target, ability.knockbackForce || 150, player.facing, true, state.vfxEvents);
@@ -763,7 +810,7 @@ function fireAbility(player: Actor, ability: AbilityDef, state: SimState, ctrl: 
     for (const target of targets) {
       const isCrit = checkCrit(player, state.rng);
       const dmg = Math.round(calcDamage(ability, player.stats, target, isCrit, state.rng) * dmgMult);
-      applyDamage(target, dmg, state.vfxEvents, isCrit);
+      trackDamage(state, player.id, target.id, applyDamage(target, dmg, state.vfxEvents, isCrit), isCrit);
       applyEffects(ability, target, player, state);
       if (ability.knockdown || dmg >= KNOCKDOWN_THRESHOLD) {
         applyKnockback(target, ability.knockbackForce || 100, player.facing, ability.knockdown, state.vfxEvents);
@@ -1056,10 +1103,10 @@ function performBasicAttack(player: Actor, state: SimState, ctrl: PlayerControll
 
     const lifesteal = player.statusEffects.find(e => e.type === 'lifesteal');
     if (lifesteal) {
-      applyHeal(player, Math.round(finalDmg * lifesteal.magnitude), state.vfxEvents);
+      trackHeal(state, player.id, applyHeal(player, Math.round(finalDmg * lifesteal.magnitude), state.vfxEvents));
     }
 
-    applyDamage(target, finalDmg, state.vfxEvents, isCrit);
+    trackDamage(state, player.id, target.id, applyDamage(target, finalDmg, state.vfxEvents, isCrit), isCrit);
 
     if (finalDmg >= KNOCKDOWN_THRESHOLD || (ctrl.attackChain === 3 && isRunning)) {
       applyKnockback(target, 120, player.facing, finalDmg >= KNOCKDOWN_THRESHOLD, state.vfxEvents);
@@ -1209,7 +1256,7 @@ function tickProjectiles(state: SimState, dtSec: number): void {
       const dy = Math.abs(target.y - proj.y);
       if (dx <= target.width / 2 + proj.radius && dy <= ATTACK_Y_TOLERANCE + proj.radius) {
         const isCrit = state.rng() < 0.05;
-        applyDamage(target, proj.damage * (isCrit ? 1.5 : 1), state.vfxEvents, isCrit);
+        trackDamage(state, proj.ownerId, target.id, applyDamage(target, proj.damage * (isCrit ? 1.5 : 1), state.vfxEvents, isCrit), isCrit);
         state.vfxEvents.push({
           type: 'hit_spark',
           color: proj.color,
@@ -1278,7 +1325,7 @@ function handlePlayerInput(state: SimState, input: InputState, ctrl: PlayerContr
       applyKnockback(player, 0, 1, false, state.vfxEvents);
       const aoeTargets = getEnemiesOf(state, player).filter(e => e.isAlive && Math.hypot(e.x - player.x, e.y - player.y) < 80);
       for (const t of aoeTargets) {
-        applyDamage(t, Math.round(15 + player.stats.STR * 0.3), state.vfxEvents, false);
+        trackDamage(state, player.id, t.id, applyDamage(t, Math.round(15 + player.stats.STR * 0.3), state.vfxEvents, false), false);
       }
       state.vfxEvents.push({ type: 'aoe_pop', color: '#ffffff', x: player.x, y: player.y, z: player.z, radius: 80 });
     }
@@ -1311,7 +1358,8 @@ function handlePlayerInput(state: SimState, input: InputState, ctrl: PlayerContr
         for (const e of getEnemiesOf(state, player)) {
           if (!e.isAlive) continue;
           if (Math.abs(e.x - rainX) > radius || Math.abs(e.y - rainY) > ATTACK_Y_TOLERANCE * 2) continue;
-          applyDamage(e, dmg, state.vfxEvents, checkCrit(player, state.rng));
+          const rainCrit = checkCrit(player, state.rng);
+          trackDamage(state, player.id, e.id, applyDamage(e, dmg, state.vfxEvents, rainCrit), rainCrit);
           addStatusEffect(state, e, 'slow', 0.3, 500, player.id);
         }
         pushAbilityVfx(state.vfxEvents, player, ability, {
@@ -1329,7 +1377,7 @@ function handlePlayerInput(state: SimState, input: InputState, ctrl: PlayerContr
     } else {
       if (ability?.isHeal && player.guildId === 'druid' && ability.id === 'tranquility') {
         const healPerSec = ability.baseDamage + ability.scaleAmount * player.stats[ability.scaleStat!];
-        applyHeal(player, (healPerSec * dtMs) / 1000, state.vfxEvents);
+        trackHeal(state, player.id, applyHeal(player, (healPerSec * dtMs) / 1000, state.vfxEvents));
       }
     }
     return;
@@ -1589,7 +1637,7 @@ function handlePlayerInput(state: SimState, input: InputState, ctrl: PlayerContr
     for (const t of miasmaTargets) {
       const dotDmg = (5 + player.stats.CON * 0.2) * dtSec;
       if (dotDmg > 0.01) {
-        applyDamage(t, Math.max(1, Math.round(dotDmg * (state.rng() > 0.9 ? 1 : 0))), state.vfxEvents, false);
+        trackDamage(state, player.id, t.id, applyDamage(t, Math.max(1, Math.round(dotDmg * (state.rng() > 0.9 ? 1 : 0))), state.vfxEvents, false), false);
       }
     }
     player.mp = Math.max(0, player.mp - dtSec * 2);

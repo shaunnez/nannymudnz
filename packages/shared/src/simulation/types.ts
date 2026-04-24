@@ -105,6 +105,25 @@ export interface ResourceDef {
   color: string;
 }
 
+export interface GuildAbilityStrategy {
+  priority: number;
+  useAtCloseRange?: boolean;
+  useAtLongRange?: boolean;
+  maxHpPct?: number;
+  minHpPct?: number;
+  retreatToUse?: boolean;
+  minResourcePct?: number;
+}
+
+export interface GuildStrategy {
+  preferRange: 'close' | 'mid' | 'long';
+  aggressionPct: number;
+  blockOnReaction: boolean;
+  resourceStrategy: 'spend' | 'hoard';
+  retreatBelowHpPct?: number;
+  abilities: Partial<Record<number | 'rmb', GuildAbilityStrategy>>;
+}
+
 export interface GuildDef {
   id: GuildId;
   name: string;
@@ -121,6 +140,7 @@ export interface GuildDef {
   rmb: AbilityDef;
   damageType: DamageType;
   description: string;
+  strategy: GuildStrategy;
   rangedBasic?: { range: number; speed: number; damageType: DamageType; vfxColor: string };
 }
 
@@ -340,6 +360,22 @@ export interface RoundState {
 
 export type SimMode = 'story' | 'vs';
 
+export interface ActorMatchStats {
+  damageDealt: number;
+  damageTaken: number;
+  abilitiesCast: number;
+  maxCombo: number;
+  critHits: number;
+  totalHits: number;
+  healingDone: number;
+  _comboRun: number;
+}
+
+export interface MatchStats {
+  p1: ActorMatchStats;
+  p2: ActorMatchStats;
+}
+
 export interface WaveEnemy {
   kind: ActorKind;
   count: number;
@@ -384,6 +420,7 @@ export interface SimState {
   combatLog: LogEntry[];
   nextLogId: number;
   controllers: Record<string, PlayerController>;
+  matchStats: MatchStats;
   /** SP VS only — CPU opponent difficulty (0..5). Undefined in MP / story. */
   difficulty?: number;
 }
