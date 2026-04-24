@@ -130,6 +130,7 @@ function stopMoving(actor: Actor): void {
 }
 
 function tryMeleeAttack(state: SimState, actor: Actor, target: Actor, damage: number, cooldownMs: number, vfxEvents: VFXEvent[]): boolean {
+  if (target.team === actor.team) return false;
   if (actor.aiState.lastActionMs < cooldownMs) return false;
   const def = ENEMY_DEFS[actor.kind];
   if (!def) return false;
@@ -244,7 +245,7 @@ function tickPackerAI(actor: Actor, target: Actor, state: SimState, dtSec: numbe
       actor.vy = (dy / (dist || 1)) * speed;
       actor.animationId = 'jump';
 
-      if (Math.abs(target.x - actor.x) < 80 && Math.abs(target.y - actor.y) < 40) {
+      if (target.team !== actor.team && Math.abs(target.x - actor.x) < 80 && Math.abs(target.y - actor.y) < 40) {
         applyDamage(target, def.damage + 5, vfxEvents);
         target.state = 'knockdown';
         target.animationId = 'knockdown';

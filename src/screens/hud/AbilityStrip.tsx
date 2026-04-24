@@ -1,5 +1,5 @@
 import type { Actor } from '@nannymud/shared/simulation/types';
-import { getGuild } from '@nannymud/shared/simulation/guildData';
+import { getGuild, DRUID_BEAR_ABILITIES, DRUID_BEAR_RMB } from '@nannymud/shared/simulation/guildData';
 import { theme } from '../../ui';
 import { ComboDisplay } from '../../ui/ComboDisplay';
 
@@ -43,11 +43,16 @@ const ABILITY_ICONS: Record<string, string> = {
   plague_vomit: '☣', diseased_claw: '✕', necrotic_embrace: '⊕', contagion: '☣', rotting_tide: '~', miasma: '◉',
   // Master
   chosen_strike: '★', chosen_utility: '↯', chosen_nuke: '◆', eclipse: '◎', apotheosis: '✦', class_swap: '↺',
+  // Druid bear/wolf form
+  bear_maul: '🐾', bear_charge: '▶', bear_roar: '🔊', bear_rend: '🩸', bear_primal_fury: '⚡', bear_revert: '↺',
 };
 
 export function AbilityStrip({ actor, side, showKeys, simTimeMs }: Props) {
   const guild = getGuild(actor.guildId!);
-  const cards = [...guild.abilities.slice(0, 5), guild.rmb];
+  const shapeshifted = actor.shapeshiftForm === 'bear' || actor.shapeshiftForm === 'wolf';
+  const cards = shapeshifted
+    ? [...DRUID_BEAR_ABILITIES.slice(0, 5), DRUID_BEAR_RMB]
+    : [...guild.abilities.slice(0, 5), guild.rmb];
 
   return (
     <div style={{ display: 'flex', gap: 4 }}>
