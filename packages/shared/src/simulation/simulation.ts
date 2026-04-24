@@ -1262,6 +1262,27 @@ function handlePlayerInput(state: SimState, input: InputState, ctrl: PlayerContr
         });
       }
     }
+    if (player.guildId === 'hunter' && ability?.id === 'rain_of_arrows') {
+      const pulseEveryMs = 500;
+      if (Math.floor(prevChannelMs / pulseEveryMs) !== Math.floor(ctrl.channelMs / pulseEveryMs)) {
+        const rainX = player.x + player.facing * 200;
+        const rainY = player.y;
+        const radius = ability.aoeRadius || 150;
+        const dmg = Math.round(ability.baseDamage + ability.scaleAmount * player.stats.DEX);
+        for (const e of getEnemiesOf(state, player)) {
+          if (!e.isAlive) continue;
+          if (Math.abs(e.x - rainX) > radius || Math.abs(e.y - rainY) > ATTACK_Y_TOLERANCE * 2) continue;
+          applyDamage(e, dmg, state.vfxEvents, checkCrit(player, state.rng));
+          addStatusEffect(state, e, 'slow', 0.3, 500, player.id);
+        }
+        pushAbilityVfx(state.vfxEvents, player, ability, {
+          type: 'channel_pulse',
+          x: rainX,
+          y: rainY,
+          radius,
+        });
+      }
+    }
     if (ctrl.channelMs >= (ability?.channelDurationMs || 2000)) {
       player.state = 'idle';
       ctrl.channelingAbility = null;
