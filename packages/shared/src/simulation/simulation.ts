@@ -1358,9 +1358,16 @@ function handlePlayerInput(state: SimState, input: InputState, ctrl: PlayerContr
   }
 
   if (input.testAbilitySlot != null && !isSilenced(player)) {
-    const guild = getGuild(player.guildId!);
     const slot = input.testAbilitySlot;
-    const ability = slot === 'rmb' ? guild.rmb : slot <= 5 ? guild.abilities[slot - 1] : guild.rmb;
+    let ability: AbilityDef | null = null;
+    if (player.shapeshiftForm === 'bear' || player.shapeshiftForm === 'wolf') {
+      ability = slot === 'rmb' ? DRUID_BEAR_RMB :
+                typeof slot === 'number' && slot >= 1 && slot <= 5 ? (DRUID_BEAR_ABILITIES[slot - 1] ?? null) :
+                DRUID_BEAR_RMB;
+    } else {
+      const guild = getGuild(player.guildId!);
+      ability = slot === 'rmb' ? guild.rmb : typeof slot === 'number' && slot <= 5 ? guild.abilities[slot - 1] : guild.rmb;
+    }
     if (ability) {
       fireAbility(player, ability, state, ctrl);
       return;

@@ -91,10 +91,12 @@ export class ActorView {
   private readonly outlineColor: number;
   private readonly initialChar: string;
   private readonly initialColor: string;
-  private readonly spriteId?: ActorKind;
+  private spriteId?: ActorKind;
   private readonly hasSprites: boolean;
   private readonly band: ScreenYBand;
   private readonly isLocalPlayerActor: boolean;
+  private readonly baseSpriteId: ActorKind | undefined;
+  private lastShapeshiftForm: string = 'none';
 
   constructor(scene: Phaser.Scene, actor: Actor, isLocalPlayerActor: boolean = false) {
     this.isLocalPlayerActor = isLocalPlayerActor;
@@ -105,6 +107,7 @@ export class ActorView {
     this.height = actor.height;
     this.spriteBodyHeightPx = this.height * SPRITE_BODY_TO_HITBOX_RATIO;
     this.spriteId = (actor.guildId ?? actor.kind) as ActorKind | undefined;
+    this.baseSpriteId = this.spriteId;
     this.hasSprites = !!this.spriteId && hasSprites(this.spriteId);
 
     const { color, initial } = colorAndInitial(actor);
@@ -930,6 +933,13 @@ export class ActorView {
   }
 
   syncFrom(actor: Actor): void {
+    const form = actor.shapeshiftForm ?? 'none';
+    if (form !== this.lastShapeshiftForm) {
+      this.lastShapeshiftForm = form;
+      this.spriteId = (form === 'wolf' || form === 'bear') ? 'wolf' : this.baseSpriteId;
+      this.currentAnim = undefined; // force anim replay with new spriteId
+    }
+
     const groundScreenY = worldYToScreenY(actor.y, this.band.min, this.band.max);
     const screenY = groundScreenY - actor.z * 0.6;
 
