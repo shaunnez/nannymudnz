@@ -27,14 +27,14 @@ interface Props {
 function buildDefaultSlots(humanGuildId: GuildId): SlotConfig[] {
   const ids = GUILDS.map((g) => g.id).filter((id) => id !== humanGuildId);
   return [
-    { type: 'human', guildId: humanGuildId, team: null },
-    { type: 'cpu',   guildId: ids[0] ?? 'knight', team: null },
-    { type: 'cpu',   guildId: ids[1] ?? 'mage',   team: null },
-    { type: 'off',   guildId: ids[2] ?? 'druid',  team: null },
-    { type: 'off',   guildId: ids[3] ?? 'hunter', team: null },
-    { type: 'off',   guildId: ids[4] ?? 'monk',   team: null },
-    { type: 'off',   guildId: ids[5] ?? 'viking', team: null },
-    { type: 'off',   guildId: ids[6] ?? 'prophet',team: null },
+    { type: 'human', guildId: humanGuildId,        team: 'A' },
+    { type: 'cpu',   guildId: ids[0] ?? 'knight',  team: 'A' },
+    { type: 'cpu',   guildId: ids[1] ?? 'mage',    team: 'A' },
+    { type: 'cpu',   guildId: ids[2] ?? 'druid',   team: 'A' },
+    { type: 'cpu',   guildId: ids[3] ?? 'hunter',  team: 'B' },
+    { type: 'cpu',   guildId: ids[4] ?? 'monk',    team: 'B' },
+    { type: 'cpu',   guildId: ids[5] ?? 'viking',  team: 'B' },
+    { type: 'cpu',   guildId: ids[6] ?? 'prophet', team: 'B' },
   ];
 }
 
