@@ -9,6 +9,7 @@ export interface GroundZone {
   radius: number;
   remainingMs: number;
   ownerTeam: 'player' | 'enemy';
+  ownerBattleTeam?: BattleTeam;
   effects: Partial<Record<StatusEffectType, { magnitude: number; durationMs: number }>>;
   damagePerTick: number;
   damageType: DamageType;

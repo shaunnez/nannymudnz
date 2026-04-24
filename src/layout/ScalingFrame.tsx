@@ -72,7 +72,7 @@ export function ScalingFrame({ children }: Props) {
 
 const outerStyle: React.CSSProperties = {
   width: '100vw',
-  height: '100vh',
+  height: '100dvh',
   background: '#000',
   display: 'flex',
   justifyContent: 'center',

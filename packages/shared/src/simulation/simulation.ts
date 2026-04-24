@@ -518,6 +518,12 @@ function pushAbilityVfx(
  * enemy lookup. Keeps the subject-actor abstraction out of every call site.
  */
 function getEnemiesOf(state: SimState, actor: Actor): Actor[] {
+  if (state.battleMode) {
+    return [state.player, ...state.enemies].filter(
+      (a) => a.id !== actor.id &&
+        !(a.battleTeam != null && actor.battleTeam != null && a.battleTeam === actor.battleTeam),
+    );
+  }
   if (state.mode === 'vs') {
     if (actor.id === 'player') {
       return state.opponent ? [state.opponent] : [];
@@ -563,6 +569,7 @@ function detonateGroundTarget(player: Actor, ability: AbilityDef, state: SimStat
       radius: 240,
       remainingMs: 6000,
       ownerTeam: player.team as 'player' | 'enemy',
+      ownerBattleTeam: player.battleTeam,
       effects: { silence: { magnitude: 1, durationMs: 1200 } },
       damagePerTick: 8,
       damageType: 'shadow',
@@ -583,6 +590,7 @@ function detonateGroundTarget(player: Actor, ability: AbilityDef, state: SimStat
       radius: 40,
       remainingMs: 300000,
       ownerTeam: player.team as 'player' | 'enemy',
+      ownerBattleTeam: player.battleTeam,
       effects: { root: { magnitude: 1, durationMs: 2000 } },
       damagePerTick: 0,
       triggerDamage: 40,
@@ -1274,9 +1282,20 @@ function tickProjectiles(state: SimState, dtSec: number): void {
       continue;
     }
 
-    const checkTargets = proj.team === 'player'
-      ? state.enemies.filter(e => e.isAlive)
-      : [state.player, ...state.allies].filter(a => a.isAlive);
+    let checkTargets: Actor[];
+    if (state.battleMode) {
+      const owner = state.player.id === proj.ownerId
+        ? state.player
+        : state.enemies.find((e) => e.id === proj.ownerId);
+      checkTargets = [state.player, ...state.enemies].filter(
+        (a) => a.isAlive && a.id !== proj.ownerId &&
+          !(a.battleTeam != null && owner?.battleTeam != null && a.battleTeam === owner.battleTeam),
+      );
+    } else {
+      checkTargets = proj.team === 'player'
+        ? state.enemies.filter(e => e.isAlive)
+        : [state.player, ...state.allies].filter(a => a.isAlive);
+    }
 
     let hit = false;
     for (const target of checkTargets) {
@@ -1732,7 +1751,9 @@ function tickGroundZones(state: SimState, dtMs: number): void {
     let triggered = false;
     for (const actor of allActors) {
       if (!actor.isAlive) continue;
-      if (actor.team === zone.ownerTeam) continue;
+      if (state.battleMode
+        ? (actor.battleTeam != null && zone.ownerBattleTeam != null && actor.battleTeam === zone.ownerBattleTeam)
+        : actor.team === zone.ownerTeam) continue;
       const dx = actor.x - zone.x;
       const dy = actor.y - zone.y;
       if (Math.abs(dx) > zone.radius || Math.abs(dy) > ATTACK_Y_TOLERANCE * 2) continue;
