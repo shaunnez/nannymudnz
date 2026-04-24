@@ -91,4 +91,23 @@ describe('advanceBracket', () => {
       expect(m.p2).toBeDefined();
     });
   });
+
+  it('correctly resolves SF and builds Final after two wins', () => {
+    let s = initChampionship('adventurer', 42);
+    // Win QF
+    s = advanceBracket(s, true);
+    expect(s.currentRound).toBe(1);
+    expect(s.rounds[0].matches.every(m => m.winner !== null)).toBe(true);
+
+    // Win SF
+    s = advanceBracket(s, true);
+    expect(s.currentRound).toBe(2);
+    // SF: all matches should have winners
+    expect(s.rounds[1].matches.every(m => m.winner !== null)).toBe(true);
+    // Final should be built with 2 valid guild participants
+    expect(s.rounds[2].matches.length).toBe(1);
+    expect(s.rounds[2].matches[0].p1).toBeTruthy();
+    expect(s.rounds[2].matches[0].p2).toBeTruthy();
+    expect(s.rounds[2].matches[0].winner).toBeNull(); // player hasn't fought yet
+  });
 });

@@ -151,8 +151,11 @@ export function advanceBracket(
     matchHistory: [...state.matchHistory],
   };
 
-  const pm = getPlayerMatch(next);
-  const opponent = next.playerGuildId === pm.p1 ? pm.p2 : pm.p1;
+  const currentRoundData = next.rounds[next.currentRound];
+  const pm = currentRoundData.matches.find(
+    m => m.p1 === next.playerGuildId || m.p2 === next.playerGuildId,
+  )!;
+  const opponent = pm.p1 === next.playerGuildId ? pm.p2 : pm.p1;
   pm.winner = playerWon ? next.playerGuildId : opponent;
 
   next.matchHistory.push({
