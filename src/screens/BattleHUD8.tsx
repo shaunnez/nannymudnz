@@ -179,10 +179,10 @@ function BottomMiniGrid({ slots, slotOffset, getActor }: MiniGridProps) {
                 {isDead && <span style={{ fontFamily: theme.fontMono, fontSize: 6, color: theme.bad, flexShrink: 0 }}>KO</span>}
               </div>
               <div style={{ height: 5, background: theme.line, position: 'relative', overflow: 'hidden', borderRadius: 1, marginTop: 2 }}>
-                <div style={{ position: 'absolute', inset: 0, width: `${hpPct * 100}%`, background: hpColor, transition: 'width 150ms linear' }} />
+                <div style={{ position: 'absolute', inset: 0, width: `${hpPct * 100}%`, background: hpColor, transition: 'none' }} />
               </div>
               <div style={{ height: 3, background: theme.line, position: 'relative', overflow: 'hidden', borderRadius: 1, marginTop: 2 }}>
-                <div style={{ position: 'absolute', inset: 0, width: `${mpPct * 100}%`, background: theme.accent, transition: 'width 150ms linear' }} />
+                <div style={{ position: 'absolute', inset: 0, width: `${mpPct * 100}%`, background: theme.accent, transition: 'none' }} />
               </div>
             </div>
           </div>
@@ -261,7 +261,7 @@ function PlayerBarRow({ slots, slotOffset, getActor, isTop, bottomOffset = 0 }: 
                     position: 'absolute', inset: 0,
                     width: `${hpPct * 100}%`,
                     background: hpColor,
-                    transition: 'width 150ms linear',
+                    transition: 'none',
                   }} />
                 </div>
                 <div style={{
@@ -278,7 +278,7 @@ function PlayerBarRow({ slots, slotOffset, getActor, isTop, bottomOffset = 0 }: 
                     position: 'absolute', inset: 0,
                     width: `${mpPct * 100}%`,
                     background: theme.accent,
-                    transition: 'width 150ms linear',
+                    transition: 'none',
                   }} />
                 </div>
                 <div style={{
