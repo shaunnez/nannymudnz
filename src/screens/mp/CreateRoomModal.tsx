@@ -16,7 +16,7 @@ type RoundsOption = (typeof ROUNDS_OPTIONS)[number];
 export function CreateRoomModal({ playerName, onCancel, onCreated }: Props) {
   const [roomName, setRoomName] = useState('Room');
   const [rounds, setRounds] = useState<RoundsOption>(3);
-  const [visibility, setVisibility] = useState<'public' | 'private'>('private');
+  const [visibility, setVisibility] = useState<'public' | 'private'>('public');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
