@@ -6,6 +6,7 @@ import { theme, guildAccent, Btn, Chip, GuildMonogram } from '../ui';
 import { GuildDetails } from './GuildDetails';
 import type { GameMode } from '../state/useAppState';
 import { SidePanel, StatBar } from './CharSelectPanels';
+import { useIsMobile } from '../hooks/useIsMobile';
 
 interface Props {
   mode: GameMode;
@@ -100,9 +101,10 @@ export function CharSelect({ mode, initialP1, initialP2, onBack, onReady }: Prop
   const hoveredGuild = GUILDS.find((g) => g.id === hoveredId)!;
   const hoveredMeta = GUILD_META[hoveredId];
 
+  const mobile = useIsMobile();
   const bodyColumns = '280px 1fr 280px';
-  const tileSize = TILE_SIZE;
-  const tileGap = TILE_GAP;
+  const tileSize = mobile ? 110 : TILE_SIZE;
+  const tileGap = mobile ? 10 : TILE_GAP;
 
   return (
     <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
@@ -167,10 +169,10 @@ export function CharSelect({ mode, initialP1, initialP2, onBack, onReady }: Prop
 
         <div
           style={{
-            padding: '20px 30px',
+            padding: mobile ? '12px 16px' : '20px 30px',
             display: 'flex',
             flexDirection: 'column',
-            gap: 18,
+            gap: mobile ? 10 : 18,
             overflow: 'auto',
           }}
         >

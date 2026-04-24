@@ -3,6 +3,7 @@ import { GUILDS, DRUID_WOLF_ABILITIES, DRUID_WOLF_RMB } from '@nannymud/shared/s
 import { GUILD_META } from '../data/guildMeta';
 import type { GuildId, Stats, AbilityDef } from '@nannymud/shared/simulation/types';
 import { theme, guildAccent, Btn, Chip, SectionLabel, GuildMonogram, SpriteStrip, ComboDisplay, MeterBar, AbilityPreview } from '../ui';
+import { useIsMobile } from '../hooks/useIsMobile';
 
 interface Props {
   guildId: GuildId;
@@ -18,6 +19,7 @@ export function GuildDossier({ guildId, onBack, onPrev, onNext }: Props) {
   const guild = useMemo(() => GUILDS.find((g) => g.id === guildId)!, [guildId]);
   const meta = GUILD_META[guildId];
   const accent = guildAccent(meta.hue);
+  const mobile = useIsMobile();
 
   const [druidForm, setDruidForm] = useState<'druid' | 'wolf'>('druid');
   useEffect(() => { setDruidForm('druid'); }, [guildId]);
@@ -80,10 +82,10 @@ export function GuildDossier({ guildId, onBack, onPrev, onNext }: Props) {
       <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1fr 1fr', overflow: 'hidden' }}>
         <div
           style={{
-            padding: 40,
+            padding: mobile ? 20 : 40,
             display: 'flex',
             flexDirection: 'column',
-            gap: 16,
+            gap: mobile ? 8 : 16,
             background: `linear-gradient(180deg, ${accent}16, transparent 70%)`,
             overflow: 'auto',
           }}
@@ -94,7 +96,7 @@ export function GuildDossier({ guildId, onBack, onPrev, onNext }: Props) {
               <div style={{ fontFamily: theme.fontMono, fontSize: 10, color: accent, letterSpacing: 5 }}>
                 {meta.tag.toUpperCase()}
               </div>
-              <div style={{ fontFamily: theme.fontDisplay, fontSize: 44, color: theme.ink, letterSpacing: '-0.02em', lineHeight: 1 }}>
+              <div style={{ fontFamily: theme.fontDisplay, fontSize: mobile ? 30 : 44, color: theme.ink, letterSpacing: '-0.02em', lineHeight: 1 }}>
                 {guild.name}
               </div>
               <div style={{ fontFamily: theme.fontBody, fontSize: 12, color: theme.inkDim, marginTop: 4 }}>
@@ -136,8 +138,8 @@ export function GuildDossier({ guildId, onBack, onPrev, onNext }: Props) {
                   gap: 4,
                 }}
               >
-                <div style={{ height: 96, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <SpriteStrip guildId={guildId} animationId={anim} targetHeight={80} />
+                <div style={{ height: mobile ? 56 : 96, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <SpriteStrip guildId={guildId} animationId={anim} targetHeight={mobile ? 48 : 80} />
                 </div>
                 <span style={{ fontFamily: theme.fontMono, fontSize: 9, color: theme.inkMuted, letterSpacing: 2 }}>
                   {anim.toUpperCase()}
@@ -149,12 +151,12 @@ export function GuildDossier({ guildId, onBack, onPrev, onNext }: Props) {
           <SectionLabel kicker="VITALS" right={guild.resource.name.toUpperCase()}>
             Kit at a glance
           </SectionLabel>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 8 }}>
-            <VitalTile label={guild.resource.name} value={String(guild.resource.max)} accent={accent} emphasized />
-            <VitalTile label="HP" value={String(guild.hpMax)} />
-            <VitalTile label="ARMOR" value={String(meta.uiVitals.Armor)} />
-            <VitalTile label="MR" value={String(meta.uiVitals.MR)} />
-            <VitalTile label="MOVE" value={String(meta.uiVitals.Move)} />
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: mobile ? 4 : 8 }}>
+            <VitalTile label={guild.resource.name} value={String(guild.resource.max)} accent={accent} emphasized mobile={mobile} />
+            <VitalTile label="HP" value={String(guild.hpMax)} mobile={mobile} />
+            <VitalTile label="ARMOR" value={String(meta.uiVitals.Armor)} mobile={mobile} />
+            <VitalTile label="MR" value={String(meta.uiVitals.MR)} mobile={mobile} />
+            <VitalTile label="MOVE" value={String(meta.uiVitals.Move)} mobile={mobile} />
           </div>
 
           <SectionLabel kicker="STATS" right="6-AXIS">
@@ -350,7 +352,7 @@ function AbilityPager({
   );
 }
 
-function VitalTile({ label, value, accent, emphasized }: { label: string; value: string; accent?: string; emphasized?: boolean }) {
+function VitalTile({ label, value, accent, emphasized, mobile }: { label: string; value: string; accent?: string; emphasized?: boolean; mobile?: boolean }) {
   const fg = emphasized && accent ? accent : theme.ink;
   const border = emphasized && accent ? accent : theme.lineSoft;
   return (
@@ -359,15 +361,15 @@ function VitalTile({ label, value, accent, emphasized }: { label: string; value:
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        padding: '10px 6px',
+        padding: mobile ? '6px 4px' : '10px 6px',
         background: theme.panel,
         border: `1px solid ${border}`,
       }}
     >
-      <span style={{ fontFamily: theme.fontMono, fontSize: 14, color: theme.inkMuted, letterSpacing: 2 }}>
+      <span style={{ fontFamily: theme.fontMono, fontSize: mobile ? 9 : 14, color: theme.inkMuted, letterSpacing: 2 }}>
         {label.toUpperCase()}
       </span>
-      <span style={{ fontFamily: theme.fontDisplay, fontSize: 22, color: fg, lineHeight: 1.1, marginTop: 2 }}>
+      <span style={{ fontFamily: theme.fontDisplay, fontSize: mobile ? 15 : 22, color: fg, lineHeight: 1.1, marginTop: 2 }}>
         {value}
       </span>
     </div>

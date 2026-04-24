@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { ChevronRight } from 'lucide-react';
 import { theme, SectionLabel } from '../ui';
 import type { AppScreen, GameMode } from '../state/useAppState';
+import { useIsMobile } from '../hooks/useIsMobile';
 
 interface MenuItem {
   id: string;
@@ -52,6 +53,7 @@ interface Props {
 export function MainMenu({ onPick, difficulty, onDifficultyChange }: Props) {
   const [sel, setSel] = useState(0);
   const setDifficulty = onDifficultyChange;
+  const mobile = useIsMobile();
 
   const activate = (index: number) => {
     const item = MENU_ITEMS[index];
@@ -84,7 +86,7 @@ export function MainMenu({ onPick, difficulty, onDifficultyChange }: Props) {
       <div
         style={{
           flex: '0 0 46%',
-          padding: '52px 48px',
+          padding: mobile ? '20px 24px' : '52px 48px',
           display: 'flex',
           flexDirection: 'column',
           minHeight: 0,
@@ -104,10 +106,10 @@ export function MainMenu({ onPick, difficulty, onDifficultyChange }: Props) {
         <div
           style={{
             fontFamily: theme.fontDisplay,
-            fontSize: 36,
+            fontSize: mobile ? 26 : 36,
             color: theme.ink,
             letterSpacing: '-0.02em',
-            marginBottom: 22,
+            marginBottom: mobile ? 10 : 22,
           }}
         >
           Choose your engagement
@@ -127,7 +129,7 @@ export function MainMenu({ onPick, difficulty, onDifficultyChange }: Props) {
                   gridTemplateColumns: '34px 1fr auto',
                   gap: 14,
                   alignItems: 'center',
-                  padding: '16px 0',
+                  padding: mobile ? '8px 0' : '16px 0',
                   borderBottom: `1px solid ${theme.lineSoft}`,
                   cursor: m.enabled && m.target ? 'pointer' : 'default',
                   opacity: m.enabled ? 1 : 0.45,
