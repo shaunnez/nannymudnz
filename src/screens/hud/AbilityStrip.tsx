@@ -1,5 +1,5 @@
-import type { Actor } from '@nannymud/shared/simulation/types';
-import { getGuild, DRUID_BEAR_ABILITIES, DRUID_BEAR_RMB } from '@nannymud/shared/simulation/guildData';
+import type { Actor, AbilityDef } from '@nannymud/shared/simulation/types';
+import { getGuild, DRUID_WOLF_ABILITIES, DRUID_WOLF_RMB } from '@nannymud/shared/simulation/guildData';
 import { theme } from '../../ui';
 import { ComboDisplay } from '../../ui/ComboDisplay';
 
@@ -10,7 +10,7 @@ interface Props {
   simTimeMs: number;
 }
 
-const KEY_LABELS = ['1', '2', '3', '4', '5', 'R'];
+const KEY_LABELS = ['1', '2', '3', '4', '5', '6'];
 
 const ABILITY_ICONS: Record<string, string> = {
   // Adventurer
@@ -47,16 +47,41 @@ const ABILITY_ICONS: Record<string, string> = {
   bear_maul: '🐾', bear_charge: '▶', bear_roar: '🔊', bear_rend: '🩸', bear_primal_fury: '⚡', bear_revert: '↺',
 };
 
+const MASTER_PRIMED_SLOTS: Record<string, { strike: string; utility: string; nuke: string }> = {
+  knight: { strike: 'valorous_strike', utility: 'shield_wall',  nuke: 'holy_rebuke'    },
+  mage:   { strike: 'arcane_shard',    utility: 'blink',        nuke: 'ice_nova'       },
+  monk:   { strike: 'five_point_palm', utility: 'flying_kick',  nuke: 'dragons_fury'   },
+  hunter: { strike: 'aimed_shot',      utility: 'disengage',    nuke: 'rain_of_arrows' },
+  druid:  { strike: 'entangle',        utility: 'rejuvenate',   nuke: 'tranquility'    },
+};
+
+function getMasterDisplayAbility(primedClass: string, slotId: string): AbilityDef | undefined {
+  const map = MASTER_PRIMED_SLOTS[primedClass];
+  if (!map) return undefined;
+  const targetId = slotId === 'chosen_strike' ? map.strike
+    : slotId === 'chosen_utility' ? map.utility
+    : slotId === 'chosen_nuke' ? map.nuke
+    : undefined;
+  if (!targetId) return undefined;
+  const guild = getGuild(primedClass as never);
+  return [...guild.abilities, guild.rmb].find(a => a.id === targetId);
+}
+
 export function AbilityStrip({ actor, side, showKeys, simTimeMs }: Props) {
   const guild = getGuild(actor.guildId!);
-  const shapeshifted = actor.shapeshiftForm === 'bear' || actor.shapeshiftForm === 'wolf';
+  const shapeshifted = actor.shapeshiftForm === 'wolf';
   const cards = shapeshifted
-    ? [...DRUID_BEAR_ABILITIES.slice(0, 5), DRUID_BEAR_RMB]
+    ? [...DRUID_WOLF_ABILITIES.slice(0, 5), DRUID_WOLF_RMB]
     : [...guild.abilities.slice(0, 5), guild.rmb];
 
   return (
     <div style={{ display: 'flex', gap: 4 }}>
       {cards.map((a, i) => {
+        const isMasterChosen = actor.guildId === 'master' && actor.primedClass &&
+          (a.id === 'chosen_strike' || a.id === 'chosen_utility' || a.id === 'chosen_nuke');
+        const displayAbility = isMasterChosen
+          ? (getMasterDisplayAbility(actor.primedClass!, a.id) ?? a)
+          : a;
         const cdUntil = actor.abilityCooldowns.get(a.id) ?? 0;
         const cdRemaining = Math.max(0, cdUntil - simTimeMs);
         const onCd = cdRemaining > 0;
@@ -105,10 +130,10 @@ export function AbilityStrip({ actor, side, showKeys, simTimeMs }: Props) {
                 userSelect: 'none',
               }}
             >
-              {ABILITY_ICONS[a.id] ?? '?'}
+              {ABILITY_ICONS[displayAbility.id] ?? ABILITY_ICONS[a.id] ?? '?'}
             </div>
             <div style={{ position: 'absolute', bottom: 5, left: 4, right: 4, textAlign: 'center' }}>
-              <div style={{ fontSize:8, lineHeight: 1.1, marginBottom: 3, color: theme.ink }}>{a.name}</div>
+              <div style={{ fontSize:8, lineHeight: 1.1, marginBottom: 3, color: theme.ink }}>{displayAbility.name}</div>
               <div style={{ display: 'flex', justifyContent: 'center' }}>
                 <ComboDisplay combo={a.combo} size={10} color={theme.inkMuted} gap={2} />
               </div>

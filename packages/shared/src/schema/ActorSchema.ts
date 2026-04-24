@@ -69,7 +69,7 @@ export class ActorSchema extends Schema {
   @type('number') bloodtally?: number;
   @type('number') chiOrbs?: number;
   @type('number') sanity?: number;
-  @type('string') shapeshiftForm?: 'none' | 'bear' | 'wolf';
+  @type('string') shapeshiftForm?: 'none' | 'wolf';
   @type('string') primedClass?: string;
   @type({ array: 'string' }) dishes?: string[];
   @type('boolean') miasmaActive?: boolean;

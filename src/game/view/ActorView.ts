@@ -941,7 +941,7 @@ export class ActorView {
     const form = actor.shapeshiftForm ?? 'none';
     if (form !== this.lastShapeshiftForm) {
       this.lastShapeshiftForm = form;
-      this.spriteId = (form === 'wolf' || form === 'bear') ? 'wolf' : this.baseSpriteId;
+      this.spriteId = form === 'wolf' ? 'wolf' : this.baseSpriteId;
       this.currentAnim = undefined; // force anim replay with new spriteId
     }
 

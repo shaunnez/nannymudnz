@@ -727,22 +727,22 @@ export function getGuild(id: string): GuildDef {
   return g;
 }
 
-export const DRUID_BEAR_ABILITIES: AbilityDef[] = [
+export const DRUID_WOLF_ABILITIES: AbilityDef[] = [
   makeAbility({
-    id: 'bear_maul', name: 'Maul', combo: 'down,down,attack',
+    id: 'wolf_maul', name: 'Maul', combo: 'down,down,attack',
     baseDamage: 55, scaleStat: 'STR', scaleAmount: 0.9,
     range: 70, knockdown: true, damageType: 'physical',
     vfxColor: '#8B4513', description: 'Heavy swipe, knocks down target',
   }),
   makeAbility({
-    id: 'bear_charge', name: 'Charge', combo: 'right,right,attack',
+    id: 'wolf_charge', name: 'Charge', combo: 'right,right,attack',
     baseDamage: 35, scaleStat: 'STR', scaleAmount: 0.6,
     range: 180, isTeleport: true, teleportDist: 180,
     knockbackForce: 200, damageType: 'physical',
     vfxColor: '#A0522D', description: 'Rush forward, knockup first enemy hit',
   }),
   makeAbility({
-    id: 'bear_roar', name: 'Roar', combo: 'down,up,attack',
+    id: 'wolf_roar', name: 'Roar', combo: 'down,up,attack',
     baseDamage: 0, aoeRadius: 150, cooldownMs: 8000, cost: 20,
     effects: {
       slow: { magnitude: 0.4, durationMs: 2000 },
@@ -752,14 +752,14 @@ export const DRUID_BEAR_ABILITIES: AbilityDef[] = [
     description: '150u AoE slow + brief fear',
   }),
   makeAbility({
-    id: 'bear_rend', name: 'Rend', combo: 'left,right,attack',
+    id: 'wolf_rend', name: 'Rend', combo: 'left,right,attack',
     baseDamage: 20, scaleStat: 'STR', scaleAmount: 0.4,
     range: 75, damageType: 'physical',
     effects: { dot: { magnitude: 8, durationMs: 3000 } },
     vfxColor: '#DC143C', description: 'Melee + stacking bleed DoT',
   }),
   makeAbility({
-    id: 'bear_primal_fury', name: 'Primal Fury', combo: 'down,up,down,up,attack',
+    id: 'wolf_primal_fury', name: 'Primal Fury', combo: 'down,up,down,up,attack',
     baseDamage: 0, cooldownMs: 90000, cost: 60,
     effects: {
       damage_boost: { magnitude: 0.4, durationMs: 6000 },
@@ -769,8 +769,8 @@ export const DRUID_BEAR_ABILITIES: AbilityDef[] = [
   }),
 ];
 
-export const DRUID_BEAR_RMB: AbilityDef = makeAbility({
-  id: 'bear_revert', name: 'Revert', combo: 'block+attack',
+export const DRUID_WOLF_RMB: AbilityDef = makeAbility({
+  id: 'wolf_revert', name: 'Revert', combo: 'block+attack',
   cooldownMs: 0, cost: 0,
-  vfxColor: '#228B22', description: 'Exit bear form, restore stats',
+  vfxColor: '#228B22', description: 'Exit wolf form, restore stats',
 });

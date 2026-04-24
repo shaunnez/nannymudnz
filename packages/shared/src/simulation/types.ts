@@ -42,7 +42,7 @@ export type ActorKind =
   | 'viking' | 'prophet' | 'vampire' | 'cultist' | 'champion' | 'darkmage'
   | 'chef' | 'leper' | 'master'
   | 'plains_bandit' | 'bandit_archer' | 'wolf' | 'bandit_brute' | 'bandit_king'
-  | 'wolf_pet' | 'drowned_spawn' | 'rotting_husk' | 'bear_form' | 'wolf_form';
+  | 'wolf_pet' | 'drowned_spawn' | 'rotting_husk' | 'wolf_form';
 
 export type AnimationId =
   | 'idle' | 'walk' | 'run' | 'jump' | 'fall' | 'land'
@@ -206,7 +206,7 @@ export interface Actor {
   bloodtally?: number;
   chiOrbs?: number;
   sanity?: number;
-  shapeshiftForm?: 'none' | 'bear' | 'wolf';
+  shapeshiftForm?: 'none' | 'wolf';
   primedClass?: string;
   dishes?: string[];
   miasmaActive?: boolean;

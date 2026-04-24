@@ -19,7 +19,7 @@ import { PickupView } from '../view/PickupView';
 import { consumeVfxEvents } from '../view/ParticleFX';
 import type { Actor, Projectile, Pickup, InputState, VFXEvent } from '@nannymud/shared/simulation/types';
 import { WORLD_WIDTH } from '@nannymud/shared/simulation/constants';
-import { getGuild, DRUID_BEAR_ABILITIES, DRUID_BEAR_RMB } from '@nannymud/shared/simulation/guildData';
+import { getGuild, DRUID_WOLF_ABILITIES, DRUID_WOLF_RMB } from '@nannymud/shared/simulation/guildData';
 import { worldYToScreenY, getScreenYBand } from '../constants';
 import type { GameCallbacks, NetMode } from '../PhaserGame';
 import { InputSender } from '../net/InputSender';
@@ -409,8 +409,8 @@ export class GameplayScene extends Phaser.Scene {
     }
 
     const guild = getGuild(player.guildId);
-    const allAbilities = player.shapeshiftForm === 'bear'
-      ? [...DRUID_BEAR_ABILITIES, DRUID_BEAR_RMB]
+    const allAbilities = player.shapeshiftForm === 'wolf'
+      ? [...DRUID_WOLF_ABILITIES, DRUID_WOLF_RMB]
       : [...guild.abilities, guild.rmb];
     const ability = allAbilities.find(a => a.id === ctrl.castingAbility);
     if (!ability || !ability.aoeRadius) { this.castingIndicator?.clear(); return; }
