@@ -31,6 +31,8 @@ export function MpCharSelect({ room, onLeave, onPhaseChange }: Props) {
 
   const isLocked = localSlot?.locked ?? false;
 
+  const [localPick, setLocalPick] = useState<GuildId | null>(null);
+
   const [cursorIdx, setCursorIdx] = useState<number>(() => {
     const gid = localSlot?.guildId;
     if (gid) {
@@ -62,11 +64,6 @@ export function MpCharSelect({ room, onLeave, onPhaseChange }: Props) {
     [isLocked],
   );
 
-  const lockIn = useCallback(() => {
-    if (isLocked) return;
-    room.send('lock_guild', { guildId: cursorGuildId });
-  }, [isLocked, room, cursorGuildId]);
-
   useEffect(() => {
     if (detailsFor) return;
     const onKey = (e: KeyboardEvent) => {
@@ -74,7 +71,14 @@ export function MpCharSelect({ room, onLeave, onPhaseChange }: Props) {
       else if (e.key === 'ArrowRight') { e.preventDefault(); move(1, 0); }
       else if (e.key === 'ArrowUp') { e.preventDefault(); move(0, -1); }
       else if (e.key === 'ArrowDown') { e.preventDefault(); move(0, 1); }
-      else if (e.key === 'Enter') { e.preventDefault(); lockIn(); }
+      else if (e.key === 'Enter') {
+        e.preventDefault();
+        if (!isLocked && localPick !== null) {
+          room.send('lock_guild', { guildId: localPick });
+        } else if (!isLocked) {
+          setLocalPick(cursorGuildId);
+        }
+      }
       else if (e.key === 'Escape' || e.key === 'Backspace') {
         e.preventDefault();
         onLeave();
@@ -82,12 +86,14 @@ export function MpCharSelect({ room, onLeave, onPhaseChange }: Props) {
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [detailsFor, lockIn, move, onLeave]);
+  }, [detailsFor, isLocked, localPick, cursorGuildId, move, onLeave, room]);
 
   if (!state) return <MpLoading />;
 
   const opponentGuildId = opponentSlot?.locked ? opponentSlot.guildId : null;
-  const localGuildId = isLocked ? (localSlot!.guildId as GuildId) : cursorGuildId;
+  const localGuildId = isLocked
+    ? (localSlot!.guildId as GuildId)
+    : (localPick ?? cursorGuildId);
 
   return (
     <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
@@ -129,8 +135,15 @@ export function MpCharSelect({ room, onLeave, onPhaseChange }: Props) {
         </div>
         <div style={{ justifySelf: 'end', display: 'flex', gap: 8, alignItems: 'flex-end' }}>
           <RoomCodeBadge code={state.code} />
-          <Btn size="md" primary disabled={isLocked} onClick={lockIn}>
-            {isLocked ? 'LOCKED ✓' : 'LOCK IN →'}
+          <Btn
+            size="md"
+            primary
+            disabled={isLocked || localPick === null}
+            onClick={() => {
+              if (localPick) room.send('lock_guild', { guildId: localPick });
+            }}
+          >
+            {isLocked ? 'LOCKED ✓' : localPick !== null ? 'LOCK IN →' : 'SELECT FIRST'}
           </Btn>
         </div>
       </div>
@@ -149,8 +162,9 @@ export function MpCharSelect({ room, onLeave, onPhaseChange }: Props) {
           role="P1"
           roleLabel="P1 · YOU"
           guildId={localGuildId}
-          locked={isLocked}
+          locked={isLocked || localPick !== null}
           active={true}
+          statusText={isLocked ? 'LOCKED ✓' : localPick !== null ? 'PICKED' : undefined}
           onView={() => setDetailsFor(localGuildId)}
         />
 
@@ -177,7 +191,9 @@ export function MpCharSelect({ room, onLeave, onPhaseChange }: Props) {
               const acc = guildAccent(meta.hue);
               const isActive = cursorIdx === i;
               const localLockedHere = isLocked && localSlot?.guildId === g.id;
+              const localPickHere = !isLocked && localPick === g.id;
               const oppLockedHere = opponentSlot?.locked && opponentSlot.guildId === g.id;
+              const isHighlighted = isActive || localLockedHere || localPickHere;
 
               return (
                 <div
@@ -186,29 +202,30 @@ export function MpCharSelect({ room, onLeave, onPhaseChange }: Props) {
                   onClick={() => {
                     if (isLocked) return;
                     setCursorIdx(i);
+                    setLocalPick(g.id);
                   }}
                   style={{
                     position: 'relative',
                     width: TILE_SIZE,
                     cursor: isLocked ? 'default' : 'pointer',
-                    outline: isActive ? `2px solid ${acc}` : 'none',
+                    outline: isHighlighted ? `2px solid ${acc}` : 'none',
                     outlineOffset: 3,
                   }}
                 >
-                  <GuildMonogram guildId={g.id} size={TILE_SIZE} selected={isActive} />
+                  <GuildMonogram guildId={g.id} size={TILE_SIZE} selected={isHighlighted} />
                   <div
                     style={{
                       textAlign: 'center',
                       marginTop: 8,
                       fontFamily: theme.fontMono,
                       fontSize: 20,
-                      color: isActive ? acc : theme.inkDim,
+                      color: isHighlighted ? acc : theme.inkDim,
                       letterSpacing: 2,
                     }}
                   >
                     {g.name.toUpperCase()}
                   </div>
-                  {localLockedHere && (
+                  {(localLockedHere || localPickHere) && (
                     <div
                       style={{
                         position: 'absolute',
@@ -222,7 +239,7 @@ export function MpCharSelect({ room, onLeave, onPhaseChange }: Props) {
                         zIndex: 2,
                       }}
                     >
-                      ◆ P1
+                      ◆ P1{localPickHere && !isLocked ? '·✓' : ''}
                     </div>
                   )}
                   {oppLockedHere && (
@@ -339,8 +356,7 @@ export function MpCharSelect({ room, onLeave, onPhaseChange }: Props) {
         }}
       >
         <span>◀▶▲▼ MOVE</span>
-        <span>↵ LOCK IN</span>
-        <span>CLICK PREVIEW</span>
+        <span>CLICK PICK · ↵ / BTN LOCK IN</span>
         <span>ESC LEAVE</span>
       </div>
     </div>
