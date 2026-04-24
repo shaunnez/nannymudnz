@@ -9,6 +9,7 @@ interface Props {
   guildId: string;
   animationId: string;
   scale?: number;
+  targetHeight?: number;
   pauseMs?: number;
 }
 
@@ -25,7 +26,7 @@ function loadMeta(guildId: string): Promise<StripMeta | null> {
   return cached;
 }
 
-export function SpriteStrip({ guildId, animationId, scale = 3, pauseMs = 400 }: Props) {
+export function SpriteStrip({ guildId, animationId, scale = 3, targetHeight, pauseMs = 400 }: Props) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [meta, setMeta] = useState<StripMeta | null>(null);
   const [missing, setMissing] = useState(false);
@@ -63,6 +64,7 @@ export function SpriteStrip({ guildId, animationId, scale = 3, pauseMs = 400 }: 
     if (!ctx) return;
     ctx.imageSmoothingEnabled = false;
     const { w, h } = meta.frameSize;
+    const s = targetHeight ? targetHeight / h : scale;
 
     const startMs = performance.now();
     let raf = 0;
@@ -74,19 +76,20 @@ export function SpriteStrip({ guildId, animationId, scale = 3, pauseMs = 400 }: 
       const frame = spec.loop ? raw % spec.frames : Math.min(raw, spec.frames - 1);
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       const img = imgRef.current;
-      if (img) ctx.drawImage(img, frame * w, 0, w, h, 0, 0, w * scale, h * scale);
+      if (img) ctx.drawImage(img, frame * w, 0, w, h, 0, 0, w * s, h * s);
       raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [meta, animationId, scale, pauseMs]);
+  }, [meta, animationId, scale, targetHeight, pauseMs]);
 
   if (missing) {
+    const s = targetHeight ? targetHeight / 68 : scale;
     return (
       <div
         style={{
-          width: 68 * scale,
-          height: 68 * scale,
+          width: 68 * s,
+          height: 68 * s,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -103,11 +106,12 @@ export function SpriteStrip({ guildId, animationId, scale = 3, pauseMs = 400 }: 
 
   const w = meta?.frameSize.w ?? 68;
   const h = meta?.frameSize.h ?? 68;
+  const effectiveScale = targetHeight ? targetHeight / h : scale;
   return (
     <canvas
       ref={canvasRef}
-      width={w * scale}
-      height={h * scale}
+      width={w * effectiveScale}
+      height={h * effectiveScale}
       style={{ imageRendering: 'pixelated', display: 'block' }}
     />
   );

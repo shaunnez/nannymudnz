@@ -69,7 +69,13 @@ type PreviewEffect =
   | 'master_eclipse'
   | 'master_apotheosis'
   | 'master_chosen_strike'
-  | 'master_chosen_nuke';
+  | 'master_chosen_nuke'
+  | 'leper_plague'
+  | 'leper_claw'
+  | 'leper_embrace'
+  | 'leper_contagion'
+  | 'leper_tide'
+  | 'leper_miasma';
 
 interface AbilityPreviewSpec {
   effect?: PreviewEffect;
@@ -192,6 +198,16 @@ function getAbilityPreviewSpec(guildId: GuildId, abilityId: string): AbilityPrev
         case 'eclipse':        return { effect: 'master_eclipse' };
         case 'apotheosis':     return { effect: 'master_apotheosis' };
         default:               return {};
+      }
+    case 'leper':
+      switch (abilityId) {
+        case 'plague_vomit':     return { effect: 'leper_plague' };
+        case 'diseased_claw':    return { effect: 'leper_claw' };
+        case 'necrotic_embrace': return { effect: 'leper_embrace' };
+        case 'contagion':        return { effect: 'leper_contagion' };
+        case 'rotting_tide':     return { effect: 'leper_tide' };
+        case 'miasma':           return { effect: 'leper_miasma' };
+        default:                 return {};
       }
     default:
       return {};
@@ -354,6 +370,12 @@ function getSpriteTransform(
       scale *= 1.02 + Math.sin(progress * TAU * 0.5) * 0.03; y += 2; break;
     case 'master_apotheosis':
       scale *= 1.08 + Math.sin(progress * TAU) * 0.03; y += 2; break;
+    case 'leper_claw':
+      x = 3 + Math.sin(progress * TAU) * 3; y += 4; break;
+    case 'leper_plague':
+      scale *= 1.0 + Math.sin(progress * TAU) * 0.02; y += 3; break;
+    case 'leper_tide':
+      scale *= 1.0 + Math.sin(progress * TAU) * 0.025; break;
     default:
       break;
   }
@@ -1116,6 +1138,77 @@ function PreviewOverlay({
         </>
       );
       break;
+    case 'leper_plague':
+      content = (
+        <>
+          <circle cx="60" cy="60" r={28+pulse*8} fill="#1a2e05" opacity={0.2+pulse*0.1} />
+          <circle cx="60" cy="60" r={34+pulse*6} fill="none" stroke="#65a30d" strokeWidth={4} opacity={0.7+pulse*0.25} />
+          {[0,1,2,3,4].map(i => {
+            const a = orbit*0.8 + i*TAU/5;
+            return <circle key={i} cx={60+Math.cos(a)*28} cy={60+Math.sin(a)*16} r="3.5" fill="#a3e635" opacity={0.75} />;
+          })}
+        </>
+      );
+      break;
+    case 'leper_claw':
+      content = (
+        <>
+          <path d={`M40 ${50+sweep*4} Q55 60 74 ${46-sweep*4}`} fill="none" stroke="#4d7c0f" strokeWidth={5} strokeLinecap="round" opacity="0.9" />
+          <path d={`M40 ${62+sweep*3} Q55 70 74 ${58-sweep*3}`} fill="none" stroke="#65a30d" strokeWidth={3} strokeLinecap="round" opacity="0.85" />
+          <path d={`M40 ${74+sweep*2} Q55 80 74 ${70-sweep*2}`} fill="none" stroke="#a3e635" strokeWidth={2} strokeLinecap="round" opacity="0.75" />
+        </>
+      );
+      break;
+    case 'leper_embrace':
+      content = (
+        <>
+          <ellipse cx="60" cy="60" rx={24+pulse*6} ry={28+pulse*6} fill="#1a2e05" opacity={0.25+pulse*0.1} />
+          <ellipse cx="60" cy="60" rx={30+pulse*4} ry={34+pulse*4} fill="none" stroke="#4d7c0f" strokeWidth={3.5} opacity={0.65+pulse*0.3} />
+          {[0,1,2,3].map(i => {
+            const t = (progress*1.2 + i*0.25) % 1;
+            const a = i*TAU/4 + orbit*0.5;
+            return <circle key={i} cx={60+Math.cos(a)*(38-t*16)} cy={60+Math.sin(a)*(22-t*10)} r={2.5*(1-t*0.5)} fill="#65a30d" opacity={0.8*(1-t*0.3)} />;
+          })}
+        </>
+      );
+      break;
+    case 'leper_contagion':
+      content = (
+        <>
+          <circle cx="60" cy="60" r={8+pulse*4} fill="#1a2e05" opacity={0.4+pulse*0.15} />
+          {[0,1,2,3,4,5].map(i => {
+            const t = (progress*0.7 + i/6) % 1;
+            const a = i*TAU/6;
+            return <circle key={i} cx={60+Math.cos(a)*t*36} cy={60+Math.sin(a)*t*22} r={2+t*3} fill="#65a30d" opacity={0.9-t*0.6} />;
+          })}
+        </>
+      );
+      break;
+    case 'leper_tide':
+      content = (
+        <>
+          <circle cx="60" cy="60" r="36" fill="none" stroke="#1a2e05" strokeWidth={10} opacity={0.22+pulse*0.08} />
+          <circle cx="60" cy="60" r="36" fill="none" stroke="#4d7c0f" strokeWidth={4} strokeDasharray="18 10" strokeDashoffset={orbit*-30} opacity={0.72+pulse*0.2} />
+          <circle cx="60" cy="60" r="24" fill="none" stroke="#65a30d" strokeWidth={2.5} strokeDasharray="10 8" strokeDashoffset={orbit*20} opacity={0.6+pulse*0.25} />
+          {[0,1,2].map(i => {
+            const a = orbit*1.2 + i*TAU/3;
+            return <circle key={i} cx={60+Math.cos(a)*32} cy={60+Math.sin(a)*20} r="3" fill="#a3e635" opacity={0.8} />;
+          })}
+        </>
+      );
+      break;
+    case 'leper_miasma':
+      content = (
+        <>
+          <ellipse cx="60" cy="60" rx={32+pulse*10} ry={36+pulse*10} fill="#1a2e05" opacity={0.18+pulse*0.1} />
+          <ellipse cx="60" cy="60" rx={36+pulse*8} ry={40+pulse*8} fill="none" stroke="#4d7c0f" strokeWidth={5} opacity={0.6+pulse*0.32} />
+          <ellipse cx="60" cy="60" rx={22+pulse*6} ry={26+pulse*6} fill="none" stroke="#65a30d" strokeWidth={2.5} opacity={0.5+pulse*0.3} />
+          {[0,1,2,3].map(i => (
+            <circle key={i} cx={60+Math.cos(orbit*0.8+i*TAU/4)*28} cy={60+Math.sin(orbit*0.8+i*TAU/4)*16} r="2.5" fill="#a3e635" opacity={0.7+pulse*0.2} />
+          ))}
+        </>
+      );
+      break;
     default:
       break;
   }
@@ -1184,7 +1277,13 @@ export function AbilityPreview({
                                   ? 'drop-shadow(0 0 18px rgba(0,0,0,0.8)) sepia(0.7) saturate(3) hue-rotate(120deg) brightness(0.75)'
                                   : preview.effect === 'master_apotheosis'
                                     ? 'drop-shadow(0 0 16px rgba(249,250,251,0.7)) brightness(1.2) saturate(0.3)'
-                                    : 'none';
+                                    : preview.effect === 'leper_plague'
+                                      ? 'drop-shadow(0 0 14px rgba(101,163,13,0.55)) sepia(0.4) saturate(2) hue-rotate(55deg) brightness(0.96)'
+                                      : preview.effect === 'leper_tide'
+                                        ? 'drop-shadow(0 0 16px rgba(26,46,5,0.7)) sepia(0.6) saturate(3) hue-rotate(70deg) brightness(0.82)'
+                                        : preview.effect === 'leper_contagion'
+                                          ? 'drop-shadow(0 0 10px rgba(101,163,13,0.5)) sepia(0.3) saturate(2) hue-rotate(60deg) brightness(1.0)'
+                                          : 'none';
 
   return (
     <div

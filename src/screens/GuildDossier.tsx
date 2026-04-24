@@ -126,7 +126,7 @@ export function GuildDossier({ guildId, onBack, onPrev, onNext }: Props) {
                 }}
               >
                 <div style={{ height: 96, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <SpriteStrip guildId={guildId} animationId={anim} scale={0.85} />
+                  <SpriteStrip guildId={guildId} animationId={anim} targetHeight={80} />
                 </div>
                 <span style={{ fontFamily: theme.fontMono, fontSize: 9, color: theme.inkMuted, letterSpacing: 2 }}>
                   {anim.toUpperCase()}
