@@ -7,6 +7,11 @@ const gameServer = new Server({
   server: app,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   express: async (expressApp: any) => {
+    expressApp.use((_req: any, res: any, next: any) => {
+      res.set('Access-Control-Allow-Origin', '*');
+      res.set('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+      next();
+    });
     expressApp.get('/api/public-rooms', async (_req: any, res: any) => {
       try {
         const rooms = await matchMaker.query({});
@@ -20,7 +25,6 @@ const gameServer = new Server({
             clients: r.clients,
             maxClients: r.maxClients,
           }));
-        res.set('Access-Control-Allow-Origin', '*');
         res.json(publicRooms);
       } catch {
         res.status(500).json({ error: 'query failed' });
