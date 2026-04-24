@@ -5,6 +5,7 @@ import type { GuildId, SimMode, SimState } from '@nannymud/shared/simulation/typ
 import type { MatchState } from '@nannymud/shared';
 import { PauseOverlay } from './PauseOverlay';
 import { StoryGameOverOverlay } from './StoryGameOverOverlay';
+import { StoryVictoryOverlay } from './StoryVictoryOverlay';
 import { GuildDetails } from './GuildDetails';
 import { LoadingScreen } from './LoadingScreen';
 import { useFullscreen } from '../layout/useFullscreen';
@@ -40,6 +41,7 @@ export function GameScreen({
   const [isPaused, setIsPaused] = useState(false);
   const [showMoves, setShowMoves] = useState(false);
   const [showStoryGameOver, setShowStoryGameOver] = useState(false);
+  const [storyVictoryScore, setStoryVictoryScore] = useState<number | null>(null);
   const pausedByMovesRef = useRef(false);
 
   const { isFullscreen, toggle: toggleFullscreen } = useFullscreen();
@@ -60,7 +62,13 @@ export function GameScreen({
     if (!parent) return;
 
     const callbacks: GameCallbacks = {
-      onVictory: (score) => onVictoryRef.current(score),
+      onVictory: (score) => {
+        if (mode === 'story') {
+          setStoryVictoryScore(score);
+        } else {
+          onVictoryRef.current(score);
+        }
+      },
       onDefeat: () => {
         if (mode === 'story') {
           setShowStoryGameOver(true);
@@ -141,6 +149,16 @@ export function GameScreen({
     onQuit();
   }, [onQuit]);
 
+  const handleStoryVictoryRematch = useCallback(() => {
+    setStoryVictoryScore(null);
+    emitToGameplay('restart-requested');
+  }, [emitToGameplay]);
+
+  const handleStoryVictoryMenu = useCallback(() => {
+    setStoryVictoryScore(null);
+    onQuit();
+  }, [onQuit]);
+
   const closeMoves = useCallback(() => {
     setShowMoves(false);
     if (pausedByMovesRef.current) {
@@ -210,6 +228,13 @@ export function GameScreen({
         <StoryGameOverOverlay
           onRematch={handleStoryRematch}
           onMenu={handleStoryMenu}
+        />
+      )}
+      {storyVictoryScore !== null && mode === 'story' && (
+        <StoryVictoryOverlay
+          score={storyVictoryScore}
+          onRematch={handleStoryVictoryRematch}
+          onMenu={handleStoryVictoryMenu}
         />
       )}
       {preloading && (

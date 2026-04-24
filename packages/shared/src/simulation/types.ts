@@ -121,6 +121,7 @@ export interface GuildDef {
   rmb: AbilityDef;
   damageType: DamageType;
   description: string;
+  rangedBasic?: { range: number; speed: number; damageType: DamageType; vfxColor: string };
 }
 
 export type AIBehavior = 'chaser' | 'archer' | 'packer' | 'brute' | 'boss';

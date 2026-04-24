@@ -1007,6 +1007,37 @@ function performBasicAttack(player: Actor, state: SimState, ctrl: PlayerControll
   player.animationId = animId;
   player.state = 'attacking';
 
+  if (guild.rangedBasic) {
+    const rb = guild.rangedBasic;
+    const proj: Projectile = {
+      id: `proj_${state.nextProjectileId++}`,
+      ownerId: player.id,
+      guildId: player.guildId,
+      team: player.team,
+      x: player.x,
+      y: player.y,
+      z: player.z + player.height * 0.55,
+      vx: player.facing * rb.speed,
+      vy: 0,
+      vz: 0,
+      damage: Math.round(baseDmg * 0.65),
+      damageType: rb.damageType,
+      range: rb.range,
+      traveled: 0,
+      radius: 8,
+      knockdown: false,
+      knockbackForce: 0,
+      effects: {},
+      piercing: false,
+      color: rb.vfxColor,
+      type: 'basic_ranged',
+      hitActorIds: [],
+    };
+    state.projectiles.push(proj);
+    state.vfxEvents.push({ type: 'projectile_spawn', x: proj.x, y: proj.y, color: proj.color });
+    return;
+  }
+
   const targets = getEnemiesOf(state, player).filter(e => {
     if (!e.isAlive || !isInRange(player, e, range)) return false;
     const dx = e.x - player.x;

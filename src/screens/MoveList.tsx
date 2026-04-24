@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { GUILDS, DRUID_BEAR_ABILITIES, DRUID_BEAR_RMB } from '@nannymud/shared/simulation/guildData';
+import { GUILDS, DRUID_WOLF_ABILITIES, DRUID_WOLF_RMB } from '@nannymud/shared/simulation/guildData';
 import { GUILD_META } from '../data/guildMeta';
 import type { GuildId, AbilityDef } from '@nannymud/shared/simulation/types';
 import { theme, guildAccent, Btn, Chip, SectionLabel, GuildMonogram, ComboDisplay } from '../ui';
@@ -15,6 +15,8 @@ const SLOT_LABELS = ['01', '02', '03', '04', '05'];
 
 export function MoveList({ initialGuild, onBack, onDossier }: Props) {
   const [sel, setSel] = useState<GuildId>(initialGuild ?? GUILDS[0].id);
+  const [druidForm, setDruidForm] = useState<'druid' | 'wolf'>('druid');
+  useEffect(() => { setDruidForm('druid'); }, [sel]);
 
   const guild = useMemo(() => GUILDS.find((g) => g.id === sel)!, [sel]);
   const meta = GUILD_META[sel];
@@ -131,32 +133,51 @@ export function MoveList({ initialGuild, onBack, onDossier }: Props) {
             </div>
           </div>
 
-          <SectionLabel kicker="ABILITIES" right={`${guild.abilities.length} + 6`}>
-            Combat moves
+          {sel === 'druid' && (
+            <div style={{ display: 'flex', gap: 8 }}>
+              {(['druid', 'wolf'] as const).map((form) => (
+                <button
+                  key={form}
+                  type="button"
+                  onClick={() => setDruidForm(form)}
+                  style={{
+                    appearance: 'none',
+                    border: `1px solid ${druidForm === form ? accent : theme.lineSoft}`,
+                    background: druidForm === form ? `${accent}18` : theme.panel,
+                    color: druidForm === form ? accent : theme.inkDim,
+                    fontFamily: theme.fontMono,
+                    fontSize: 11,
+                    letterSpacing: 3,
+                    padding: '6px 14px',
+                    cursor: 'pointer',
+                  }}
+                >
+                  {form === 'druid' ? 'DRUID FORM' : 'WOLF FORM'}
+                </button>
+              ))}
+            </div>
+          )}
+
+          <SectionLabel
+            kicker={sel === 'druid' && druidForm === 'wolf' ? 'WOLF FORM' : 'ABILITIES'}
+            right={`${sel === 'druid' && druidForm === 'wolf' ? DRUID_WOLF_ABILITIES.length : guild.abilities.length} + 6`}
+          >
+            {sel === 'druid' && druidForm === 'wolf' ? 'Abilities while shapeshifted' : 'Combat moves'}
           </SectionLabel>
 
           <div style={{ display: 'flex', flexDirection: 'column' }}>
             <MoveHeader />
-            {guild.abilities.map((a, i) => (
+            {(sel === 'druid' && druidForm === 'wolf' ? DRUID_WOLF_ABILITIES : guild.abilities).map((a, i) => (
               <MoveRow key={a.id} slot={SLOT_LABELS[i]} ability={a} accent={accent} guildId={sel} abilityIndex={i} />
             ))}
-            <MoveRow slot="6" ability={guild.rmb} accent={accent} guildId={sel} abilityIndex={-1} />
+            <MoveRow
+              slot="6"
+              ability={sel === 'druid' && druidForm === 'wolf' ? DRUID_WOLF_RMB : guild.rmb}
+              accent={accent}
+              guildId={sel}
+              abilityIndex={-1}
+            />
           </div>
-
-          {sel === 'druid' && (
-            <>
-              <SectionLabel kicker="BEAR FORM" right="5 + 6">
-                Abilities while shapeshifted
-              </SectionLabel>
-              <div style={{ display: 'flex', flexDirection: 'column' }}>
-                <MoveHeader />
-                {DRUID_BEAR_ABILITIES.map((a, i) => (
-                  <MoveRow key={a.id} slot={SLOT_LABELS[i]} ability={a} accent={accent} guildId={sel} abilityIndex={i} />
-                ))}
-                <MoveRow slot="6" ability={DRUID_BEAR_RMB} accent={accent} guildId={sel} abilityIndex={-1} />
-              </div>
-            </>
-          )}
         </div>
       </div>
 
