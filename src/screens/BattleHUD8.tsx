@@ -4,7 +4,7 @@ import type { SimState, BattleSlot } from '@nannymud/shared/simulation/types';
 import { GUILDS } from '@nannymud/shared/simulation/guildData';
 import { theme, GuildMonogram } from '../ui';
 import { VIRTUAL_WIDTH, VIRTUAL_HEIGHT } from '../game/constants';
-import { HudFooter } from './hud/HudFooter';
+import { AbilityStrip } from './hud/AbilityStrip';
 import { TouchJoystick } from './hud/TouchJoystick';
 import { TouchActionButtons } from './hud/TouchActionButtons';
 import { useIsMobile } from '../hooks/useIsMobile';
@@ -107,17 +107,68 @@ export function BattleHUD8({ game, slots }: Props) {
           </div>
         </div>
 
-        <HudFooter
-          mode="vs"
-          p1={state.player}
-          p2={null}
-          simTimeMs={state.timeMs}
-          state={state}
-        />
-        {/* BOTTOM — 2×2 grid overlaid on footer's right-panel space */}
-        {bottom.length > 0 && (
-          <BottomMiniGrid slots={bottom} slotOffset={4} getActor={getActor} />
-        )}
+        {/* Battle footer: abilities left, 2×2 team-B grid right */}
+        <div style={{
+          position: 'absolute', bottom: 0, left: 0, right: 0, height: 128,
+          display: 'flex', flexDirection: 'row',
+          background: theme.bg, borderTop: `1px solid ${theme.line}`,
+          pointerEvents: 'auto',
+        }}>
+          <div style={{ flex: 1, minWidth: 0, padding: '8px 14px 10px', display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <div style={{ fontFamily: theme.fontMono, fontSize: 10, letterSpacing: 3, color: theme.team1 }}>
+              P1 · ABILITIES
+            </div>
+            <AbilityStrip actor={state.player} side="p1" showKeys simTimeMs={state.timeMs} interactive />
+          </div>
+          {bottom.length > 0 && (
+            <div style={{
+              flex: 1, minWidth: 0,
+              display: 'grid',
+              gridTemplateColumns: '1fr 1fr',
+              gridTemplateRows: '1fr 1fr',
+              gap: 3,
+              padding: '5px 8px',
+              borderLeft: `1px solid ${theme.line}`,
+            }}>
+              {bottom.slice(0, 4).map((slot, i) => {
+                const actor = getActor(i + 4);
+                const isHuman = slot.type === 'human';
+                const teamColor = slot.team ? TEAM_COLORS[slot.team] : theme.lineSoft;
+                const hpPct = actor ? actor.hp / Math.max(1, actor.hpMax) : 0;
+                const mpPct = actor ? actor.mp / Math.max(1, actor.mpMax) : 0;
+                const isDead = actor ? !actor.isAlive : true;
+                const hpColor = hpPct > 0.35 ? theme.good : hpPct > 0.15 ? theme.warn : theme.bad;
+                const guild = GUILDS.find((g) => g.id === slot.guildId);
+                return (
+                  <div key={i} style={{
+                    padding: '3px 5px',
+                    border: `1px solid ${isHuman ? theme.accent : teamColor}`,
+                    background: isDead ? `${theme.bad}11` : theme.bgDeep,
+                    opacity: isDead ? 0.4 : 1,
+                    display: 'grid', gridTemplateColumns: '20px 1fr', gap: 4,
+                    alignItems: 'start', overflow: 'hidden',
+                  }}>
+                    <GuildMonogram guildId={slot.guildId} size={20} selected={isHuman} dim={isDead} />
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ fontFamily: theme.fontMono, fontSize: 7, color: teamColor, letterSpacing: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {(guild?.name ?? slot.guildId).slice(0, 8).toUpperCase()}
+                        </span>
+                        {isDead && <span style={{ fontFamily: theme.fontMono, fontSize: 6, color: theme.bad, flexShrink: 0 }}>KO</span>}
+                      </div>
+                      <div style={{ height: 5, background: theme.line, position: 'relative', overflow: 'hidden', borderRadius: 1, marginTop: 2 }}>
+                        <div style={{ position: 'absolute', inset: 0, width: `${hpPct * 100}%`, background: hpColor }} />
+                      </div>
+                      <div style={{ height: 3, background: theme.line, position: 'relative', overflow: 'hidden', borderRadius: 1, marginTop: 2 }}>
+                        <div style={{ position: 'absolute', inset: 0, width: `${mpPct * 100}%`, background: theme.accent }} />
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
         {mobile && <TouchJoystick />}
         {mobile && <TouchActionButtons />}
       </div>
@@ -125,72 +176,6 @@ export function BattleHUD8({ game, slots }: Props) {
   );
 }
 
-interface MiniGridProps {
-  slots: BattleSlot[];
-  slotOffset: number;
-  getActor: (i: number) => import('@nannymud/shared/simulation/types').Actor | null;
-}
-
-function BottomMiniGrid({ slots, slotOffset, getActor }: MiniGridProps) {
-  return (
-    <div style={{
-      position: 'absolute',
-      bottom: 0, right: 0,
-      width: '50%', height: 128,
-      display: 'grid',
-      gridTemplateColumns: '1fr 1fr',
-      gridTemplateRows: '1fr 1fr',
-      gap: 3,
-      padding: '5px 8px',
-      borderTop: `1px solid ${theme.line}`,
-      background: theme.panel,
-    }}>
-      {slots.slice(0, 4).map((slot, i) => {
-        const actor = getActor(i + slotOffset);
-        const isHuman = slot.type === 'human';
-        const teamColor = slot.team ? TEAM_COLORS[slot.team] : theme.lineSoft;
-        const borderColor = isHuman ? theme.accent : teamColor;
-        const hpPct = actor ? actor.hp / Math.max(1, actor.hpMax) : 0;
-        const mpPct = actor ? actor.mp / Math.max(1, actor.mpMax) : 0;
-        const isDead = actor ? !actor.isAlive : true;
-        const hpColor = hpPct > 0.35 ? theme.good : hpPct > 0.15 ? theme.warn : theme.bad;
-        const guild = GUILDS.find((g) => g.id === slot.guildId);
-        const guildName = guild?.name ?? slot.guildId;
-
-        return (
-          <div key={i} style={{
-            padding: '3px 5px',
-            border: `1px solid ${borderColor}`,
-            background: isDead ? `${theme.bad}11` : (isHuman ? `${theme.accent}08` : theme.bgDeep),
-            opacity: isDead ? 0.4 : 1,
-            display: 'grid', gridTemplateColumns: '20px 1fr', gap: 4,
-            alignItems: 'start', overflow: 'hidden',
-          }}>
-            <GuildMonogram guildId={slot.guildId} size={20} selected={isHuman} dim={isDead} />
-            <div style={{ minWidth: 0 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{
-                  fontFamily: theme.fontMono, fontSize: 7,
-                  color: isHuman ? theme.accent : (slot.team ? teamColor : theme.ink),
-                  letterSpacing: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                }}>
-                  {guildName.slice(0, 8).toUpperCase()}
-                </span>
-                {isDead && <span style={{ fontFamily: theme.fontMono, fontSize: 6, color: theme.bad, flexShrink: 0 }}>KO</span>}
-              </div>
-              <div style={{ height: 5, background: theme.line, position: 'relative', overflow: 'hidden', borderRadius: 1, marginTop: 2 }}>
-                <div style={{ position: 'absolute', inset: 0, width: `${hpPct * 100}%`, background: hpColor, transition: 'none' }} />
-              </div>
-              <div style={{ height: 3, background: theme.line, position: 'relative', overflow: 'hidden', borderRadius: 1, marginTop: 2 }}>
-                <div style={{ position: 'absolute', inset: 0, width: `${mpPct * 100}%`, background: theme.accent, transition: 'none' }} />
-              </div>
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
 
 interface BarRowProps {
   slots: BattleSlot[];
