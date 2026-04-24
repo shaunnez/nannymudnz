@@ -112,7 +112,8 @@ export function MpLobby({ room, onLeave, onPhaseChange }: Props) {
           gap: 16,
         }}
       >
-        <div style={{ flex: 1 }}>
+        <Btn size="md" onClick={onLeave}>← LEAVE</Btn>
+        <div style={{ flex: 1, textAlign: 'center' }}>
           <div
             style={{
               fontFamily: theme.fontMono,
@@ -172,7 +173,6 @@ export function MpLobby({ room, onLeave, onPhaseChange }: Props) {
             {copied ? 'COPIED ✓' : 'CLICK·COPY'}
           </span>
         </div>
-        <Btn size="md" onClick={onLeave}>← LEAVE</Btn>
       </div>
 
       {/* Meta strip */}
