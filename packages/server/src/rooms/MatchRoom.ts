@@ -384,6 +384,7 @@ export class MatchRoom extends Room<MatchState> {
       else if (winner === 'p2') this.state.matchWinnerSessionId = joinerId2;
       else this.state.matchWinnerSessionId = ''; // draw
       this.state.phase = 'results';
+      this.broadcast('match_result', { matchStats: this.plainSim.matchStats });
     }
   }
 }

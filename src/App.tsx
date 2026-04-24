@@ -16,10 +16,11 @@ import { MpStageSelect } from './screens/mp/MpStageSelect';
 import { MpBattle } from './screens/mp/MpBattle';
 import { MpLoadingScreen } from './screens/mp/MpLoadingScreen';
 import { GUILDS } from '@nannymud/shared/simulation/guildData';
+import { getMatchSlots } from './screens/mp/useMatchState';
 import { ScalingFrame } from './layout/ScalingFrame';
 import { Scanlines, theme } from './ui';
 import { useAppState, type AppScreen } from './state/useAppState';
-import type { MatchStats } from '@nannymud/shared/simulation/types';
+import type { GuildId, MatchStats } from '@nannymud/shared/simulation/types';
 
 const PHASE_TO_SCREEN: Record<MatchPhase, AppScreen> = {
   lobby: 'mp_lobby',
@@ -34,6 +35,7 @@ export default function App() {
   const { state, go, set } = useAppState();
   const [finalScore, setFinalScore] = useState(0);
   const [finalMatchStats, setFinalMatchStats] = useState<MatchStats | null>(null);
+  const [mpMatchStats, setMpMatchStats] = useState<MatchStats | null>(null);
 
   // URL routing: /multiplayer → mp_hub on initial mount.
   useEffect(() => {
@@ -90,6 +92,16 @@ export default function App() {
       room.onLeave.remove(handler);
     };
   }, [state.mpRoom, set, go]);
+
+  // Capture match stats broadcast by the server when the match ends.
+  useEffect(() => {
+    const room = state.mpRoom;
+    if (!room) return;
+    setMpMatchStats(null);
+    room.onMessage('match_result', (msg: { matchStats: MatchStats }) => {
+      setMpMatchStats(msg.matchStats);
+    });
+  }, [state.mpRoom]);
 
   const onPhaseChange = useCallback(
     (phase: MatchPhase) => {
@@ -278,15 +290,40 @@ export default function App() {
           />
         )}
 
-        {/* mp_results still stubbed until Phase F wraps.
-            Also catches any orphaned MP screen (no room after a refresh)
-            and offers a back-to-hub affordance. */}
+        {state.screen === 'mp_results' && state.mpRoom && (() => {
+          const room = state.mpRoom;
+          const rstate = room.state;
+          const { localSlot, opponentSlot } = getMatchSlots(rstate, room.sessionId);
+          const localGuild = (localSlot?.guildId as GuildId | undefined) ?? 'adventurer';
+          const oppGuild = (opponentSlot?.guildId as GuildId | undefined) ?? 'knight';
+          const localWon = rstate.matchWinnerSessionId === room.sessionId;
+          const localIsHost = room.sessionId === rstate.hostSessionId;
+          let adjustedStats: MatchStats | undefined;
+          if (mpMatchStats) {
+            const localStats = localIsHost ? mpMatchStats.p1 : mpMatchStats.p2;
+            const oppStats = localIsHost ? mpMatchStats.p2 : mpMatchStats.p1;
+            adjustedStats = { p1: localStats, p2: oppStats };
+          }
+          return (
+            <ResultsScreen
+              p1={localGuild}
+              p2={oppGuild}
+              winner={localWon ? 'P1' : 'P2'}
+              score={0}
+              matchStats={adjustedStats}
+              onRematch={() => room.send('rematch_offer', {})}
+              onMenu={leaveMp}
+            />
+          );
+        })()}
+
+        {/* Fallback stub for orphaned MP screens (no room after a refresh). */}
         {isMpScreen &&
           state.screen !== 'mp_hub' &&
-          (state.screen === 'mp_results' ||
-            (state.screen !== 'mp_battle' &&
-              state.screen !== 'mp_load' &&
-              !state.mpRoom)) && (
+          (state.screen !== 'mp_results' || !state.mpRoom) &&
+          state.screen !== 'mp_battle' &&
+          state.screen !== 'mp_load' &&
+          !state.mpRoom && (
             <MpStub screen={state.screen} onLeave={leaveMp} />
           )}
 
