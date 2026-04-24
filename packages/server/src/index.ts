@@ -1,65 +1,39 @@
-import { Server, matchMaker, Room } from 'colyseus';
-import type { Client } from 'colyseus';
+import { Server, matchMaker, createRouter, createEndpoint } from 'colyseus';
 import { createServer } from 'node:http';
 import { MatchRoom } from './rooms/MatchRoom.js';
 
-/** Transient room: client connects, receives public room list, then leaves. No HTTP needed. */
-class QueryRoom extends Room {
-  maxClients = 1;
-
-  async onJoin(client: Client) {
-    try {
-      const rooms = await matchMaker.query({});
-      const publicRooms = rooms
-        .filter((r) => r.metadata?.visibility === 'public')
-        .map((r) => ({
-          roomId: r.roomId,
-          name: r.metadata?.name ?? '',
-          hostName: r.metadata?.hostName ?? '',
-          rounds: r.metadata?.rounds ?? 3,
-          clients: r.clients,
-          maxClients: r.maxClients,
-        }));
-      client.send('rooms', publicRooms);
-    } catch {
-      client.send('rooms', []);
-    }
+const publicRoomsEndpoint = createEndpoint('/api/public-rooms', { method: 'GET' }, async () => {
+  try {
+    const rooms = await matchMaker.query({});
+    const publicRooms = rooms
+      .filter((r) => r.metadata?.visibility === 'public')
+      .map((r) => ({
+        roomId: r.roomId,
+        name: r.metadata?.name ?? '',
+        hostName: r.metadata?.hostName ?? '',
+        rounds: r.metadata?.rounds ?? 3,
+        clients: r.clients,
+        maxClients: r.maxClients,
+      }));
+    return new Response(JSON.stringify(publicRooms), {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+    });
+  } catch {
+    return new Response(JSON.stringify({ error: 'query failed' }), {
+      status: 500,
+      headers: { 'content-type': 'application/json' },
+    });
   }
-}
-
-const app = createServer();
-const gameServer = new Server({
-  server: app,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  express: async (expressApp: any) => {
-    expressApp.use((_req: any, res: any, next: any) => {
-      res.set('Access-Control-Allow-Origin', '*');
-      res.set('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
-      next();
-    });
-    expressApp.get('/api/public-rooms', async (_req: any, res: any) => {
-      try {
-        const rooms = await matchMaker.query({});
-        const publicRooms = rooms
-          .filter((r) => r.metadata?.visibility === 'public')
-          .map((r) => ({
-            roomId: r.roomId,
-            name: r.metadata?.name ?? '',
-            hostName: r.metadata?.hostName ?? '',
-            rounds: r.metadata?.rounds ?? 3,
-            clients: r.clients,
-            maxClients: r.maxClients,
-          }));
-        res.json(publicRooms);
-      } catch {
-        res.status(500).json({ error: 'query failed' });
-      }
-    });
-  },
 });
 
+const app = createServer();
+const gameServer = new Server({ server: app });
+
 gameServer.define('match', MatchRoom).filterBy(['code', 'visibility']);
-gameServer.define('query', QueryRoom);
+
+// Must be set before listen() so bindRouterToTransport picks it up.
+gameServer.router = createRouter({ publicRoomsEndpoint });
 
 const port = Number(process.env.PORT ?? 2567);
 

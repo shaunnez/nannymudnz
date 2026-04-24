@@ -40,19 +40,9 @@ export interface PublicRoom {
 }
 
 export async function getPublicRooms(): Promise<PublicRoom[]> {
-  return new Promise((resolve, reject) => {
-    const timer = setTimeout(() => reject(new Error('Room query timed out')), 6000);
-    getClient().joinOrCreate<void>('query').then((room) => {
-      room.onMessage<PublicRoom[]>('rooms', (rooms) => {
-        clearTimeout(timer);
-        resolve(rooms);
-        room.leave().catch(() => {});
-      });
-    }).catch((err) => {
-      clearTimeout(timer);
-      reject(err instanceof Error ? err : new Error('Failed to query rooms'));
-    });
-  });
+  const response = await getClient().http.get('/api/public-rooms');
+  if (response.status >= 400) throw new Error('Failed to fetch rooms');
+  return response.data as PublicRoom[];
 }
 
 // Test hook: allow tests to inject a mock client

@@ -33,15 +33,15 @@ const DIFFICULTY_LABELS = ['Training', 'Easy', 'Knight', 'Veteran', 'Master', 'M
 
 const NEWS = [
   { d: '24 APR', t: 'Survival, Battle & Championship modes designed', b: 'Three new game modes specced out — endless waves, 1v1 deathmatch rules, and a full bracketed tournament system.' },
-  { d: '23 APR', t: 'Guild balancer ships',                 b: 'Automated 4 500-match bot-vs-bot matrix now keeps all 15 guilds within a 40–60 % win-rate band.' },
-  { d: '22 APR', t: 'Multiplayer stats & post-match screen', b: 'Damage dealt, kills, ability usage, and a winner banner now appear at the end of every online match.' },
-  { d: '21 APR', t: 'Public room browser live',             b: 'Open lobbies are listed in real time — no code needed, just click and join.' },
-  { d: '20 APR', t: 'Druid bear form & Ranger wolf pet',    b: 'Druid shapeshifts into a bear with a new ability set; Ranger summons a wolf pet with its own AI and cycling modes.' },
-  { d: '18 APR', t: 'PixelLab VFX sprites across all guilds', b: 'Over 50 ability effects — impacts, flashes, bursts, and teleport pops — replaced with AI-generated pixel art.' },
-  { d: '16 APR', t: 'LF2-style tiled stage backdrops',     b: 'All 9 stages now scroll with layered pixel-art backgrounds, matching the classic Little Fighter 2 look.' },
-  { d: '14 APR', t: 'Stealth system & vampire nocturne',    b: 'Vampire can vanish from opponent view, break stealth for a bonus hit, and trigger a full nocturne darkness dome.' },
-  { d: '12 APR', t: 'Live MP lobby with chat',              b: 'Multiplayer lobby upgraded with player slot cards, room metadata strip, and real-time in-lobby chat.' },
-  { d: '10 APR', t: '1v1 multiplayer launched (Colyseus)',  b: 'Full online 1v1 mode with server-authoritative simulation, state sync, and 50 ms interpolation went live.' },
+  { d: '24 APR', t: 'Guild balancer ships',                 b: 'Automated 4 500-match bot-vs-bot matrix now keeps all 15 guilds within a 40–60 % win-rate band.' },
+  { d: '24 APR', t: 'Multiplayer stats & post-match screen', b: 'Damage dealt, kills, ability usage, and a winner banner now appear at the end of every online match.' },
+  { d: '24 APR', t: 'Public room browser live',             b: 'Open lobbies are listed in real time — no code needed, just click and join.' },
+  { d: '24 APR', t: 'Druid bear form & Ranger wolf pet',    b: 'Druid shapeshifts into a bear with a new ability set; Ranger summons a wolf pet with its own AI and cycling modes.' },
+  { d: '24 APR', t: 'PixelLab VFX sprites across all guilds', b: 'Over 50 ability effects — impacts, flashes, bursts, and teleport pops — replaced with AI-generated pixel art.' },
+  { d: '24 APR', t: 'LF2-style tiled stage backdrops',     b: 'All 9 stages now scroll with layered pixel-art backgrounds, matching the classic Little Fighter 2 look.' },
+  { d: '24 APR', t: 'Stealth system & vampire nocturne',    b: 'Vampire can vanish from opponent view, break stealth for a bonus hit, and trigger a full nocturne darkness dome.' },
+  { d: '24 APR', t: 'Live MP lobby with chat',              b: 'Multiplayer lobby upgraded with player slot cards, room metadata strip, and real-time in-lobby chat.' },
+  { d: '24 APR', t: '1v1 multiplayer launched (Colyseus)',  b: 'Full online 1v1 mode with server-authoritative simulation, state sync, and 50 ms interpolation went live.' },
 ];
 
 interface Props {
