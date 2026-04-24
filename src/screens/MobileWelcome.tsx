@@ -37,13 +37,12 @@ export function MobileWelcome() {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: 24,
+        padding: 16,
       }}
     >
       <div
         style={{
           width: '100%',
-          maxWidth: 480,
           background: theme.bg,
           border: `1px solid ${theme.accent}`,
           boxShadow: `0 0 0 1px ${theme.line}, 0 30px 80px rgba(0,0,0,0.7)`,
@@ -52,22 +51,22 @@ export function MobileWelcome() {
         }}
       >
         {/* Header */}
-        <div style={{ padding: '14px 20px', borderBottom: `1px solid ${theme.lineSoft}` }}>
-          <div style={{ fontFamily: theme.fontMono, fontSize: 10, color: theme.inkMuted, letterSpacing: 3 }}>
+        <div style={{ padding: '22px 28px', borderBottom: `1px solid ${theme.lineSoft}` }}>
+          <div style={{ fontFamily: theme.fontMono, fontSize: 13, color: theme.inkMuted, letterSpacing: 3 }}>
             NANNYMUD
           </div>
-          <div style={{ fontFamily: theme.fontDisplay, fontSize: 22, color: theme.ink, letterSpacing: '-0.01em', marginTop: 2 }}>
+          <div style={{ fontFamily: theme.fontDisplay, fontSize: 34, color: theme.ink, letterSpacing: '-0.02em', marginTop: 4 }}>
             Better as an app
           </div>
         </div>
 
         {/* Body */}
-        <div style={{ padding: '20px 20px 8px', display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <div style={{ fontFamily: theme.fontBody, fontSize: 14, color: theme.inkDim, lineHeight: 1.6 }}>
+        <div style={{ padding: '24px 28px 12px', display: 'flex', flexDirection: 'column', gap: 20 }}>
+          <div style={{ fontFamily: theme.fontBody, fontSize: 19, color: theme.inkDim, lineHeight: 1.6 }}>
             Play in landscape for the best experience. For an optimal experience, save as a web app — fullscreen, no browser bar, no zoom issues.
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {[
               { icon: '📤', text: 'Tap the Share button in Safari' },
               { icon: '➕', text: 'Tap "Add to Home Screen"' },
@@ -78,14 +77,14 @@ export function MobileWelcome() {
                 style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: 14,
-                  padding: '10px 14px',
+                  gap: 18,
+                  padding: '16px 18px',
                   background: theme.panel,
                   border: `1px solid ${theme.lineSoft}`,
                 }}
               >
-                <span style={{ fontSize: 20, lineHeight: 1, flexShrink: 0 }}>{step.icon}</span>
-                <span style={{ fontFamily: theme.fontBody, fontSize: 14, color: theme.ink, lineHeight: 1.4 }}>
+                <span style={{ fontSize: 28, lineHeight: 1, flexShrink: 0 }}>{step.icon}</span>
+                <span style={{ fontFamily: theme.fontBody, fontSize: 19, color: theme.ink, lineHeight: 1.4 }}>
                   {step.text}
                 </span>
               </div>
@@ -96,12 +95,12 @@ export function MobileWelcome() {
         {/* Footer */}
         <div
           style={{
-            padding: '14px 20px',
+            padding: '20px 28px',
             borderTop: `1px solid ${theme.lineSoft}`,
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            gap: 12,
+            gap: 16,
           }}
         >
           <button
@@ -111,10 +110,10 @@ export function MobileWelcome() {
               border: 'none',
               color: theme.inkMuted,
               fontFamily: theme.fontMono,
-              fontSize: 11,
+              fontSize: 14,
               letterSpacing: 2,
               cursor: 'pointer',
-              padding: '8px 0',
+              padding: '12px 0',
               WebkitTapHighlightColor: 'transparent' as string,
             }}
           >
@@ -127,10 +126,10 @@ export function MobileWelcome() {
               border: `1px solid ${theme.accent}`,
               color: '#000',
               fontFamily: theme.fontMono,
-              fontSize: 12,
+              fontSize: 16,
               letterSpacing: 3,
               cursor: 'pointer',
-              padding: '10px 20px',
+              padding: '16px 32px',
               fontWeight: 700,
               WebkitTapHighlightColor: 'transparent' as string,
             }}
