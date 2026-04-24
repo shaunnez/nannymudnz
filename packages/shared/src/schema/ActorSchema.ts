@@ -74,6 +74,7 @@ export class ActorSchema extends Schema {
   @type({ array: 'string' }) dishes?: string[];
   @type('boolean') miasmaActive?: boolean;
   @type('boolean') stealthed?: boolean;
+  @type('string') petAiMode?: 'aggressive' | 'defensive' | 'passive';
   @type('string') fivePointPalmTarget?: string;
 
   @type('boolean') isAlive!: boolean;

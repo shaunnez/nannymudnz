@@ -434,13 +434,18 @@ export class ActorView {
 
   private drawDruidShapeshift(bodyHeight: number, visualTime: number): void {
     this.auraFx.clear();
-    const pulse = 0.6 + Math.sin(visualTime * 3) * 0.25;
-    this.auraFx.lineStyle(4, 0x65a30d, 0.7 + pulse * 0.2);
-    this.auraFx.strokeEllipse(0, -bodyHeight * 0.52, this.width * 1.42, bodyHeight * 1.02);
-    this.auraFx.lineStyle(2, 0x4caf50, 0.55);
-    this.auraFx.strokeEllipse(0, -bodyHeight * 0.52, this.width * 1.2, bodyHeight * 0.82);
+    const pulse = 0.5 + Math.sin(visualTime * 2.5) * 0.3;
+    // Outer fill — earthy brown glow
+    this.auraFx.fillStyle(0x8B4513, 0.18 + pulse * 0.08);
+    this.auraFx.fillEllipse(0, -bodyHeight * 0.52, this.width * 1.7, bodyHeight * 1.15);
+    // Outer ring
+    this.auraFx.lineStyle(5, 0x8B4513, 0.75 + pulse * 0.2);
+    this.auraFx.strokeEllipse(0, -bodyHeight * 0.52, this.width * 1.7, bodyHeight * 1.15);
+    // Inner green nature ring
+    this.auraFx.lineStyle(2, 0x65a30d, 0.6);
+    this.auraFx.strokeEllipse(0, -bodyHeight * 0.52, this.width * 1.25, bodyHeight * 0.88);
     this.auraFx.setVisible(true);
-    if (this.sprite) this.sprite.setScale(this.spriteScale * 1.08);
+    if (this.sprite) this.sprite.setScale(this.spriteScale * 1.22);
   }
 
   private drawMonkSerenity(bodyHeight: number, visualTime: number, chiOrbs: number): void {
@@ -1235,6 +1240,7 @@ export class ActorView {
       : isVampireNocturne ? 0x1e0a2e
       : isDarkmageCloak ? 0x1e1b4b
       : isMasterApotheosis ? 0xf9fafb
+      : isDruidShapeshift ? 0x5c3d1e
       : null;
     if (this.sprite) {
       if (isHit) {

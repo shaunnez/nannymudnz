@@ -1771,6 +1771,15 @@ function tickVsSimulation(
     tickPlayerResourceRegen(opp, dtMs, true, state);
   }
 
+  for (const ally of state.allies) {
+    if (!ally.isAlive) continue;
+    tickAI(ally, state, dtSec, state.vfxEvents);
+    tickPhysics(ally, dtSec);
+    tickStatusEffects(ally, dtMs, state.vfxEvents);
+    tickHPRegen(ally, dtMs, true);
+  }
+  state.allies = state.allies.filter(a => a.isAlive);
+
   tickProjectiles(state, dtSec);
   tickGroundZones(state, dtMs);
   updateCamera(state);
