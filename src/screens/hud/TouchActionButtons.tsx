@@ -74,7 +74,7 @@ export function TouchActionButtons() {
       style={{
         position: 'absolute',
         left: LEFT_OFFSET,
-        bottom: 148,
+        bottom: 168,
         display: 'flex',
         gap: 12,
         pointerEvents: 'none',
