@@ -155,7 +155,7 @@ export function CharSelect({ mode, initialP1, initialP2, onBack, onReady }: Prop
         <SidePanel
           role="P1"
           guildId={picks.p1 ?? ids[cursors.p1]}
-          locked={hasOpponent ? picks.p1 !== null : false}
+          locked={picks.p1 !== null}
           active={activeSlot === 'p1'}
           statusText={
             picks.p1 !== null ? 'PICKED' :
@@ -362,7 +362,7 @@ export function CharSelect({ mode, initialP1, initialP2, onBack, onReady }: Prop
         }}
       >
         <span>◀▶▲▼ MOVE</span>
-        <span>{hasOpponent ? '↵ PICK / READY' : '↵ SELECT'}</span>
+        <span>{hasOpponent ? '↵ PICK / READY' : '↵ PICK'}</span>
         {hasOpponent && <span>TAB SWITCH</span>}
         <span>ESC BACK</span>
       </div>

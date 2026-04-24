@@ -27,12 +27,12 @@ export function GuildDossier({ guildId, onBack, onPrev, onNext }: Props) {
       if (guildId === 'druid' && druidForm === 'wolf') {
         return [
           ...DRUID_WOLF_ABILITIES.map((a, i) => ({ ability: a, slot: String(i + 1).padStart(2, '0'), isRmb: false })),
-          { ability: DRUID_WOLF_RMB, slot: 'RMB', isRmb: true },
+          { ability: DRUID_WOLF_RMB, slot: '06', isRmb: true },
         ];
       }
       return [
         ...guild.abilities.map((a, i) => ({ ability: a, slot: String(i + 1).padStart(2, '0'), isRmb: false })),
-        { ability: guild.rmb, slot: 'RMB', isRmb: true },
+        { ability: guild.rmb, slot: '06', isRmb: true },
       ];
     },
     [guild, guildId, druidForm],
