@@ -68,7 +68,8 @@ export function MobileWelcome() {
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {[
-              { icon: '📤', text: 'Tap the Share button in Safari' },
+              { icon: '⋯',  text: 'Tap ⋯ or the Share button (📤) in Safari' },
+              { icon: '☝️', text: 'Scroll up in the popup that appears' },
               { icon: '➕', text: 'Tap "Add to Home Screen"' },
               { icon: '✓',  text: 'Tap "Add" — done' },
             ].map((step, i) => (
