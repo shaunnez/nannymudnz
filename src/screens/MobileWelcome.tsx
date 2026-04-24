@@ -37,7 +37,7 @@ export function MobileWelcome() {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: 16,
+        padding: 28,
       }}
     >
       <div
