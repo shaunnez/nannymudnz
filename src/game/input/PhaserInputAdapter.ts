@@ -11,6 +11,19 @@ import { loadKeyBindings, type KeyBindings } from '../../input/keyBindings';
  * Listens via scene.input.keyboard (Phaser's plugin) rather than raw window
  * events so the listeners auto-detach on scene shutdown.
  */
+const TOUCH_ABILITY_EVENT = 'nannymud:touch-ability';
+const TOUCH_PAUSE_EVENT = 'nannymud:touch-pause';
+
+/** Fire from React to trigger an ability slot tap (1–6). */
+export function dispatchTouchAbility(slot: number): void {
+  window.dispatchEvent(new CustomEvent(TOUCH_ABILITY_EVENT, { detail: slot }));
+}
+
+/** Fire from React to trigger the pause action. */
+export function dispatchTouchPause(): void {
+  window.dispatchEvent(new CustomEvent(TOUCH_PAUSE_EVENT));
+}
+
 export class PhaserInputAdapter {
   private bindings: KeyBindings;
 
@@ -36,6 +49,8 @@ export class PhaserInputAdapter {
 
     this.windowBlurHandler = () => this.reset();
     window.addEventListener('blur', this.windowBlurHandler);
+    window.addEventListener(TOUCH_ABILITY_EVENT, this.onTouchAbility);
+    window.addEventListener(TOUCH_PAUSE_EVENT, this.onTouchPause);
   }
 
   updateBindings(bindings: KeyBindings): void {
@@ -58,6 +73,15 @@ export class PhaserInputAdapter {
     this.keys.delete(key);
     if (key === this.bindings.left) this.runningLeft = false;
     if (key === this.bindings.right) this.runningRight = false;
+  };
+
+  private onTouchAbility = (e: Event): void => {
+    const slot = (e as CustomEvent<number>).detail;
+    this.justPressed.add(String(slot));
+  };
+
+  private onTouchPause = (): void => {
+    this.justPressed.add(this.bindings.pause);
   };
 
   private reset(): void {
@@ -139,6 +163,8 @@ export class PhaserInputAdapter {
       window.removeEventListener('blur', this.windowBlurHandler);
       this.windowBlurHandler = undefined;
     }
+    window.removeEventListener(TOUCH_ABILITY_EVENT, this.onTouchAbility);
+    window.removeEventListener(TOUCH_PAUSE_EVENT, this.onTouchPause);
     this.reset();
   }
 }

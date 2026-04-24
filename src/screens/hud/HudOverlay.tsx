@@ -4,6 +4,7 @@ import type { SimState } from '@nannymud/shared/simulation/types';
 import { HudTopBar } from './HudTopBar';
 import { HudFooter } from './HudFooter';
 import { VIRTUAL_WIDTH, VIRTUAL_HEIGHT } from '../../game/constants';
+import { dispatchTouchPause } from '../../game/input/PhaserInputAdapter';
 
 interface Props {
   game: Phaser.Game | null;
@@ -126,6 +127,34 @@ export function HudOverlay({
           state={state}
         />
       </div>
+      {/* Mobile pause button — outside the scaled div so it stays top-right at display coords */}
+      <button
+        onClick={dispatchTouchPause}
+        style={{
+          position: 'absolute',
+          top: 8,
+          right: 8,
+          width: 36,
+          height: 36,
+          background: 'rgba(0,0,0,0.55)',
+          border: '1px solid rgba(255,255,255,0.2)',
+          borderRadius: 6,
+          color: '#fff',
+          fontSize: 14,
+          fontWeight: 700,
+          cursor: 'pointer',
+          pointerEvents: 'auto',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          WebkitTapHighlightColor: 'transparent',
+          userSelect: 'none',
+          zIndex: 10,
+        }}
+        aria-label="Pause"
+      >
+        ❙❙
+      </button>
     </div>
   );
 }
