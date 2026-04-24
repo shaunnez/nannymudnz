@@ -23,18 +23,18 @@ export function createBattleState(
   state.battleTimer = BATTLE_TIMER_MS;
   state.battStats = { [state.player.id]: makeEmptyBattStat() };
 
-  // Spawn CPU slots as guild actors (use createPlayerActor, not createEnemyActor —
-  // guild actors need the VS AI pipeline, not the enemy-kind AI).
+  // Assign battleTeam to the human player from their slot.
+  const humanSlot = slots.find((s) => s.type === 'human');
+  if (humanSlot) state.player.battleTeam = humanSlot.team ?? undefined;
+
   const cpuSlots = slots.filter((s) => s.type === 'cpu');
   for (let i = 0; i < cpuSlots.length; i++) {
     const slot = cpuSlots[i];
     const actor = createPlayerActor(slot.guildId);
     actor.id = `battle_${state.nextActorId++}`;
     actor.team = 'enemy';
-    // isPlayer=true so handlePlayerInput (with synthesized input) drives the actor.
-    // The enemy-kind tickAI in ai.ts expects ENEMY_DEFS entries; guild actors don't
-    // have those, so the VS AI pipeline is the correct path.
     actor.isPlayer = true;
+    actor.battleTeam = slot.team ?? undefined;
     actor.x = PLAYER_SPAWN_X + ENEMY_SPAWN_START_OFFSET + i * ENEMY_SPAWN_SPACING;
     actor.y = PLAYER_SPAWN_Y + ((i % 3) - 1) * 40;
     actor.facing = -1;
