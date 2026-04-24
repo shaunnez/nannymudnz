@@ -29,15 +29,15 @@ export function ResultsScreen({ p1, p2, winner, score, matchStats, onRematch, on
     if (matchStats) {
       const ms1 = winner === 'P1' ? matchStats.p1 : matchStats.p2;
       const ms2 = winner === 'P1' ? matchStats.p2 : matchStats.p1;
-      const critPct1 = ms1.totalHits > 0 ? Math.round((ms1.critHits / ms1.totalHits) * 100) : 0;
-      const critPct2 = ms2.totalHits > 0 ? Math.round((ms2.critHits / ms2.totalHits) * 100) : 0;
+      const critPct1 = ms1.totalHits > 0 ? Math.min(100, Math.round((ms1.critHits / ms1.totalHits) * 100)) : 0;
+      const critPct2 = ms2.totalHits > 0 ? Math.min(100, Math.round((ms2.critHits / ms2.totalHits) * 100)) : 0;
       return [
-        { k: 'DAMAGE DEALT', a: ms1.damageDealt, b: ms2.damageDealt },
-        { k: 'DAMAGE TAKEN', a: ms1.damageTaken, b: ms2.damageTaken },
+        { k: 'DAMAGE DEALT', a: Math.round(ms1.damageDealt), b: Math.round(ms2.damageDealt) },
+        { k: 'DAMAGE TAKEN', a: Math.round(ms1.damageTaken), b: Math.round(ms2.damageTaken) },
         { k: 'ABILITIES CAST', a: ms1.abilitiesCast, b: ms2.abilitiesCast },
         { k: 'MAX COMBO', a: ms1.maxCombo, b: ms2.maxCombo },
         { k: 'CRIT %', a: `${critPct1}%`, b: `${critPct2}%` },
-        { k: 'HEALING', a: ms1.healingDone, b: ms2.healingDone },
+        { k: 'HEALING', a: Math.round(ms1.healingDone), b: Math.round(ms2.healingDone) },
       ];
     }
     // Fallback for when no real stats are available
