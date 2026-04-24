@@ -107,10 +107,6 @@ export function BattleHUD8({ game, slots }: Props) {
           </div>
         </div>
 
-        {/* BOTTOM — 2×2 grid in footer's right-panel space */}
-        {bottom.length > 0 && (
-          <BottomMiniGrid slots={bottom} slotOffset={4} getActor={getActor} />
-        )}
         <HudFooter
           mode="vs"
           p1={state.player}
@@ -118,6 +114,10 @@ export function BattleHUD8({ game, slots }: Props) {
           simTimeMs={state.timeMs}
           state={state}
         />
+        {/* BOTTOM — 2×2 grid overlaid on footer's right-panel space */}
+        {bottom.length > 0 && (
+          <BottomMiniGrid slots={bottom} slotOffset={4} getActor={getActor} />
+        )}
         {mobile && <TouchJoystick />}
         {mobile && <TouchActionButtons />}
       </div>
@@ -268,7 +268,7 @@ function PlayerBarRow({ slots, slotOffset, getActor, isTop, bottomOffset = 0 }: 
                   fontFamily: theme.fontMono, fontSize: 7, color: theme.inkDim,
                   letterSpacing: 1, marginTop: 2,
                 }}>
-                  HP {actor ? actor.hp : 0}/{actor ? actor.hpMax : 0}
+                  HP {actor ? Math.round(actor.hp) : 0}/{actor ? actor.hpMax : 0}
                 </div>
               </div>
               {/* MP bar */}
@@ -285,7 +285,7 @@ function PlayerBarRow({ slots, slotOffset, getActor, isTop, bottomOffset = 0 }: 
                   fontFamily: theme.fontMono, fontSize: 7, color: theme.inkDim,
                   letterSpacing: 1, marginTop: 2,
                 }}>
-                  MP {actor ? actor.mp : 0}/{actor ? actor.mpMax : 0}
+                  MP {actor ? Math.round(actor.mp) : 0}/{actor ? actor.mpMax : 0}
                 </div>
               </div>
             </div>

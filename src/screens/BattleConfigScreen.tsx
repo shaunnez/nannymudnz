@@ -95,8 +95,8 @@ export function BattleConfigScreen({ humanGuildId, onBack, onReady }: Props) {
             <div key={i} style={{
               border: `1px solid ${borderColor}`,
               background: isOff ? 'transparent' : theme.panel,
-              padding: 14,
-              display: 'flex', flexDirection: 'column', gap: 10,
+              padding: '16px 14px 18px',
+              display: 'flex', flexDirection: 'column', gap: 14,
               opacity: isOff ? 0.45 : 1,
             }}>
               {/* Slot header */}
@@ -108,10 +108,10 @@ export function BattleConfigScreen({ humanGuildId, onBack, onReady }: Props) {
                   onClick={() => cycleType(i)}
                   style={{
                     cursor: isHuman ? 'default' : 'pointer',
-                    fontFamily: theme.fontMono, fontSize: 9, letterSpacing: 2,
+                    fontFamily: theme.fontMono, fontSize: 10, letterSpacing: 2,
                     color: isOff ? theme.inkMuted : isHuman ? theme.accent : theme.good,
                     border: `1px solid ${isOff ? theme.lineSoft : isHuman ? theme.accent : theme.good}`,
-                    padding: '2px 5px',
+                    padding: '4px 10px',
                   }}
                 >
                   {s.type.toUpperCase()}
@@ -124,24 +124,24 @@ export function BattleConfigScreen({ humanGuildId, onBack, onReady }: Props) {
                 style={{ display: 'flex', justifyContent: 'center', cursor: s.type === 'cpu' ? 'pointer' : 'default' }}
               >
                 {isOff ? (
-                  <div style={{ width: 80, height: 80, border: `1px dashed ${theme.lineSoft}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: theme.fontMono, fontSize: 9, color: theme.inkMuted, letterSpacing: 2 }}>
+                  <div style={{ width: 140, height: 140, border: `1px dashed ${theme.lineSoft}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: theme.fontMono, fontSize: 9, color: theme.inkMuted, letterSpacing: 2 }}>
                     EMPTY
                   </div>
                 ) : (
-                  <GuildMonogram guildId={s.guildId} size={80} selected={isHuman} />
+                  <GuildMonogram guildId={s.guildId} size={140} selected={isHuman} />
                 )}
               </div>
 
               {!isOff && (
                 <>
-                  <div style={{ fontFamily: theme.fontDisplay, fontSize: 14, color: isHuman ? theme.accent : theme.ink, textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  <div style={{ fontFamily: theme.fontDisplay, fontSize: 18, color: isHuman ? theme.accent : theme.ink, textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {GUILDS.find((g) => g.id === s.guildId)?.name ?? s.guildId}
                   </div>
 
                   {/* Team selector */}
                   <div>
-                    <div style={{ fontFamily: theme.fontMono, fontSize: 8, color: theme.inkMuted, letterSpacing: 2, marginBottom: 4 }}>TEAM</div>
-                    <div style={{ display: 'flex', gap: 3 }}>
+                    <div style={{ fontFamily: theme.fontMono, fontSize: 9, color: theme.inkMuted, letterSpacing: 2, marginBottom: 6 }}>TEAM</div>
+                    <div style={{ display: 'flex', gap: 4 }}>
                       {([null, 'A', 'B', 'C', 'D'] as BattleTeam[]).map((t) => {
                         const active = s.team === t;
                         const c = t ? TEAM_COLORS[t] : theme.inkMuted;
@@ -150,11 +150,12 @@ export function BattleConfigScreen({ humanGuildId, onBack, onReady }: Props) {
                             key={String(t)}
                             onClick={() => updateSlot(i, { team: t })}
                             style={{
-                              flex: 1, textAlign: 'center', padding: '3px 0',
-                              fontFamily: theme.fontMono, fontSize: 9, cursor: 'pointer',
+                              flex: 1, textAlign: 'center', padding: '8px 0',
+                              fontFamily: theme.fontMono, fontSize: 12, cursor: 'pointer',
+                              fontWeight: active ? 700 : 400,
                               border: `1px solid ${active ? c : theme.lineSoft}`,
                               color: active ? c : theme.inkDim,
-                              background: active ? `${c}18` : 'transparent',
+                              background: active ? `${c}22` : 'transparent',
                             }}
                           >
                             {t ?? '—'}
