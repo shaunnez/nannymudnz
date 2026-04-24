@@ -39,12 +39,13 @@ export function MpLobby({ room, onLeave, onPhaseChange }: Props) {
   }, [state, room.sessionId]);
 
   useEffect(() => {
-    room.onMessage('chat', (msg: { name: string; text: string }) => {
+    const unsub = room.onMessage('chat', (msg: { name: string; text: string }) => {
       setChatMessages((prev) => [
         ...prev.slice(-99),
         { name: msg.name, text: msg.text, isYou: msg.name === localNameRef.current },
       ]);
     });
+    return () => unsub();
   }, [room]);
 
   useEffect(() => {
