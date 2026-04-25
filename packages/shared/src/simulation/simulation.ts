@@ -251,11 +251,10 @@ const STAGE_LEVELS: Record<StageId, number> = {
   catacombs: 6, throne: 7, docks: 8, rooftops: 9,
 };
 
-// eslint-disable-next-line no-restricted-globals -- seed is chosen once at boot, outside the tick loop
 export function createInitialState(
   guildId: GuildId,
   stageIdOrSeed: StageId | number = 'assembly',
-  seed: number = Date.now(),  // eslint-disable-line no-restricted-globals
+  seed: number = Date.now(),  // eslint-disable-line no-restricted-globals -- seed chosen once at boot
 ): SimState {
   let resolvedStageId: StageId = 'assembly';
   let resolvedSeed = seed;
