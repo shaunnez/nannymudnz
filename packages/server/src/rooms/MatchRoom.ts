@@ -4,6 +4,7 @@ import type { InputMsg, InputEvent } from '@nannymud/shared';
 import type { InputState, SimState, GuildId } from '@nannymud/shared/simulation/types';
 import { tickSimulation, makeEmptyInputState } from '@nannymud/shared/simulation/simulation';
 import { createMpVsState } from '@nannymud/shared/simulation/vsSimulation';
+import { createMpBattleState } from '@nannymud/shared/simulation/battleSimulation';
 import { generateCode } from '../util/roomCode.js';
 import { createSimSchema, mirrorSimToSchema } from './simMirror.js';
 
@@ -41,6 +42,9 @@ export class MatchRoom extends Room<MatchState> {
    * to the schema directly.
    */
   private plainSim: SimState | null = null;
+
+  /** Maps actor ID → session ID for MP Battle multi-input routing. Built in startMatch. */
+  private actorToSession = new Map<string, string>();
 
   /**
    * Session ID of the player who sent `rematch_offer`, or null.
@@ -192,7 +196,10 @@ export class MatchRoom extends Room<MatchState> {
     this.onMessage('ready_to_start', (client: Client) => {
       if (this.state.phase !== 'loading') return;
       this.readyToStart.add(client.sessionId);
-      if (this.readyToStart.size < 2) return;
+      const requiredCount = this.state.gameMode === 'battle'
+        ? [...this.state.battleSlots].filter(s => s.slotType === 'human').length
+        : 2;
+      if (this.readyToStart.size < requiredCount) return;
       this.startMatch();
     });
 
@@ -345,16 +352,42 @@ export class MatchRoom extends Room<MatchState> {
    * joiner = slot 1 (opponent).
    */
   private startMatch() {
+    // Seed is chosen once here (before the tick loop) so determinism is
+    // preserved inside the match. Clients never produce a seed.
+    const seed = Math.floor(Math.random() * 2 ** 31);
+    this.state.seed = seed;
+
+    if (this.state.gameMode === 'battle') {
+      const slots = [...this.state.battleSlots].map(s => ({
+        guildId: (s.guildId || 'adventurer') as import('@nannymud/shared/simulation/types').GuildId,
+        type: s.slotType as 'human' | 'cpu' | 'off',
+        team: (s.team || undefined) as import('@nannymud/shared/simulation/types').BattleTeam,
+      }));
+      const { state: sim, actorIdBySlotIndex } = createMpBattleState(slots, this.state.stageId, seed);
+      this.plainSim = sim;
+      this.state.sim = createSimSchema(this.plainSim);
+
+      // Build reverse map: actorId → ownerSessionId for input routing
+      this.actorToSession.clear();
+      for (const [slotIdx, actorId] of Object.entries(actorIdBySlotIndex)) {
+        const bSlot = this.state.battleSlots[Number(slotIdx)];
+        if (bSlot?.ownerSessionId) {
+          this.actorToSession.set(actorId, bSlot.ownerSessionId);
+        }
+      }
+
+      this.state.phase = 'in_game';
+      this.setSimulationInterval((dt) => this.tick(dt), 1000 / 60);
+      this.setPatchRate(50);
+      return;
+    }
+
+    // Versus (existing logic — unchanged below this point)
     const hostSlot = this.state.players.get(this.state.hostSessionId);
     const joinerId = this.getJoinerId();
     const joinerSlot = joinerId ? this.state.players.get(joinerId) : undefined;
     if (!hostSlot || !joinerSlot) return;
     if (!hostSlot.guildId || !joinerSlot.guildId) return;
-
-    // Seed is chosen once here (before the tick loop) so determinism is
-    // preserved inside the match. Clients never produce a seed.
-    const seed = Math.floor(Math.random() * 2 ** 31);
-    this.state.seed = seed;
 
     this.plainSim = createMpVsState(
       hostSlot.guildId as GuildId,
@@ -456,10 +489,23 @@ export class MatchRoom extends Room<MatchState> {
   tick(dtMs: number) {
     if (!this.plainSim || !this.state.sim) return;
     if (this.state.phase !== 'in_game') return;
+
     const p1 = this.coalesceInput(this.state.hostSessionId);
-    const joinerId = this.getJoinerId();
-    const p2 = joinerId ? this.coalesceInput(joinerId) : makeEmptyInputState();
-    tickSimulation(this.plainSim, p1, dtMs, p2);
+
+    if (this.state.gameMode === 'battle') {
+      const extraInputs: Record<string, InputState> = {};
+      for (const [actorId, sessionId] of this.actorToSession) {
+        if (sessionId !== this.state.hostSessionId) {
+          extraInputs[actorId] = this.coalesceInput(sessionId);
+        }
+      }
+      tickSimulation(this.plainSim, p1, dtMs, undefined, extraInputs);
+    } else {
+      const joinerId = this.getJoinerId();
+      const p2 = joinerId ? this.coalesceInput(joinerId) : makeEmptyInputState();
+      tickSimulation(this.plainSim, p1, dtMs, p2);
+    }
+
     mirrorSimToSchema(this.plainSim, this.state.sim);
     if (this.plainSim.vfxEvents.length > 0) {
       this.broadcast('vfx', this.plainSim.vfxEvents);

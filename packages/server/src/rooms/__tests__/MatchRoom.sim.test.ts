@@ -38,7 +38,7 @@ function stubTimers(room: MatchRoom) {
     .setPatchRate = () => {};
 }
 
-function createRoom(opts: { name?: string; rounds?: number } = {}) {
+function createRoom(opts: { name?: string; rounds?: number; gameMode?: 'versus' | 'battle'; visibility?: 'public' | 'private' } = {}) {
   const room = new MatchRoom();
   room['state'] = new MatchState();
   const store: MsgStore = { events: {} };
@@ -247,5 +247,37 @@ describe('MatchRoom determinism: same seed + same inputs = same state', () => {
     // Instead, compare timeMs/tick which should match (same input, same dt).
     expect(a.timeMs).toBe(b.timeMs);
     expect(a.tick).toBe(b.tick);
+  });
+});
+
+describe('MatchRoom Battle mode: startMatch + tick', () => {
+  it('startMatch in battle mode uses createMpBattleState and ticks without crash', () => {
+    const room = createRoom({ gameMode: 'battle', name: 'B', rounds: 3, visibility: 'public' });
+    const host = makeClient('host');
+    const p2   = makeClient('p2');
+
+    joinRoom(room, host, { name: 'A' });
+    joinRoom(room, p2,   { name: 'B' });
+    room.state.players.get('host')!.ready = true;
+    room.state.players.get('p2')!.ready = true;
+    sendMsg(room, host, 'launch_battle', {});
+
+    sendMsg(room, host, 'set_my_guild', { guildId: 'adventurer' });
+    sendMsg(room, p2,   'set_my_guild', { guildId: 'knight' });
+    sendMsg(room, host, 'set_battle_slot', { index: 2, slotType: 'cpu', guildId: 'mage', team: 'B' });
+    sendMsg(room, host, 'launch_from_config', {});
+
+    // Simulate stage select → loading
+    room.state.phase = 'loading';
+    room.state.stageId = 'assembly';
+
+    sendMsg(room, host, 'ready_to_start', {});
+    sendMsg(room, p2,   'ready_to_start', {});
+
+    // Must be in_game after both clients signal ready
+    expect(room.state.phase).toBe('in_game');
+    // Battle mode sim must have battleMode=true (set by createMpBattleState)
+    expect((room['plainSim'] as { battleMode?: boolean })?.battleMode).toBe(true);
+    expect(() => room.tick(16)).not.toThrow();
   });
 });
