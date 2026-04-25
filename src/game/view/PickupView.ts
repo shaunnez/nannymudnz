@@ -1,5 +1,7 @@
 import Phaser from 'phaser';
 import type { Pickup } from '@nannymud/shared/simulation/types';
+
+const PICKUP_SCALE = 2;
 import { worldYToScreenY, getScreenYBand, type ScreenYBand } from '../constants';
 
 /**
@@ -38,15 +40,15 @@ export class PickupView {
 
     if (pickup.type === 'rock') {
       g.fillStyle(0x9ca3af, 1);
-      g.fillEllipse(0, 0, 16, 12);
-      g.strokeEllipse(0, 0, 16, 12);
+      g.fillEllipse(0, 0, 16 * PICKUP_SCALE, 12 * PICKUP_SCALE);
+      g.strokeEllipse(0, 0, 16 * PICKUP_SCALE, 12 * PICKUP_SCALE);
     } else {
       // club: wood shaft + darker head.
       g.fillStyle(0x92400e, 1);
-      g.fillRect(-4, -14, 8, 14);
-      g.strokeRect(-4, -14, 8, 14);
+      g.fillRect(-4 * PICKUP_SCALE, -14 * PICKUP_SCALE, 8 * PICKUP_SCALE, 14 * PICKUP_SCALE);
+      g.strokeRect(-4 * PICKUP_SCALE, -14 * PICKUP_SCALE, 8 * PICKUP_SCALE, 14 * PICKUP_SCALE);
       g.fillStyle(0x6b4226, 1);
-      g.fillRect(-6, -16, 12, 4);
+      g.fillRect(-6 * PICKUP_SCALE, -16 * PICKUP_SCALE, 12 * PICKUP_SCALE, 4 * PICKUP_SCALE);
     }
   }
 

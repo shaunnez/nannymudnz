@@ -38,7 +38,7 @@ export const ENEMY_DEFS: Record<string, EnemyDef> = {
     ai: 'archer',
     dropCopper: [5, 15],
     dropWeapon: 'rock',
-    dropWeaponChance: 0.2,
+    dropWeaponChance: 0.5,
     width: 40,
     height: 60,
     isRanged: true,
