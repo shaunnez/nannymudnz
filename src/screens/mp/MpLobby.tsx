@@ -192,6 +192,13 @@ export function MpLobby({ room, onLeave, onPhaseChange }: Props) {
         <Chip mono>BO{state.rounds}</Chip>
         <Chip mono>{state.visibility.toUpperCase()}</Chip>
         {state.gameMode === 'battle' && state.uniqueGuilds && <Chip mono>UNIQUE GUILDS</Chip>}
+        {isHost && state.gameMode === 'battle' && (
+          <div style={{ marginLeft: 'auto' }}>
+            <Btn size="md" primary disabled={!canLaunch} onClick={() => room.send('launch_battle', {})}>
+              NEXT →
+            </Btn>
+          </div>
+        )}
       </div>
 
       {/* Body — two columns */}
