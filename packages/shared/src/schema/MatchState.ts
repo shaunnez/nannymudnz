@@ -1,8 +1,16 @@
-import { Schema, type, MapSchema } from '@colyseus/schema';
+import { Schema, type, MapSchema, ArraySchema } from '@colyseus/schema';
 import { PlayerSlot } from './PlayerSlot';
 import { SimStateSchema } from './SimStateSchema';
+import { BattleSlotSchema } from './BattleSlotSchema';
 
-export type MatchPhase = 'lobby' | 'char_select' | 'stage_select' | 'loading' | 'in_game' | 'results';
+export type MatchPhase =
+  | 'lobby'
+  | 'char_select'
+  | 'stage_select'
+  | 'loading'
+  | 'in_game'
+  | 'results'
+  | 'battle_config';
 
 export class MatchState extends Schema {
   @type('string') phase: MatchPhase = 'lobby';
@@ -18,4 +26,7 @@ export class MatchState extends Schema {
   @type(SimStateSchema) sim?: SimStateSchema;
   @type('string') matchWinnerSessionId = '';
   @type('number') createdAtMs = 0;
+  @type('string') gameMode: 'versus' | 'battle' = 'versus';
+  @type('boolean') uniqueGuilds = false;
+  @type([BattleSlotSchema]) battleSlots = new ArraySchema<BattleSlotSchema>();
 }

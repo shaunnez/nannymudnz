@@ -21,3 +21,20 @@ export interface LaunchBattleMsg { type: 'launch_battle'; }
 export interface ReadyToStartMsg { type: 'ready_to_start'; }
 export interface RematchOfferMsg { type: 'rematch_offer'; }
 export interface RematchAcceptMsg { type: 'rematch_accept'; accept: boolean; }
+
+export interface SetBattleSlotMsg {
+  type: 'set_battle_slot';
+  index: number;
+  slotType: 'human' | 'cpu' | 'off';
+  guildId: string;
+  team: string;
+}
+
+export interface SetMyGuildMsg {
+  type: 'set_my_guild';
+  guildId: string;
+}
+
+export interface LaunchFromConfigMsg {
+  type: 'launch_from_config';
+}

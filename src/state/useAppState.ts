@@ -27,6 +27,7 @@ export type AppScreen =
   | 'mp_stage'
   | 'mp_load'
   | 'mp_battle'
+  | 'mp_battle_config'
   | 'mp_results'
   | 'survresults'
   | 'champbracket'

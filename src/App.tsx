@@ -37,6 +37,7 @@ const PHASE_TO_SCREEN: Record<MatchPhase, AppScreen> = {
   loading: 'mp_load',
   in_game: 'mp_battle',
   results: 'mp_results',
+  battle_config: 'mp_battle_config',
 };
 
 export default function App() {
@@ -80,7 +81,8 @@ export default function App() {
     state.screen === 'mp_stage' ||
     state.screen === 'mp_load' ||
     state.screen === 'mp_battle' ||
-    state.screen === 'mp_results';
+    state.screen === 'mp_results' ||
+    state.screen === 'mp_battle_config';
 
   useEffect(() => {
     if (!isMpScreen && state.mpRoom) {
@@ -427,6 +429,11 @@ export default function App() {
           );
         })()}
 
+        {/* Battle config screen — placeholder until Task 9 wires the real component. */}
+        {state.screen === 'mp_battle_config' && state.mpRoom && (
+          <MpStub screen={state.screen} onLeave={leaveMp} />
+        )}
+
         {/* Fallback stub for orphaned MP screens (no room after a refresh). */}
         {isMpScreen &&
           state.screen !== 'mp_hub' &&
@@ -457,6 +464,8 @@ function MpStub({ screen, onLeave }: MpStubProps) {
       ? 'IN BATTLE (Phase F)'
       : screen === 'mp_results'
       ? 'RESULTS (Phase F)'
+      : screen === 'mp_battle_config'
+      ? 'BATTLE CONFIG (Phase F)'
       : 'NO ROOM';
   return (
     <div

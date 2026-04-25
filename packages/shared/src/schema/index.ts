@@ -9,4 +9,5 @@ export * from './RoundStateSchema';
 export * from './WaveSchema';
 export * from './SimStateSchema';
 export * from './PlayerSlot';
+export * from './BattleSlotSchema';
 export * from './MatchState';
