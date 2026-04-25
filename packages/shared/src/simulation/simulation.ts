@@ -1,7 +1,7 @@
 import type {
   SimState, Actor, InputState, GuildId, Projectile, DamageType,
   AbilityDef, ActorKind, AnimationId, PlayerController, StatusEffectType, VFXEvent, GroundZone,
-  MatchStats, StageId,
+  MatchStats, StageId, EnemyDef,
 } from './types';
 import { getGuild, DRUID_WOLF_ABILITIES, DRUID_WOLF_RMB } from './guildData';
 import { makeRng } from './rng';
@@ -1244,6 +1244,36 @@ function tickHPRegen(actor: Actor, dtMs: number, inCombat: boolean): void {
   }
 }
 
+export function tickBossPhases(state: SimState, actor: Actor, def: EnemyDef): void {
+  if (!def.phases || def.phases.length === 0) return;
+  const nextPhase = def.phases[actor.bossPhase];
+  if (!nextPhase) return;
+  if (actor.hp / actor.hpMax >= nextPhase.hpThreshold) return;
+
+  actor.bossPhase += 1;
+  actor.attackSpeedMult = (actor.attackSpeedMult ?? 1) * nextPhase.attackSpeedMult;
+  actor.damageMult = (actor.damageMult ?? 1) * nextPhase.damageMult;
+
+  if (nextPhase.summons) {
+    for (const s of nextPhase.summons) {
+      for (let i = 0; i < s.count; i++) {
+        const spawnX = actor.x + (i % 2 === 0 ? -120 : 120) - i * 40;
+        const spawnY = actor.y + state.rng() * 60 - 30;
+        state.enemies.push(createEnemyActor(s.kind, spawnX, spawnY, state));
+      }
+    }
+  }
+
+  state.vfxEvents.push({
+    type: 'boss_phase',
+    color: '#ff4400',
+    x: actor.x,
+    y: actor.y,
+    actorId: actor.id,
+    phase: actor.bossPhase,
+  });
+}
+
 function tickWaves(state: SimState): void {
   for (let i = 0; i < state.waves.length; i++) {
     const wave = state.waves[i];
@@ -1881,6 +1911,8 @@ export function tickSimulation(
     tickGetup(enemy, dtSec);
     tickStatusEffects(enemy, dtMs, state.vfxEvents);
     tickHPRegen(enemy, dtMs, true);
+    const enemyDef = ENEMY_DEFS[enemy.kind];
+    if (enemyDef) tickBossPhases(state, enemy, enemyDef);
   }
 
   for (const dead of deadEnemies) {

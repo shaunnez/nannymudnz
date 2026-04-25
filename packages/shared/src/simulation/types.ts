@@ -324,7 +324,8 @@ export type VFXEventType =
   | 'channel_pulse'
   | 'aura_pulse'
   | 'zone_pulse'
-  | 'summon_spawn';
+  | 'summon_spawn'
+  | 'boss_phase';
 
 export interface VFXEvent {
   type: VFXEventType;
@@ -348,6 +349,8 @@ export interface VFXEvent {
   ownerId?: string;
   targetId?: string;
   assetKey?: string;
+  actorId?: string;
+  phase?: number;
 }
 
 export type LogTag = 'P1' | 'P2' | 'SYS';

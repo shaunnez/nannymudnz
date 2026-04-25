@@ -151,7 +151,9 @@ function tryMeleeAttack(state: SimState, actor: Actor, target: Actor, damage: nu
 
   actor.aiState.lastActionMs = 0;
   actor.animationId = 'attack_1';
-  applyDamage(target, damage + Math.round(state.rng() * 4), vfxEvents);
+  const rawDamage = damage + Math.round(state.rng() * 4);
+  const effectiveDamage = Math.round(rawDamage * (actor.damageMult ?? 1));
+  applyDamage(target, effectiveDamage, vfxEvents);
   vfxEvents.push({ type: 'hit_spark', color: '#fbbf24', x: target.x, y: target.y, z: target.z });
   return true;
 }
