@@ -94,7 +94,7 @@ export function initChampionship(playerGuildId: GuildId, seed: number): Champion
   }
   const cpuGuilds = pool.slice(0, 7);
 
-  const playerPos = Math.floor(rng() * 8);
+  const playerPos = 0; // player always seeds into the top slot
   const allGuilds: GuildId[] = [];
   let cpuIdx = 0;
   for (let i = 0; i < 8; i++) {

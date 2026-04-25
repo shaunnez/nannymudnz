@@ -1843,11 +1843,15 @@ export function tickSimulation(
     }
     if (state.battleMode && enemy.isPlayer) {
       // Battle CPU: guild actor driven by synthesized VS input, not tickAI.
+      // handlePlayerInput already decrements invulnerableMs for this branch.
       const oppCtrl = getOrCreateController(state, enemy.id, createEmptyCpuInput());
       const cpuInput = synthesizeVsCpuInput(state, enemy, oppCtrl.input, dtMs, 2);
       handlePlayerInput(state, cpuInput, oppCtrl, dtMs, enemy);
     } else {
       tickAI(enemy, state, dtSec, state.vfxEvents);
+      if (enemy.invulnerableMs > 0) {
+        enemy.invulnerableMs = Math.max(0, enemy.invulnerableMs - dtMs);
+      }
     }
     tickPhysics(enemy, dtSec);
     tickKnockdown(enemy, dtSec);
