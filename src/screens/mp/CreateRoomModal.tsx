@@ -41,20 +41,6 @@ export function CreateRoomModal({ playerName, onCancel, onCreated }: Props) {
     }
   };
 
-  const toggleStyle = (active: boolean) => ({
-    padding: '8px 20px',
-    background: active ? theme.accent : 'transparent',
-    color: active ? theme.bgDeep : theme.ink,
-    border: `1px solid ${active ? theme.accent : theme.line}`,
-    fontFamily: theme.fontMono,
-    fontSize: 13,
-    letterSpacing: 2,
-    cursor: loading ? 'not-allowed' : 'pointer',
-    opacity: loading ? 0.5 : 1,
-    borderRadius: 2,
-    transition: 'all 100ms ease',
-  });
-
   return (
     <ModalShell
       kicker="MULTIPLAYER"
@@ -81,12 +67,16 @@ export function CreateRoomModal({ playerName, onCancel, onCreated }: Props) {
         <div>
           <div style={{ fontFamily: theme.fontMono, fontSize: 10, color: theme.inkMuted, letterSpacing: 3, marginBottom: 8 }}>GAME MODE</div>
           <div style={{ display: 'flex', gap: 8 }}>
-            <button onClick={() => !loading && setGameMode('versus')} disabled={loading} style={toggleStyle(gameMode === 'versus')}>
-              VERSUS · 1V1
-            </button>
-            <button onClick={() => !loading && setGameMode('battle')} disabled={loading} style={toggleStyle(gameMode === 'battle')}>
-              BATTLE · UP TO 8
-            </button>
+            {(['versus', 'battle'] as const).map((m) => (
+              <button
+                key={m}
+                onClick={() => !loading && setGameMode(m)}
+                disabled={loading}
+                style={{ padding: '8px 20px', background: gameMode === m ? theme.accent : 'transparent', color: gameMode === m ? theme.bgDeep : theme.ink, border: `1px solid ${gameMode === m ? theme.accent : theme.line}`, fontFamily: theme.fontMono, fontSize: 15, cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.5 : 1, borderRadius: 2, transition: 'all 100ms ease' }}
+              >
+                {m === 'versus' ? 'VERSUS · 1V1' : 'BATTLE · UP TO 8'}
+              </button>
+            ))}
           </div>
         </div>
 
