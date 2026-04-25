@@ -4,6 +4,7 @@ import type { GuildId, SimState } from '@nannymud/shared/simulation/types';
 import type { MatchState } from '@nannymud/shared';
 import {
   createInitialState,
+  createSurvivalState,
   tickSimulation,
   resetController,
   forcePause,
@@ -126,6 +127,8 @@ export class GameplayScene extends Phaser.Scene {
     } else if (this.game.registry.get('battleMode')) {
       const battleSlots = this.game.registry.get('battleSlots') as BattleSlot[];
       this.simState = createBattleState(guildId, battleSlots, stageId, seed);
+    } else if (this.game.registry.get('survivalMode')) {
+      this.simState = createSurvivalState(guildId, seed);
     } else {
       this.simState = createInitialState(guildId, seed);
     }
@@ -187,7 +190,11 @@ export class GameplayScene extends Phaser.Scene {
       this.events.on('restart-requested', () => {
         const currentGuild = this.game.registry.get('guildId') as GuildId;
         resetController(this.simState, 'player');
-        this.simState = createInitialState(currentGuild, Date.now());
+        if (this.game.registry.get('survivalMode')) {
+          this.simState = createSurvivalState(currentGuild, Date.now());
+        } else {
+          this.simState = createInitialState(currentGuild, Date.now());
+        }
         resetController(this.simState, 'player');
         this.phaseHandoffFired = false;
         this.bossMusicStarted = false;

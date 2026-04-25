@@ -24,6 +24,11 @@ import type { GuildId, MatchStats, BattStatEntry } from '@nannymud/shared/simula
 import { BattleConfigScreen } from './screens/BattleConfigScreen';
 import { BattleResultsScreen } from './screens/BattleResultsScreen';
 import { MobileWelcome } from './screens/MobileWelcome';
+import { initChampionship, advanceBracket, getOpponent } from './state/championship';
+import { ChampBracketScreen } from './screens/ChampBracketScreen';
+import { ChampTransitionScreen } from './screens/ChampTransitionScreen';
+import { ChampResultsScreen } from './screens/ChampResultsScreen';
+import { SurvivalResultsScreen } from './screens/SurvivalResultsScreen';
 
 const PHASE_TO_SCREEN: Record<MatchPhase, AppScreen> = {
   lobby: 'mp_lobby',
@@ -41,6 +46,8 @@ export default function App() {
   const [mpMatchStats, setMpMatchStats] = useState<MatchStats | null>(null);
   const [battlePlayerWon, setBattlePlayerWon] = useState(false);
   const [finalBattStats, setFinalBattStats] = useState<Record<string, BattStatEntry> | null>(null);
+  const [champPrevRound, setChampPrevRound] = useState<0 | 1 | 2>(0);
+  const [champPlayerWon, setChampPlayerWon] = useState(false);
 
   // URL routing: /multiplayer → mp_hub on initial mount.
   useEffect(() => {
@@ -158,7 +165,14 @@ export default function App() {
             onBack={() => go('menu')}
             onReady={(p1, p2) => {
               set({ p1, p2 });
-              go(state.mode === 'batt' ? 'battleconfig' : 'stage');
+              if (state.mode === 'batt') {
+                go('battleconfig');
+              } else if (state.mode === 'champ') {
+                set({ championshipState: initChampionship(p1, Date.now()) });
+                go('champbracket');
+              } else {
+                go('stage');
+              }
             }}
           />
         )}
@@ -177,9 +191,16 @@ export default function App() {
         {state.screen === 'stage' && (
           <StageSelect
             initialStage={state.stageId}
-            onBack={() => go('charselect')}
+            onBack={() => {
+              if (state.mode === 'champ') go('champbracket');
+              else go('charselect');
+            }}
             onReady={(stageId) => {
-              set({ stageId });
+              if (state.mode === 'champ' && state.championshipState) {
+                set({ stageId, p2: getOpponent(state.championshipState) });
+              } else {
+                set({ stageId });
+              }
               go('game');
             }}
           />
@@ -211,6 +232,20 @@ export default function App() {
               setBattlePlayerWon(playerWon);
               setFinalBattStats(battStats ?? null);
               go('battresults');
+            }}
+            survivalMode={state.mode === 'surv'}
+            onSurvivalEnd={(score, wave) => {
+              set({ survivalScore: score, survivalWave: wave });
+              go('survresults');
+            }}
+            onChampEnd={(playerWon) => {
+              if (!state.championshipState) return;
+              const prevRound = state.championshipState.currentRound as 0 | 1 | 2;
+              const advanced = advanceBracket(state.championshipState, playerWon);
+              setChampPrevRound(prevRound);
+              setChampPlayerWon(playerWon);
+              set({ championshipState: advanced });
+              go('champtransition');
             }}
             onQuit={() => go('menu')}
           />
@@ -268,6 +303,42 @@ export default function App() {
             playerWon={battlePlayerWon}
             onRematch={() => go('game')}
             onMenu={() => go('menu')}
+          />
+        )}
+
+        {state.screen === 'survresults' && (
+          <SurvivalResultsScreen
+            guildId={state.p1}
+            score={state.survivalScore}
+            wave={state.survivalWave}
+            onRetry={() => go('game')}
+            onMenu={() => go('menu')}
+          />
+        )}
+
+        {state.screen === 'champbracket' && state.championshipState && (
+          <ChampBracketScreen
+            champ={state.championshipState}
+            onFight={() => go('stage')}
+            onQuit={() => { set({ championshipState: null }); go('menu'); }}
+          />
+        )}
+
+        {state.screen === 'champtransition' && state.championshipState && (
+          <ChampTransitionScreen
+            champ={state.championshipState}
+            prevRound={champPrevRound}
+            playerWon={champPlayerWon}
+            onAdvance={() => go('champbracket')}
+            onResults={() => go('champresults')}
+          />
+        )}
+
+        {state.screen === 'champresults' && state.championshipState && (
+          <ChampResultsScreen
+            champ={state.championshipState}
+            onPlayAgain={() => { set({ championshipState: null }); go('charselect'); }}
+            onMenu={() => { set({ championshipState: null }); go('menu'); }}
           />
         )}
 

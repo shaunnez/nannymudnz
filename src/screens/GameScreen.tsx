@@ -33,13 +33,20 @@ interface Props {
   onDefeat: (matchStats: MatchStats, battStats?: Record<string, BattStatEntry> | null) => void;
   /** Called when battle match ends. playerWon is true when all enemies KO or player had highest HP. */
   onBattleEnd?: (playerWon: boolean, battStats?: Record<string, BattStatEntry> | null) => void;
+  /** Pass true when mode is 'surv'. Routes sim defeat to onSurvivalEnd instead of story game-over overlay. */
+  survivalMode?: boolean;
+  /** Called on survival defeat with final score and wave reached. */
+  onSurvivalEnd?: (score: number, wave: number) => void;
+  /** When provided, championship fight outcomes route here instead of onVictory/onDefeat. */
+  onChampEnd?: (playerWon: boolean) => void;
   onQuit: () => void;
 }
 
 export function GameScreen({
   mode, p1, p2, stageId, animateHud, difficulty, matchRoom,
   battleMode, battleSlots,
-  onVictory, onDefeat, onBattleEnd, onQuit,
+  survivalMode,
+  onVictory, onDefeat, onBattleEnd, onSurvivalEnd, onChampEnd, onQuit,
 }: Props) {
   const netMode = matchRoom ? 'mp' : 'sp';
   const parentRef = useRef<HTMLDivElement>(null);
@@ -64,10 +71,14 @@ export function GameScreen({
   const onDefeatRef = useRef(onDefeat);
   const onQuitRef = useRef(onQuit);
   const onBattleEndRef = useRef(onBattleEnd);
+  const onSurvivalEndRef = useRef(onSurvivalEnd);
+  const onChampEndRef = useRef(onChampEnd);
   useEffect(() => { onVictoryRef.current = onVictory; }, [onVictory]);
   useEffect(() => { onDefeatRef.current = onDefeat; }, [onDefeat]);
   useEffect(() => { onQuitRef.current = onQuit; }, [onQuit]);
   useEffect(() => { onBattleEndRef.current = onBattleEnd; }, [onBattleEnd]);
+  useEffect(() => { onSurvivalEndRef.current = onSurvivalEnd; }, [onSurvivalEnd]);
+  useEffect(() => { onChampEndRef.current = onChampEnd; }, [onChampEnd]);
 
   useEffect(() => {
     const parent = parentRef.current;
@@ -75,6 +86,10 @@ export function GameScreen({
 
     const callbacks: GameCallbacks = {
       onVictory: (score, matchStats, battStats) => {
+        if (onChampEndRef.current) {
+          onChampEndRef.current(true);
+          return;
+        }
         if (battleMode) {
           onBattleEndRef.current?.(true, battStats);
         } else if (mode === 'story') {
@@ -84,6 +99,15 @@ export function GameScreen({
         }
       },
       onDefeat: (matchStats, battStats) => {
+        if (survivalMode) {
+          const sim = gameRef.current?.registry.get('simState') as SimState | undefined;
+          onSurvivalEndRef.current?.(sim?.survivalScore ?? 0, sim?.currentWave ?? 0);
+          return;
+        }
+        if (onChampEndRef.current) {
+          onChampEndRef.current(false);
+          return;
+        }
         if (battleMode) {
           onBattleEndRef.current?.(false, battStats);
         } else if (mode === 'story') {
@@ -108,6 +132,7 @@ export function GameScreen({
       difficulty,
       battleMode,
       battleSlots,
+      survivalMode,
     });
     gameRef.current = game;
     setGameReady(true);
