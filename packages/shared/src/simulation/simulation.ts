@@ -1871,7 +1871,10 @@ export function tickSimulation(
     }
   }
 
-  state.enemies = state.enemies.filter(e => e.isAlive || state.timeMs - e.deathTimeMs < 2000);
+  // In battle mode keep dead enemies so HUD slot indices stay stable throughout the match.
+  if (!state.battleMode) {
+    state.enemies = state.enemies.filter(e => e.isAlive || state.timeMs - e.deathTimeMs < 2000);
+  }
   state.allies = state.allies.filter(a => a.isAlive);
 
   tickProjectiles(state, dtSec);

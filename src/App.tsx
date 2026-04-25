@@ -208,7 +208,7 @@ export default function App() {
 
         {state.screen === 'game' && (
           <GameScreen
-            mode={state.mode === 'vs' ? 'vs' : 'story'}
+            mode={state.mode === 'vs' || state.mode === 'champ' ? 'vs' : 'story'}
             p1={state.p1}
             p2={state.p2}
             stageId={state.stageId}
@@ -238,7 +238,7 @@ export default function App() {
               set({ survivalScore: score, survivalWave: wave });
               go('survresults');
             }}
-            onChampEnd={(playerWon) => {
+            onChampEnd={state.mode === 'champ' ? (playerWon) => {
               if (!state.championshipState) return;
               const prevRound = state.championshipState.currentRound as 0 | 1 | 2;
               const advanced = advanceBracket(state.championshipState, playerWon);
@@ -246,7 +246,7 @@ export default function App() {
               setChampPlayerWon(playerWon);
               set({ championshipState: advanced });
               go('champtransition');
-            }}
+            } : undefined}
             onQuit={() => go('menu')}
           />
         )}

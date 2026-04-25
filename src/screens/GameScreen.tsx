@@ -86,12 +86,10 @@ export function GameScreen({
 
     const callbacks: GameCallbacks = {
       onVictory: (score, matchStats, battStats) => {
-        if (onChampEndRef.current) {
-          onChampEndRef.current(true);
-          return;
-        }
         if (battleMode) {
           onBattleEndRef.current?.(true, battStats);
+        } else if (onChampEndRef.current) {
+          onChampEndRef.current(true);
         } else if (mode === 'story') {
           setStoryVictoryScore(score);
         } else {
@@ -104,12 +102,10 @@ export function GameScreen({
           onSurvivalEndRef.current?.(sim?.survivalScore ?? 0, sim?.currentWave ?? 0);
           return;
         }
-        if (onChampEndRef.current) {
-          onChampEndRef.current(false);
-          return;
-        }
         if (battleMode) {
           onBattleEndRef.current?.(false, battStats);
+        } else if (onChampEndRef.current) {
+          onChampEndRef.current(false);
         } else if (mode === 'story') {
           setShowStoryGameOver(true);
         } else {
