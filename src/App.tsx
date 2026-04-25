@@ -440,6 +440,7 @@ export default function App() {
           (state.screen !== 'mp_results' || !state.mpRoom) &&
           state.screen !== 'mp_battle' &&
           state.screen !== 'mp_load' &&
+          state.screen !== 'mp_battle_config' &&
           !state.mpRoom && (
             <MpStub screen={state.screen} onLeave={leaveMp} />
           )}
