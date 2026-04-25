@@ -45,7 +45,7 @@ export type StageId =
 export type ActorKind =
   | 'adventurer' | 'knight' | 'mage' | 'druid' | 'hunter' | 'monk'
   | 'viking' | 'prophet' | 'vampire' | 'cultist' | 'champion' | 'darkmage'
-  | 'chef' | 'leper' | 'master' | 'ranger'
+  | 'chef' | 'leper' | 'master'
   | 'plains_bandit' | 'bandit_archer' | 'wolf' | 'bandit_brute' | 'bandit_king'
   | 'wolf_pet' | 'drowned_spawn' | 'rotting_husk' | 'wolf_form'
   | 'giant_blue_wolf' | 'vampire_lord' | 'cult_high_priest' | 'elder_druid'
@@ -61,7 +61,7 @@ export type AnimationId =
 export type GuildId =
   | 'adventurer' | 'knight' | 'mage' | 'druid' | 'hunter' | 'monk'
   | 'viking' | 'prophet' | 'vampire' | 'cultist' | 'champion' | 'darkmage'
-  | 'chef' | 'leper' | 'master' | 'ranger';
+  | 'chef' | 'leper' | 'master';
 
 export interface Stats {
   STR: number;
