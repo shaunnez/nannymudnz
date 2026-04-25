@@ -1,12 +1,9 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { createRequire } from 'node:module';
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
-
-const require = createRequire(import.meta.url);
-const { version } = require('./package.json') as { version: string };
+import pkg from './package.json';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -79,6 +76,6 @@ export default defineConfig({
   define: {
     CANVAS_RENDERER: JSON.stringify(true),
     WEBGL_RENDERER: JSON.stringify(true),
-    __APP_VERSION__: JSON.stringify(version),
+    __APP_VERSION__: JSON.stringify(pkg.version),
   },
 });
