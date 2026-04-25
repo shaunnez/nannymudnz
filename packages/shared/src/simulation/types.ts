@@ -43,7 +43,9 @@ export type ActorKind =
   | 'viking' | 'prophet' | 'vampire' | 'cultist' | 'champion' | 'darkmage'
   | 'chef' | 'leper' | 'master'
   | 'plains_bandit' | 'bandit_archer' | 'wolf' | 'bandit_brute' | 'bandit_king'
-  | 'wolf_pet' | 'drowned_spawn' | 'rotting_husk' | 'wolf_form';
+  | 'wolf_pet' | 'drowned_spawn' | 'rotting_husk' | 'wolf_form'
+  | 'giant_blue_wolf' | 'vampire_lord' | 'cult_high_priest' | 'elder_druid'
+  | 'plague_darkmage' | 'warlord' | 'shadow_master' | 'bandit_king_ii';
 
 export type AnimationId =
   | 'idle' | 'walk' | 'run' | 'jump' | 'fall' | 'land'
@@ -168,6 +170,7 @@ export interface EnemyDef {
   isRanged: boolean;
   projectileSpeed: number;
   projectileRange: number;
+  phases?: BossPhase[];
 }
 
 export interface BossPhase {
@@ -220,6 +223,9 @@ export interface Actor {
   heldPickup: Pickup | null;
   aiState: AIState;
   bossPhase: number;
+  attackSpeedMult?: number;
+  damageMult?: number;
+  aiDifficulty?: number;
   summonedByPlayer: boolean;
   summonedBy?: string;
   petAiMode?: 'aggressive' | 'defensive' | 'passive';
@@ -379,12 +385,9 @@ export interface MatchStats {
   p2: ActorMatchStats;
 }
 
-export interface WaveEnemy {
-  kind: ActorKind;
-  count: number;
-  offsetX?: number;
-  offsetY?: number;
-}
+export type WaveEnemy =
+  | { kind: ActorKind; count: number; offsetX?: number; offsetY?: number }
+  | { guild: GuildId; count: number; difficulty: number };
 
 export interface Wave {
   triggerX: number;
