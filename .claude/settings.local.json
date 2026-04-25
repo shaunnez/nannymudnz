@@ -116,7 +116,9 @@
       "WebFetch(domain:craftpix.net)",
       "Bash(npx eslint *)",
       "Bash(npx kill-port *)",
-      "Bash(taskkill /F /IM node.exe)"
+      "Bash(taskkill /F /IM node.exe)",
+      "Bash(sort -k2)",
+      "Bash(python3 -c \"import json; m=json.load\\(open\\('public/vfx/effects/metadata.json'\\)\\); s=m['assets']['slash_5']; print\\(f'slash_5 frameSize: {s[\\\\\"frameSize\\\\\"]}'\\); print\\(f'slash_5 anchor: {s[\\\\\"anchor\\\\\"]}'\\); print\\(f'Expected center: \\({s[\\\\\"frameSize\\\\\"][\\\\\"w\\\\\"]//2}, {s[\\\\\"frameSize\\\\\"][\\\\\"h\\\\\"]//2}\\)'\\); print\\(f'Match: {s[\\\\\"anchor\\\\\"][\\\\\"x\\\\\"] == s[\\\\\"frameSize\\\\\"][\\\\\"w\\\\\"]//2 and s[\\\\\"anchor\\\\\"][\\\\\"y\\\\\"] == s[\\\\\"frameSize\\\\\"][\\\\\"h\\\\\"]//2}'\\)\")"
     ]
   }
 }

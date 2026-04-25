@@ -1,6 +1,5 @@
 import Phaser from 'phaser';
 import type { ActorKind, AnimationId } from '@nannymud/shared/simulation/types';
-import { readUseNewVfx } from '../../state/useDevSettings';
 
 /**
  * Per-actor sprite metadata as emitted by scripts/composite-pixellab-sprites.py.
@@ -90,22 +89,14 @@ function metadataKey(actorId: ActorKind): string {
  * preload, so the progress bar keeps ticking and the loader's `complete`
  * event fires after everything has finished.
  */
-// When the New VFX toggle is on, Hunter uses the ranger chibi sprites instead.
-const SPRITE_OVERRIDES: Partial<Record<ActorKind, string>> = { hunter: 'ranger' };
-
 export function queueActorSprites(scene: Phaser.Scene): void {
   measuredLayouts.clear();
   referenceBodyHeights.clear();
-  const newVfx = readUseNewVfx();
-  const spriteDirs = new Map<ActorKind, string>();
   for (const actorId of SPRITE_ACTORS) {
-    const dir = (newVfx ? SPRITE_OVERRIDES[actorId] : undefined) ?? actorId;
-    spriteDirs.set(actorId, dir);
-    scene.load.json(metadataKey(actorId), `sprites/${dir}/metadata.json`);
+    scene.load.json(metadataKey(actorId), `sprites/${actorId}/metadata.json`);
   }
 
   for (const actorId of SPRITE_ACTORS) {
-    const dir = spriteDirs.get(actorId)!;
     const key = metadataKey(actorId);
     scene.load.on(`filecomplete-json-${key}`, () => {
       const meta = scene.cache.json.get(key) as ActorSpriteMetadata | undefined;
@@ -114,7 +105,7 @@ export function queueActorSprites(scene: Phaser.Scene): void {
       for (const animId of Object.keys(meta.animations) as AnimationId[]) {
         scene.load.spritesheet(
           textureKey(actorId, animId),
-          `sprites/${dir}/${animId}.png`,
+          `sprites/${actorId}/${animId}.png`,
           { frameWidth: meta.frameSize.w, frameHeight: meta.frameSize.h },
         );
       }
