@@ -417,4 +417,32 @@ describe('MatchRoom phase transitions (direct instantiation)', () => {
     sendMsg(room, p2, 'launch_from_config', {});
     expect(room.state.phase).toBe('battle_config');
   });
+
+  it('set_battle_slot with uniqueGuilds rejects duplicate guildId from host', () => {
+    const room = createRoom({ gameMode: 'battle', name: 'B', rounds: 3, visibility: 'public', uniqueGuilds: true });
+    const host = makeClient('host');
+    const p2   = makeClient('p2');
+    reachBattleConfig(room, host, p2);
+
+    sendMsg(room, host, 'set_battle_slot', { index: 2, slotType: 'cpu', guildId: 'adventurer', team: 'A' });
+    // host's human slot already has ownerSessionId=host; give host's human slot 'adventurer' via set_my_guild first
+    sendMsg(room, host, 'set_my_guild', { guildId: 'adventurer' });
+    // Now try to set slot 3 to the same guild — should be rejected
+    sendMsg(room, host, 'set_battle_slot', { index: 3, slotType: 'cpu', guildId: 'adventurer', team: 'B' });
+    expect(room.state.battleSlots[3].slotType).toBe('off'); // rejected, no change
+  });
+
+  it('launch_from_config is ignored when fewer than 2 active slots', () => {
+    const room = createRoom({ gameMode: 'battle', name: 'B', rounds: 3, visibility: 'public' });
+    const host = makeClient('host');
+    const p2   = makeClient('p2');
+    reachBattleConfig(room, host, p2);
+
+    // Turn all slots off except one (the host's human slot)
+    for (let i = 1; i < 8; i++) {
+      sendMsg(room, host, 'set_battle_slot', { index: i, slotType: 'off', guildId: '', team: '' });
+    }
+    sendMsg(room, host, 'launch_from_config', {});
+    expect(room.state.phase).toBe('battle_config'); // not advanced
+  });
 });
