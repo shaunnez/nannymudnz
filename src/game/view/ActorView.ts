@@ -1026,15 +1026,15 @@ export class ActorView {
     // sprite has lifted by actor.z * 0.6 upward, so the gap between shadow
     // and feet reads as jump height.
     this.shadow.clear();
+    this.shadow.fillStyle(0x000000, 0.3);
     if (actor.z > 0) {
-      this.shadow.fillStyle(0x000000, 0.3);
       const shrink = Math.min(1, 1 - actor.z / 200);
       const shadowOffset = actor.z * 0.6;
       this.shadow.fillEllipse(0, shadowOffset - 2, this.width * 0.8 * shrink, 10);
-      this.shadow.setVisible(true);
     } else {
-      this.shadow.setVisible(false);
+      this.shadow.fillEllipse(0, -2, this.width * 0.8, 10);
     }
+    this.shadow.setVisible(true);
 
     // HP bar above the head when below max.
     const hpRatio = Math.max(0, Math.min(1, actor.hp / actor.hpMax));

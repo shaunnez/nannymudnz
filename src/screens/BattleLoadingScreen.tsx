@@ -108,7 +108,7 @@ export function BattleLoadingScreen({ slots, stageId, humanProgress }: Props) {
         style={{
           flex: 1, position: 'relative',
           display: 'flex', flexDirection: 'column', justifyContent: 'center',
-          gap: 10, padding: '16px 24px',
+          gap: 6, padding: '10px 24px',
         }}
       >
         <FighterRow slots={row1} slotOffset={0} getProgress={getProgress} />
@@ -151,7 +151,7 @@ interface RowProps {
 
 function FighterRow({ slots, slotOffset, getProgress }: RowProps) {
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: `repeat(${slots.length}, 1fr)`, gap: 10 }}>
+    <div style={{ display: 'grid', gridTemplateColumns: `repeat(${slots.length}, 1fr)`, gap: 6 }}>
       {slots.map((slot, i) => (
         <FighterCard key={i} slot={slot} progress={getProgress(slot, i + slotOffset)} />
       ))}
@@ -179,12 +179,12 @@ function FighterCard({ slot, progress }: CardProps) {
     return (
       <div
         style={{
-          padding: '14px 16px',
+          padding: '8px 12px',
           border: `1px solid ${theme.lineSoft}`,
           background: theme.bgDeep,
           opacity: 0.25,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          minHeight: 88,
+          minHeight: 68,
         }}
       >
         <span style={{ fontFamily: theme.fontMono, fontSize: 10, color: theme.inkMuted, letterSpacing: 2 }}>
@@ -197,26 +197,26 @@ function FighterCard({ slot, progress }: CardProps) {
   return (
     <div
       style={{
-        padding: '14px 16px',
+        padding: '8px 12px',
         border: `1px solid ${borderColor}`,
         background: isHuman ? `${theme.accent}0a` : theme.bgDeep,
-        display: 'flex', flexDirection: 'column', gap: 10,
+        display: 'flex', flexDirection: 'column', gap: 6,
       }}
     >
       {/* Identity row */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-        <GuildMonogram guildId={slot.guildId} size={48} selected={ready} />
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <GuildMonogram guildId={slot.guildId} size={36} selected={ready} />
         <div style={{ minWidth: 0 }}>
           <div
             style={{
-              fontFamily: theme.fontDisplay, fontSize: 18, color: theme.ink,
+              fontFamily: theme.fontDisplay, fontSize: 15, color: theme.ink,
               letterSpacing: '-0.01em', lineHeight: 1.1,
               overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
             }}
           >
             {guild?.name ?? slot.guildId}
           </div>
-          <div style={{ fontFamily: theme.fontMono, fontSize: 9, color: teamColor, letterSpacing: 2, marginTop: 2 }}>
+          <div style={{ fontFamily: theme.fontMono, fontSize: 8, color: teamColor, letterSpacing: 2, marginTop: 2 }}>
             {meta?.tag.toUpperCase() ?? ''}
           </div>
         </div>
@@ -231,11 +231,11 @@ function FighterCard({ slot, progress }: CardProps) {
       </div>
 
       {/* Progress bar */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
         <div
           style={{
             display: 'flex', justifyContent: 'space-between',
-            fontFamily: theme.fontMono, fontSize: 9, color: theme.inkMuted, letterSpacing: 2,
+            fontFamily: theme.fontMono, fontSize: 8, color: theme.inkMuted, letterSpacing: 2,
           }}
         >
           <span>PROGRESS</span>
@@ -243,7 +243,7 @@ function FighterCard({ slot, progress }: CardProps) {
         </div>
         <div
           style={{
-            width: '100%', height: 8,
+            width: '100%', height: 5,
             background: theme.bgDeep, border: `1px solid ${theme.lineSoft}`,
             position: 'relative', overflow: 'hidden',
           }}

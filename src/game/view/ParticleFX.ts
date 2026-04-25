@@ -6,9 +6,26 @@ import { spawnEffectVfx } from './EffectsRegistry';
 import { readUseNewVfx } from '../../state/useDevSettings';
 
 const SLASH_KEYS = ['slash_1','slash_2','slash_3','slash_4','slash_5','slash_6','slash_7','slash_8','slash_9','slash_10'] as const;
+export const EXPLOSION_KEYS = ['explosion_1','explosion_2','explosion_3','explosion_5','explosion_6','explosion_8','explosion_9','explosion_10'] as const;
 
 function randomSlashKey(): string {
   return SLASH_KEYS[Math.floor(Math.random() * SLASH_KEYS.length)];
+}
+
+// Effects-layer overlay: fires IN ADDITION to guild sprite VFX.
+// Maps abilityId → effects asset key for hit_spark, aoe_pop, or channel_pulse events.
+// Fill this in per-ability once the full VFX alignment pass is done.
+const EFFECTS_OVERLAY: Partial<Record<string, string>> = {
+  // ── Slashes ───────────────────────────────────────────────────────────────
+  // e.g.  jab: 'slash_1',
+
+  // ── Explosions ────────────────────────────────────────────────────────────
+  // e.g.  meteor: 'explosion_8',
+};
+
+function getEffectsOverlay(abilityId: string | undefined): string | undefined {
+  if (!abilityId) return undefined;
+  return EFFECTS_OVERLAY[abilityId];
 }
 
 /**
@@ -216,7 +233,10 @@ export function consumeVfxEvents(scene: Phaser.Scene, events: VFXEvent[]): void 
   for (const event of events) {
     const { x, y } = worldCoords(event, band);
     const colorInt = hexToInt(event.color);
-    if (spawnGuildVfx(scene, event, x, y)) continue;
+    const guildFired = spawnGuildVfx(scene, event, x, y);
+    const overlayKey = newVfx ? getEffectsOverlay(event.abilityId) : undefined;
+    if (overlayKey) spawnEffectVfx(scene, overlayKey, x, y, event.facing ?? 1);
+    if (guildFired) continue;
 
     switch (event.type) {
       case 'projectile_spawn':

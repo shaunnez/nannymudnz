@@ -1,11 +1,11 @@
-"""Composite stage preview thumbnails from public/world/<stageId>/raw/*.png.
+"""Composite stage preview thumbnails matching BackgroundView.ts aesthetics.
 
-Renders a 640x360 (16:9) hero image matching the in-game BackgroundView.ts
-aesthetic (sky gradient + masonry band + red carpet rug + pillar/banner/
-brazier props). Used by src/screens/StageSelect.tsx preview card.
+Renders 900×506 hero images (VIRTUAL_WIDTH × VIRTUAL_HEIGHT) without characters:
+  sky gradient → ground gradient → backdrop.png tile → horizon.png tile → props
 
 Usage:
-    python scripts/build-stage-preview.py assembly
+    python scripts/build-stage-preview.py              # all 9 stages
+    python scripts/build-stage-preview.py assembly     # one stage
 
 Writes: public/world/<stageId>/preview.png
 """
@@ -16,10 +16,104 @@ from pathlib import Path
 
 from PIL import Image, ImageDraw
 
-W, H = 640, 360
+W, H = 900, 506
+GROUND_Y = round(H * 0.45)   # groundTopScreen = height * 0.45 ≈ 228
+HORIZON_H = 32
+HORIZON_Y = GROUND_Y - 16
 
 
-def blend(a: tuple[int, int, int], b: tuple[int, int, int], t: float) -> tuple[int, int, int]:
+# Sky-top, sky-bottom, ground-top, ground-bottom  (from BackgroundView.ts)
+STAGE_COLORS: dict[str, tuple[tuple[int,int,int], ...]] = {
+    'assembly':  ((0x23,0x3f,0x71), (0x9f,0x7a,0xa8), (0x7a,0x74,0x6d), (0x54,0x4d,0x47)),
+    'market':    ((0x08,0x06,0x18), (0x2a,0x18,0x08), (0x20,0x18,0x18), (0x11,0x0f,0x0f)),
+    'kitchen':   ((0x1c,0x18,0x10), (0x25,0x20,0x18), (0x2a,0x22,0x18), (0x18,0x14,0x10)),
+    'tower':     ((0x08,0x05,0x20), (0x15,0x0a,0x38), (0x08,0x0f,0x20), (0x04,0x08,0x10)),
+    'grove':     ((0x04,0x0c,0x18), (0x0a,0x15,0x08), (0x0f,0x1a,0x08), (0x08,0x0f,0x05)),
+    'catacombs': ((0x07,0x07,0x0f), (0x0e,0x10,0x18), (0x12,0x16,0x1e), (0x09,0x0c,0x12)),
+    'throne':    ((0x13,0x05,0x05), (0x28,0x08,0x08), (0x20,0x10,0x10), (0x13,0x08,0x08)),
+    'docks':     ((0x06,0x08,0x10), (0x0e,0x12,0x18), (0x18,0x12,0x10), (0x0f,0x0a,0x08)),
+    'rooftops':  ((0x28,0x58,0xa0), (0x60,0x80,0xb8), (0x58,0x58,0x58), (0x3a,0x3a,0x3a)),
+}
+
+# Extra props per stage: list of (raw_filename, x_fraction, scale, alpha)
+# x_fraction is 0.0 = left edge, 1.0 = right edge; image is placed bottom-aligned at ground level.
+STAGE_PROPS: dict[str, list[tuple[str, float, float, float]]] = {
+    'assembly':  [
+        ('pillar_stone_knight_hall.png', 0.10, 0.55, 0.92),
+        ('pillar_stone_knight_hall.png', 0.38, 0.55, 0.92),
+        ('pillar_stone_knight_hall.png', 0.62, 0.55, 0.92),
+        ('pillar_stone_knight_hall.png', 0.90, 0.55, 0.92),
+        ('banner_war_hanging.png',       0.24, 0.55, 0.85),
+        ('banner_war_hanging.png',       0.50, 0.55, 0.85),
+        ('banner_war_hanging.png',       0.76, 0.55, 0.85),
+    ],
+    'market': [
+        ('hanging_sign_lantern.png',  0.15, 0.50, 0.90),
+        ('hanging_sign_lantern.png',  0.50, 0.50, 0.90),
+        ('hanging_sign_lantern.png',  0.85, 0.50, 0.90),
+        ('barrel_crate_stack.png',    0.22, 0.45, 0.88),
+        ('market_stall_wooden.png',   0.55, 0.48, 0.88),
+        ('lantern_post_paper.png',    0.78, 0.42, 0.85),
+    ],
+    'kitchen': [
+        ('stove_brick_ruined.png',   0.18, 0.50, 0.90),
+        ('cauldron_iron_bubbling.png', 0.50, 0.48, 0.90),
+        ('meat_hooks_hanging.png',   0.72, 0.50, 0.88),
+        ('barrel_rotten_leaking.png', 0.85, 0.42, 0.85),
+    ],
+    'tower': [
+        ('pillar_arcane_rune.png',    0.12, 0.52, 0.90),
+        ('pillar_arcane_rune.png',    0.88, 0.52, 0.90),
+        ('crystal_cluster_arcane.png', 0.35, 0.45, 0.88),
+        ('crystal_cluster_arcane.png', 0.65, 0.45, 0.88),
+        ('tome_pile_floating.png',    0.50, 0.42, 0.85),
+        ('brazier_arcane_violet.png', 0.28, 0.40, 0.85),
+        ('brazier_arcane_violet.png', 0.72, 0.40, 0.85),
+    ],
+    'grove': [
+        ('tree_ancient_gnarled.png',  0.08, 0.55, 0.90),
+        ('tree_ancient_gnarled.png',  0.92, 0.55, 0.90),
+        ('stone_standing_runic.png',  0.30, 0.50, 0.88),
+        ('stone_standing_runic.png',  0.70, 0.50, 0.88),
+        ('altar_mossy_druid.png',     0.50, 0.46, 0.88),
+        ('mushroom_bioluminescent.png', 0.42, 0.38, 0.80),
+        ('mushroom_bioluminescent.png', 0.58, 0.38, 0.80),
+    ],
+    'catacombs': [
+        ('pillar_cracked_flooded.png', 0.15, 0.52, 0.90),
+        ('pillar_cracked_flooded.png', 0.85, 0.52, 0.90),
+        ('stalactite_cluster.png',    0.35, 0.45, 0.85),
+        ('stalactite_cluster.png',    0.65, 0.45, 0.85),
+        ('bone_pile_ancient.png',     0.22, 0.40, 0.80),
+        ('bone_pile_ancient.png',     0.78, 0.40, 0.80),
+        ('torch_sconce_skull.png',    0.48, 0.42, 0.85),
+    ],
+    'throne': [
+        ('throne_crimson_ornate.png', 0.50, 0.55, 0.92),
+        ('pillar_crimson_banner.png', 0.12, 0.52, 0.90),
+        ('pillar_crimson_banner.png', 0.88, 0.52, 0.90),
+        ('block_execution_wood.png',  0.28, 0.44, 0.85),
+        ('cage_iron_floor.png',       0.72, 0.44, 0.85),
+    ],
+    'docks': [
+        ('post_mooring_dock.png',  0.14, 0.50, 0.88),
+        ('post_mooring_dock.png',  0.86, 0.50, 0.88),
+        ('anchor_rusted_large.png', 0.30, 0.45, 0.85),
+        ('crate_stack_dock.png',   0.62, 0.46, 0.85),
+        ('lamp_fog_iron.png',      0.48, 0.40, 0.82),
+    ],
+    'rooftops': [
+        ('chimney_stone_smoke.png', 0.10, 0.50, 0.90),
+        ('chimney_stone_smoke.png', 0.60, 0.50, 0.90),
+        ('bell_post_brass.png',     0.40, 0.52, 0.90),
+        ('gargoyle_stone_roof.png', 0.22, 0.44, 0.85),
+        ('gargoyle_stone_roof.png', 0.78, 0.44, 0.85),
+        ('flags_prayer_string.png', 0.50, 0.42, 0.80),
+    ],
+}
+
+
+def blend(a: tuple[int,int,int], b: tuple[int,int,int], t: float) -> tuple[int,int,int]:
     return (
         int(a[0] + (b[0] - a[0]) * t),
         int(a[1] + (b[1] - a[1]) * t),
@@ -27,140 +121,111 @@ def blend(a: tuple[int, int, int], b: tuple[int, int, int], t: float) -> tuple[i
     )
 
 
-def draw_assembly(out: Path, raw: Path) -> None:
-    img = Image.new("RGBA", (W, H), (0, 0, 0, 255))
+def tile_image(src: Image.Image, dest_w: int, dest_h: int) -> Image.Image:
+    """Return a dest_w × dest_h image filled by tiling src horizontally."""
+    result = Image.new('RGBA', (dest_w, dest_h), (0, 0, 0, 0))
+    iw = src.width
+    for x in range(0, dest_w, iw):
+        result.paste(src, (x, 0))
+    return result
+
+
+def place_prop(
+    canvas: Image.Image,
+    prop_path: Path,
+    x_frac: float,
+    scale: float,
+    alpha: float,
+    ground_y: int,
+) -> None:
+    if not prop_path.exists():
+        return
+    prop = Image.open(prop_path).convert('RGBA')
+    target_h = max(1, round(prop.height * scale))
+    target_w = max(1, round(prop.width * scale))
+    prop = prop.resize((target_w, target_h), Image.Resampling.LANCZOS)
+    if alpha < 1.0:
+        r, g, b, a = prop.split()
+        a = a.point(lambda v: round(v * alpha))
+        prop = Image.merge('RGBA', (r, g, b, a))
+    cx = round(x_frac * W)
+    bx = cx - target_w // 2
+    by = ground_y - target_h
+    canvas.alpha_composite(prop, (bx, by))
+
+
+def draw_stage(stage_id: str, raw: Path, out: Path) -> None:
+    colors = STAGE_COLORS[stage_id]
+    sky_top, sky_bot, gnd_top, gnd_bot = colors
+
+    # --- Base canvas
+    img = Image.new('RGBA', (W, H), (0, 0, 0, 255))
     px = img.load()
 
-    # --- Sky gradient (top ~68%): 0x233f71 → 0x9f7aa8, matches BackgroundView.ts:97.
-    # Taller sky + shorter floor reads better as a card (the in-game camera
-    # sits low; the preview wants more architecture on screen).
-    sky_bottom = int(H * 0.68)
-    sky_top_rgb = (0x23, 0x3f, 0x71)
-    sky_bot_rgb = (0x9f, 0x7a, 0xa8)
-    for y in range(sky_bottom):
-        c = blend(sky_top_rgb, sky_bot_rgb, y / max(1, sky_bottom - 1))
+    # Sky gradient (0 → GROUND_Y)
+    for y in range(GROUND_Y):
+        c = blend(sky_top, sky_bot, y / max(1, GROUND_Y - 1))
         for x in range(W):
-            px[x, y] = (*c, 255)
+            px[x, y] = (*c, 255)  # type: ignore[index]
 
-    # Soft warm glow near horizon, matches the fillEllipse in BackgroundView.
-    glow = Image.new("RGBA", (W, H), (0, 0, 0, 0))
-    gd = ImageDraw.Draw(glow)
-    gd.ellipse((W * 0.14, sky_bottom - 90, W * 0.86, sky_bottom - 30),
-               fill=(0xf6, 0xbf, 0x6a, 22))
-    img.alpha_composite(glow)
+    # Ground gradient (GROUND_Y → H)
+    for y in range(GROUND_Y, H):
+        t = (y - GROUND_Y) / max(1, H - GROUND_Y - 1)
+        c = blend(gnd_top, gnd_bot, t)
+        for x in range(W):
+            px[x, y] = (*c, 255)  # type: ignore[index]
 
-    # --- Masonry roof + wall band behind pillars
+    # Ground seam line
     draw = ImageDraw.Draw(img)
-    roof_top = 14
-    roof_bot = roof_top + 12
-    draw.rectangle([0, roof_top, W, roof_bot], fill=(0x6f, 0x76, 0x82, 255))
-    draw.rectangle([0, roof_top - 4, W, roof_top], fill=(0x50, 0x56, 0x60, 255))
-    draw.rectangle([0, roof_bot, W, roof_bot + 4], fill=(0x50, 0x56, 0x60, 255))
-    for x in range(0, W + 90, 64):
-        draw.line([(x, roof_top), (x + 14, roof_bot)], fill=(0x8f, 0x97, 0xa3, 120), width=1)
+    draw.line([(0, GROUND_Y), (W, GROUND_Y)], fill=(0x10, 0x10, 0x10, 200), width=2)
 
-    wall_bot = sky_bottom + 4
-    draw.rectangle([0, wall_bot - 28, W, wall_bot - 12], fill=(0x7b, 0x82, 0x90, 255))
-    draw.rectangle([0, wall_bot - 12, W, wall_bot], fill=(0x5b, 0x62, 0x70, 255))
+    # Backdrop tile (covers sky area: y=0 to GROUND_Y)
+    backdrop_path = out.parent / 'backdrop.png'
+    if backdrop_path.exists():
+        bd = Image.open(backdrop_path).convert('RGBA')
+        bd_tiled = tile_image(bd, W, GROUND_Y)
+        img.alpha_composite(bd_tiled, (0, 0))
 
-    # --- Floor: stone gradient + red carpet with gold trim
-    floor_top = sky_bottom
-    floor_h = H - floor_top
-    for y in range(floor_top, H):
-        t = (y - floor_top) / max(1, floor_h - 1)
-        c = blend((0x7a, 0x74, 0x6d), (0x54, 0x4d, 0x47), t)
-        for x in range(W):
-            px[x, y] = (*c, 255)
-    draw.line([(0, floor_top), (W, floor_top)], fill=(0x2d, 0x26, 0x22), width=2)
+    # Horizon strip (HORIZON_Y to HORIZON_Y+HORIZON_H)
+    horizon_path = out.parent / 'horizon.png'
+    if horizon_path.exists():
+        hz = Image.open(horizon_path).convert('RGBA')
+        hz_tiled = tile_image(hz, W, HORIZON_H)
+        # Resize height to HORIZON_H if needed
+        if hz_tiled.height != HORIZON_H:
+            hz_tiled = hz_tiled.resize((W, HORIZON_H), Image.Resampling.LANCZOS)
+        img.alpha_composite(hz_tiled, (0, HORIZON_Y))
 
-    # Red carpet is a foreground band; stone strip visible above it so pillar
-    # bases sit on stone, not on the rug.
-    stone_strip_h = 14
-    rug_y = floor_top + stone_strip_h
-    rug_h = floor_h - stone_strip_h - 6
-    draw.rectangle([0, rug_y, W, rug_y + rug_h], fill=(0xb0, 0x1f, 0x2f, 245))
-    draw.rectangle([0, rug_y + 14, W, rug_y + rug_h - 14], fill=(0x7d, 0x17, 0x23, 90))
-    draw.line([(0, rug_y), (W, rug_y)], fill=(0xe5, 0xc1, 0x5a), width=3)
-    draw.line([(0, rug_y + rug_h), (W, rug_y + rug_h)], fill=(0xe5, 0xc1, 0x5a), width=3)
-    draw.line([(0, rug_y + 6), (W, rug_y + 6)], fill=(0xf2, 0xd9, 0x87, 220), width=1)
-    draw.line([(0, rug_y + rug_h - 6), (W, rug_y + rug_h - 6)], fill=(0xf2, 0xd9, 0x87, 220), width=1)
-    for x in range(18, W, 36):
-        draw.line([(x, rug_y + 3), (x + 10, rug_y + 3)], fill=(0xd8, 0xb0, 0x4b), width=1)
-        draw.line([(x + 6, rug_y + rug_h - 3), (x + 16, rug_y + rug_h - 3)], fill=(0xd8, 0xb0, 0x4b), width=1)
+    # Stage-specific props
+    for (fname, x_frac, scale, alpha) in STAGE_PROPS.get(stage_id, []):
+        place_prop(img, raw / fname, x_frac, scale, alpha, GROUND_Y)
 
-    # --- Load props
-    pillar = Image.open(raw / "pillar_stone_knight_hall.png").convert("RGBA")
-    banner = Image.open(raw / "banner_war_hanging.png").convert("RGBA")
-    brazier = Image.open(raw / "brazier_wall_torch.png").convert("RGBA")
-    window = Image.open(raw / "window_stained_glass.png").convert("RGBA")
-
-    pillar_h = 200
-    pillar_w = int(pillar.width * pillar_h / pillar.height)
-    pillar = pillar.resize((pillar_w, pillar_h), Image.Resampling.LANCZOS)
-
-    banner_h = 128
-    banner_w = int(banner.width * banner_h / banner.height)
-    banner = banner.resize((banner_w, banner_h), Image.Resampling.LANCZOS)
-
-    brazier_h = 62
-    brazier_w = int(brazier.width * brazier_h / brazier.height)
-    brazier = brazier.resize((brazier_w, brazier_h), Image.Resampling.LANCZOS)
-
-    window_h = 84
-    window_w = int(window.width * window_h / window.height)
-    window = window.resize((window_w, window_h), Image.Resampling.LANCZOS)
-
-    # --- Stained-glass windows behind the columns (upper wall accent)
-    win_y = roof_bot + 10
-    for cx in (W * 0.22, W * 0.5, W * 0.78):
-        img.alpha_composite(window, (int(cx - window_w / 2), int(win_y)))
-
-    # --- Banners hang between pillars (front-wall layer)
-    banner_y = sky_bottom - banner_h - 10
-    for cx in (W * 0.22, W * 0.5, W * 0.78):
-        img.alpha_composite(banner, (int(cx - banner_w / 2), int(banner_y)))
-
-    # --- Pillars: feet on the stone strip (above the rug), spread across the hall
-    pillar_y = floor_top - pillar_h + stone_strip_h - 2
-    pillar_xs = [W * 0.08, W * 0.36, W * 0.64, W * 0.92]
-    for cx in pillar_xs:
-        img.alpha_composite(pillar, (int(cx - pillar_w / 2), int(pillar_y)))
-
-    # Braziers on every pillar, seated in the niche pocket
-    brazier_y = pillar_y + pillar_h * 0.42
-    for cx in pillar_xs:
-        img.alpha_composite(brazier, (int(cx - brazier_w / 2), int(brazier_y)))
-
-    # --- Subtle vignette for card polish
-    vignette = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    # Subtle vignette
+    vignette = Image.new('RGBA', (W, H), (0, 0, 0, 0))
     vd = ImageDraw.Draw(vignette)
-    for i in range(22):
-        vd.rectangle([i, i, W - i, H - i], outline=(0, 0, 0, 8))
+    for i in range(28):
+        vd.rectangle([i, i, W - i, H - i], outline=(0, 0, 0, 6))
     img.alpha_composite(vignette)
 
     out.parent.mkdir(parents=True, exist_ok=True)
-    img.convert("RGB").save(out, "PNG", optimize=True)
-    print(f"wrote {out} ({W}x{H})")
+    img.convert('RGB').save(out, 'PNG', optimize=True)
+    print(f'wrote {out}  ({W}×{H})')
 
 
 def main(argv: list[str]) -> int:
-    if len(argv) < 2:
-        print("usage: build-stage-preview.py <stageId>", file=sys.stderr)
-        return 1
-    stage = argv[1]
     root = Path(__file__).resolve().parent.parent
-    raw = root / "public" / "world" / stage / "raw"
-    out = root / "public" / "world" / stage / "preview.png"
-    if not raw.exists():
-        print(f"missing raw dir: {raw}", file=sys.stderr)
-        return 1
-    if stage == "assembly":
-        draw_assembly(out, raw)
-    else:
-        print(f"no preview recipe for stage: {stage}", file=sys.stderr)
-        return 1
-    return 0
+    stages = list(STAGE_COLORS.keys()) if len(argv) < 2 else [argv[1]]
+    ok = True
+    for stage_id in stages:
+        if stage_id not in STAGE_COLORS:
+            print(f'unknown stage: {stage_id}', file=sys.stderr)
+            ok = False
+            continue
+        raw = root / 'public' / 'world' / stage_id / 'raw'
+        out = root / 'public' / 'world' / stage_id / 'preview.png'
+        draw_stage(stage_id, raw, out)
+    return 0 if ok else 1
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     sys.exit(main(sys.argv))

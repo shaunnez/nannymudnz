@@ -549,6 +549,9 @@ function getAbilityAssetKey(abilityId: string, eventType: VFXEvent['type']): str
     // Druid projectile
     case 'entangle':         return eventType === 'hit_spark'  ? 'entangle_burst'          : undefined;
     // Viking projectile
+    case 'whirlwind':        return eventType === 'channel_pulse' ? 'whirlwind_burst'       : undefined;
+    case 'bloodlust':        return eventType === 'aura_pulse'    ? 'bloodlust_aura'        : undefined;
+    case 'undying_rage':     return eventType === 'aura_pulse'    ? 'undying_rage_aura'     : undefined;
     case 'harpoon':          return eventType === 'hit_spark'  ? 'harpoon_impact'          : undefined;
     // Prophet projectile
     case 'smite':            return eventType === 'hit_spark'  ? 'smite_burst'             : undefined;
