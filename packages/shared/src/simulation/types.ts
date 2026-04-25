@@ -457,6 +457,7 @@ export interface SimState {
   battleTimer: number;
   battleDifficulty: number;
   battStats: Record<string, BattStatEntry> | null;
+  stageLevel?: number;
 }
 
 export interface InputState {

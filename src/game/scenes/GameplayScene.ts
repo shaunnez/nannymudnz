@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import type { Room } from '@colyseus/sdk';
-import type { GuildId, SimState } from '@nannymud/shared/simulation/types';
+import type { GuildId, SimState, StageId } from '@nannymud/shared/simulation/types';
 import type { MatchState } from '@nannymud/shared';
 import {
   createInitialState,
@@ -131,7 +131,7 @@ export class GameplayScene extends Phaser.Scene {
     } else if (this.game.registry.get('survivalMode')) {
       this.simState = createSurvivalState(guildId, seed);
     } else {
-      this.simState = createInitialState(guildId, seed);
+      this.simState = createInitialState(guildId, stageId as StageId, seed);
     }
     this.inputAdapter = new PhaserInputAdapter(this);
     this.phaseHandoffFired = false;
@@ -199,7 +199,8 @@ export class GameplayScene extends Phaser.Scene {
           const diff = (this.game.registry.get('difficulty') as number | null) ?? 2;
           this.simState = createBattleState(currentGuild, battleSlots, stageId, Date.now(), diff);
         } else {
-          this.simState = createInitialState(currentGuild, Date.now());
+          const stageId = this.game.registry.get('stageId') as string;
+          this.simState = createInitialState(currentGuild, stageId as StageId, Date.now());
         }
         resetController(this.simState, 'player');
         this.phaseHandoffFired = false;

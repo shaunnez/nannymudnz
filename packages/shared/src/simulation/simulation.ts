@@ -1,7 +1,7 @@
 import type {
   SimState, Actor, InputState, GuildId, Projectile, DamageType,
   AbilityDef, ActorKind, AnimationId, PlayerController, StatusEffectType, VFXEvent, GroundZone,
-  MatchStats,
+  MatchStats, StageId,
 } from './types';
 import { getGuild, DRUID_WOLF_ABILITIES, DRUID_WOLF_RMB } from './guildData';
 import { makeRng } from './rng';
@@ -178,8 +178,24 @@ export function createEnemyActor(kind: string, x: number, y: number, state: SimS
   };
 }
 
+const STAGE_LEVELS: Record<StageId, number> = {
+  assembly: 1, market: 2, kitchen: 3, tower: 4, grove: 5,
+  catacombs: 6, throne: 7, docks: 8, rooftops: 9,
+};
+
 // eslint-disable-next-line no-restricted-globals -- seed is chosen once at boot, outside the tick loop
-export function createInitialState(guildId: GuildId, seed: number = Date.now()): SimState {
+export function createInitialState(
+  guildId: GuildId,
+  stageIdOrSeed: StageId | number = 'assembly',
+  seed: number = Date.now(),  // eslint-disable-line no-restricted-globals
+): SimState {
+  let resolvedStageId: StageId = 'assembly';
+  let resolvedSeed = seed;
+  if (typeof stageIdOrSeed === 'number') {
+    resolvedSeed = stageIdOrSeed;
+  } else {
+    resolvedStageId = stageIdOrSeed;
+  }
   return {
     tick: 0,
     timeMs: 0,
@@ -190,15 +206,15 @@ export function createInitialState(guildId: GuildId, seed: number = Date.now()):
     projectiles: [],
     groundZones: [],
     vfxEvents: [],
-    waves: STAGE_WAVES.map(w => ({ ...w, enemies: w.enemies.map(e => ({ ...e })), triggered: false, cleared: false })),
+    waves: STAGE_WAVES[resolvedStageId].map(w => ({ ...w, enemies: w.enemies.map(e => ({ ...e })), triggered: false, cleared: false })),
     currentWave: -1,
     cameraX: 0,
     cameraLocked: false,
     phase: 'playing',
     bossSpawned: false,
     score: 0,
-    rngSeed: seed,
-    rng: makeRng(seed),
+    rngSeed: resolvedSeed,
+    rng: makeRng(resolvedSeed),
     nextActorId: 1,
     nextProjectileId: 1000,
     nextPickupId: 1,
@@ -218,6 +234,7 @@ export function createInitialState(guildId: GuildId, seed: number = Date.now()):
     battleTimer: 0,
     battleDifficulty: 2,
     battStats: null,
+    stageLevel: STAGE_LEVELS[resolvedStageId],
   };
 }
 
