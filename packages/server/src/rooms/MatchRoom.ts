@@ -120,6 +120,7 @@ export class MatchRoom extends Room<MatchState> {
       if (this.state.phase !== 'battle_config') return;
       const slot = this.state.battleSlots[msg.index];
       if (!slot) return;
+      if (slot.ownerSessionId) return; // cannot overwrite a claimed human slot
       if (this.state.uniqueGuilds && msg.guildId) {
         const taken = [...this.state.battleSlots].some(
           (s, i) => i !== msg.index && s.slotType !== 'off' && s.guildId === msg.guildId,
@@ -150,6 +151,10 @@ export class MatchRoom extends Room<MatchState> {
       if (this.state.phase !== 'battle_config') return;
       const activeCount = [...this.state.battleSlots].filter(s => s.slotType !== 'off').length;
       if (activeCount < 2) return;
+      const humanWithNoGuild = [...this.state.battleSlots].some(
+        s => s.slotType === 'human' && s.ownerSessionId && !s.guildId,
+      );
+      if (humanWithNoGuild) return;
       // Copy guildId into PlayerSlot so existing MP results screen can read each player's guild
       for (const bSlot of this.state.battleSlots) {
         if (bSlot.slotType === 'human' && bSlot.ownerSessionId) {
@@ -270,6 +275,22 @@ export class MatchRoom extends Room<MatchState> {
       this.state.matchWinnerSessionId = winnerId;
       this.state.phase = 'results';
       // pendingRematchOffer is already null at this point (set during results only)
+    } else if (phase === 'battle_config') {
+      // Flip the departing player's battle slot to off
+      for (const bSlot of this.state.battleSlots) {
+        if (bSlot.ownerSessionId === client.sessionId) {
+          bSlot.slotType = 'off';
+          bSlot.ownerSessionId = '';
+          bSlot.guildId = '';
+          break;
+        }
+      }
+      this.state.players.delete(client.sessionId);
+      // Promote host if needed
+      if (this.state.hostSessionId === client.sessionId) {
+        const next = [...this.state.players.keys()][0];
+        if (next) this.state.hostSessionId = next;
+      }
     } else if (phase === 'lobby' || phase === 'char_select' ||
                phase === 'stage_select' || phase === 'loading') {
       this.pendingRematchOffer = null;

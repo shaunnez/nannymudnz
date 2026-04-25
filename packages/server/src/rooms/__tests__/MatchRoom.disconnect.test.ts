@@ -30,7 +30,7 @@ function stubTimers(room: MatchRoom) {
   (room as unknown as { setPatchRate: () => void }).setPatchRate = () => {};
 }
 
-function createRoom(opts: { name?: string } = {}) {
+function createRoom(opts: { name?: string; gameMode?: 'versus' | 'battle'; uniqueGuilds?: boolean } = {}) {
   const room = new MatchRoom();
   room['state'] = new MatchState();
   const store: MsgStore = { events: {} };
@@ -395,5 +395,68 @@ describe('E. tick() is a no-op outside in_game', () => {
     room.tick(16);
     room.tick(16);
     expect(room.state.sim?.timeMs ?? 0).toBe(timeBefore);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Battle config disconnect + guard tests (Tasks 5/7 fixes)
+// ---------------------------------------------------------------------------
+
+describe('MatchRoom battle_config phase', () => {
+  function reachBattleConfig(room: ReturnType<typeof createRoom>, host: StubClient, p2: StubClient) {
+    joinRoom(room, host, { name: 'Alice' });
+    joinRoom(room, p2, { name: 'Bob' });
+    room.state.players.get(host.sessionId)!.ready = true;
+    room.state.players.get(p2.sessionId)!.ready = true;
+    sendMsg(room, host, 'launch_battle', {});
+  }
+
+  it('set_battle_slot cannot overwrite a claimed human slot', () => {
+    const room = createRoom({ gameMode: 'battle', name: 'B' });
+    const host = makeClient('host');
+    const p2   = makeClient('p2');
+    reachBattleConfig(room, host, p2);
+
+    // Slot 0 is the host's human slot (ownerSessionId set)
+    sendMsg(room, host, 'set_battle_slot', { index: 0, slotType: 'cpu', guildId: 'knight', team: 'A' });
+    expect(room.state.battleSlots[0].slotType).toBe('human'); // unchanged
+  });
+
+  it('launch_from_config is rejected when a human slot has no guild', () => {
+    const room = createRoom({ gameMode: 'battle', name: 'B' });
+    const host = makeClient('host');
+    const p2   = makeClient('p2');
+    reachBattleConfig(room, host, p2);
+
+    // Give p2 a guild but leave host without one
+    sendMsg(room, p2, 'set_my_guild', { guildId: 'knight' });
+    sendMsg(room, host, 'launch_from_config', {});
+    expect(room.state.phase).toBe('battle_config'); // not advanced
+  });
+
+  it('player leaving during battle_config flips their slot to off', () => {
+    const room = createRoom({ gameMode: 'battle', name: 'B' });
+    const host = makeClient('host');
+    const p2   = makeClient('p2');
+    reachBattleConfig(room, host, p2);
+
+    leaveRoom(room, p2);
+
+    const p2Slot = [...room.state.battleSlots].find(s => s.ownerSessionId === 'p2');
+    expect(p2Slot).toBeUndefined();
+    const offSlots = [...room.state.battleSlots].filter(s => s.slotType === 'off');
+    expect(offSlots.length).toBeGreaterThanOrEqual(7);
+  });
+
+  it('host leaving during battle_config promotes next player to host', () => {
+    const room = createRoom({ gameMode: 'battle', name: 'B' });
+    const host = makeClient('host');
+    const p2   = makeClient('p2');
+    reachBattleConfig(room, host, p2);
+
+    leaveRoom(room, host);
+
+    expect(room.state.hostSessionId).toBe('p2');
+    expect(room.state.players.has('host')).toBe(false);
   });
 });
