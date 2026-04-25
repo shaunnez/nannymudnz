@@ -8,8 +8,38 @@ interface Props {
   children: ReactNode;
 }
 
-function measure() {
-  return { w: window.innerWidth, h: window.innerHeight };
+function isStandalone(): boolean {
+  return (
+    (navigator as Navigator & { standalone?: boolean }).standalone === true ||
+    window.matchMedia('(display-mode: standalone)').matches
+  );
+}
+
+function measure(): { w: number; h: number } {
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+  if (isStandalone()) return { w, h };
+
+  // In browser mode subtract safe-area insets so the game frame clears the
+  // home indicator bar (bottom) and notch (left/right in landscape).
+  // env() resolves to 0 on devices/browsers that don't support it.
+  const el = document.createElement('div');
+  el.style.cssText = [
+    'position:fixed', 'visibility:hidden', 'pointer-events:none',
+    'padding-top:env(safe-area-inset-top,0px)',
+    'padding-right:env(safe-area-inset-right,0px)',
+    'padding-bottom:env(safe-area-inset-bottom,0px)',
+    'padding-left:env(safe-area-inset-left,0px)',
+  ].join(';');
+  document.body.appendChild(el);
+  const cs = getComputedStyle(el);
+  const top    = parseFloat(cs.paddingTop)    || 0;
+  const right  = parseFloat(cs.paddingRight)  || 0;
+  const bottom = parseFloat(cs.paddingBottom) || 0;
+  const left   = parseFloat(cs.paddingLeft)   || 0;
+  el.remove();
+
+  return { w: w - left - right, h: h - top - bottom };
 }
 
 export function ScalingFrame({ children }: Props) {
