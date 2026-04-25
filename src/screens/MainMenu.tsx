@@ -110,7 +110,7 @@ export function MainMenu({ onPick }: Props) {
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column' }}>
-          {MENU_ITEMS.filter((m) => !(mobile && m.id === 'set')).map((m, i) => {
+          {MENU_ITEMS.map((m, i) => {
             const active = i === sel;
             const disabledColor = theme.inkMuted;
             return (
