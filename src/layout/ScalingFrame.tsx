@@ -8,45 +8,10 @@ interface Props {
   children: ReactNode;
 }
 
-function isStandalone(): boolean {
-  return (
-    (navigator as Navigator & { standalone?: boolean }).standalone === true ||
-    window.matchMedia('(display-mode: standalone)').matches
-  );
-}
-
-function measure(): { w: number; h: number } {
-  const w = window.innerWidth;
-  const h = window.innerHeight;
-  if (isStandalone()) return { w, h };
-
-  // In browser mode subtract safe-area insets so the game frame clears the
-  // home indicator bar (bottom) and notch (left/right in landscape).
-  // env() resolves to 0 on devices/browsers that don't support it.
-  const el = document.createElement('div');
-  el.style.cssText = [
-    'position:fixed', 'visibility:hidden', 'pointer-events:none',
-    'padding-top:env(safe-area-inset-top,0px)',
-    'padding-right:env(safe-area-inset-right,0px)',
-    'padding-bottom:env(safe-area-inset-bottom,0px)',
-    'padding-left:env(safe-area-inset-left,0px)',
-  ].join(';');
-  document.body.appendChild(el);
-  const cs = getComputedStyle(el);
-  const top    = parseFloat(cs.paddingTop)    || 0;
-  const right  = parseFloat(cs.paddingRight)  || 0;
-  const bottom = parseFloat(cs.paddingBottom) || 0;
-  const left   = parseFloat(cs.paddingLeft)   || 0;
-  el.remove();
-
-  return { w: w - left - right, h: h - top - bottom };
-}
-
 export function ScalingFrame({ children }: Props) {
   const rootRef = useRef<HTMLDivElement>(null);
   const wasFullscreenRef = useRef(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [dims, setDims] = useState(measure);
 
   const toggle = () => {
     const el = rootRef.current;
@@ -75,16 +40,6 @@ export function ScalingFrame({ children }: Props) {
   }, []);
 
   useEffect(() => {
-    let t: ReturnType<typeof setTimeout>;
-    const onResize = () => {
-      clearTimeout(t);
-      t = setTimeout(() => setDims(measure()), 150);
-    };
-    window.addEventListener('resize', onResize);
-    return () => { window.removeEventListener('resize', onResize); clearTimeout(t); };
-  }, []);
-
-  useEffect(() => {
     let fullscreenKey = loadKeyBindings().fullscreen;
     const refresh = () => { fullscreenKey = loadKeyBindings().fullscreen; };
     const onKey = (e: KeyboardEvent) => {
@@ -104,17 +59,33 @@ export function ScalingFrame({ children }: Props) {
     };
   }, []);
 
-  const { w, h } = dims;
-  const gameW = Math.min(w, h * 16 / 9);
-  const gameH = Math.min(h, w * 9 / 16);
-
   return (
     <FullscreenContext.Provider value={{ isFullscreen, toggle }}>
-      <div ref={rootRef} style={{ width: w, height: h, background: '#000', display: 'flex', justifyContent: 'center', alignItems: 'center', overflow: 'hidden', margin: 0 }}>
-        <div style={{ width: gameW, height: gameH, background: '#0f172a', position: 'relative', overflow: 'hidden' }}>
+      <div ref={rootRef} style={outerStyle}>
+        <div style={innerStyle}>
           {children}
         </div>
       </div>
     </FullscreenContext.Provider>
   );
 }
+
+const outerStyle: React.CSSProperties = {
+  width: '100vw',
+  height: '100dvh',
+  background: '#000',
+  display: 'flex',
+  justifyContent: 'center',
+  alignItems: 'center',
+  overflow: 'hidden',
+  margin: 0,
+};
+
+const innerStyle: React.CSSProperties = {
+  aspectRatio: '16 / 9',
+  width: 'min(100vw, calc(100vh * 16 / 9))',
+  height: 'min(100vh, calc(100vw * 9 / 16))',
+  background: '#0f172a',
+  position: 'relative',
+  overflow: 'hidden',
+};
