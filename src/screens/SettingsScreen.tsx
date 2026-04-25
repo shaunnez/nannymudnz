@@ -63,7 +63,7 @@ export function SettingsScreen({
   const [volume, setVolume] = useState(loadVolume);
   const [bindings, setBindings] = useState<KeyBindings>(loadKeyBindings);
   const [rebinding, setRebinding] = useState<keyof KeyBindings | null>(null);
-  const { enemyHpScale, setEnemyHpScale } = useDevSettings();
+  const { enemyHpScale, setEnemyHpScale, useNewVfx, setUseNewVfx } = useDevSettings();
   const mobile = useIsMobile();
 
   useEffect(() => {
@@ -254,6 +254,12 @@ export function SettingsScreen({
             sub="Pulse meters, glow combo text, flicker scanlines on hit"
             on={animateHud}
             onClick={onToggleAnimateHud}
+          />
+          <Toggle
+            label="New VFX"
+            sub="Craftpix sprite effects instead of procedural sparks and rings"
+            on={useNewVfx}
+            onClick={() => setUseNewVfx(!useNewVfx)}
           />
         </div>
 
