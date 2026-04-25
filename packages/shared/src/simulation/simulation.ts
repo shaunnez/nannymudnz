@@ -1984,6 +1984,11 @@ export function tickSimulation(
       const oppCtrl = getOrCreateController(state, enemy.id, createEmptyCpuInput());
       const cpuInput = synthesizeVsCpuInput(state, enemy, oppCtrl.input, dtMs, state.battleDifficulty);
       handlePlayerInput(state, cpuInput, oppCtrl, dtMs, enemy);
+    } else if (enemy.guildId !== null) {
+      // Story-mode guild actor: drive with VS CPU AI (same pipeline as Battle/VS modes)
+      const oppCtrl = getOrCreateController(state, enemy.id, createEmptyCpuInput());
+      const cpuInput = synthesizeVsCpuInput(state, enemy, oppCtrl.input, dtMs, enemy.aiDifficulty ?? 3);
+      handlePlayerInput(state, cpuInput, oppCtrl, dtMs, enemy);
     } else {
       tickAI(enemy, state, dtSec, state.vfxEvents);
       if (enemy.invulnerableMs > 0) {
@@ -1995,6 +2000,9 @@ export function tickSimulation(
     tickGetup(enemy, dtSec);
     tickStatusEffects(enemy, dtMs, state.vfxEvents);
     tickHPRegen(enemy, dtMs, true);
+    if (enemy.guildId !== null) {
+      tickPlayerResourceRegen(enemy, dtMs, true, state);
+    }
     const enemyDef = ENEMY_DEFS[enemy.kind];
     if (enemyDef) tickBossPhases(state, enemy, enemyDef);
   }
