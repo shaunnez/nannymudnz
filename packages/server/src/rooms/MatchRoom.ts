@@ -134,6 +134,7 @@ export class MatchRoom extends Room<MatchState> {
       slot.slotType = msg.slotType;
       slot.guildId = msg.guildId;
       slot.team = msg.team;
+      slot.locked = false; // changing content resets lock
       if (msg.slotType !== 'human') slot.ownerSessionId = '';
     });
 
@@ -148,17 +149,27 @@ export class MatchRoom extends Room<MatchState> {
         if (taken) return;
       }
       slot.guildId = msg.guildId;
+      slot.locked = false; // changing guild resets lock
+    });
+
+    this.onMessage('lock_battle_slot', (client: Client, msg: { index: number }) => {
+      if (this.state.phase !== 'battle_config') return;
+      const slot = this.state.battleSlots[msg.index];
+      if (!slot || slot.slotType === 'off') return;
+      if (!slot.guildId) return; // must have a guild before locking
+      // Human slot: only the owner can lock it
+      if (slot.slotType === 'human' && slot.ownerSessionId !== client.sessionId) return;
+      // CPU slot: only the host can lock it
+      if (slot.slotType === 'cpu' && client.sessionId !== this.state.hostSessionId) return;
+      slot.locked = !slot.locked; // toggle
     });
 
     this.onMessage('launch_from_config', (client: Client) => {
       if (client.sessionId !== this.state.hostSessionId) return;
       if (this.state.phase !== 'battle_config') return;
-      const activeCount = [...this.state.battleSlots].filter(s => s.slotType !== 'off').length;
-      if (activeCount < 2) return;
-      const humanWithNoGuild = [...this.state.battleSlots].some(
-        s => s.slotType === 'human' && s.ownerSessionId && !s.guildId,
-      );
-      if (humanWithNoGuild) return;
+      const activeSlots = [...this.state.battleSlots].filter(s => s.slotType !== 'off');
+      if (activeSlots.length < 2) return;
+      if (!activeSlots.every(s => s.locked)) return; // all active slots must be locked
       // Copy guildId into PlayerSlot so existing MP results screen can read each player's guild
       for (const bSlot of this.state.battleSlots) {
         if (bSlot.slotType === 'human' && bSlot.ownerSessionId) {

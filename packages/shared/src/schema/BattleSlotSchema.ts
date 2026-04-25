@@ -5,4 +5,5 @@ export class BattleSlotSchema extends Schema {
   @type('string') guildId = '';
   @type('string') team = '';           // 'A' | 'B' | 'C' | 'D' | ''
   @type('string') ownerSessionId = ''; // set for human slots
+  @type('boolean') locked = false;
 }

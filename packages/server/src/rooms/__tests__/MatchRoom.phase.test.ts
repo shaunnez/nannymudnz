@@ -395,7 +395,7 @@ describe('MatchRoom phase transitions (direct instantiation)', () => {
     expect(p2Slot.guildId).toBe('adventurer');
   });
 
-  it('launch_from_config transitions to stage_select when >=2 active slots', () => {
+  it('launch_from_config transitions to stage_select when >=2 active slots all locked', () => {
     const room = createRoom({ gameMode: 'battle', name: 'B', rounds: 3, visibility: 'public' });
     const host = makeClient('host');
     const p2   = makeClient('p2');
@@ -403,9 +403,27 @@ describe('MatchRoom phase transitions (direct instantiation)', () => {
 
     sendMsg(room, host, 'set_my_guild', { guildId: 'adventurer' });
     sendMsg(room, p2,   'set_my_guild', { guildId: 'knight' });
+    // Lock both human slots before launching
+    sendMsg(room, host, 'lock_battle_slot', { index: 0 });
+    sendMsg(room, p2,   'lock_battle_slot', { index: 1 });
     sendMsg(room, host, 'launch_from_config', {});
 
     expect(room.state.phase).toBe('stage_select');
+  });
+
+  it('launch_from_config is rejected when slots are not all locked', () => {
+    const room = createRoom({ gameMode: 'battle', name: 'B', rounds: 3, visibility: 'public' });
+    const host = makeClient('host');
+    const p2   = makeClient('p2');
+    reachBattleConfig(room, host, p2);
+
+    sendMsg(room, host, 'set_my_guild', { guildId: 'adventurer' });
+    sendMsg(room, p2,   'set_my_guild', { guildId: 'knight' });
+    // Only host locks — p2 has not locked
+    sendMsg(room, host, 'lock_battle_slot', { index: 0 });
+    sendMsg(room, host, 'launch_from_config', {});
+
+    expect(room.state.phase).toBe('battle_config'); // not advanced
   });
 
   it('launch_from_config is ignored by non-host', () => {

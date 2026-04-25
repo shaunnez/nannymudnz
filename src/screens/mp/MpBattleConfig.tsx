@@ -47,8 +47,10 @@ export function MpBattleConfig({ room, onLeave, onPhaseChange }: Props) {
   const slots = [...state.battleSlots];
   const isHost = room.sessionId === state.hostSessionId;
   const mySlotIndex = slots.findIndex(s => s.ownerSessionId === room.sessionId);
-  const activeCount = slots.filter(s => s.slotType !== 'off').length;
-  const canLaunch = isHost && activeCount >= 2;
+  const activeSlots = slots.filter(s => s.slotType !== 'off');
+  const activeCount = activeSlots.length;
+  const allLocked = activeCount >= 2 && activeSlots.every(s => s.locked);
+  const canLaunch = isHost && allLocked;
 
   // Map guildId → slot indices that claim it (for taken indicators)
   const claimsByGuild = new Map<string, number[]>();
@@ -62,7 +64,8 @@ export function MpBattleConfig({ room, onLeave, onPhaseChange }: Props) {
 
   const nextGuild = (currentGuildId: string, direction = 1): string => {
     const cur = GUILD_IDS.indexOf(currentGuildId as GuildId);
-    return GUILD_IDS[(cur + direction + GUILD_IDS.length) % GUILD_IDS.length];
+    const start = cur >= 0 ? cur : 0;
+    return GUILD_IDS[(start + direction + GUILD_IDS.length) % GUILD_IDS.length];
   };
 
   const trySetGuild = (slotIndex: number, guildId: string, sender: 'host' | 'player') => {
@@ -81,7 +84,7 @@ export function MpBattleConfig({ room, onLeave, onPhaseChange }: Props) {
   const handleCycleType = (index: number) => {
     if (!isHost) return;
     const slot = slots[index];
-    if (slot.slotType === 'human') return; // cannot overwrite human slot
+    if (slot.slotType === 'human') return;
     const next = slot.slotType === 'cpu' ? 'off' : 'cpu';
     room.send('set_battle_slot', { index, slotType: next, guildId: slot.guildId, team: slot.team });
   };
@@ -90,6 +93,10 @@ export function MpBattleConfig({ room, onLeave, onPhaseChange }: Props) {
     if (!isHost) return;
     const slot = slots[index];
     room.send('set_battle_slot', { index, slotType: slot.slotType, guildId: slot.guildId, team });
+  };
+
+  const handleLock = (index: number) => {
+    room.send('lock_battle_slot', { index });
   };
 
   return (
@@ -115,30 +122,64 @@ export function MpBattleConfig({ room, onLeave, onPhaseChange }: Props) {
         {slots.map((slot, i) => {
           const isOff = slot.slotType === 'off';
           const isHuman = slot.slotType === 'human';
+          const isCpu = slot.slotType === 'cpu';
           const isMySlot = i === mySlotIndex;
+          const isLocked = slot.locked;
           const teamColor = slot.team ? (TEAM_COLORS[slot.team] ?? theme.lineSoft) : theme.lineSoft;
-          const borderColor = isMySlot ? theme.accent : isOff ? theme.lineSoft : isHuman ? theme.warn : teamColor;
+          const borderColor = isLocked ? theme.good : isMySlot ? theme.accent : isOff ? theme.lineSoft : isHuman ? theme.warn : teamColor;
           const claimers = claimsByGuild.get(slot.guildId) ?? [];
+
+          // Who can cycle this slot's guild
+          const canCycleGuild = isMySlot || (isHost && isCpu);
+          // Who can lock this slot
+          const canLockSlot = (isMySlot || (isHost && isCpu)) && !!slot.guildId;
+
+          const currentGuildId = slot.guildId || GUILD_IDS[0];
 
           return (
             <div
               key={i}
-              style={{ border: `1px solid ${borderColor}`, background: isOff ? 'transparent' : theme.panel, padding: '14px 12px 16px', display: 'flex', flexDirection: 'column', gap: 12, opacity: isOff ? 0.4 : 1, position: 'relative' }}
+              style={{
+                border: `1px solid ${borderColor}`,
+                background: isOff ? 'transparent' : theme.panel,
+                padding: '14px 12px 16px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 10,
+                opacity: isOff ? 0.4 : 1,
+                position: 'relative',
+                transition: 'border-color 150ms ease',
+              }}
             >
-              {/* Slot header */}
+              {/* Slot header: slot number + type badge */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontFamily: theme.fontMono, fontSize: 9, color: theme.inkMuted, letterSpacing: 2 }}>
+                <span style={{ fontFamily: theme.fontMono, fontSize: 10, color: theme.inkMuted, letterSpacing: 2 }}>
                   SLOT {String(i + 1).padStart(2, '0')}
                 </span>
                 {isHost && !isHuman ? (
                   <span
                     onClick={() => handleCycleType(i)}
-                    style={{ cursor: 'pointer', fontFamily: theme.fontMono, fontSize: 9, letterSpacing: 2, color: isOff ? theme.inkMuted : theme.good, border: `1px solid ${isOff ? theme.lineSoft : theme.good}`, padding: '3px 8px' }}
+                    style={{
+                      cursor: 'pointer',
+                      fontFamily: theme.fontMono,
+                      fontSize: 12,
+                      letterSpacing: 2,
+                      color: isOff ? theme.inkMuted : theme.good,
+                      border: `1px solid ${isOff ? theme.lineSoft : theme.good}`,
+                      padding: '5px 12px',
+                    }}
                   >
                     {slot.slotType.toUpperCase()}
                   </span>
                 ) : isHuman ? (
-                  <span style={{ fontFamily: theme.fontMono, fontSize: 9, letterSpacing: 2, color: theme.warn, border: `1px solid ${theme.warn}55`, padding: '3px 8px' }}>
+                  <span style={{
+                    fontFamily: theme.fontMono,
+                    fontSize: 12,
+                    letterSpacing: 2,
+                    color: theme.warn,
+                    border: `1px solid ${theme.warn}55`,
+                    padding: '5px 12px',
+                  }}>
                     HUMAN
                   </span>
                 ) : null}
@@ -147,23 +188,33 @@ export function MpBattleConfig({ room, onLeave, onPhaseChange }: Props) {
               {/* Guild portrait */}
               {isOff ? (
                 <div style={{ display: 'flex', justifyContent: 'center' }}>
-                  <div style={{ width: 110, height: 110, border: `1px dashed ${theme.lineSoft}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: theme.fontMono, fontSize: 9, color: theme.inkMuted, letterSpacing: 2 }}>EMPTY</div>
+                  <div style={{ width: 110, height: 110, border: `1px dashed ${theme.lineSoft}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: theme.fontMono, fontSize: 9, color: theme.inkMuted, letterSpacing: 2 }}>
+                    {isHost ? (
+                      <span onClick={() => handleCycleType(i)} style={{ cursor: 'pointer' }}>+ ADD CPU</span>
+                    ) : 'EMPTY'}
+                  </div>
                 </div>
               ) : (
                 <div style={{ position: 'relative', display: 'flex', justifyContent: 'center' }}>
                   <div
                     onClick={() => {
-                      if (!slot.guildId) return;
-                      if (isMySlot) trySetGuild(i, nextGuild(slot.guildId), 'player');
-                      else if (isHost && !isHuman) trySetGuild(i, nextGuild(slot.guildId), 'host');
+                      if (!canCycleGuild || isLocked) return;
+                      trySetGuild(i, nextGuild(currentGuildId), isMySlot ? 'player' : 'host');
                     }}
-                    style={{ cursor: (isMySlot || (isHost && !isHuman)) ? 'pointer' : 'default', position: 'relative' }}
+                    style={{ cursor: canCycleGuild && !isLocked ? 'pointer' : 'default', position: 'relative' }}
                   >
                     <GuildMonogram
-                      guildId={(slot.guildId || GUILD_IDS[0]) as GuildId}
+                      guildId={currentGuildId as GuildId}
                       size={110}
                       selected={isMySlot}
                     />
+
+                    {/* Locked overlay */}
+                    {isLocked && (
+                      <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: `${theme.good}33`, pointerEvents: 'none' }}>
+                        <span style={{ fontFamily: theme.fontMono, fontSize: 11, color: theme.good, letterSpacing: 2, textShadow: `0 0 6px ${theme.bgDeep}` }}>✓ LOCKED</span>
+                      </div>
+                    )}
 
                     {/* Guild taken indicators — always shown */}
                     {claimers.filter(ci => ci !== i).map((claimerIdx, tagI) => {
@@ -183,7 +234,7 @@ export function MpBattleConfig({ room, onLeave, onPhaseChange }: Props) {
                       );
                     })}
 
-                    {/* TAKEN flash overlay */}
+                    {/* TAKEN flash */}
                     {takenFlashIdx === i && (
                       <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: `${theme.bad}cc`, fontFamily: theme.fontMono, fontSize: 13, color: theme.bg, letterSpacing: 2 }}>
                         TAKEN
@@ -193,14 +244,32 @@ export function MpBattleConfig({ room, onLeave, onPhaseChange }: Props) {
                 </div>
               )}
 
-              {/* Guild name + owner label */}
+              {/* Guild name */}
               {!isOff && (
                 <>
                   <div style={{ fontFamily: theme.fontDisplay, fontSize: 14, color: isMySlot ? theme.accent : theme.ink, textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {GUILDS.find(g => g.id === slot.guildId)?.name ?? (slot.guildId ? slot.guildId : '—')}
+                    {GUILDS.find(g => g.id === slot.guildId)?.name ?? '—'}
                   </div>
-                  {isHuman && isMySlot && (
-                    <div style={{ fontFamily: theme.fontMono, fontSize: 9, color: theme.accent, letterSpacing: 1, textAlign: 'center' }}>YOU</div>
+
+                  {/* Lock button */}
+                  {canLockSlot && (
+                    <button
+                      onClick={() => handleLock(i)}
+                      style={{
+                        padding: '8px 0',
+                        background: isLocked ? theme.good : 'transparent',
+                        color: isLocked ? theme.bgDeep : theme.inkMuted,
+                        border: `1px solid ${isLocked ? theme.good : theme.line}`,
+                        fontFamily: theme.fontMono,
+                        fontSize: 11,
+                        letterSpacing: 2,
+                        cursor: 'pointer',
+                        transition: 'all 150ms ease',
+                        width: '100%',
+                      }}
+                    >
+                      {isLocked ? '✓ LOCKED' : '□ LOCK IN'}
+                    </button>
                   )}
 
                   {/* Team selector — host only */}
@@ -233,10 +302,9 @@ export function MpBattleConfig({ room, onLeave, onPhaseChange }: Props) {
 
       {/* Footer */}
       <div style={{ padding: '10px 36px', borderTop: `1px solid ${theme.lineSoft}`, display: 'flex', gap: 24, fontFamily: theme.fontMono, fontSize: 9, color: theme.inkMuted, letterSpacing: 2 }}>
-        <span>CLICK PORTRAIT TO CYCLE GUILD</span>
-        {isHost && <span>CLICK TYPE TO TOGGLE CPU/OFF</span>}
-        <span>{activeCount} ACTIVE SLOTS</span>
-        <span>ESC LEAVE</span>
+        <span>TAP PORTRAIT TO CYCLE · LOCK IN TO CONFIRM</span>
+        {isHost && <span>TAP TYPE TO TOGGLE CPU/OFF</span>}
+        <span>{activeSlots.filter(s => s.locked).length}/{activeCount} LOCKED</span>
       </div>
     </div>
   );
