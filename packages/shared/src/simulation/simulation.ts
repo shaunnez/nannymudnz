@@ -5,7 +5,7 @@ import type {
 } from './types';
 import { getGuild, DRUID_WOLF_ABILITIES, DRUID_WOLF_RMB } from './guildData';
 import { makeRng } from './rng';
-import { ENEMY_DEFS, STAGE_WAVES } from './enemyData';
+import { ENEMY_DEFS, STAGE_WAVES, LEVEL_STAT_MULT } from './enemyData';
 import {
   PLAYER_SPAWN_X, PLAYER_SPAWN_Y, ENEMY_SPAWN_Y_RANGE,
   DOUBLE_TAP_MS, COMBO_ATTACK_WINDOW_MS, KNOCKDOWN_THRESHOLD,
@@ -171,6 +171,74 @@ export function createEnemyActor(kind: string, x: number, y: number, state: SimS
       lungeMs: 0,
     },
     bossPhase: 0,
+    summonedByPlayer: false,
+    isAlive: true,
+    deathTimeMs: 0,
+    score: 0,
+  };
+}
+
+export function createGuildEnemyActor(
+  guildId: GuildId,
+  x: number,
+  y: number,
+  state: SimState,
+  difficulty: number = 3,
+): Actor {
+  const guild = getGuild(guildId);
+  return {
+    id: `actor_${state.nextActorId++}`,
+    kind: guildId as ActorKind,
+    team: 'enemy',
+    x,
+    y,
+    z: 0,
+    vx: 0,
+    vy: 0,
+    vz: 0,
+    facing: -1,
+    width: 40,
+    height: 60,
+    hp: guild.hpMax,
+    hpMax: guild.hpMax,
+    hpDark: guild.hpMax,
+    mp: guild.resource.startValue,
+    mpMax: guild.resource.max,
+    armor: guild.armor,
+    magicResist: guild.magicResist,
+    moveSpeed: guild.moveSpeed,
+    stats: { ...guild.stats },
+    statusEffects: [],
+    animationId: 'idle',
+    animationFrame: 0,
+    animationTimeMs: 0,
+    state: 'idle',
+    stateTimeMs: 0,
+    isPlayer: false,
+    guildId,
+    abilityCooldowns: new Map(),
+    rmbCooldown: 0,
+    comboHits: 0,
+    lastAttackTimeMs: 0,
+    knockdownTimeMs: 0,
+    getupTimeMs: 0,
+    invulnerableMs: 0,
+    heldPickup: null,
+    aiState: {
+      behavior: 'none',
+      targetId: null,
+      lastActionMs: state.rng() * 600,
+      retreating: false,
+      packRole: null,
+      phase: 0,
+      patrolDir: 1,
+      leapCooldown: 0,
+      windupActive: false,
+      windupTimeMs: 0,
+      lungeMs: 0,
+    },
+    bossPhase: 0,
+    aiDifficulty: difficulty,
     summonedByPlayer: false,
     isAlive: true,
     deathTimeMs: 0,
@@ -1274,6 +1342,11 @@ export function tickBossPhases(state: SimState, actor: Actor, def: EnemyDef): vo
   });
 }
 
+const BOSS_KINDS = new Set<string>([
+  'bandit_king', 'bandit_king_ii', 'giant_blue_wolf', 'vampire_lord',
+  'cult_high_priest', 'elder_druid', 'plague_darkmage', 'warlord', 'shadow_master',
+]);
+
 function tickWaves(state: SimState): void {
   for (let i = 0; i < state.waves.length; i++) {
     const wave = state.waves[i];
@@ -1303,16 +1376,27 @@ function tickWaves(state: SimState): void {
         for (let j = 0; j < spawn.count; j++) {
           const spawnX = state.player.x + 300 + j * 80;
           const spawnY = ENEMY_SPAWN_Y_RANGE[0] + state.rng() * (ENEMY_SPAWN_Y_RANGE[1] - ENEMY_SPAWN_Y_RANGE[0]);
+          const mult = LEVEL_STAT_MULT(state.stageLevel ?? 1);
 
-          if (spawn.kind === 'bandit_king') {
-            state.bossSpawned = true;
+          if ('guild' in spawn) {
+            const actor = createGuildEnemyActor(spawn.guild, spawnX, spawnY, state, spawn.difficulty);
+            actor.hpMax = Math.round(actor.hpMax * mult.hpMult);
+            actor.hp = actor.hpMax;
+            actor.hpDark = actor.hpMax;
+            state.enemies.push(actor);
+          } else {
+            if (BOSS_KINDS.has(spawn.kind)) {
+              state.bossSpawned = true;
+            }
+            const enemy = createEnemyActor(spawn.kind, spawnX, spawnY, state);
+            enemy.hpMax = Math.round(enemy.hpMax * mult.hpMult);
+            enemy.hp = enemy.hpMax;
+            enemy.hpDark = enemy.hpMax;
+            if (spawn.kind === 'bandit_king') {
+              enemy.stats = { STR: 14, DEX: 10, CON: 18, INT: 8, WIS: 8, CHA: 8 };
+            }
+            state.enemies.push(enemy);
           }
-
-          const enemy = createEnemyActor(spawn.kind, spawnX, spawnY, state);
-          if (spawn.kind === 'bandit_king') {
-            enemy.stats = { STR: 14, DEX: 10, CON: 18, INT: 8, WIS: 8, CHA: 8 };
-          }
-          state.enemies.push(enemy);
         }
       }
       break;
