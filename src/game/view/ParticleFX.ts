@@ -2,6 +2,19 @@ import Phaser from 'phaser';
 import type { VFXEvent } from '@nannymud/shared/simulation/types';
 import { DEPTH_SCALE, worldYToScreenY, getScreenYBand, type ScreenYBand } from '../constants';
 import { spawnGuildVfx } from './VfxRegistry';
+import { spawnEffectVfx } from './EffectsRegistry';
+import { readUseNewVfx } from '../../state/useDevSettings';
+
+const SLASH_KEYS = ['slash_1','slash_2','slash_3','slash_4','slash_5','slash_6','slash_7','slash_8','slash_9','slash_10'] as const;
+const EXPLOSION_KEYS = ['explosion_1','explosion_2','explosion_3','explosion_5','explosion_6','explosion_8','explosion_9','explosion_10'] as const;
+
+function randomSlashKey(): string {
+  return SLASH_KEYS[Math.floor(Math.random() * SLASH_KEYS.length)];
+}
+
+function randomExplosionKey(): string {
+  return EXPLOSION_KEYS[Math.floor(Math.random() * EXPLOSION_KEYS.length)];
+}
 
 /**
  * Consumes per-tick VFXEvents emitted by the simulation and spawns short-lived
@@ -204,6 +217,7 @@ function spawnBlinkTrail(
 
 export function consumeVfxEvents(scene: Phaser.Scene, events: VFXEvent[]): void {
   const band = getScreenYBand(scene);
+  const newVfx = readUseNewVfx();
   for (const event of events) {
     const { x, y } = worldCoords(event, band);
     const colorInt = hexToInt(event.color);
@@ -215,23 +229,31 @@ export function consumeVfxEvents(scene: Phaser.Scene, events: VFXEvent[]): void 
         break;
 
       case 'hit_spark': {
-        for (let i = 0; i < 6; i++) {
-          const angle = (i / 6) * Math.PI * 2 + Math.random() * 0.5;
-          const speed = 80 + Math.random() * 120;
-          const radius = 2 + Math.random() * 3;
-          spawnBurstSpark(scene, x, y, angle, speed, radius, colorInt, 1, 300);
+        if (newVfx) {
+          spawnEffectVfx(scene, randomSlashKey(), x, y, event.facing ?? 1);
+        } else {
+          for (let i = 0; i < 6; i++) {
+            const angle = (i / 6) * Math.PI * 2 + Math.random() * 0.5;
+            const speed = 80 + Math.random() * 120;
+            const radius = 2 + Math.random() * 3;
+            spawnBurstSpark(scene, x, y, angle, speed, radius, colorInt, 1, 300);
+          }
         }
         break;
       }
 
       case 'aoe_pop': {
-        const r = event.radius || 60;
-        spawnExpandingRing(scene, x, y, r, 1.0, colorInt, 0.6, 0.2, 3, false, 400);
-        for (let i = 0; i < 12; i++) {
-          const angle = (i / 12) * Math.PI * 2;
-          const rx = x + Math.cos(angle) * r;
-          const ry = y + Math.sin(angle) * r * 0.5;
-          spawnBurstSpark(scene, rx, ry, angle, 40, 3, colorInt, 0.8, 300);
+        if (newVfx) {
+          spawnEffectVfx(scene, randomExplosionKey(), x, y, 1);
+        } else {
+          const r = event.radius || 60;
+          spawnExpandingRing(scene, x, y, r, 1.0, colorInt, 0.6, 0.2, 3, false, 400);
+          for (let i = 0; i < 12; i++) {
+            const angle = (i / 12) * Math.PI * 2;
+            const rx = x + Math.cos(angle) * r;
+            const ry = y + Math.sin(angle) * r * 0.5;
+            spawnBurstSpark(scene, rx, ry, angle, 40, 3, colorInt, 0.8, 300);
+          }
         }
         break;
       }
