@@ -8,10 +8,15 @@ interface Props {
   children: ReactNode;
 }
 
+function measure() {
+  return { w: window.innerWidth, h: window.innerHeight };
+}
+
 export function ScalingFrame({ children }: Props) {
   const rootRef = useRef<HTMLDivElement>(null);
   const wasFullscreenRef = useRef(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [dims, setDims] = useState(measure);
 
   const toggle = () => {
     const el = rootRef.current;
@@ -40,6 +45,16 @@ export function ScalingFrame({ children }: Props) {
   }, []);
 
   useEffect(() => {
+    let t: ReturnType<typeof setTimeout>;
+    const onResize = () => {
+      clearTimeout(t);
+      t = setTimeout(() => setDims(measure()), 150);
+    };
+    window.addEventListener('resize', onResize);
+    return () => { window.removeEventListener('resize', onResize); clearTimeout(t); };
+  }, []);
+
+  useEffect(() => {
     let fullscreenKey = loadKeyBindings().fullscreen;
     const refresh = () => { fullscreenKey = loadKeyBindings().fullscreen; };
     const onKey = (e: KeyboardEvent) => {
@@ -59,33 +74,17 @@ export function ScalingFrame({ children }: Props) {
     };
   }, []);
 
+  const { w, h } = dims;
+  const gameW = Math.min(w, h * 16 / 9);
+  const gameH = Math.min(h, w * 9 / 16);
+
   return (
     <FullscreenContext.Provider value={{ isFullscreen, toggle }}>
-      <div ref={rootRef} style={outerStyle}>
-        <div style={innerStyle}>
+      <div ref={rootRef} style={{ width: w, height: h, background: '#000', display: 'flex', justifyContent: 'center', alignItems: 'center', overflow: 'hidden', margin: 0 }}>
+        <div style={{ width: gameW, height: gameH, background: '#0f172a', position: 'relative', overflow: 'hidden' }}>
           {children}
         </div>
       </div>
     </FullscreenContext.Provider>
   );
 }
-
-const outerStyle: React.CSSProperties = {
-  width: '100vw',
-  height: '100dvh',
-  background: '#000',
-  display: 'flex',
-  justifyContent: 'center',
-  alignItems: 'center',
-  overflow: 'hidden',
-  margin: 0,
-};
-
-const innerStyle: React.CSSProperties = {
-  aspectRatio: '16 / 9',
-  width: 'min(100vw, calc(100vh * 16 / 9))',
-  height: 'min(100vh, calc(100vw * 9 / 16))',
-  background: '#0f172a',
-  position: 'relative',
-  overflow: 'hidden',
-};
