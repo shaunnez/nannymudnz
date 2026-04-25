@@ -58,6 +58,7 @@ export class SimStateSchema extends Schema {
   @type({ array: LogEntrySchema }) combatLog: LogEntry[] =
     new ArraySchema<LogEntrySchema>() as unknown as LogEntry[];
   @type('number') nextLogId!: number;
+  @type('number') battleTimer!: number;
 
   // Untracked: per-player server-side input / combo buffers. The server uses
   // these authoritatively; clients only ever see their own local input state

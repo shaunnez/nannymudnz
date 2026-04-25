@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { theme, Btn, Chip, SectionLabel } from '../ui';
 import { loadKeyBindings, saveKeyBindings, DEFAULT_BINDINGS, type KeyBindings } from '../input/keyBindings';
 import { useDevSettings } from '../state/useDevSettings';
+import { useIsMobile } from '../hooks/useIsMobile';
 
 const VOL_KEY = 'nannymud_volume';
 
@@ -63,6 +64,7 @@ export function SettingsScreen({
   const [bindings, setBindings] = useState<KeyBindings>(loadKeyBindings);
   const [rebinding, setRebinding] = useState<keyof KeyBindings | null>(null);
   const { enemyHpScale, setEnemyHpScale } = useDevSettings();
+  const mobile = useIsMobile();
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -109,74 +111,76 @@ export function SettingsScreen({
           </span>
         </div>
         <div style={{ justifySelf: 'end' }}>
-          <Btn size="md" onClick={resetBindings}>RESET KEYS</Btn>
+          {!mobile && <Btn size="md" onClick={resetBindings}>RESET KEYS</Btn>}
         </div>
       </div>
 
-      <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1fr 1fr', overflow: 'hidden' }}>
-        
-        <div
-          style={{
-            padding: 32,
-            borderLeft: `1px solid ${theme.lineSoft}`,
-            overflow: 'auto',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 14,
-          }}
-        >
-          <SectionLabel kicker="CONTROLS" right={rebinding ? 'PRESS A KEY · ESC CANCELS' : 'CLICK TO REBIND'}>
-            Keyboard
-          </SectionLabel>
+      <div style={{ flex: 1, display: 'grid', gridTemplateColumns: mobile ? '1fr' : '1fr 1fr', overflow: 'hidden' }}>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            {BIND_ORDER.map((k) => {
-              const isRebinding = rebinding === k;
-              return (
-                <div
-                  key={k}
-                  onClick={() => setRebinding(k)}
-                  style={{
-                    display: 'grid',
-                    gridTemplateColumns: '1fr auto 130px',
-                    gap: 12,
-                    alignItems: 'center',
-                    padding: '10px 14px',
-                    background: isRebinding ? `${theme.accent}16` : theme.panel,
-                    border: `1px solid ${isRebinding ? theme.accent : theme.lineSoft}`,
-                    cursor: 'pointer',
-                  }}
-                >
-                  <div>
-                    <div style={{ fontFamily: theme.fontDisplay, fontSize: 15, color: theme.ink }}>
-                      {BIND_LABELS[k]}
-                    </div>
-                    <div style={{ fontFamily: theme.fontMono, fontSize: 9, color: theme.inkMuted, letterSpacing: 2 }}>
-                      {k.toUpperCase()}
-                    </div>
-                  </div>
-                  <Chip mono tone="warn">{bindings[k] !== DEFAULT_BINDINGS[k] ? 'Custom' : 'Default'}</Chip>
+        {!mobile && (
+          <div
+            style={{
+              padding: 32,
+              borderLeft: `1px solid ${theme.lineSoft}`,
+              overflow: 'auto',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 14,
+            }}
+          >
+            <SectionLabel kicker="CONTROLS" right={rebinding ? 'PRESS A KEY · ESC CANCELS' : 'CLICK TO REBIND'}>
+              Keyboard
+            </SectionLabel>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {BIND_ORDER.map((k) => {
+                const isRebinding = rebinding === k;
+                return (
                   <div
+                    key={k}
+                    onClick={() => setRebinding(k)}
                     style={{
-                      justifySelf: 'end',
-                      padding: '6px 12px',
-                      minWidth: 88,
-                      textAlign: 'center',
-                      background: theme.bgDeep,
-                      border: `1px solid ${isRebinding ? theme.accent : theme.line}`,
-                      fontFamily: theme.fontMono,
-                      fontSize: 12,
-                      color: isRebinding ? theme.accent : theme.ink,
-                      letterSpacing: 2,
+                      display: 'grid',
+                      gridTemplateColumns: '1fr auto 130px',
+                      gap: 12,
+                      alignItems: 'center',
+                      padding: '10px 14px',
+                      background: isRebinding ? `${theme.accent}16` : theme.panel,
+                      border: `1px solid ${isRebinding ? theme.accent : theme.lineSoft}`,
+                      cursor: 'pointer',
                     }}
                   >
-                    {isRebinding ? '···' : formatKey(bindings[k])}
+                    <div>
+                      <div style={{ fontFamily: theme.fontDisplay, fontSize: 15, color: theme.ink }}>
+                        {BIND_LABELS[k]}
+                      </div>
+                      <div style={{ fontFamily: theme.fontMono, fontSize: 9, color: theme.inkMuted, letterSpacing: 2 }}>
+                        {k.toUpperCase()}
+                      </div>
+                    </div>
+                    <Chip mono tone="warn">{bindings[k] !== DEFAULT_BINDINGS[k] ? 'Custom' : 'Default'}</Chip>
+                    <div
+                      style={{
+                        justifySelf: 'end',
+                        padding: '6px 12px',
+                        minWidth: 88,
+                        textAlign: 'center',
+                        background: theme.bgDeep,
+                        border: `1px solid ${isRebinding ? theme.accent : theme.line}`,
+                        fontFamily: theme.fontMono,
+                        fontSize: 12,
+                        color: isRebinding ? theme.accent : theme.ink,
+                        letterSpacing: 2,
+                      }}
+                    >
+                      {isRebinding ? '···' : formatKey(bindings[k])}
+                    </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
-        </div>
+        )}
         <div style={{ padding: 32, display: 'flex', flexDirection: 'column', gap: 22, overflow: 'auto' }}>
           <SectionLabel kicker="AUDIO" right={`${Math.round(volume * 100)}%`}>
             Master volume
@@ -267,7 +271,7 @@ export function SettingsScreen({
           letterSpacing: 2,
         }}
       >
-        <span>CLICK A KEY TO REBIND</span>
+        {!mobile && <span>CLICK A KEY TO REBIND</span>}
         <span>ESC MENU</span>
       </div>
     </div>

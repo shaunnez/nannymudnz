@@ -114,7 +114,9 @@
       "WebFetch(domain:opengameart.org)",
       "WebFetch(domain:kenney.nl)",
       "WebFetch(domain:craftpix.net)",
-      "Bash(npx eslint *)"
+      "Bash(npx eslint *)",
+      "Bash(npx kill-port *)",
+      "Bash(taskkill /F /IM node.exe)"
     ]
   }
 }

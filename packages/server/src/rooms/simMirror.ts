@@ -59,6 +59,7 @@ export function mirrorSimToSchema(src: SimState, dst: SimStateSchema): void {
   dst.bloodtallyDecayMs = src.bloodtallyDecayMs;
   dst.mode = src.mode;
   dst.nextLogId = src.nextLogId;
+  dst.battleTimer = src.battleTimer ?? 0;
 
   mirrorActor(src.player, dst.player as ActorSchema);
 

@@ -37,7 +37,7 @@ export function dispatchTouchJoystick(state: TouchJoystickState): void {
 
 const TOUCH_BUTTON_EVENT = 'nannymud:touch-button';
 
-export function dispatchTouchButton(action: 'attack' | 'block', pressed: boolean): void {
+export function dispatchTouchButton(action: 'attack' | 'block' | 'grab' | 'jump', pressed: boolean): void {
   window.dispatchEvent(new CustomEvent(TOUCH_BUTTON_EVENT, { detail: { action, pressed } }));
 }
 
@@ -59,6 +59,8 @@ export class PhaserInputAdapter {
 
   private touchAttack = false;
   private touchBlock = false;
+  private touchGrab = false;
+  private touchJump = false;
 
   private keyboard: Phaser.Input.Keyboard.KeyboardPlugin | undefined;
   private windowBlurHandler: (() => void) | undefined;
@@ -116,15 +118,20 @@ export class PhaserInputAdapter {
   };
 
   private onTouchButton = (e: Event): void => {
-    const { action, pressed } = (e as CustomEvent<{ action: 'attack' | 'block'; pressed: boolean }>).detail;
-    const key = action === 'attack' ? this.bindings.attack : this.bindings.block;
+    const { action, pressed } = (e as CustomEvent<{ action: 'attack' | 'block' | 'grab' | 'jump'; pressed: boolean }>).detail;
+    const keyMap = { attack: this.bindings.attack, block: this.bindings.block, grab: this.bindings.grab, jump: this.bindings.jump };
+    const key = keyMap[action];
     if (pressed) {
       this.justPressed.add(key);
       if (action === 'attack') this.touchAttack = true;
-      else this.touchBlock = true;
+      else if (action === 'block') this.touchBlock = true;
+      else if (action === 'grab') this.touchGrab = true;
+      else if (action === 'jump') this.touchJump = true;
     } else {
       if (action === 'attack') this.touchAttack = false;
-      else this.touchBlock = false;
+      else if (action === 'block') this.touchBlock = false;
+      else if (action === 'grab') this.touchGrab = false;
+      else if (action === 'jump') this.touchJump = false;
     }
   };
 
@@ -173,14 +180,14 @@ export class PhaserInputAdapter {
       right: this.keys.has(rightKey) || j.right,
       up: this.keys.has(b.up) || j.up,
       down: this.keys.has(b.down) || j.down,
-      jump: this.keys.has(b.jump),
+      jump: this.keys.has(b.jump) || this.touchJump,
       attack: this.keys.has(b.attack) || this.touchAttack,
       block: this.keys.has(b.block) || this.touchBlock,
-      grab: this.keys.has(b.grab),
+      grab: this.keys.has(b.grab) || this.touchGrab,
       pause: this.keys.has(b.pause),
       leftJustPressed,
       rightJustPressed,
-      jumpJustPressed: this.justPressed.has(b.jump),
+      jumpJustPressed: this.justPressed.has(b.jump) || this.touchJump,
       attackJustPressed: this.justPressed.has(b.attack),
       blockJustPressed: this.justPressed.has(b.block),
       grabJustPressed: this.justPressed.has(b.grab),

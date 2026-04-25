@@ -529,10 +529,17 @@ export class MatchRoom extends Room<MatchState> {
       this.broadcast('vfx', this.plainSim.vfxEvents);
     }
 
-    // Propagate sim match-end into MatchState.phase. The sim flips
-    // `round.phase` to 'matchOver' after the best-of resolves; until we mirror
-    // that into 'results' here, clients stay stuck on the battle screen.
-    if (this.plainSim.round?.phase === 'matchOver') {
+    // Propagate sim match-end into MatchState.phase.
+    if (this.state.gameMode === 'battle') {
+      // Battle mode: sim phase flips to 'victory'/'defeat' when timer expires or all
+      // combatants on one side are eliminated.
+      const simPhase = this.plainSim.phase;
+      if (simPhase === 'victory' || simPhase === 'defeat') {
+        this.state.phase = 'results';
+        this.broadcast('match_result', { matchStats: this.plainSim.matchStats });
+      }
+    } else if (this.plainSim.round?.phase === 'matchOver') {
+      // VS mode: best-of rounds resolved.
       const winner = this.plainSim.round.matchWinner;
       const joinerId2 = this.getJoinerId();
       if (winner === 'p1') this.state.matchWinnerSessionId = this.state.hostSessionId;

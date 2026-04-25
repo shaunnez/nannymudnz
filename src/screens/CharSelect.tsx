@@ -190,7 +190,7 @@ export function CharSelect({ mode, initialP1, initialP2, onBack, onReady }: Prop
               const acc = guildAccent(meta.hue);
               const p1Here = cursors.p1 === i;
               const cpuHere = hasOpponent && cursors.cpu === i;
-              const isActiveTile = activeSlot === 'p1' ? p1Here : cpuHere;
+              const isActiveTile = activeSlot === 'p1' ? p1Here : (activeSlot === 'cpu' && cpuHere);
               const p1PickedHere = picks.p1 === g.id;
               const cpuPickedHere = hasOpponent && picks.cpu === g.id;
               const outlineColor = p1PickedHere ? theme.accent : cpuPickedHere ? theme.warn : null;
@@ -214,7 +214,7 @@ export function CharSelect({ mode, initialP1, initialP2, onBack, onReady }: Prop
                     outlineOffset: 4,
                   }}
                 >
-                  <GuildMonogram guildId={g.id} size={tileSize} selected={p1Here || cpuHere || p1PickedHere || cpuPickedHere} />
+                  <GuildMonogram guildId={g.id} size={tileSize} selected={p1Here || (activeSlot === 'cpu' && cpuHere) || p1PickedHere || cpuPickedHere} />
                   <div
                     style={{
                       textAlign: 'center',
@@ -244,7 +244,7 @@ export function CharSelect({ mode, initialP1, initialP2, onBack, onReady }: Prop
                       ◆ P1{p1PickedHere ? '·✓' : ''}
                     </div>
                   )}
-                  {(cpuHere || cpuPickedHere) && (
+                  {((activeSlot === 'cpu' && cpuHere) || cpuPickedHere) && (
                     <div
                       style={{
                         position: 'absolute',

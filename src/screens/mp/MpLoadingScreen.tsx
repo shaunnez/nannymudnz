@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import type { Room } from '@colyseus/sdk';
 import type { MatchState, MatchPhase } from '@nannymud/shared';
 import type { GuildId } from '@nannymud/shared/simulation/types';
@@ -19,12 +19,18 @@ interface Props {
 
 export function MpLoadingScreen({ room, onPhaseChange }: Props) {
   const state = useMatchState(room);
+  const [pulse, setPulse] = useState(0);
 
   usePhaseBounce(state?.phase ?? 'loading', 'loading', onPhaseChange);
 
   useEffect(() => {
     room.send('ready_to_start', {});
   }, [room]);
+
+  useEffect(() => {
+    const id = setInterval(() => setPulse(p => (p + 1) % 3), 500);
+    return () => clearInterval(id);
+  }, []);
 
   if (!state) return <MpLoading />;
 
@@ -35,6 +41,7 @@ export function MpLoadingScreen({ room, onPhaseChange }: Props) {
     const activeSlots = [...state.battleSlots].filter(s => s.slotType !== 'off');
     const stage = STAGES_BY_ID[stageId];
     const accent = `oklch(0.72 0.18 ${stage.hue})`;
+    const dots = '.'.repeat(pulse + 1);
     return (
       <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', background: `linear-gradient(180deg, ${accent}22, ${theme.bgDeep} 70%)` }}>
         {/* Header */}
@@ -75,9 +82,17 @@ export function MpLoadingScreen({ room, onPhaseChange }: Props) {
           })}
         </div>
 
-        {/* Tip */}
+        {/* Animated loading bar + tip */}
         <div style={{ padding: '14px 40px 20px', borderTop: `1px solid ${theme.lineSoft}`, background: theme.bgDeep }}>
-          <div style={{ fontFamily: theme.fontMono, fontSize: 10, color: theme.inkMuted, letterSpacing: 3, marginBottom: 4 }}>▸ ADVICE FROM THE WIZARDS</div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+            <div style={{ fontFamily: theme.fontMono, fontSize: 10, color: theme.inkMuted, letterSpacing: 3 }}>▸ ADVICE FROM THE WIZARDS</div>
+            <div style={{ fontFamily: theme.fontMono, fontSize: 10, color: accent, letterSpacing: 2, minWidth: 80, textAlign: 'right' }}>
+              LOADING{dots}
+            </div>
+          </div>
+          <div style={{ height: 2, background: theme.lineSoft, borderRadius: 1, overflow: 'hidden', marginBottom: 8 }}>
+            <div style={{ height: '100%', background: accent, width: `${(pulse + 1) * 33}%`, transition: 'width 450ms ease' }} />
+          </div>
           <div style={{ fontFamily: theme.fontBody, fontSize: 13, color: theme.inkDim, fontStyle: 'italic' }}>{TIPS[0]}</div>
         </div>
       </div>

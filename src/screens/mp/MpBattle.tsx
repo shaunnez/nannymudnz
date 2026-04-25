@@ -1,6 +1,6 @@
 import type { Room } from '@colyseus/sdk';
 import type { MatchState, MatchPhase } from '@nannymud/shared';
-import type { GuildId } from '@nannymud/shared/simulation/types';
+import type { GuildId, BattleSlot, BattleTeam } from '@nannymud/shared/simulation/types';
 import { GameScreen } from '../GameScreen';
 import { useMatchState, getMatchSlots } from './useMatchState';
 import { usePhaseBounce } from './usePhaseBounce';
@@ -13,12 +13,6 @@ interface Props {
   onPhaseChange: (phase: MatchPhase) => void;
 }
 
-/**
- * Bridges the Colyseus match room into the Phaser-hosting GameScreen.
- * Derives local/opponent guilds + stage from the synced MatchState so the HUD
- * and boot config render the right characters, then hands control to GameScreen
- * which runs in `netMode === 'mp'`.
- */
 export function MpBattle({ room, animateHud, onLeave, onPhaseChange }: Props) {
   const state = useMatchState(room);
 
@@ -26,8 +20,17 @@ export function MpBattle({ room, animateHud, onLeave, onPhaseChange }: Props) {
 
   if (!state) return <MpLoading />;
 
-  const { localSlot, opponentSlot } = getMatchSlots(state, room.sessionId);
+  const isBattle = state.gameMode === 'battle';
 
+  const battleSlots: BattleSlot[] | undefined = isBattle
+    ? [...state.battleSlots].map(s => ({
+        guildId: (s.guildId || 'adventurer') as GuildId,
+        type: s.slotType as 'human' | 'cpu' | 'off',
+        team: (s.team as BattleTeam) || null,
+      }))
+    : undefined;
+
+  const { localSlot, opponentSlot } = getMatchSlots(state, room.sessionId);
   const p1 = (localSlot?.guildId as GuildId | undefined) ?? 'adventurer';
   const p2 = (opponentSlot?.guildId as GuildId | undefined) ?? 'knight';
   const stageId = state.stageId || 'assembly';
@@ -40,11 +43,11 @@ export function MpBattle({ room, animateHud, onLeave, onPhaseChange }: Props) {
       stageId={stageId}
       animateHud={animateHud}
       matchRoom={room}
-      onVictory={() => {
-        // In MP the server drives phase transitions; victory handoff is the
-        // server's job. This is a no-op — results will flow via onPhaseChange.
-      }}
+      battleMode={isBattle}
+      battleSlots={battleSlots}
+      onVictory={() => {}}
       onDefeat={() => {}}
+      onBattleEnd={() => {}}
       onQuit={onLeave}
     />
   );
