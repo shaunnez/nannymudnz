@@ -16,6 +16,7 @@ import { HudOverlay } from './hud/HudOverlay';
 import { BattleHUD8 } from './BattleHUD8';
 import { STAGES } from '../data/stages';
 import type { StageId } from '../data/stages';
+import { unlockStage } from '../state/useStageProgress';
 
 interface Props {
   mode: SimMode;
@@ -91,6 +92,11 @@ export function GameScreen({
         } else if (onChampEndRef.current) {
           onChampEndRef.current(true);
         } else if (mode === 'story') {
+          const stageList = STAGES.map(s => s.id);
+          const currentIdx = stageList.indexOf(stageId as StageId);
+          if (currentIdx >= 0 && currentIdx < stageList.length - 1) {
+            unlockStage(stageList[currentIdx + 1]);
+          }
           setStoryVictoryScore(score);
         } else {
           onVictoryRef.current(score, matchStats, battStats);

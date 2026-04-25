@@ -38,12 +38,18 @@ export interface StatusEffect {
   lastTickMs?: number;
 }
 
+export type StageId =
+  | 'assembly' | 'market' | 'kitchen' | 'tower' | 'grove'
+  | 'catacombs' | 'throne' | 'docks' | 'rooftops';
+
 export type ActorKind =
   | 'adventurer' | 'knight' | 'mage' | 'druid' | 'hunter' | 'monk'
   | 'viking' | 'prophet' | 'vampire' | 'cultist' | 'champion' | 'darkmage'
   | 'chef' | 'leper' | 'master'
   | 'plains_bandit' | 'bandit_archer' | 'wolf' | 'bandit_brute' | 'bandit_king'
-  | 'wolf_pet' | 'drowned_spawn' | 'rotting_husk' | 'wolf_form';
+  | 'wolf_pet' | 'drowned_spawn' | 'rotting_husk' | 'wolf_form'
+  | 'giant_blue_wolf' | 'vampire_lord' | 'cult_high_priest' | 'elder_druid'
+  | 'plague_darkmage' | 'warlord' | 'shadow_master' | 'bandit_king_ii';
 
 export type AnimationId =
   | 'idle' | 'walk' | 'run' | 'jump' | 'fall' | 'land'
@@ -168,6 +174,7 @@ export interface EnemyDef {
   isRanged: boolean;
   projectileSpeed: number;
   projectileRange: number;
+  phases?: BossPhase[];
 }
 
 export interface BossPhase {
@@ -220,6 +227,9 @@ export interface Actor {
   heldPickup: Pickup | null;
   aiState: AIState;
   bossPhase: number;
+  attackSpeedMult?: number;
+  damageMult?: number;
+  aiDifficulty?: number;
   summonedByPlayer: boolean;
   summonedBy?: string;
   petAiMode?: 'aggressive' | 'defensive' | 'passive';
@@ -314,7 +324,8 @@ export type VFXEventType =
   | 'channel_pulse'
   | 'aura_pulse'
   | 'zone_pulse'
-  | 'summon_spawn';
+  | 'summon_spawn'
+  | 'boss_phase';
 
 export interface VFXEvent {
   type: VFXEventType;
@@ -338,6 +349,8 @@ export interface VFXEvent {
   ownerId?: string;
   targetId?: string;
   assetKey?: string;
+  actorId?: string;
+  phase?: number;
 }
 
 export type LogTag = 'P1' | 'P2' | 'SYS';
@@ -379,12 +392,9 @@ export interface MatchStats {
   p2: ActorMatchStats;
 }
 
-export interface WaveEnemy {
-  kind: ActorKind;
-  count: number;
-  offsetX?: number;
-  offsetY?: number;
-}
+export type WaveEnemy =
+  | { kind: ActorKind; count: number; offsetX?: number; offsetY?: number }
+  | { guild: GuildId; count: number; difficulty: number };
 
 export interface Wave {
   triggerX: number;
@@ -450,6 +460,7 @@ export interface SimState {
   battleTimer: number;
   battleDifficulty: number;
   battStats: Record<string, BattStatEntry> | null;
+  stageLevel?: number;
 }
 
 export interface InputState {

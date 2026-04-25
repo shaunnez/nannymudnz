@@ -1,11 +1,11 @@
 import type {
   SimState, Actor, InputState, GuildId, Projectile, DamageType,
   AbilityDef, ActorKind, AnimationId, PlayerController, StatusEffectType, VFXEvent, GroundZone,
-  MatchStats,
+  MatchStats, StageId, EnemyDef,
 } from './types';
 import { getGuild, DRUID_WOLF_ABILITIES, DRUID_WOLF_RMB } from './guildData';
 import { makeRng } from './rng';
-import { ENEMY_DEFS, STAGE_WAVES } from './enemyData';
+import { ENEMY_DEFS, STAGE_WAVES, LEVEL_STAT_MULT } from './enemyData';
 import {
   PLAYER_SPAWN_X, PLAYER_SPAWN_Y, ENEMY_SPAWN_Y_RANGE,
   DOUBLE_TAP_MS, COMBO_ATTACK_WINDOW_MS, KNOCKDOWN_THRESHOLD,
@@ -178,8 +178,91 @@ export function createEnemyActor(kind: string, x: number, y: number, state: SimS
   };
 }
 
-// eslint-disable-next-line no-restricted-globals -- seed is chosen once at boot, outside the tick loop
-export function createInitialState(guildId: GuildId, seed: number = Date.now()): SimState {
+export function createGuildEnemyActor(
+  guildId: GuildId,
+  x: number,
+  y: number,
+  state: SimState,
+  difficulty: number = 3,
+): Actor {
+  const guild = getGuild(guildId);
+  return {
+    id: `actor_${state.nextActorId++}`,
+    kind: guildId as ActorKind,
+    team: 'enemy',
+    x,
+    y,
+    z: 0,
+    vx: 0,
+    vy: 0,
+    vz: 0,
+    facing: -1,
+    width: 40,
+    height: 60,
+    hp: guild.hpMax,
+    hpMax: guild.hpMax,
+    hpDark: guild.hpMax,
+    mp: guild.resource.startValue,
+    mpMax: guild.resource.max,
+    armor: guild.armor,
+    magicResist: guild.magicResist,
+    moveSpeed: guild.moveSpeed,
+    stats: { ...guild.stats },
+    statusEffects: [],
+    animationId: 'idle',
+    animationFrame: 0,
+    animationTimeMs: 0,
+    state: 'idle',
+    stateTimeMs: 0,
+    isPlayer: false,
+    guildId,
+    abilityCooldowns: new Map(),
+    rmbCooldown: 0,
+    comboHits: 0,
+    lastAttackTimeMs: 0,
+    knockdownTimeMs: 0,
+    getupTimeMs: 0,
+    invulnerableMs: 0,
+    heldPickup: null,
+    aiState: {
+      behavior: 'none',
+      targetId: null,
+      lastActionMs: state.rng() * 600,
+      retreating: false,
+      packRole: null,
+      phase: 0,
+      patrolDir: 1,
+      leapCooldown: 0,
+      windupActive: false,
+      windupTimeMs: 0,
+      lungeMs: 0,
+    },
+    bossPhase: 0,
+    aiDifficulty: difficulty,
+    summonedByPlayer: false,
+    isAlive: true,
+    deathTimeMs: 0,
+    score: 0,
+  };
+}
+
+const STAGE_LEVELS: Record<StageId, number> = {
+  assembly: 1, market: 2, kitchen: 3, tower: 4, grove: 5,
+  catacombs: 6, throne: 7, docks: 8, rooftops: 9,
+};
+
+export function createInitialState(
+  guildId: GuildId,
+  stageIdOrSeed: StageId | number = 'assembly',
+  seed: number = Date.now(),  // eslint-disable-line no-restricted-globals -- seed chosen once at boot
+): SimState {
+  let resolvedStageId: StageId = 'assembly';
+  let resolvedSeed = seed;
+  if (typeof stageIdOrSeed === 'number') {
+    resolvedSeed = stageIdOrSeed;
+  } else {
+    resolvedStageId = stageIdOrSeed;
+  }
   return {
     tick: 0,
     timeMs: 0,
@@ -190,15 +273,15 @@ export function createInitialState(guildId: GuildId, seed: number = Date.now()):
     projectiles: [],
     groundZones: [],
     vfxEvents: [],
-    waves: STAGE_WAVES.map(w => ({ ...w, enemies: w.enemies.map(e => ({ ...e })), triggered: false, cleared: false })),
+    waves: STAGE_WAVES[resolvedStageId].map(w => ({ ...w, enemies: w.enemies.map(e => ({ ...e })), triggered: false, cleared: false })),
     currentWave: -1,
     cameraX: 0,
     cameraLocked: false,
     phase: 'playing',
     bossSpawned: false,
     score: 0,
-    rngSeed: seed,
-    rng: makeRng(seed),
+    rngSeed: resolvedSeed,
+    rng: makeRng(resolvedSeed),
     nextActorId: 1,
     nextProjectileId: 1000,
     nextPickupId: 1,
@@ -218,6 +301,7 @@ export function createInitialState(guildId: GuildId, seed: number = Date.now()):
     battleTimer: 0,
     battleDifficulty: 2,
     battStats: null,
+    stageLevel: STAGE_LEVELS[resolvedStageId],
   };
 }
 
@@ -1227,6 +1311,41 @@ function tickHPRegen(actor: Actor, dtMs: number, inCombat: boolean): void {
   }
 }
 
+export function tickBossPhases(state: SimState, actor: Actor, def: EnemyDef): void {
+  if (!def.phases || def.phases.length === 0) return;
+  const nextPhase = def.phases[actor.bossPhase];
+  if (!nextPhase) return;
+  if (actor.hp / actor.hpMax >= nextPhase.hpThreshold) return;
+
+  actor.bossPhase += 1;
+  actor.attackSpeedMult = (actor.attackSpeedMult ?? 1) * nextPhase.attackSpeedMult;
+  actor.damageMult = (actor.damageMult ?? 1) * nextPhase.damageMult;
+
+  if (nextPhase.summons) {
+    for (const s of nextPhase.summons) {
+      for (let i = 0; i < s.count; i++) {
+        const spawnX = actor.x + (i % 2 === 0 ? -120 : 120) - i * 40;
+        const spawnY = actor.y + state.rng() * 60 - 30;
+        state.enemies.push(createEnemyActor(s.kind, spawnX, spawnY, state));
+      }
+    }
+  }
+
+  state.vfxEvents.push({
+    type: 'boss_phase',
+    color: '#ff4400',
+    x: actor.x,
+    y: actor.y,
+    actorId: actor.id,
+    phase: actor.bossPhase,
+  });
+}
+
+const BOSS_KINDS = new Set<string>([
+  'bandit_king', 'bandit_king_ii', 'giant_blue_wolf', 'vampire_lord',
+  'cult_high_priest', 'elder_druid', 'plague_darkmage', 'warlord', 'shadow_master',
+]);
+
 function tickWaves(state: SimState): void {
   for (let i = 0; i < state.waves.length; i++) {
     const wave = state.waves[i];
@@ -1256,16 +1375,27 @@ function tickWaves(state: SimState): void {
         for (let j = 0; j < spawn.count; j++) {
           const spawnX = state.player.x + 300 + j * 80;
           const spawnY = ENEMY_SPAWN_Y_RANGE[0] + state.rng() * (ENEMY_SPAWN_Y_RANGE[1] - ENEMY_SPAWN_Y_RANGE[0]);
+          const mult = LEVEL_STAT_MULT(state.stageLevel ?? 1);
 
-          if (spawn.kind === 'bandit_king') {
-            state.bossSpawned = true;
+          if ('guild' in spawn) {
+            const actor = createGuildEnemyActor(spawn.guild, spawnX, spawnY, state, spawn.difficulty);
+            actor.hpMax = Math.round(actor.hpMax * mult.hpMult);
+            actor.hp = actor.hpMax;
+            actor.hpDark = actor.hpMax;
+            state.enemies.push(actor);
+          } else {
+            if (BOSS_KINDS.has(spawn.kind)) {
+              state.bossSpawned = true;
+            }
+            const enemy = createEnemyActor(spawn.kind, spawnX, spawnY, state);
+            enemy.hpMax = Math.round(enemy.hpMax * mult.hpMult);
+            enemy.hp = enemy.hpMax;
+            enemy.hpDark = enemy.hpMax;
+            if (spawn.kind === 'bandit_king') {
+              enemy.stats = { STR: 14, DEX: 10, CON: 18, INT: 8, WIS: 8, CHA: 8 };
+            }
+            state.enemies.push(enemy);
           }
-
-          const enemy = createEnemyActor(spawn.kind, spawnX, spawnY, state);
-          if (spawn.kind === 'bandit_king') {
-            enemy.stats = { STR: 14, DEX: 10, CON: 18, INT: 8, WIS: 8, CHA: 8 };
-          }
-          state.enemies.push(enemy);
         }
       }
       break;
@@ -1853,6 +1983,11 @@ export function tickSimulation(
       const oppCtrl = getOrCreateController(state, enemy.id, createEmptyCpuInput());
       const cpuInput = synthesizeVsCpuInput(state, enemy, oppCtrl.input, dtMs, state.battleDifficulty);
       handlePlayerInput(state, cpuInput, oppCtrl, dtMs, enemy);
+    } else if (enemy.guildId !== null) {
+      // Story-mode guild actor: drive with VS CPU AI (same pipeline as Battle/VS modes)
+      const oppCtrl = getOrCreateController(state, enemy.id, createEmptyCpuInput());
+      const cpuInput = synthesizeVsCpuInput(state, enemy, oppCtrl.input, dtMs, enemy.aiDifficulty ?? 3);
+      handlePlayerInput(state, cpuInput, oppCtrl, dtMs, enemy);
     } else {
       tickAI(enemy, state, dtSec, state.vfxEvents);
       if (enemy.invulnerableMs > 0) {
@@ -1864,6 +1999,11 @@ export function tickSimulation(
     tickGetup(enemy, dtSec);
     tickStatusEffects(enemy, dtMs, state.vfxEvents);
     tickHPRegen(enemy, dtMs, true);
+    if (enemy.guildId !== null) {
+      tickPlayerResourceRegen(enemy, dtMs, true, state);
+    }
+    const enemyDef = ENEMY_DEFS[enemy.kind];
+    if (enemyDef) tickBossPhases(state, enemy, enemyDef);
   }
 
   for (const dead of deadEnemies) {
