@@ -110,8 +110,8 @@ export function BattleResultsScreen({ slots, battStats, playerWon, onRematch, on
                 </div>
                 <span style={{ fontFamily: theme.fontMono, fontSize: 13, color: theme.ink }}>{r.entry.kills}</span>
                 <span style={{ fontFamily: theme.fontMono, fontSize: 13, color: theme.inkDim }}>{r.entry.deaths}</span>
-                <span style={{ fontFamily: theme.fontMono, fontSize: 12, color: theme.inkDim }}>{r.entry.dmgDealt}</span>
-                <span style={{ fontFamily: theme.fontMono, fontSize: 12, color: theme.good }}>{r.entry.healing}</span>
+                <span style={{ fontFamily: theme.fontMono, fontSize: 12, color: theme.inkDim }}>{Math.round(r.entry.dmgDealt)}</span>
+                <span style={{ fontFamily: theme.fontMono, fontSize: 12, color: theme.good }}>{Math.round(r.entry.healing)}</span>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                   <div style={{ flex: 1, height: 5, background: theme.line, position: 'relative' }}>
                     <div style={{ position: 'absolute', inset: 0, width: `${(r.score / maxScore) * 100}%`, background: isWinner ? theme.accent : theme.inkDim }} />

@@ -103,7 +103,7 @@ function PlayerSlot({
   const guild = getGuild(actor.guildId!);
   const meta = GUILD_META[actor.guildId!];
   const accent = guildAccent(meta.hue);
-  const teamColor = side === 'left' ? theme.team1 : theme.team2;
+  const teamColor = side === 'left' ? theme.accent : theme.warn;
   const row = side === 'left' ? 'row' : 'row-reverse';
   const textAlign = side === 'left' ? 'left' : 'right';
 
