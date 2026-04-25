@@ -6,14 +6,9 @@ import { spawnEffectVfx } from './EffectsRegistry';
 import { readUseNewVfx } from '../../state/useDevSettings';
 
 const SLASH_KEYS = ['slash_1','slash_2','slash_3','slash_4','slash_5','slash_6','slash_7','slash_8','slash_9','slash_10'] as const;
-const EXPLOSION_KEYS = ['explosion_1','explosion_2','explosion_3','explosion_5','explosion_6','explosion_8','explosion_9','explosion_10'] as const;
 
 function randomSlashKey(): string {
   return SLASH_KEYS[Math.floor(Math.random() * SLASH_KEYS.length)];
-}
-
-function randomExplosionKey(): string {
-  return EXPLOSION_KEYS[Math.floor(Math.random() * EXPLOSION_KEYS.length)];
 }
 
 /**
@@ -243,17 +238,13 @@ export function consumeVfxEvents(scene: Phaser.Scene, events: VFXEvent[]): void 
       }
 
       case 'aoe_pop': {
-        if (newVfx) {
-          spawnEffectVfx(scene, randomExplosionKey(), x, y, 1);
-        } else {
-          const r = event.radius || 60;
-          spawnExpandingRing(scene, x, y, r, 1.0, colorInt, 0.6, 0.2, 3, false, 400);
-          for (let i = 0; i < 12; i++) {
-            const angle = (i / 12) * Math.PI * 2;
-            const rx = x + Math.cos(angle) * r;
-            const ry = y + Math.sin(angle) * r * 0.5;
-            spawnBurstSpark(scene, rx, ry, angle, 40, 3, colorInt, 0.8, 300);
-          }
+        const r = event.radius || 60;
+        spawnExpandingRing(scene, x, y, r, 1.0, colorInt, 0.6, 0.2, 3, false, 400);
+        for (let i = 0; i < 12; i++) {
+          const angle = (i / 12) * Math.PI * 2;
+          const rx = x + Math.cos(angle) * r;
+          const ry = y + Math.sin(angle) * r * 0.5;
+          spawnBurstSpark(scene, rx, ry, angle, 40, 3, colorInt, 0.8, 300);
         }
         break;
       }

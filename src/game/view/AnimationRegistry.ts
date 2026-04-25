@@ -43,7 +43,7 @@ const SPRITE_ACTORS: ActorKind[] = [
   // Player guilds
   'adventurer', 'champion', 'chef', 'cultist', 'darkmage',
   'druid', 'hunter', 'knight', 'leper', 'mage', 'master',
-  'monk', 'prophet', 'vampire', 'viking',
+  'monk', 'prophet', 'ranger', 'vampire', 'viking',
   // Enemies + summons — entries added as sprite bundles land in public/sprites/
   'plains_bandit',
   'wolf',

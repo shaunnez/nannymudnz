@@ -151,4 +151,13 @@ export const GUILD_META: Record<GuildId, GuildMeta> = {
     bio: "Few earn the title. Fewer keep it. The Masters don't choose a class — they rotate through yours.",
     uiVitals: { Armor: 10, MR: 10, Move: 135 },
   },
+  ranger: {
+    id: 'ranger',
+    sub: 'Rangers Guild',
+    tag: 'Ranged Tracker',
+    glyph: 'Rg',
+    hue: 120,
+    bio: 'Swift of foot and quick of aim. Rangers track prey across any terrain.',
+    uiVitals: { Armor: 7, MR: 8, Move: 145 },
+  },
 };
