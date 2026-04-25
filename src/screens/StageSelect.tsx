@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { STAGES } from '../data/stages';
 import type { StageId } from '../data/stages';
 import { isStageUnlocked } from '../state/useStageProgress';
+import { useDevSettings } from '../state/useDevSettings';
 import { theme, Btn } from '../ui';
 import { StageTile, StageDetailPanel } from './StagePanels';
 
@@ -14,7 +15,10 @@ interface Props {
 const COLS = 3;
 const ROWS = 3;
 
+const HP_PRESETS = [0.1, 0.25, 0.5, 0.75, 1] as const;
+
 export function StageSelect({ initialStage, onBack, onReady }: Props) {
+  const { enemyHpScale, setEnemyHpScale } = useDevSettings();
   const startIdx = useMemo(() => {
     const i = STAGES.findIndex((s) => s.id === initialStage);
     return i >= 0 ? i : 0;
@@ -119,6 +123,27 @@ export function StageSelect({ initialStage, onBack, onReady }: Props) {
         <span>◀▶▲▼ MOVE</span>
         <span>↵ FIGHT</span>
         <span>ESC BACK</span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <span style={{ color: theme.warn }}>ENEMY HP</span>
+          {HP_PRESETS.map((p) => (
+            <button
+              key={p}
+              onClick={() => setEnemyHpScale(p)}
+              style={{
+                fontFamily: theme.fontMono,
+                fontSize: 10,
+                letterSpacing: 1,
+                padding: '2px 6px',
+                border: `1px solid ${p === enemyHpScale ? theme.warn : theme.lineSoft}`,
+                background: p === enemyHpScale ? theme.warn : 'transparent',
+                color: p === enemyHpScale ? theme.bg : theme.inkMuted,
+                cursor: 'pointer',
+              }}
+            >
+              {Math.round(p * 100)}%
+            </button>
+          ))}
+        </span>
         <span style={{ marginLeft: 'auto' }}>
           {STAGES.filter((s) => isStageUnlocked(s.id)).length} / {STAGES.length} UNLOCKED
         </span>

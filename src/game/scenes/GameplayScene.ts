@@ -14,6 +14,7 @@ import { createVsState } from '@nannymud/shared/simulation/vsSimulation';
 import { createBattleState } from '@nannymud/shared/simulation/battleSimulation';
 import type { BattleSlot } from '@nannymud/shared/simulation/types';
 import { FULLSCREEN_EXIT_EVENT } from '../../layout/fullscreenConstants';
+import { readEnemyHpScale } from '../../state/useDevSettings';
 import { PhaserInputAdapter } from '../input/PhaserInputAdapter';
 import { BackgroundView } from '../view/BackgroundView';
 import { ActorView } from '../view/ActorView';
@@ -131,7 +132,7 @@ export class GameplayScene extends Phaser.Scene {
     } else if (this.game.registry.get('survivalMode')) {
       this.simState = createSurvivalState(guildId, seed);
     } else {
-      this.simState = createInitialState(guildId, stageId as StageId, seed);
+      this.simState = createInitialState(guildId, stageId as StageId, seed, readEnemyHpScale());
     }
     this.inputAdapter = new PhaserInputAdapter(this);
     this.phaseHandoffFired = false;
@@ -200,7 +201,7 @@ export class GameplayScene extends Phaser.Scene {
           this.simState = createBattleState(currentGuild, battleSlots, stageId, Date.now(), diff);
         } else {
           const stageId = this.game.registry.get('stageId') as string;
-          this.simState = createInitialState(currentGuild, stageId as StageId, Date.now());
+          this.simState = createInitialState(currentGuild, stageId as StageId, Date.now(), readEnemyHpScale());
         }
         resetController(this.simState, 'player');
         this.phaseHandoffFired = false;

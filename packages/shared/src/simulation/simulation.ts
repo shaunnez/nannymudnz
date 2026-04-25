@@ -255,6 +255,7 @@ export function createInitialState(
   guildId: GuildId,
   stageIdOrSeed: StageId | number = 'assembly',
   seed: number = Date.now(),  // eslint-disable-line no-restricted-globals -- seed chosen once at boot
+  enemyHpScale = 1,
 ): SimState {
   let resolvedStageId: StageId = 'assembly';
   let resolvedSeed = seed;
@@ -302,6 +303,7 @@ export function createInitialState(
     battleDifficulty: 2,
     battStats: null,
     stageLevel: STAGE_LEVELS[resolvedStageId],
+    enemyHpScale,
   };
 }
 
@@ -1376,10 +1378,11 @@ function tickWaves(state: SimState): void {
           const spawnX = state.player.x + 300 + j * 80;
           const spawnY = ENEMY_SPAWN_Y_RANGE[0] + state.rng() * (ENEMY_SPAWN_Y_RANGE[1] - ENEMY_SPAWN_Y_RANGE[0]);
           const mult = LEVEL_STAT_MULT(state.stageLevel ?? 1);
+          const hpScale = mult.hpMult * (state.enemyHpScale ?? 1);
 
           if ('guild' in spawn) {
             const actor = createGuildEnemyActor(spawn.guild, spawnX, spawnY, state, spawn.difficulty);
-            actor.hpMax = Math.round(actor.hpMax * mult.hpMult);
+            actor.hpMax = Math.round(actor.hpMax * hpScale);
             actor.hp = actor.hpMax;
             actor.hpDark = actor.hpMax;
             state.enemies.push(actor);
@@ -1388,7 +1391,7 @@ function tickWaves(state: SimState): void {
               state.bossSpawned = true;
             }
             const enemy = createEnemyActor(spawn.kind, spawnX, spawnY, state);
-            enemy.hpMax = Math.round(enemy.hpMax * mult.hpMult);
+            enemy.hpMax = Math.round(enemy.hpMax * hpScale);
             enemy.hp = enemy.hpMax;
             enemy.hpDark = enemy.hpMax;
             if (spawn.kind === 'bandit_king') {
