@@ -1,5 +1,6 @@
 import { theme } from '../ui';
 import type { StageMeta } from '../data/stages';
+import { isStageUnlocked } from '../state/useStageProgress';
 
 export interface StageTileProps {
   stage: StageMeta;
@@ -12,7 +13,7 @@ export interface StageTileProps {
 
 export function StageTile({ stage, index, active, isHost, onMouseEnter, onClick }: StageTileProps) {
   const acc = `oklch(0.70 0.16 ${stage.hue})`;
-  const locked = !stage.enabled;
+  const locked = !isStageUnlocked(stage.id);
 
   return (
     <div
@@ -109,6 +110,17 @@ export function StageTile({ stage, index, active, isHost, onMouseEnter, onClick 
         }}
       />
 
+      {locked && (
+        <div style={{
+          position: 'absolute', inset: 0,
+          background: 'rgba(0,0,0,0.55)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          pointerEvents: 'none',
+        }}>
+          <span style={{ fontSize: 28 }}>🔒</span>
+        </div>
+      )}
+
       {/* Number badge */}
       <div
         style={{
@@ -199,7 +211,7 @@ export function StageDetailPanel({ stages, cursor, isHost, onHover, onCommit }: 
     >
       <div>
         <div style={{ fontFamily: theme.fontMono, fontSize: 10, color: accent, letterSpacing: 3 }}>
-          {cur.enabled ? 'AVAILABLE' : 'COMING SOON'}
+          {isStageUnlocked(cur.id) ? 'AVAILABLE' : 'COMING SOON'}
         </div>
         <div
           style={{
@@ -301,7 +313,7 @@ export function StageDetailPanel({ stages, cursor, isHost, onHover, onCommit }: 
               onMouseEnter={() => { if (isHost) onHover(i); }}
               onClick={() => {
                 if (!isHost) return;
-                if (s.enabled) onCommit(i);
+                if (isStageUnlocked(s.id)) onCommit(i);
                 else onHover(i);
               }}
               style={{
@@ -315,19 +327,19 @@ export function StageDetailPanel({ stages, cursor, isHost, onHover, onCommit }: 
                 borderBottom: `1px solid ${theme.lineSoft}`,
                 borderLeft: `2px solid ${act ? acc : 'transparent'}`,
                 background: act ? `${acc}10` : 'transparent',
-                cursor: !isHost ? 'default' : s.enabled ? 'pointer' : 'default',
+                cursor: !isHost ? 'default' : isStageUnlocked(s.id) ? 'pointer' : 'default',
                 transition: 'background 120ms ease, border-color 120ms ease',
               }}
             >
               <span style={{ fontFamily: theme.fontMono, fontSize: 12, color: act ? accent : theme.inkMuted, letterSpacing: 1 }}>
                 {String(i + 1).padStart(2, '0')}
               </span>
-              <span style={{ width: 10, height: 10, background: acc, opacity: act ? 1 : s.enabled ? 0.6 : 0.25 }} />
-              <span style={{ fontFamily: theme.fontDisplay, fontSize: 18, letterSpacing: '-0.01em', color: act ? accent : s.enabled ? theme.ink : theme.inkMuted }}>
+              <span style={{ width: 10, height: 10, background: acc, opacity: act ? 1 : isStageUnlocked(s.id) ? 0.6 : 0.25 }} />
+              <span style={{ fontFamily: theme.fontDisplay, fontSize: 18, letterSpacing: '-0.01em', color: act ? accent : isStageUnlocked(s.id) ? theme.ink : theme.inkMuted }}>
                 {s.name}
               </span>
-              <span style={{ fontFamily: theme.fontMono, fontSize: 10, color: s.enabled ? (act ? accent : theme.inkMuted) : theme.warn, letterSpacing: 2 }}>
-                {s.enabled ? (act ? '◆ SELECTED' : 'READY') : 'SOON'}
+              <span style={{ fontFamily: theme.fontMono, fontSize: 10, color: isStageUnlocked(s.id) ? (act ? accent : theme.inkMuted) : theme.warn, letterSpacing: 2 }}>
+                {isStageUnlocked(s.id) ? (act ? '◆ SELECTED' : 'READY') : 'SOON'}
               </span>
             </div>
           );

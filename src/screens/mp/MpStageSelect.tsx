@@ -3,6 +3,7 @@ import type { Room } from '@colyseus/sdk';
 import type { MatchState, MatchPhase } from '@nannymud/shared';
 import { theme, Btn } from '../../ui';
 import { STAGES } from '../../data/stages';
+import { isStageUnlocked } from '../../state/useStageProgress';
 import { useMatchState } from './useMatchState';
 import { usePhaseBounce } from './usePhaseBounce';
 import { RoomCodeBadge } from './RoomCodeBadge';
@@ -50,7 +51,7 @@ export function MpStageSelect({ room, onLeave, onPhaseChange }: Props) {
     (idx: number) => {
       if (!isHost) return;
       const stage = STAGES[idx];
-      if (!stage.enabled) return;
+      if (!isStageUnlocked(stage.id)) return;
       room.send('pick_stage', { stageId: stage.id });
     },
     [isHost, room],
@@ -116,7 +117,7 @@ export function MpStageSelect({ room, onLeave, onPhaseChange }: Props) {
         <div style={{ justifySelf: 'end', display: 'flex', gap: 8, alignItems: 'flex-end' }}>
           <RoomCodeBadge code={state.code} />
           {isHost && (
-            <Btn size="md" primary disabled={!cur.enabled} onClick={() => commit(displayCursor)}>
+            <Btn size="md" primary disabled={!isStageUnlocked(cur.id)} onClick={() => commit(displayCursor)}>
               FIGHT →
             </Btn>
           )}
@@ -179,7 +180,7 @@ export function MpStageSelect({ room, onLeave, onPhaseChange }: Props) {
         )}
         <span>ESC LEAVE</span>
         <span style={{ marginLeft: 'auto', color: accent }}>
-          {STAGES.filter((s) => s.enabled).length} / {STAGES.length} UNLOCKED
+          {STAGES.filter((s) => isStageUnlocked(s.id)).length} / {STAGES.length} UNLOCKED
         </span>
       </div>
     </div>

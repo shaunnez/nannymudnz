@@ -6,7 +6,6 @@ export interface StageMeta {
   name: string;
   hue: number;
   blurb: string;
-  enabled: boolean;
   /** Path under /public to a 16:9 preview image, or null if no art yet. */
   preview: string | null;
 }
@@ -17,7 +16,6 @@ export const STAGES: StageMeta[] = [
     name: 'Assembly Hall',
     hue: 210,
     blurb: 'Flagstones under torchlight. The Knights swore here — mind the pillars.',
-    enabled: true,
     preview: '/world/assembly/preview.png',
   },
   {
@@ -25,7 +23,6 @@ export const STAGES: StageMeta[] = [
     name: 'Night Market',
     hue: 40,
     blurb: 'Paper lanterns and slick cobbles. The stalls are open. The knives, also.',
-    enabled: true,
     preview: '/world/market/preview.png',
   },
   {
@@ -33,7 +30,6 @@ export const STAGES: StageMeta[] = [
     name: 'Rot-Kitchen',
     hue: 95,
     blurb: 'The Lepers took the stoves. The stew is old and moves on its own.',
-    enabled: true,
     preview: '/world/kitchen/preview.png',
   },
   {
@@ -41,7 +37,6 @@ export const STAGES: StageMeta[] = [
     name: 'Mage Tower',
     hue: 260,
     blurb: 'Levitating glass floors. Do not step where the runes are singing.',
-    enabled: true,
     preview: '/world/tower/preview.png',
   },
   {
@@ -49,7 +44,6 @@ export const STAGES: StageMeta[] = [
     name: 'Moonwake Grove',
     hue: 140,
     blurb: 'The old trees listen. Tread polite. The Druids are watching.',
-    enabled: true,
     preview: '/world/grove/preview.png',
   },
   {
@@ -57,7 +51,6 @@ export const STAGES: StageMeta[] = [
     name: 'Drowned Catacombs',
     hue: 300,
     blurb: 'Stalactites, saltwater, and names written in a dead vowel.',
-    enabled: true,
     preview: '/world/catacombs/preview.png',
   },
   {
@@ -65,7 +58,6 @@ export const STAGES: StageMeta[] = [
     name: 'Red Throne',
     hue: 15,
     blurb: 'The throne counts. Every retreat is a step into the pit.',
-    enabled: true,
     preview: '/world/throne/preview.png',
   },
   {
@@ -73,7 +65,6 @@ export const STAGES: StageMeta[] = [
     name: 'Vampire Docks',
     hue: 330,
     blurb: 'Fog off the pier. Nothing docks here that returns.',
-    enabled: true,
     preview: '/world/docks/preview.png',
   },
   {
@@ -81,7 +72,6 @@ export const STAGES: StageMeta[] = [
     name: 'Monastery Rooftops',
     hue: 185,
     blurb: 'Slate tiles, thin air, one misstep to the courtyard below.',
-    enabled: true,
     preview: '/world/rooftops/preview.png',
   },
 ];

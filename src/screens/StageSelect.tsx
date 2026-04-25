@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { STAGES } from '../data/stages';
 import type { StageId } from '../data/stages';
+import { isStageUnlocked } from '../state/useStageProgress';
 import { theme, Btn } from '../ui';
 import { StageTile, StageDetailPanel } from './StagePanels';
 
@@ -21,7 +22,7 @@ export function StageSelect({ initialStage, onBack, onReady }: Props) {
   const [cursor, setCursor] = useState(startIdx);
 
   const cur = STAGES[cursor];
-  const canCommit = cur.enabled;
+  const canCommit = isStageUnlocked(cur.id);
 
   const move = useCallback((dx: number, dy: number) => {
     setCursor((c) => {
@@ -89,7 +90,7 @@ export function StageSelect({ initialStage, onBack, onReady }: Props) {
               active={i === cursor}
               isHost={true}
               onMouseEnter={() => setCursor(i)}
-              onClick={() => { if (s.enabled) onReady(s.id); }}
+              onClick={() => { if (isStageUnlocked(s.id)) onReady(s.id); }}
             />
           ))}
         </div>
@@ -119,7 +120,7 @@ export function StageSelect({ initialStage, onBack, onReady }: Props) {
         <span>↵ FIGHT</span>
         <span>ESC BACK</span>
         <span style={{ marginLeft: 'auto' }}>
-          {STAGES.filter((s) => s.enabled).length} / {STAGES.length} UNLOCKED
+          {STAGES.filter((s) => isStageUnlocked(s.id)).length} / {STAGES.length} UNLOCKED
         </span>
       </div>
     </div>
