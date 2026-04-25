@@ -15,6 +15,8 @@ export interface HostRoomOpts {
   rounds: 1 | 3 | 5 | 7;
   visibility: 'public' | 'private';
   playerName: string;
+  gameMode?: 'versus' | 'battle';
+  uniqueGuilds?: boolean;
 }
 
 export async function hostRoom(opts: HostRoomOpts): Promise<Room<MatchState>> {
@@ -23,6 +25,8 @@ export async function hostRoom(opts: HostRoomOpts): Promise<Room<MatchState>> {
     rounds: opts.rounds,
     visibility: opts.visibility,
     playerName: opts.playerName,
+    gameMode: opts.gameMode ?? 'versus',
+    uniqueGuilds: opts.uniqueGuilds ?? false,
   });
 }
 

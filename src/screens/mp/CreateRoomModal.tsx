@@ -17,13 +17,13 @@ export function CreateRoomModal({ playerName, onCancel, onCreated }: Props) {
   const [roomName, setRoomName] = useState('Room');
   const [rounds, setRounds] = useState<RoundsOption>(3);
   const [visibility, setVisibility] = useState<'public' | 'private'>('public');
+  const [gameMode, setGameMode] = useState<'versus' | 'battle'>('versus');
+  const [uniqueGuilds, setUniqueGuilds] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    inputRef.current?.focus();
-  }, []);
+  useEffect(() => { inputRef.current?.focus(); }, []);
 
   const canCreate = roomName.trim().length > 0 && !loading;
 
@@ -32,19 +32,28 @@ export function CreateRoomModal({ playerName, onCancel, onCreated }: Props) {
     setLoading(true);
     setError(null);
     try {
-      const room = await hostRoom({
-        name: roomName.trim(),
-        rounds,
-        visibility,
-        playerName,
-      });
+      const room = await hostRoom({ name: roomName.trim(), rounds, visibility, playerName, gameMode, uniqueGuilds });
       onCreated(room);
     } catch (err) {
-      console.log(err)
+      console.log(err);
       setError(err instanceof Error ? err.message : 'Failed to create room. Check your connection.');
       setLoading(false);
     }
   };
+
+  const toggleStyle = (active: boolean) => ({
+    padding: '8px 20px',
+    background: active ? theme.accent : 'transparent',
+    color: active ? theme.bgDeep : theme.ink,
+    border: `1px solid ${active ? theme.accent : theme.line}`,
+    fontFamily: theme.fontMono,
+    fontSize: 13,
+    letterSpacing: 2,
+    cursor: loading ? 'not-allowed' : 'pointer',
+    opacity: loading ? 0.5 : 1,
+    borderRadius: 2,
+    transition: 'all 100ms ease',
+  });
 
   return (
     <ModalShell
@@ -57,69 +66,40 @@ export function CreateRoomModal({ playerName, onCancel, onCreated }: Props) {
 
         {/* Room name */}
         <div>
-          <div
-            style={{
-              fontFamily: theme.fontMono,
-              fontSize: 10,
-              color: theme.inkMuted,
-              letterSpacing: 3,
-              marginBottom: 8,
-            }}
-          >
-            ROOM NAME
-          </div>
+          <div style={{ fontFamily: theme.fontMono, fontSize: 10, color: theme.inkMuted, letterSpacing: 3, marginBottom: 8 }}>ROOM NAME</div>
           <input
             ref={inputRef}
             value={roomName}
             onChange={(e) => setRoomName(e.target.value)}
             maxLength={32}
             disabled={loading}
-            style={{
-              width: '100%',
-              background: theme.panel,
-              border: `1px solid ${theme.line}`,
-              color: theme.ink,
-              fontFamily: theme.fontBody,
-              fontSize: 16,
-              padding: '10px 14px',
-              outline: 'none',
-              boxSizing: 'border-box',
-              opacity: loading ? 0.5 : 1,
-            }}
+            style={{ width: '100%', background: theme.panel, border: `1px solid ${theme.line}`, color: theme.ink, fontFamily: theme.fontBody, fontSize: 16, padding: '10px 14px', outline: 'none', boxSizing: 'border-box', opacity: loading ? 0.5 : 1 }}
           />
+        </div>
+
+        {/* Game mode */}
+        <div>
+          <div style={{ fontFamily: theme.fontMono, fontSize: 10, color: theme.inkMuted, letterSpacing: 3, marginBottom: 8 }}>GAME MODE</div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button onClick={() => !loading && setGameMode('versus')} disabled={loading} style={toggleStyle(gameMode === 'versus')}>
+              VERSUS · 1V1
+            </button>
+            <button onClick={() => !loading && setGameMode('battle')} disabled={loading} style={toggleStyle(gameMode === 'battle')}>
+              BATTLE · UP TO 8
+            </button>
+          </div>
         </div>
 
         {/* Rounds */}
         <div>
-          <div
-            style={{
-              fontFamily: theme.fontMono,
-              fontSize: 10,
-              color: theme.inkMuted,
-              letterSpacing: 3,
-              marginBottom: 8,
-            }}
-          >
-            ROUNDS
-          </div>
+          <div style={{ fontFamily: theme.fontMono, fontSize: 10, color: theme.inkMuted, letterSpacing: 3, marginBottom: 8 }}>ROUNDS</div>
           <div style={{ display: 'flex', gap: 8 }}>
             {ROUNDS_OPTIONS.map((r) => (
               <button
                 key={r}
                 onClick={() => setRounds(r)}
                 disabled={loading}
-                style={{
-                  padding: '8px 20px',
-                  background: rounds === r ? theme.accent : 'transparent',
-                  color: rounds === r ? theme.bgDeep : theme.ink,
-                  border: `1px solid ${rounds === r ? theme.accent : theme.line}`,
-                  fontFamily: theme.fontMono,
-                  fontSize: 15,
-                  cursor: loading ? 'not-allowed' : 'pointer',
-                  opacity: loading ? 0.5 : 1,
-                  borderRadius: 2,
-                  transition: 'all 100ms ease',
-                }}
+                style={{ padding: '8px 20px', background: rounds === r ? theme.accent : 'transparent', color: rounds === r ? theme.bgDeep : theme.ink, border: `1px solid ${rounds === r ? theme.accent : theme.line}`, fontFamily: theme.fontMono, fontSize: 15, cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.5 : 1, borderRadius: 2, transition: 'all 100ms ease' }}
               >
                 {r}
               </button>
@@ -127,67 +107,35 @@ export function CreateRoomModal({ playerName, onCancel, onCreated }: Props) {
           </div>
         </div>
 
+        {/* Unique guilds (battle only) */}
+        {gameMode === 'battle' && (
+          <div>
+            <div style={{ fontFamily: theme.fontMono, fontSize: 10, color: theme.inkMuted, letterSpacing: 3, marginBottom: 8 }}>OPTIONS</div>
+            <label
+              onClick={() => !loading && setUniqueGuilds(u => !u)}
+              style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: loading ? 'not-allowed' : 'pointer', userSelect: 'none' }}
+            >
+              <span style={{ width: 16, height: 16, border: `2px solid ${uniqueGuilds ? theme.accent : theme.line}`, background: uniqueGuilds ? theme.accent : 'transparent', display: 'inline-block', flexShrink: 0, transition: 'all 100ms ease' }} />
+              <span style={{ fontFamily: theme.fontBody, fontSize: 14, color: theme.ink }}>Unique guilds — no two players share a guild</span>
+            </label>
+          </div>
+        )}
+
         {/* Visibility */}
         <div>
-          <div
-            style={{
-              fontFamily: theme.fontMono,
-              fontSize: 10,
-              color: theme.inkMuted,
-              letterSpacing: 3,
-              marginBottom: 8,
-            }}
-          >
-            VISIBILITY
-          </div>
+          <div style={{ fontFamily: theme.fontMono, fontSize: 10, color: theme.inkMuted, letterSpacing: 3, marginBottom: 8 }}>VISIBILITY</div>
           <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
             {(['private', 'public'] as const).map((v) => (
-              <label
-                key={v}
-                onClick={() => !loading && setVisibility(v)}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 8,
-                  cursor: loading ? 'not-allowed' : 'pointer',
-                  fontFamily: theme.fontBody,
-                  fontSize: 14,
-                  color: loading ? theme.inkMuted : theme.ink,
-                  opacity: loading ? 0.5 : 1,
-                  userSelect: 'none',
-                }}
-              >
-                <span
-                  style={{
-                    width: 14,
-                    height: 14,
-                    borderRadius: '50%',
-                    border: `2px solid ${visibility === v ? theme.accent : theme.line}`,
-                    background: visibility === v ? theme.accent : 'transparent',
-                    display: 'inline-block',
-                    flexShrink: 0,
-                    transition: 'all 100ms ease',
-                  }}
-                />
+              <label key={v} onClick={() => !loading && setVisibility(v)} style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: loading ? 'not-allowed' : 'pointer', fontFamily: theme.fontBody, fontSize: 14, color: loading ? theme.inkMuted : theme.ink, opacity: loading ? 0.5 : 1, userSelect: 'none' }}>
+                <span style={{ width: 14, height: 14, borderRadius: '50%', border: `2px solid ${visibility === v ? theme.accent : theme.line}`, background: visibility === v ? theme.accent : 'transparent', display: 'inline-block', flexShrink: 0, transition: 'all 100ms ease' }} />
                 {v.charAt(0).toUpperCase() + v.slice(1)}
               </label>
             ))}
           </div>
         </div>
 
-        {/* Error */}
         {error && (
-          <div
-            style={{
-              fontFamily: theme.fontMono,
-              fontSize: 12,
-              color: theme.bad,
-              letterSpacing: 1,
-              padding: '8px 12px',
-              border: `1px solid ${theme.bad}`,
-              background: `${theme.bad}18`,
-            }}
-          >
+          <div style={{ fontFamily: theme.fontMono, fontSize: 12, color: theme.bad, letterSpacing: 1, padding: '8px 12px', border: `1px solid ${theme.bad}`, background: `${theme.bad}18` }}>
             {error}
           </div>
         )}
