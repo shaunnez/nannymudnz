@@ -58,11 +58,13 @@ export function MpLobby({ room, onLeave, onPhaseChange }: Props) {
     : { localSlot: null, opponentSlot: null };
   const isHost = !!state && room.sessionId === state.hostSessionId;
   const currentReady = localSlot?.ready ?? false;
-  const bothPresent = !!localSlot && !!opponentSlot;
-  const allReady = bothPresent && !!localSlot?.ready && !!opponentSlot?.ready;
-  const canLaunch = isHost && bothPresent && allReady;
-  const notReadyCount = [localSlot, opponentSlot].filter((s) => s && !s.ready).length;
-  const filledCount = [localSlot, opponentSlot].filter(Boolean).length;
+  const connectedPlayers = state ? [...state.players.values()].filter(p => p.connected) : [];
+  const filledCount = connectedPlayers.length;
+  const maxSlots = state?.gameMode === 'battle' ? 8 : 2;
+  const allReady = filledCount > 0 && connectedPlayers.every(p => p.ready);
+  const atLeastTwo = filledCount >= 2;
+  const canLaunch = isHost && atLeastTwo && allReady;
+  const notReadyCount = connectedPlayers.filter(p => !p.ready).length;
 
   const copyCode = useCallback(() => {
     if (state?.code) navigator.clipboard?.writeText(state.code);
@@ -122,7 +124,7 @@ export function MpLobby({ room, onLeave, onPhaseChange }: Props) {
               letterSpacing: 3,
             }}
           >
-            ROOM LOBBY · PRE-GAME · {filledCount}/2
+            ROOM LOBBY · PRE-GAME · {filledCount}/{state.gameMode === 'battle' ? 8 : 2}
           </div>
           <div
             style={{
@@ -186,9 +188,10 @@ export function MpLobby({ room, onLeave, onPhaseChange }: Props) {
           alignItems: 'center',
         }}
       >
-        <Chip tone="accent" mono>1V1</Chip>
+        <Chip tone="accent" mono>{state.gameMode === 'battle' ? 'BATTLE' : '1V1'}</Chip>
         <Chip mono>BO{state.rounds}</Chip>
         <Chip mono>{state.visibility.toUpperCase()}</Chip>
+        {state.gameMode === 'battle' && state.uniqueGuilds && <Chip mono>UNIQUE GUILDS</Chip>}
       </div>
 
       {/* Body — two columns */}
@@ -222,21 +225,40 @@ export function MpLobby({ room, onLeave, onPhaseChange }: Props) {
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            <SlotCard
-              slot={localSlot ?? null}
-              isYou
-              showHost={isHost}
-              showKick={false}
-              slotIndex={0}
-            />
-            <SlotCard
-              slot={opponentSlot ?? null}
-              isYou={false}
-              showHost={!isHost && !!opponentSlot && opponentSlot.sessionId === state.hostSessionId}
-              showKick={isHost && !!opponentSlot}
-              onKick={() => opponentSlot && room.send('kick', { sessionId: opponentSlot.sessionId })}
-              slotIndex={1}
-            />
+            {state.gameMode === 'battle' ? (
+              Array.from({ length: maxSlots }, (_, i) => {
+                const playerEntries = [...state.players.entries()];
+                const entry = playerEntries[i];
+                const sid = entry?.[0] ?? null;
+                const slot = entry?.[1] ?? null;
+                const isYou = sid === room.sessionId;
+                const isSlotHost = !!slot && slot.sessionId === state.hostSessionId;
+                const showKick = isHost && !!slot && !isYou;
+                return (
+                  <SlotCard
+                    key={i}
+                    slot={slot ? { name: slot.name, sessionId: slot.sessionId, ready: slot.ready, ping: slot.ping, connected: slot.connected } : null}
+                    isYou={isYou}
+                    showHost={isSlotHost}
+                    showKick={showKick}
+                    onKick={() => slot && room.send('kick', { sessionId: slot.sessionId })}
+                    slotIndex={i}
+                  />
+                );
+              })
+            ) : (
+              <>
+                <SlotCard slot={localSlot ?? null} isYou showHost={isHost} showKick={false} slotIndex={0} />
+                <SlotCard
+                  slot={opponentSlot ?? null}
+                  isYou={false}
+                  showHost={!isHost && !!opponentSlot && opponentSlot.sessionId === state.hostSessionId}
+                  showKick={isHost && !!opponentSlot}
+                  onKick={() => opponentSlot && room.send('kick', { sessionId: opponentSlot.sessionId })}
+                  slotIndex={1}
+                />
+              </>
+            )}
           </div>
 
           {/* Footer actions */}
@@ -266,13 +288,8 @@ export function MpLobby({ room, onLeave, onPhaseChange }: Props) {
               {currentReady ? '■ READY' : '□ READY UP'}
             </Btn>
             {isHost && (
-              <Btn
-                size="md"
-                primary
-                disabled={!canLaunch}
-                onClick={() => room.send('launch_battle', {})}
-              >
-                LAUNCH BATTLE →
+              <Btn size="md" primary disabled={!canLaunch} onClick={() => room.send('launch_battle', {})}>
+                {state.gameMode === 'battle' ? 'NEXT →' : 'LAUNCH BATTLE →'}
               </Btn>
             )}
           </div>
@@ -391,7 +408,7 @@ export function MpLobby({ room, onLeave, onPhaseChange }: Props) {
         }}
       >
         <span>R READY</span>
-        {isHost && <span>ENTER LAUNCH</span>}
+        {isHost && <span>{state.gameMode === 'battle' ? 'ENTER NEXT' : 'ENTER LAUNCH'}</span>}
         <span>ESC LEAVE</span>
       </div>
     </div>

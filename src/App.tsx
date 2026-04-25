@@ -11,6 +11,7 @@ import { GuildDossier } from './screens/GuildDossier';
 import { SettingsScreen } from './screens/SettingsScreen';
 import { MpHub } from './screens/mp/MpHub';
 import { MpLobby } from './screens/mp/MpLobby';
+import { MpBattleConfig } from './screens/mp/MpBattleConfig';
 import { MpCharSelect } from './screens/mp/MpCharSelect';
 import { MpStageSelect } from './screens/mp/MpStageSelect';
 import { MpBattle } from './screens/mp/MpBattle';
@@ -429,9 +430,12 @@ export default function App() {
           );
         })()}
 
-        {/* Battle config screen — placeholder until Task 9 wires the real component. */}
         {state.screen === 'mp_battle_config' && state.mpRoom && (
-          <MpStub screen={state.screen} onLeave={leaveMp} />
+          <MpBattleConfig
+            room={state.mpRoom}
+            onLeave={leaveMp}
+            onPhaseChange={onPhaseChange}
+          />
         )}
 
         {/* Fallback stub for orphaned MP screens (no room after a refresh). */}
