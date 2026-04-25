@@ -192,6 +192,10 @@ export class GameplayScene extends Phaser.Scene {
         resetController(this.simState, 'player');
         if (this.game.registry.get('survivalMode')) {
           this.simState = createSurvivalState(currentGuild, Date.now());
+        } else if (this.game.registry.get('battleMode')) {
+          const battleSlots = this.game.registry.get('battleSlots') as BattleSlot[];
+          const stageId = this.game.registry.get('stageId') as string;
+          this.simState = createBattleState(currentGuild, battleSlots, stageId, Date.now());
         } else {
           this.simState = createInitialState(currentGuild, Date.now());
         }
