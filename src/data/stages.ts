@@ -1,6 +1,5 @@
-export type StageId =
-  | 'assembly' | 'market' | 'kitchen' | 'tower' | 'grove'
-  | 'catacombs' | 'throne' | 'docks' | 'rooftops';
+import type { StageId } from '@nannymud/shared/simulation/types';
+export type { StageId };
 
 export interface StageMeta {
   id: StageId;

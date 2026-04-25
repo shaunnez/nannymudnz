@@ -1,4 +1,4 @@
-import type { EnemyDef, Wave, ActorKind } from './types';
+import type { EnemyDef, Wave, WaveEnemy, ActorKind, GuildId, StageId } from './types';
 
 export const ENEMY_DEFS: Record<string, EnemyDef> = {
   plains_bandit: {
@@ -403,56 +403,95 @@ export const ENEMY_DEFS: Record<string, EnemyDef> = {
   },
 };
 
-export const STAGE_WAVES: Wave[] = [
-  {
-    triggerX: 400,
-    enemies: [
-      { kind: 'plains_bandit' as ActorKind, count: 2 },
-    ],
-    triggered: false,
-    cleared: false,
-  },
-  {
-    triggerX: 900,
-    enemies: [
-      { kind: 'plains_bandit' as ActorKind, count: 3 },
-      { kind: 'bandit_archer' as ActorKind, count: 1 },
-    ],
-    triggered: false,
-    cleared: false,
-  },
-  {
-    triggerX: 1600,
-    enemies: [
-      { kind: 'wolf' as ActorKind, count: 2 },
-    ],
-    triggered: false,
-    cleared: false,
-  },
-  {
-    triggerX: 2400,
-    enemies: [
-      { kind: 'plains_bandit' as ActorKind, count: 2 },
-      { kind: 'bandit_archer' as ActorKind, count: 2 },
-    ],
-    triggered: false,
-    cleared: false,
-  },
-  {
-    triggerX: 3200,
-    enemies: [
-      { kind: 'bandit_brute' as ActorKind, count: 1 },
-      { kind: 'wolf' as ActorKind, count: 2 },
-    ],
-    triggered: false,
-    cleared: false,
-  },
-  {
-    triggerX: 3800,
-    enemies: [
-      { kind: 'bandit_king' as ActorKind, count: 1 },
-    ],
-    triggered: false,
-    cleared: false,
-  },
-];
+const LEVEL_STAT_MULT = (level: number) => ({
+  hpMult: 1 + (level - 1) * 0.15,
+  dmgMult: 1 + (level - 1) * 0.12,
+});
+export { LEVEL_STAT_MULT };
+
+function w(triggerX: number, enemies: Wave['enemies']): Wave {
+  return { triggerX, enemies, triggered: false, cleared: false };
+}
+
+function e(kind: ActorKind, count: number): WaveEnemy {
+  return { kind, count };
+}
+
+function g(guild: GuildId, count: number, difficulty: number): WaveEnemy {
+  return { guild, count, difficulty };
+}
+
+export const STAGE_WAVES: Record<StageId, Wave[]> = {
+  assembly: [
+    w(400,  [e('plains_bandit', 2)]),
+    w(900,  [e('plains_bandit', 3), e('bandit_archer', 1)]),
+    w(1400, [e('plains_bandit', 2), e('bandit_archer', 2)]),
+    w(2000, [e('plains_bandit', 4), e('bandit_archer', 1)]),
+    w(2600, [e('plains_bandit', 3), e('bandit_archer', 2)]),
+    w(3800, [e('bandit_king', 1)]),
+  ],
+  market: [
+    w(400,  [e('wolf', 3)]),
+    w(900,  [e('wolf', 4), e('bandit_archer', 2)]),
+    w(1400, [e('wolf', 5), e('bandit_archer', 2)]),
+    w(2000, [e('wolf', 6), e('bandit_archer', 3)]),
+    w(2600, [e('wolf', 4), e('bandit_archer', 4)]),
+    w(3800, [e('giant_blue_wolf', 1)]),
+  ],
+  kitchen: [
+    w(400,  [e('bandit_brute', 2)]),
+    w(900,  [e('bandit_brute', 2), g('vampire', 2, 2)]),
+    w(1400, [e('bandit_brute', 3), g('vampire', 2, 3)]),
+    w(2000, [e('bandit_brute', 2), g('vampire', 4, 3)]),
+    w(2600, [g('vampire', 4, 4)]),
+    w(3800, [e('vampire_lord', 1)]),
+  ],
+  tower: [
+    w(400,  [g('cultist', 3, 2)]),
+    w(900,  [g('cultist', 2, 2), e('drowned_spawn', 3)]),
+    w(1400, [g('cultist', 3, 3), e('drowned_spawn', 4)]),
+    w(2000, [g('cultist', 4, 3), e('drowned_spawn', 2)]),
+    w(2600, [g('cultist', 5, 4)]),
+    w(3800, [e('cult_high_priest', 1)]),
+  ],
+  grove: [
+    w(400,  [g('druid', 2, 2)]),
+    w(900,  [g('druid', 2, 2), g('hunter', 2, 2)]),
+    w(1400, [e('wolf', 2), g('hunter', 2, 3), g('druid', 1, 3)]),
+    w(2000, [g('hunter', 4, 3), e('wolf', 2)]),
+    w(2600, [g('druid', 3, 4), g('hunter', 2, 4)]),
+    w(3800, [e('elder_druid', 1)]),
+  ],
+  catacombs: [
+    w(400,  [g('leper', 3, 3)]),
+    w(900,  [g('leper', 2, 3), e('rotting_husk', 3)]),
+    w(1400, [g('darkmage', 2, 3), e('rotting_husk', 3)]),
+    w(2000, [g('leper', 2, 4), g('darkmage', 2, 4)]),
+    w(2600, [g('darkmage', 4, 4), e('rotting_husk', 2)]),
+    w(3800, [e('plague_darkmage', 1)]),
+  ],
+  throne: [
+    w(400,  [g('viking', 3, 4)]),
+    w(900,  [g('knight', 2, 4), g('viking', 2, 4)]),
+    w(1400, [g('knight', 3, 4), g('champion', 2, 4)]),
+    w(2000, [g('viking', 2, 5), g('champion', 3, 5)]),
+    w(2600, [g('knight', 2, 5), g('champion', 2, 5), g('viking', 1, 5)]),
+    w(3800, [e('warlord', 1)]),
+  ],
+  docks: [
+    w(400,  [e('bandit_brute', 2)]),
+    w(900,  [g('adventurer', 3, 4), e('bandit_brute', 2)]),
+    w(1400, [g('mage', 3, 4), g('monk', 3, 4)]),
+    w(2000, [g('prophet', 3, 5), g('viking', 3, 5)]),
+    w(2600, [g('master', 2, 5), g('champion', 2, 5)]),
+    w(3800, [e('shadow_master', 1)]),
+  ],
+  rooftops: [
+    w(400,  [e('plains_bandit', 3), e('wolf', 3)]),
+    w(900,  [g('vampire', 3, 5), e('bandit_brute', 2)]),
+    w(1400, [g('darkmage', 3, 5), e('rotting_husk', 3)]),
+    w(2000, [g('knight', 2, 5), g('viking', 2, 5), g('champion', 2, 5)]),
+    w(2600, [g('cultist', 4, 5), e('drowned_spawn', 4)]),
+    w(3800, [e('bandit_king_ii', 1)]),
+  ],
+};

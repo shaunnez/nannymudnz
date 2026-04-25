@@ -38,6 +38,10 @@ export interface StatusEffect {
   lastTickMs?: number;
 }
 
+export type StageId =
+  | 'assembly' | 'market' | 'kitchen' | 'tower' | 'grove'
+  | 'catacombs' | 'throne' | 'docks' | 'rooftops';
+
 export type ActorKind =
   | 'adventurer' | 'knight' | 'mage' | 'druid' | 'hunter' | 'monk'
   | 'viking' | 'prophet' | 'vampire' | 'cultist' | 'champion' | 'darkmage'
