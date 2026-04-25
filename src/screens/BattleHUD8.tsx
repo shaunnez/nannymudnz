@@ -158,10 +158,10 @@ export function BattleHUD8({ game, slots }: Props) {
                         </span>
                         {isDead && <span style={{ fontFamily: theme.fontMono, fontSize: 6, color: theme.bad, flexShrink: 0 }}>KO</span>}
                       </div>
-                      <div style={{ height: 8, background: theme.line, position: 'relative', overflow: 'hidden', borderRadius: 1, marginTop: 3 }}>
+                      <div style={{ height: 14, background: theme.line, position: 'relative', overflow: 'hidden', borderRadius: 1, marginTop: 3 }}>
                         <div style={{ position: 'absolute', inset: 0, width: `${hpPct * 100}%`, background: hpColor }} />
                       </div>
-                      <div style={{ height: 5, background: theme.line, position: 'relative', overflow: 'hidden', borderRadius: 1, marginTop: 2 }}>
+                      <div style={{ height: 8, background: theme.line, position: 'relative', overflow: 'hidden', borderRadius: 1, marginTop: 2 }}>
                         <div style={{ position: 'absolute', inset: 0, width: `${mpPct * 100}%`, background: mpColor }} />
                       </div>
                     </div>
@@ -244,7 +244,7 @@ function PlayerBarRow({ slots, slotOffset, getActor, isTop, bottomOffset = 0 }: 
               </div>
               {/* HP bar */}
               <div style={{ marginTop: 3 }}>
-                <div style={{ height: 10, background: theme.line, position: 'relative', overflow: 'hidden', borderRadius: 1 }}>
+                <div style={{ height: 18, background: theme.line, position: 'relative', overflow: 'hidden', borderRadius: 1 }}>
                   <div style={{
                     position: 'absolute', inset: 0,
                     width: `${hpPct * 100}%`,
@@ -261,7 +261,7 @@ function PlayerBarRow({ slots, slotOffset, getActor, isTop, bottomOffset = 0 }: 
               </div>
               {/* MP bar */}
               <div style={{ marginTop: 3 }}>
-                <div style={{ height: 5, background: theme.line, position: 'relative', overflow: 'hidden', borderRadius: 1 }}>
+                <div style={{ height: 10, background: theme.line, position: 'relative', overflow: 'hidden', borderRadius: 1 }}>
                   <div style={{
                     position: 'absolute', inset: 0,
                     width: `${mpPct * 100}%`,
