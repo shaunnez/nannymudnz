@@ -72,13 +72,15 @@ export function BattleConfigScreen({ humanGuildId, onBack, onReady }: Props) {
       <div style={{ position: 'absolute', inset: 0, background: SCANLINE_BG, pointerEvents: 'none' }} />
 
       {/* Header */}
-      <div style={{ padding: '20px 36px', borderBottom: `1px solid ${theme.lineSoft}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div style={{ padding: '20px 36px', borderBottom: `1px solid ${theme.lineSoft}`, display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center' }}>
         <div>
+          <Btn onClick={onBack}>← BACK</Btn>
+        </div>
+        <div style={{ textAlign: 'center' }}>
           <div style={{ fontFamily: theme.fontMono, fontSize: 10, color: theme.inkMuted, letterSpacing: 3 }}>SLOTS · CONFIG</div>
           <div style={{ fontFamily: theme.fontDisplay, fontSize: 26, color: theme.ink }}>Set the field</div>
         </div>
-        <div style={{ display: 'flex', gap: 8 }}>
-          <Btn onClick={onBack}>← BACK</Btn>
+        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
           <Btn primary disabled={!canStart} onClick={handleReady}>STAGE →</Btn>
         </div>
       </div>

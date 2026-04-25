@@ -40,8 +40,9 @@ function findVsTarget(state: SimState, opp: Actor): Actor | null {
 const BASIC_ATTACK_RANGE = 55;
 /** Step this far inside real range before swinging so attacks connect. */
 const APPROACH_MARGIN = 8;
-/** Hysteresis — resume chasing only when we're clearly outside range. */
-const RETREAT_MARGIN = 14;
+/** Hysteresis — resume chasing only when absDx exceeds this. Must be ≤ BASIC_ATTACK_RANGE
+ * to prevent a dead zone where fighters are stopped but outside attack range. */
+const RETREAT_MARGIN = 0;
 /** Target depth overlap when approaching — inside ATTACK_Y_TOLERANCE. */
 const DEPTH_TARGET_WINDOW = 20;
 
@@ -171,7 +172,7 @@ export function synthesizeVsCpuInput(
   let desiredBlock = false;
   let desiredAbility: number | null = null;
 
-  const inMeleeRange = absDx <= BASIC_ATTACK_RANGE - 2 && absDy <= ATTACK_Y_TOLERANCE;
+  const inMeleeRange = absDx <= BASIC_ATTACK_RANGE && absDy <= ATTACK_Y_TOLERANCE;
   const makingDecision = ai.lastActionMs >= tuning.decisionIntervalMs;
 
   if (makingDecision) {

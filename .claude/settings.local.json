@@ -109,7 +109,12 @@
       "Bash(rm /c/Users/nimbl/projects/nannymud/public/vfx/darkmage/shadow_step_flash.png)",
       "Bash(rm /c/Users/nimbl/projects/nannymud/public/vfx/darkmage/whispers_aura.png)",
       "Bash(echo \"Exit: $?\")",
-      "Bash(grep \"^  {$\" /c/Users/nimbl/projects/nannymud/packages/shared/src/simulation/guildData.ts)"
+      "Bash(grep \"^  {$\" /c/Users/nimbl/projects/nannymud/packages/shared/src/simulation/guildData.ts)",
+      "Bash(grep -v \"//\")",
+      "WebFetch(domain:opengameart.org)",
+      "WebFetch(domain:kenney.nl)",
+      "WebFetch(domain:craftpix.net)",
+      "Bash(npx eslint *)"
     ]
   }
 }

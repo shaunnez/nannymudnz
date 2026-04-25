@@ -108,22 +108,22 @@ export function ChampBracketScreen({ champ, onFight, onQuit }: Props) {
         style={{
           padding: '20px 36px',
           borderBottom: `1px solid ${theme.lineSoft}`,
-          display: 'flex',
-          justifyContent: 'space-between',
+          display: 'grid',
+          gridTemplateColumns: '1fr auto 1fr',
           alignItems: 'center',
         }}
       >
         <div>
+          <Btn onClick={onQuit}>← QUIT</Btn>
+        </div>
+        <div style={{ textAlign: 'center' }}>
           <div style={{ fontFamily: theme.fontMono, fontSize: 10, color: theme.inkMuted, letterSpacing: 3 }}>
             CHAMPIONSHIP · {roundLabel}
           </div>
           <div style={{ fontFamily: theme.fontDisplay, fontSize: 26, color: theme.ink }}>The bracket</div>
         </div>
-        <div style={{ display: 'flex', gap: 8 }}>
-          <Btn onClick={onQuit}>← QUIT</Btn>
-          <Btn primary onClick={onFight}>
-            FIGHT →
-          </Btn>
+        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+          <Btn primary onClick={onFight}>FIGHT →</Btn>
         </div>
       </div>
 
