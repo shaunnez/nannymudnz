@@ -242,13 +242,14 @@ export function MpLobby({ room, onLeave, onPhaseChange }: Props) {
                     showHost={isSlotHost}
                     showKick={showKick}
                     onKick={() => slot && room.send('kick', { sessionId: slot.sessionId })}
+                    onToggleReady={isYou ? () => room.send('ready_toggle', { ready: !currentReady }) : undefined}
                     slotIndex={i}
                   />
                 );
               })
             ) : (
               <>
-                <SlotCard slot={localSlot ?? null} isYou showHost={isHost} showKick={false} slotIndex={0} />
+                <SlotCard slot={localSlot ?? null} isYou showHost={isHost} showKick={false} onToggleReady={() => room.send('ready_toggle', { ready: !currentReady })} slotIndex={0} />
                 <SlotCard
                   slot={opponentSlot ?? null}
                   isYou={false}
@@ -431,10 +432,11 @@ interface SlotCardProps {
   showHost: boolean;
   showKick: boolean;
   onKick?: () => void;
+  onToggleReady?: () => void;
   slotIndex: number;
 }
 
-function SlotCard({ slot, isYou, showHost, showKick, onKick, slotIndex }: SlotCardProps) {
+function SlotCard({ slot, isYou, showHost, showKick, onKick, onToggleReady, slotIndex }: SlotCardProps) {
   const avatarColor = isYou ? theme.accent : theme.warn;
 
   if (!slot) {
@@ -473,6 +475,7 @@ function SlotCard({ slot, isYou, showHost, showKick, onKick, slotIndex }: SlotCa
 
   return (
     <div
+      onClick={isYou && onToggleReady ? onToggleReady : undefined}
       style={{
         padding: 10,
         border: `1px solid ${isYou ? `${theme.accent}55` : theme.line}`,
@@ -483,6 +486,7 @@ function SlotCard({ slot, isYou, showHost, showKick, onKick, slotIndex }: SlotCa
         alignItems: 'center',
         minHeight: 84,
         borderRadius: 2,
+        cursor: isYou && onToggleReady ? 'pointer' : 'default',
       }}
     >
       <div
