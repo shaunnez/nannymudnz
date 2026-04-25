@@ -1,5 +1,5 @@
 import { Room, Client } from 'colyseus';
-import { MatchState, PlayerSlot } from '@nannymud/shared';
+import { MatchState, PlayerSlot, BattleSlotSchema } from '@nannymud/shared';
 import type { InputMsg, InputEvent } from '@nannymud/shared';
 import type { InputState, SimState, GuildId } from '@nannymud/shared/simulation/types';
 import { tickSimulation, makeEmptyInputState } from '@nannymud/shared/simulation/simulation';
@@ -11,6 +11,8 @@ interface CreateOpts {
   name?: string;
   rounds?: number;
   visibility?: 'public' | 'private';
+  gameMode?: 'versus' | 'battle';
+  uniqueGuilds?: boolean;
 }
 
 export class MatchRoom extends Room<MatchState> {
@@ -53,6 +55,9 @@ export class MatchRoom extends Room<MatchState> {
     this.state.rounds = opts.rounds ?? 3;
     this.state.visibility = opts.visibility ?? 'private';
     this.state.createdAtMs = Date.now();
+    this.state.gameMode = opts.gameMode ?? 'versus';
+    this.state.uniqueGuilds = opts.uniqueGuilds ?? false;
+    this.maxClients = this.state.gameMode === 'battle' ? 8 : 2;
     this.roomId = this.state.code;
     console.log(`[MatchRoom] created code=${this.state.code} name="${this.state.name}" rounds=${this.state.rounds}`);
     void this.setMetadata({
@@ -60,6 +65,7 @@ export class MatchRoom extends Room<MatchState> {
       rounds: this.state.rounds,
       visibility: this.state.visibility,
       hostName: '',
+      gameMode: this.state.gameMode,
     });
 
     this.onMessage('ready_toggle', (client: Client, msg: { ready: boolean }) => {
@@ -85,9 +91,73 @@ export class MatchRoom extends Room<MatchState> {
     this.onMessage('launch_battle', (client: Client) => {
       if (client.sessionId !== this.state.hostSessionId) return;
       const slots = [...this.state.players.values()];
-      if (slots.length !== 2 || !slots.every(s => s.ready)) return;
-      this.state.phase = 'char_select';
-      slots.forEach(s => { s.locked = false; s.guildId = ''; });
+      const allReady = slots.length >= 2 && slots.every(s => s.ready);
+      if (!allReady) return;
+
+      if (this.state.gameMode === 'battle') {
+        this.state.battleSlots.clear();
+        const connectedSessions = [...this.state.players.keys()];
+        for (let i = 0; i < 8; i++) {
+          const slot = new BattleSlotSchema();
+          if (i < connectedSessions.length) {
+            slot.slotType = 'human';
+            slot.ownerSessionId = connectedSessions[i];
+          } else {
+            slot.slotType = 'off';
+          }
+          this.state.battleSlots.push(slot);
+        }
+        this.state.phase = 'battle_config';
+      } else {
+        if (slots.length !== 2) return;
+        this.state.phase = 'char_select';
+        slots.forEach(s => { s.locked = false; s.guildId = ''; });
+      }
+    });
+
+    this.onMessage('set_battle_slot', (client: Client, msg: { index: number; slotType: 'human' | 'cpu' | 'off'; guildId: string; team: string }) => {
+      if (client.sessionId !== this.state.hostSessionId) return;
+      if (this.state.phase !== 'battle_config') return;
+      const slot = this.state.battleSlots[msg.index];
+      if (!slot) return;
+      if (this.state.uniqueGuilds && msg.guildId) {
+        const taken = [...this.state.battleSlots].some(
+          (s, i) => i !== msg.index && s.slotType !== 'off' && s.guildId === msg.guildId,
+        );
+        if (taken) return;
+      }
+      slot.slotType = msg.slotType;
+      slot.guildId = msg.guildId;
+      slot.team = msg.team;
+      if (msg.slotType !== 'human') slot.ownerSessionId = '';
+    });
+
+    this.onMessage('set_my_guild', (client: Client, msg: { guildId: string }) => {
+      if (this.state.phase !== 'battle_config') return;
+      const slot = [...this.state.battleSlots].find(s => s.ownerSessionId === client.sessionId);
+      if (!slot) return;
+      if (this.state.uniqueGuilds && msg.guildId) {
+        const taken = [...this.state.battleSlots].some(
+          s => s !== slot && s.slotType !== 'off' && s.guildId === msg.guildId,
+        );
+        if (taken) return;
+      }
+      slot.guildId = msg.guildId;
+    });
+
+    this.onMessage('launch_from_config', (client: Client) => {
+      if (client.sessionId !== this.state.hostSessionId) return;
+      if (this.state.phase !== 'battle_config') return;
+      const activeCount = [...this.state.battleSlots].filter(s => s.slotType !== 'off').length;
+      if (activeCount < 2) return;
+      // Copy guildId into PlayerSlot so existing MP results screen can read each player's guild
+      for (const bSlot of this.state.battleSlots) {
+        if (bSlot.slotType === 'human' && bSlot.ownerSessionId) {
+          const ps = this.state.players.get(bSlot.ownerSessionId);
+          if (ps) ps.guildId = bSlot.guildId;
+        }
+      }
+      this.state.phase = 'stage_select';
     });
 
     this.onMessage('lock_guild', (client: Client, msg: { guildId: string }) => {

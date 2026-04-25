@@ -38,7 +38,7 @@ function sendMsg(room: MatchRoom, client: StubClient, type: string, msg: unknown
 }
 
 /** Bootstrap a fresh MatchRoom in lobby state with no clients. */
-function createRoom(opts: { name?: string; rounds?: number; visibility?: 'public' | 'private' } = {}) {
+function createRoom(opts: { name?: string; rounds?: number; visibility?: 'public' | 'private'; gameMode?: 'versus' | 'battle'; uniqueGuilds?: boolean } = {}) {
   const room = new MatchRoom();
   // Provide minimal state before calling onCreate
   room['state'] = new MatchState();
@@ -268,6 +268,7 @@ describe('MatchRoom phase transitions (direct instantiation)', () => {
       rounds: 5,
       visibility: 'public',
       hostName: '',
+      gameMode: 'versus',
     });
   });
 
@@ -278,5 +279,142 @@ describe('MatchRoom phase transitions (direct instantiation)', () => {
     expect(r['setMetadata']).toHaveBeenCalledTimes(2);
     const secondCall = (r['setMetadata'] as ReturnType<typeof vi.fn>).mock.calls[1][0];
     expect(secondCall.hostName).toBe('Alice');
+  });
+
+  // -------------------------------------------------------------------------
+  // Task 3: Battle mode init
+  // -------------------------------------------------------------------------
+
+  it('Battle room sets maxClients to 8', () => {
+    const room = createRoom({ gameMode: 'battle', name: 'TestBattle', rounds: 3, visibility: 'public' });
+    expect(room.maxClients).toBe(8);
+    expect(room.state.gameMode).toBe('battle');
+    expect(room.state.uniqueGuilds).toBe(false);
+  });
+
+  it('Versus room keeps maxClients at 2', () => {
+    const room = createRoom({ name: 'TestVersus', rounds: 3, visibility: 'public' });
+    expect(room.maxClients).toBe(2);
+    expect(room.state.gameMode).toBe('versus');
+  });
+
+  // -------------------------------------------------------------------------
+  // Task 4: launch_battle → battle_config
+  // -------------------------------------------------------------------------
+
+  it('launch_battle in battle mode transitions to battle_config and initialises 8 battleSlots', () => {
+    const room = createRoom({ gameMode: 'battle', name: 'B', rounds: 3, visibility: 'public' });
+    const c1 = makeClient('host');
+    const c2 = makeClient('p2');
+    joinRoom(room, c1, { name: 'Alice' });
+    joinRoom(room, c2, { name: 'Bob' });
+
+    room.state.players.get('host')!.ready = true;
+    room.state.players.get('p2')!.ready = true;
+
+    sendMsg(room, c1, 'launch_battle', {});
+
+    expect(room.state.phase).toBe('battle_config');
+    expect(room.state.battleSlots.length).toBe(8);
+
+    const humanSlots = [...room.state.battleSlots].filter(s => s.slotType === 'human');
+    expect(humanSlots).toHaveLength(2);
+
+    const offSlots = [...room.state.battleSlots].filter(s => s.slotType === 'off');
+    expect(offSlots).toHaveLength(6);
+  });
+
+  // -------------------------------------------------------------------------
+  // Task 5: set_battle_slot, set_my_guild, launch_from_config
+  // -------------------------------------------------------------------------
+
+  function reachBattleConfig(room: ReturnType<typeof createRoom>, host: StubClient, p2: StubClient) {
+    joinRoom(room, host, { name: 'Alice' });
+    joinRoom(room, p2, { name: 'Bob' });
+    room.state.players.get(host.sessionId)!.ready = true;
+    room.state.players.get(p2.sessionId)!.ready = true;
+    sendMsg(room, host, 'launch_battle', {});
+  }
+
+  it('host can set a cpu slot guild and team', () => {
+    const room = createRoom({ gameMode: 'battle', name: 'B', rounds: 3, visibility: 'public' });
+    const host = makeClient('host');
+    const p2   = makeClient('p2');
+    reachBattleConfig(room, host, p2);
+
+    sendMsg(room, host, 'set_battle_slot', { index: 2, slotType: 'cpu', guildId: 'knight', team: 'B' });
+
+    const s = room.state.battleSlots[2];
+    expect(s.slotType).toBe('cpu');
+    expect(s.guildId).toBe('knight');
+    expect(s.team).toBe('B');
+  });
+
+  it('non-host cannot call set_battle_slot', () => {
+    const room = createRoom({ gameMode: 'battle', name: 'B', rounds: 3, visibility: 'public' });
+    const host = makeClient('host');
+    const p2   = makeClient('p2');
+    reachBattleConfig(room, host, p2);
+
+    sendMsg(room, p2, 'set_battle_slot', { index: 2, slotType: 'cpu', guildId: 'knight', team: 'A' });
+    expect(room.state.battleSlots[2].slotType).toBe('off');
+  });
+
+  it('set_my_guild updates the calling player own slot', () => {
+    const room = createRoom({ gameMode: 'battle', name: 'B', rounds: 3, visibility: 'public' });
+    const host = makeClient('host');
+    const p2   = makeClient('p2');
+    reachBattleConfig(room, host, p2);
+
+    sendMsg(room, p2, 'set_my_guild', { guildId: 'mage' });
+    const ownSlot = [...room.state.battleSlots].find(s => s.ownerSessionId === 'p2')!;
+    expect(ownSlot.guildId).toBe('mage');
+  });
+
+  it('unique guilds: rejects duplicate guildId', () => {
+    const room = createRoom({ gameMode: 'battle', name: 'B', rounds: 3, visibility: 'public', uniqueGuilds: true });
+    const host = makeClient('host');
+    const p2   = makeClient('p2');
+    reachBattleConfig(room, host, p2);
+
+    sendMsg(room, host, 'set_my_guild', { guildId: 'adventurer' });
+    sendMsg(room, p2,   'set_my_guild', { guildId: 'adventurer' });
+    const p2Slot = [...room.state.battleSlots].find(s => s.ownerSessionId === 'p2')!;
+    expect(p2Slot.guildId).toBe(''); // rejected — unchanged
+  });
+
+  it('unique guilds off: allows duplicate guildId', () => {
+    const room = createRoom({ gameMode: 'battle', name: 'B', rounds: 3, visibility: 'public', uniqueGuilds: false });
+    const host = makeClient('host');
+    const p2   = makeClient('p2');
+    reachBattleConfig(room, host, p2);
+
+    sendMsg(room, host, 'set_my_guild', { guildId: 'adventurer' });
+    sendMsg(room, p2,   'set_my_guild', { guildId: 'adventurer' });
+    const p2Slot = [...room.state.battleSlots].find(s => s.ownerSessionId === 'p2')!;
+    expect(p2Slot.guildId).toBe('adventurer');
+  });
+
+  it('launch_from_config transitions to stage_select when >=2 active slots', () => {
+    const room = createRoom({ gameMode: 'battle', name: 'B', rounds: 3, visibility: 'public' });
+    const host = makeClient('host');
+    const p2   = makeClient('p2');
+    reachBattleConfig(room, host, p2);
+
+    sendMsg(room, host, 'set_my_guild', { guildId: 'adventurer' });
+    sendMsg(room, p2,   'set_my_guild', { guildId: 'knight' });
+    sendMsg(room, host, 'launch_from_config', {});
+
+    expect(room.state.phase).toBe('stage_select');
+  });
+
+  it('launch_from_config is ignored by non-host', () => {
+    const room = createRoom({ gameMode: 'battle', name: 'B', rounds: 3, visibility: 'public' });
+    const host = makeClient('host');
+    const p2   = makeClient('p2');
+    reachBattleConfig(room, host, p2);
+
+    sendMsg(room, p2, 'launch_from_config', {});
+    expect(room.state.phase).toBe('battle_config');
   });
 });
