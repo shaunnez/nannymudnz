@@ -152,11 +152,18 @@ export class MatchRoom extends Room<MatchState> {
       slot.locked = false; // changing guild resets lock
     });
 
+    this.onMessage('set_my_team', (client: Client, msg: { team: string }) => {
+      if (this.state.phase !== 'battle_config') return;
+      const slot = [...this.state.battleSlots].find(s => s.ownerSessionId === client.sessionId);
+      if (!slot) return;
+      slot.team = msg.team;
+      slot.locked = false;
+    });
+
     this.onMessage('lock_battle_slot', (client: Client, msg: { index: number }) => {
       if (this.state.phase !== 'battle_config') return;
       const slot = this.state.battleSlots[msg.index];
       if (!slot || slot.slotType === 'off') return;
-      if (!slot.guildId) return; // must have a guild before locking
       // Human slot: only the owner can lock it
       if (slot.slotType === 'human' && slot.ownerSessionId !== client.sessionId) return;
       // CPU slot: only the host can lock it
