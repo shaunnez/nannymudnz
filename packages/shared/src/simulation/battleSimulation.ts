@@ -106,7 +106,6 @@ export function createMpBattleState(
       // Human-type: no AI — driven by extraInputs in tick; clear the default chaser behavior
       actor.aiState = { ...actor.aiState, behavior: 'none', targetId: null };
     }
-    // Human-type actors have no AI — driven by extraInputs in tick
     state.enemies.push(actor);
     state.battStats[actor.id] = makeEmptyBattStat();
     actorIdBySlotIndex[i] = actor.id;

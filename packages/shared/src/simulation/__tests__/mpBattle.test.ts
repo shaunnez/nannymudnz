@@ -36,7 +36,7 @@ describe('createMpBattleState', () => {
     const { state, actorIdBySlotIndex } = createMpBattleState(TWO_HUMAN_SLOTS, 'assembly', 1);
     const slot1ActorId = actorIdBySlotIndex[1];
     const slot1Actor = state.enemies.find(e => e.id === slot1ActorId)!;
-    expect(slot1Actor.aiState.behavior).not.toBe('chaser');
+    expect(slot1Actor.aiState.behavior).toBe('none');
   });
 });
 
