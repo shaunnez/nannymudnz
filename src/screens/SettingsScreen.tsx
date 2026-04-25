@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { theme, Btn, Chip, SectionLabel } from '../ui';
 import { loadKeyBindings, saveKeyBindings, DEFAULT_BINDINGS, type KeyBindings } from '../input/keyBindings';
+import { useDevSettings } from '../state/useDevSettings';
 
 const VOL_KEY = 'nannymud_volume';
 
@@ -61,6 +62,7 @@ export function SettingsScreen({
   const [volume, setVolume] = useState(loadVolume);
   const [bindings, setBindings] = useState<KeyBindings>(loadKeyBindings);
   const [rebinding, setRebinding] = useState<keyof KeyBindings | null>(null);
+  const { enemyHpScale, setEnemyHpScale } = useDevSettings();
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -220,6 +222,27 @@ export function SettingsScreen({
               />
             </div>
           ))}
+
+          <SectionLabel kicker="STORY MODE" right={`${Math.round(enemyHpScale * 100)}%`}>
+            Enemy HP scale
+          </SectionLabel>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+            <input
+              type="range"
+              min={0.1}
+              max={1}
+              step={0.05}
+              value={enemyHpScale}
+              onChange={(e) => setEnemyHpScale(parseFloat(e.target.value))}
+              style={{ flex: 1, accentColor: theme.accent }}
+            />
+            <span style={{ fontFamily: theme.fontMono, fontSize: 12, color: theme.accent, minWidth: 44, textAlign: 'right' }}>
+              {Math.round(enemyHpScale * 100)}%
+            </span>
+          </div>
+          <div style={{ fontFamily: theme.fontBody, fontSize: 11, color: theme.inkMuted, lineHeight: 1.5 }}>
+            Scales enemy max HP on spawn. Use 10–25% to sprint through stages for testing.
+          </div>
 
           <SectionLabel kicker="VIDEO">Terminal chrome theme</SectionLabel>
           <Toggle
