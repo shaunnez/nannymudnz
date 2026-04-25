@@ -1,4 +1,5 @@
 import type { ReactNode, MouseEventHandler } from 'react';
+import { useIsMobile } from '../hooks/useIsMobile';
 import { theme } from './theme';
 
 interface BtnProps {
@@ -17,6 +18,12 @@ const SIZES = {
   lg: { pad: '12px 24px', fs: 15 },
 } as const;
 
+const SIZES_MOBILE = {
+  sm: { pad: '4px 10px', fs: 11 },
+  md: { pad: '12px 22px', fs: 15 },
+  lg: { pad: '12px 24px', fs: 15 },
+} as const;
+
 export function Btn({
   children,
   onClick,
@@ -26,7 +33,8 @@ export function Btn({
   title,
   type = 'button',
 }: BtnProps) {
-  const s = SIZES[size];
+  const mobile = useIsMobile();
+  const s = mobile ? SIZES_MOBILE[size] : SIZES[size];
   return (
     <button
       type={type}
