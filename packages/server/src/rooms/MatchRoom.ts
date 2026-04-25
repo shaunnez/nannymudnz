@@ -202,7 +202,15 @@ export class MatchRoom extends Room<MatchState> {
       if (client.sessionId !== this.state.hostSessionId) return;
       if (this.state.phase !== 'stage_select') return;
       this.state.stageId = msg.stageId;
+      for (const p of this.state.players.values()) p.loadProgress = 0;
       this.state.phase = 'loading';
+    });
+
+    this.onMessage('load_progress', (client: Client, msg: { value: number }) => {
+      if (this.state.phase !== 'loading') return;
+      const slot = this.state.players.get(client.sessionId);
+      if (!slot) return;
+      slot.loadProgress = Math.max(0, Math.min(1, Number(msg.value) || 0));
     });
 
     this.onMessage('hover_stage', (client: Client, msg: { idx: number }) => {

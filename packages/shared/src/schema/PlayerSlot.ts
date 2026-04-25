@@ -8,4 +8,5 @@ export class PlayerSlot extends Schema {
   @type('boolean') locked = false;
   @type('boolean') connected = true;
   @type('number') ping = 0;
+  @type('number') loadProgress = 0;  // 0..1, updated during 'loading' phase
 }

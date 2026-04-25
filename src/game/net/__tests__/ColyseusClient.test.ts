@@ -35,6 +35,8 @@ describe('ColyseusClient', () => {
       rounds: 3,
       visibility: 'public',
       playerName: 'Alice',
+      gameMode: 'versus',
+      uniqueGuilds: false,
     });
   });
 

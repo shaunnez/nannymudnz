@@ -38,3 +38,8 @@ export interface SetMyGuildMsg {
 export interface LaunchFromConfigMsg {
   type: 'launch_from_config';
 }
+
+export interface LoadProgressMsg {
+  type: 'load_progress';
+  value: number; // 0..1
+}

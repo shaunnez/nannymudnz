@@ -2,6 +2,7 @@ import { Client, Room } from '@colyseus/sdk';
 import type { MatchState } from '@nannymud/shared';
 
 const WS_URL = import.meta.env.VITE_COLYSEUS_URL ?? 'ws://localhost:2567';
+const HTTP_URL = WS_URL.replace(/^ws/, 'http');
 
 let client: Client | null = null;
 
@@ -44,9 +45,9 @@ export interface PublicRoom {
 }
 
 export async function getPublicRooms(): Promise<PublicRoom[]> {
-  const response = await getClient().http.get('/api/public-rooms');
-  if (response.status >= 400) throw new Error('Failed to fetch rooms');
-  return response.data as PublicRoom[];
+  const response = await fetch(`${HTTP_URL}/api/public-rooms`);
+  if (!response.ok) throw new Error('Failed to fetch rooms');
+  return response.json() as Promise<PublicRoom[]>;
 }
 
 // Test hook: allow tests to inject a mock client
