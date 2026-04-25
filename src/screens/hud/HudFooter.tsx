@@ -59,9 +59,8 @@ function AbilityStripSection({
   interactive?: boolean;
 }) {
   const color = side === 'p1' ? theme.team1 : theme.team2;
-  const align = side === 'p1' ? 'flex-start' : 'flex-end';
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: align, gap: 4 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 4 }}>
       <div
         style={{
           fontFamily: theme.fontMono,

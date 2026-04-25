@@ -108,7 +108,7 @@ export function BattleHUD8({ game, slots }: Props) {
           </div>
         </div>
 
-        {/* Battle footer: abilities left, 2×2 team-B grid right */}
+        {/* Battle footer: abilities left, 2×2 team-B grid right (or P2 abilities in 1v1) */}
         <div style={{
           position: 'absolute', bottom: 0, left: 0, right: 0, height: 128,
           display: 'flex', flexDirection: 'row',
@@ -121,7 +121,18 @@ export function BattleHUD8({ game, slots }: Props) {
             </div>
             <AbilityStrip actor={state.player} side="p1" showKeys simTimeMs={state.timeMs} interactive />
           </div>
-          {bottom.length > 0 && (
+          {bottom.length === 0 && state.enemies[0]?.guildId ? (
+            <div style={{
+              flex: 1, minWidth: 0, padding: '8px 14px 10px',
+              display: 'flex', flexDirection: 'column', gap: 4,
+              borderLeft: `1px solid ${theme.line}`,
+            }}>
+              <div style={{ fontFamily: theme.fontMono, fontSize: 10, letterSpacing: 3, color: theme.team2 }}>
+                P2 · ABILITIES
+              </div>
+              <AbilityStrip actor={state.enemies[0]} side="p2" showKeys={false} simTimeMs={state.timeMs} />
+            </div>
+          ) : bottom.length > 0 ? (
             <div style={{
               flex: 1, minWidth: 0,
               display: 'grid',
@@ -169,7 +180,7 @@ export function BattleHUD8({ game, slots }: Props) {
                 );
               })}
             </div>
-          )}
+          ) : null}
         </div>
         {mobile && <TouchJoystick />}
         {mobile && <TouchActionButtons />}

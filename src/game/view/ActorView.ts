@@ -21,6 +21,20 @@ for (const [kind, def] of Object.entries(ENEMY_DEFS)) {
   ENEMY_LOOKUP[kind] = { color: def.color, initial: def.initial };
 }
 
+// Maps boss/elite enemy kinds that lack their own sprite sheets to an existing
+// guild or enemy sprite set. The borrowed sprite plays at the boss's larger
+// hitbox scale so it reads as a visually distinct threat without needing new assets.
+const BOSS_SPRITE_MAP: Partial<Record<string, ActorKind>> = {
+  giant_blue_wolf:  'wolf',
+  vampire_lord:     'vampire',
+  cult_high_priest: 'cultist',
+  elder_druid:      'druid',
+  plague_darkmage:  'darkmage',
+  warlord:          'champion',
+  shadow_master:    'master',
+  bandit_king_ii:   'bandit_king',
+};
+
 const ALLY_COLOR = '#a3e635';
 const ALLY_INITIAL = 'A';
 
@@ -106,7 +120,8 @@ export class ActorView {
     this.width = actor.width;
     this.height = actor.height;
     this.spriteBodyHeightPx = this.height * SPRITE_BODY_TO_HITBOX_RATIO;
-    this.spriteId = (actor.guildId ?? actor.kind) as ActorKind | undefined;
+    const rawId = actor.guildId ?? actor.kind;
+    this.spriteId = (BOSS_SPRITE_MAP[rawId] ?? rawId) as ActorKind | undefined;
     this.baseSpriteId = this.spriteId;
     this.hasSprites = !!this.spriteId && hasSprites(this.spriteId);
 
@@ -1021,18 +1036,18 @@ export class ActorView {
       this.nose.fillPath();
     }
 
-    // Shadow for airborne actors only — LF2 convention, matches the pre-port
-    // Canvas renderer. The shadow is drawn at ground level (world y) while the
-    // sprite has lifted by actor.z * 0.6 upward, so the gap between shadow
-    // and feet reads as jump height.
+    // Shadow sits at ground level, slightly behind the actor (opposite facing).
+    // When airborne the shadow stays on the ground, shrinks, and the vertical
+    // gap between shadow and feet reads as jump height.
     this.shadow.clear();
-    this.shadow.fillStyle(0x000000, 0.3);
+    this.shadow.fillStyle(0x000000, 0.45);
+    const shadowBehindX = -actor.facing * 8;
     if (actor.z > 0) {
       const shrink = Math.min(1, 1 - actor.z / 200);
       const shadowOffset = actor.z * 0.6;
-      this.shadow.fillEllipse(0, shadowOffset - 2, this.width * 0.8 * shrink, 10);
+      this.shadow.fillEllipse(shadowBehindX, shadowOffset - 2, this.width * 1.4 * shrink, 16 * shrink);
     } else {
-      this.shadow.fillEllipse(0, -2, this.width * 0.8, 10);
+      this.shadow.fillEllipse(shadowBehindX, -2, this.width * 1.4, 16);
     }
     this.shadow.setVisible(true);
 
