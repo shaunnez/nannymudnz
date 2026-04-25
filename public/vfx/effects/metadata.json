@@ -1,0 +1,260 @@
+{
+  "frameSize": {
+    "w": 96,
+    "h": 96
+  },
+  "assets": {
+    "slash_1": {
+      "frames": 12,
+      "frameDurationMs": 35,
+      "loop": false,
+      "anchor": {
+        "x": 640,
+        "y": 360
+      },
+      "frameSize": {
+        "w": 1280,
+        "h": 720
+      },
+      "scale": 0.156
+    },
+    "slash_2": {
+      "frames": 9,
+      "frameDurationMs": 35,
+      "loop": false,
+      "anchor": {
+        "x": 640,
+        "y": 360
+      },
+      "frameSize": {
+        "w": 1280,
+        "h": 720
+      },
+      "scale": 0.156
+    },
+    "slash_3": {
+      "frames": 12,
+      "frameDurationMs": 35,
+      "loop": false,
+      "anchor": {
+        "x": 640,
+        "y": 360
+      },
+      "frameSize": {
+        "w": 1280,
+        "h": 720
+      },
+      "scale": 0.156
+    },
+    "slash_4": {
+      "frames": 12,
+      "frameDurationMs": 35,
+      "loop": false,
+      "anchor": {
+        "x": 640,
+        "y": 360
+      },
+      "frameSize": {
+        "w": 1280,
+        "h": 720
+      },
+      "scale": 0.156
+    },
+    "slash_5": {
+      "frames": 11,
+      "frameDurationMs": 35,
+      "loop": false,
+      "anchor": {
+        "x": 284,
+        "y": 197
+      },
+      "frameSize": {
+        "w": 568,
+        "h": 395
+      },
+      "scale": 0.352
+    },
+    "slash_6": {
+      "frames": 11,
+      "frameDurationMs": 35,
+      "loop": false,
+      "anchor": {
+        "x": 640,
+        "y": 360
+      },
+      "frameSize": {
+        "w": 1280,
+        "h": 720
+      },
+      "scale": 0.156
+    },
+    "slash_7": {
+      "frames": 6,
+      "frameDurationMs": 35,
+      "loop": false,
+      "anchor": {
+        "x": 640,
+        "y": 360
+      },
+      "frameSize": {
+        "w": 1280,
+        "h": 720
+      },
+      "scale": 0.156
+    },
+    "slash_8": {
+      "frames": 8,
+      "frameDurationMs": 35,
+      "loop": false,
+      "anchor": {
+        "x": 640,
+        "y": 360
+      },
+      "frameSize": {
+        "w": 1280,
+        "h": 720
+      },
+      "scale": 0.156
+    },
+    "slash_9": {
+      "frames": 9,
+      "frameDurationMs": 35,
+      "loop": false,
+      "anchor": {
+        "x": 640,
+        "y": 360
+      },
+      "frameSize": {
+        "w": 1280,
+        "h": 720
+      },
+      "scale": 0.156
+    },
+    "slash_10": {
+      "frames": 10,
+      "frameDurationMs": 35,
+      "loop": false,
+      "anchor": {
+        "x": 331,
+        "y": 253
+      },
+      "frameSize": {
+        "w": 662,
+        "h": 506
+      },
+      "scale": 0.302
+    },
+    "explosion_1": {
+      "frames": 10,
+      "frameDurationMs": 60,
+      "loop": false,
+      "anchor": {
+        "x": 275,
+        "y": 275
+      },
+      "frameSize": {
+        "w": 550,
+        "h": 550
+      },
+      "scale": 0.455
+    },
+    "explosion_2": {
+      "frames": 10,
+      "frameDurationMs": 60,
+      "loop": false,
+      "anchor": {
+        "x": 260,
+        "y": 260
+      },
+      "frameSize": {
+        "w": 520,
+        "h": 520
+      },
+      "scale": 0.481
+    },
+    "explosion_3": {
+      "frames": 10,
+      "frameDurationMs": 60,
+      "loop": false,
+      "anchor": {
+        "x": 340,
+        "y": 340
+      },
+      "frameSize": {
+        "w": 680,
+        "h": 680
+      },
+      "scale": 0.368
+    },
+    "explosion_5": {
+      "frames": 10,
+      "frameDurationMs": 60,
+      "loop": false,
+      "anchor": {
+        "x": 320,
+        "y": 320
+      },
+      "frameSize": {
+        "w": 640,
+        "h": 640
+      },
+      "scale": 0.391
+    },
+    "explosion_6": {
+      "frames": 10,
+      "frameDurationMs": 60,
+      "loop": false,
+      "anchor": {
+        "x": 380,
+        "y": 380
+      },
+      "frameSize": {
+        "w": 760,
+        "h": 760
+      },
+      "scale": 0.329
+    },
+    "explosion_8": {
+      "frames": 10,
+      "frameDurationMs": 60,
+      "loop": false,
+      "anchor": {
+        "x": 350,
+        "y": 350
+      },
+      "frameSize": {
+        "w": 700,
+        "h": 700
+      },
+      "scale": 0.357
+    },
+    "explosion_9": {
+      "frames": 10,
+      "frameDurationMs": 60,
+      "loop": false,
+      "anchor": {
+        "x": 400,
+        "y": 400
+      },
+      "frameSize": {
+        "w": 800,
+        "h": 800
+      },
+      "scale": 0.312
+    },
+    "explosion_10": {
+      "frames": 10,
+      "frameDurationMs": 60,
+      "loop": false,
+      "anchor": {
+        "x": 307,
+        "y": 307
+      },
+      "frameSize": {
+        "w": 615,
+        "h": 615
+      },
+      "scale": 0.407
+    }
+  }
+}
