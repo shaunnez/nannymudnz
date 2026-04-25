@@ -1,7 +1,7 @@
 import { Room, Client } from 'colyseus';
 import { MatchState, PlayerSlot, BattleSlotSchema } from '@nannymud/shared';
 import type { InputMsg, InputEvent } from '@nannymud/shared';
-import type { InputState, SimState, GuildId } from '@nannymud/shared/simulation/types';
+import type { InputState, SimState, GuildId, BattleTeam } from '@nannymud/shared/simulation/types';
 import { tickSimulation, makeEmptyInputState } from '@nannymud/shared/simulation/simulation';
 import { createMpVsState } from '@nannymud/shared/simulation/vsSimulation';
 import { createMpBattleState } from '@nannymud/shared/simulation/battleSimulation';
@@ -359,9 +359,9 @@ export class MatchRoom extends Room<MatchState> {
 
     if (this.state.gameMode === 'battle') {
       const slots = [...this.state.battleSlots].map(s => ({
-        guildId: (s.guildId || 'adventurer') as import('@nannymud/shared/simulation/types').GuildId,
+        guildId: (s.guildId || 'adventurer') as GuildId,
         type: s.slotType as 'human' | 'cpu' | 'off',
-        team: (s.team || undefined) as import('@nannymud/shared/simulation/types').BattleTeam,
+        team: (s.team as BattleTeam) || null,
       }));
       const { state: sim, actorIdBySlotIndex } = createMpBattleState(slots, this.state.stageId, seed);
       this.plainSim = sim;
