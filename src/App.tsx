@@ -152,8 +152,6 @@ export default function App() {
               if (mode) set({ mode });
               go(target);
             }}
-            difficulty={state.difficulty}
-            onDifficultyChange={(d) => set({ difficulty: d })}
           />
         )}
 
@@ -213,7 +211,7 @@ export default function App() {
             p2={state.p2}
             stageId={state.stageId}
             animateHud={state.animateHud}
-            difficulty={state.difficulty}
+            difficulty={state.mode === 'batt' ? state.battleDifficulty : state.mode === 'champ' ? state.champDifficulty : state.vsDifficulty}
             battleMode={state.mode === 'batt'}
             battleSlots={state.mode === 'batt' ? state.battleSlots : undefined}
             onVictory={(score, matchStats) => {
@@ -280,6 +278,12 @@ export default function App() {
           <SettingsScreen
             animateHud={state.animateHud}
             onToggleAnimateHud={() => set({ animateHud: !state.animateHud })}
+            vsDifficulty={state.vsDifficulty}
+            champDifficulty={state.champDifficulty}
+            battleDifficulty={state.battleDifficulty}
+            onVsDifficultyChange={(d) => set({ vsDifficulty: d })}
+            onChampDifficultyChange={(d) => set({ champDifficulty: d })}
+            onBattleDifficultyChange={(d) => set({ battleDifficulty: d })}
             onBack={() => go('menu')}
           />
         )}

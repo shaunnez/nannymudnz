@@ -12,6 +12,7 @@ export function createBattleState(
   slots: BattleSlot[],
   _stageId: string,
   seed: number = Date.now(),
+  difficulty = 2,
 ): SimState {
   const state = createInitialState(humanGuildId, seed);
 
@@ -21,6 +22,7 @@ export function createBattleState(
   state.battleMode = true;
   state.battleSlots = slots;
   state.battleTimer = BATTLE_TIMER_MS;
+  state.battleDifficulty = difficulty;
   state.battStats = { [state.player.id]: makeEmptyBattStat() };
 
   // Assign battleTeam to the human player from their slot.

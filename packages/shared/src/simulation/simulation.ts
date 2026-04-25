@@ -216,6 +216,7 @@ export function createInitialState(guildId: GuildId, seed: number = Date.now()):
     battleMode: false,
     battleSlots: [],
     battleTimer: 0,
+    battleDifficulty: 2,
     battStats: null,
   };
 }
@@ -1845,7 +1846,7 @@ export function tickSimulation(
       // Battle CPU: guild actor driven by synthesized VS input, not tickAI.
       // handlePlayerInput already decrements invulnerableMs for this branch.
       const oppCtrl = getOrCreateController(state, enemy.id, createEmptyCpuInput());
-      const cpuInput = synthesizeVsCpuInput(state, enemy, oppCtrl.input, dtMs, 2);
+      const cpuInput = synthesizeVsCpuInput(state, enemy, oppCtrl.input, dtMs, state.battleDifficulty);
       handlePlayerInput(state, cpuInput, oppCtrl, dtMs, enemy);
     } else {
       tickAI(enemy, state, dtSec, state.vfxEvents);

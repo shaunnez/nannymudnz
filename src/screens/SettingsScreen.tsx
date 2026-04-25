@@ -38,13 +38,26 @@ function formatKey(k: string): string {
   return k.toUpperCase();
 }
 
+const DIFFICULTY_LABELS = ['Training', 'Easy', 'Knight', 'Veteran', 'Master', 'Mats Himself'];
+
 interface Props {
   animateHud: boolean;
   onToggleAnimateHud: () => void;
+  vsDifficulty: number;
+  champDifficulty: number;
+  battleDifficulty: number;
+  onVsDifficultyChange: (d: number) => void;
+  onChampDifficultyChange: (d: number) => void;
+  onBattleDifficultyChange: (d: number) => void;
   onBack: () => void;
 }
 
-export function SettingsScreen({ animateHud, onToggleAnimateHud, onBack }: Props) {
+export function SettingsScreen({
+  animateHud, onToggleAnimateHud,
+  vsDifficulty, champDifficulty, battleDifficulty,
+  onVsDifficultyChange, onChampDifficultyChange, onBattleDifficultyChange,
+  onBack,
+}: Props) {
   const [volume, setVolume] = useState(loadVolume);
   const [bindings, setBindings] = useState<KeyBindings>(loadKeyBindings);
   const [rebinding, setRebinding] = useState<keyof KeyBindings | null>(null);
@@ -183,6 +196,30 @@ export function SettingsScreen({ animateHud, onToggleAnimateHud, onBack }: Props
           <div style={{ fontFamily: theme.fontBody, fontSize: 11, color: theme.inkMuted, lineHeight: 1.5 }}>
             Music and combat SFX share this slider. Applies to the next match.
           </div>
+
+          <SectionLabel kicker="CPU DIFFICULTY">Per-mode AI level</SectionLabel>
+          {(
+            [
+              { label: 'Versus', value: vsDifficulty, onChange: onVsDifficultyChange },
+              { label: 'Championship', value: champDifficulty, onChange: onChampDifficultyChange },
+              { label: 'Battle', value: battleDifficulty, onChange: onBattleDifficultyChange },
+            ] as const
+          ).map(({ label, value, onChange }) => (
+            <div key={label} style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                <span style={{ fontFamily: theme.fontDisplay, fontSize: 15, color: theme.ink }}>{label}</span>
+                <span style={{ fontFamily: theme.fontMono, fontSize: 11, color: theme.accent }}>{DIFFICULTY_LABELS[value]}</span>
+              </div>
+              <input
+                type="range"
+                min={0}
+                max={5}
+                value={value}
+                onChange={(e) => onChange(+e.target.value)}
+                style={{ flex: 1, accentColor: theme.accent }}
+              />
+            </div>
+          ))}
 
           <SectionLabel kicker="VIDEO">Terminal chrome theme</SectionLabel>
           <Toggle

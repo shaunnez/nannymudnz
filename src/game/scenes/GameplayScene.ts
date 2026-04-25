@@ -126,7 +126,8 @@ export class GameplayScene extends Phaser.Scene {
       this.simState = createVsState(guildId, p2, stageId, seed, false, difficulty);
     } else if (this.game.registry.get('battleMode')) {
       const battleSlots = this.game.registry.get('battleSlots') as BattleSlot[];
-      this.simState = createBattleState(guildId, battleSlots, stageId, seed);
+      const battleDiff = (this.game.registry.get('difficulty') as number | null) ?? 2;
+      this.simState = createBattleState(guildId, battleSlots, stageId, seed, battleDiff);
     } else if (this.game.registry.get('survivalMode')) {
       this.simState = createSurvivalState(guildId, seed);
     } else {
@@ -195,7 +196,8 @@ export class GameplayScene extends Phaser.Scene {
         } else if (this.game.registry.get('battleMode')) {
           const battleSlots = this.game.registry.get('battleSlots') as BattleSlot[];
           const stageId = this.game.registry.get('stageId') as string;
-          this.simState = createBattleState(currentGuild, battleSlots, stageId, Date.now());
+          const diff = (this.game.registry.get('difficulty') as number | null) ?? 2;
+          this.simState = createBattleState(currentGuild, battleSlots, stageId, Date.now(), diff);
         } else {
           this.simState = createInitialState(currentGuild, Date.now());
         }

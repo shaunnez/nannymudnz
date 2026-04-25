@@ -448,6 +448,7 @@ export interface SimState {
   battleMode: boolean;
   battleSlots: BattleSlot[];
   battleTimer: number;
+  battleDifficulty: number;
   battStats: Record<string, BattStatEntry> | null;
 }
 

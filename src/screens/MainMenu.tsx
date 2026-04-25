@@ -10,7 +10,6 @@ interface MenuItem {
   sub: string;
   target: AppScreen | null;
   mode?: GameMode;
-  slider?: boolean;
   enabled: boolean;  // false → visually dimmed, click is no-op (unbuilt screens)
 }
 
@@ -24,12 +23,10 @@ const MENU_ITEMS: MenuItem[] = [
   { id: 'mp',    label: 'MULTIPLAYER',   sub: 'Up to 8 · FFA · Teams · Co-op', target: 'mp_hub',     enabled: true },
   { id: 'batt',  label: 'BATTLE',        sub: '4 vs 4 · configure all 8 slots',target: 'charselect', mode: 'batt',  enabled: true },
   { id: 'champ', label: 'CHAMPIONSHIP',  sub: 'Bracketed tournament',          target: 'charselect', mode: 'champ', enabled: true },
-  { id: 'diff',  label: '1P DIFFICULTY', sub: 'Training · Knight · Master',    target: null, slider: true, enabled: true },
   { id: 'moves', label: 'MOVE LIST',     sub: 'Ability reference per guild',   target: 'moves',      enabled: true },
   { id: 'set',   label: 'SETTINGS',      sub: 'Controls · video · audio',      target: 'settings',   enabled: true },
 ];
 
-const DIFFICULTY_LABELS = ['Training', 'Easy', 'Knight', 'Veteran', 'Master', 'Mats Himself'];
 
 const NEWS = [
   { d: '24 APR', t: 'Survival, Battle & Championship modes designed', b: 'Three new game modes specced out — endless waves, 1v1 deathmatch rules, and a full bracketed tournament system.' },
@@ -46,13 +43,10 @@ const NEWS = [
 
 interface Props {
   onPick: (target: AppScreen, mode?: GameMode) => void;
-  difficulty: number;
-  onDifficultyChange: (d: number) => void;
 }
 
-export function MainMenu({ onPick, difficulty, onDifficultyChange }: Props) {
+export function MainMenu({ onPick }: Props) {
   const [sel, setSel] = useState(0);
-  const setDifficulty = onDifficultyChange;
   const mobile = useIsMobile();
 
   const activate = (index: number) => {
@@ -185,35 +179,6 @@ export function MainMenu({ onPick, difficulty, onDifficultyChange }: Props) {
                   >
                     {m.sub}
                   </div>
-                  {m.slider && (
-                    <div
-                      style={{
-                        marginTop: 8,
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 10,
-                      }}
-                    >
-                      <input
-                        type="range"
-                        min={0}
-                        max={5}
-                        value={difficulty}
-                        onChange={(e) => setDifficulty(+e.target.value)}
-                        style={{ flex: 1, accentColor: theme.accent }}
-                      />
-                      <span
-                        style={{
-                          fontFamily: theme.fontMono,
-                          fontSize: 11,
-                          color: theme.accent,
-                          minWidth: 100,
-                        }}
-                      >
-                        {DIFFICULTY_LABELS[difficulty]}
-                      </span>
-                    </div>
-                  )}
                 </div>
                 {m.target && (
                   <ChevronRight

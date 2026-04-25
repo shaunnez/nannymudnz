@@ -94,7 +94,7 @@ export const ENEMY_DEFS: Record<string, EnemyDef> = {
     name: 'Bandit King',
     color: '#8a0f0f',
     initial: 'K',
-    hp: 3200,
+    hp: 2240,
     armor: 20,
     magicResist: 10,
     moveSpeed: 90,

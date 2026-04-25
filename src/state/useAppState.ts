@@ -50,8 +50,11 @@ export interface AppState {
 
   animateHud: boolean;
 
-  /** SP VS CPU difficulty (0..5). Ignored in MP / story. */
-  difficulty: number;
+  /** Per-mode CPU difficulty (0..5). Each is persisted independently. */
+  vsDifficulty: number;
+  champDifficulty: number;
+  battleDifficulty: number;
+
   battleSlots: BattleSlot[];
 
   survivalScore: number;
@@ -74,7 +77,9 @@ const DEFAULT_STATE: AppState = {
   winner: null,
   mpRoom: null,
   animateHud: true,
-  difficulty: 2,
+  vsDifficulty: 2,
+  champDifficulty: 2,
+  battleDifficulty: 2,
   battleSlots: [],
   survivalScore: 0,
   survivalWave: 0,
@@ -89,7 +94,9 @@ const PERSISTED_KEYS: (keyof AppState)[] = [
   'p2Team',
   'stageId',
   'animateHud',
-  'difficulty',
+  'vsDifficulty',
+  'champDifficulty',
+  'battleDifficulty',
 ];
 
 function loadPersisted(): Partial<AppState> {
@@ -102,6 +109,13 @@ function loadPersisted(): Partial<AppState> {
       if (key in parsed) {
         (picked as Record<string, unknown>)[key] = parsed[key];
       }
+    }
+    // Migrate old single 'difficulty' key
+    if ('difficulty' in parsed && typeof parsed.difficulty === 'number') {
+      const d = parsed.difficulty as number;
+      if (!('vsDifficulty' in parsed)) picked.vsDifficulty = d;
+      if (!('champDifficulty' in parsed)) picked.champDifficulty = d;
+      if (!('battleDifficulty' in parsed)) picked.battleDifficulty = d;
     }
     return picked;
   } catch {
