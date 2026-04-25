@@ -145,7 +145,7 @@ export interface GuildDef {
   rangedBasic?: { range: number; speed: number; damageType: DamageType; vfxColor: string };
 }
 
-export type AIBehavior = 'chaser' | 'archer' | 'packer' | 'brute' | 'boss';
+export type AIBehavior = 'chaser' | 'archer' | 'packer' | 'brute' | 'boss' | 'none';
 
 export interface EnemyDef {
   kind: ActorKind;

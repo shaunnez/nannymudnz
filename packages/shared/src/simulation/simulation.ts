@@ -1788,6 +1788,7 @@ export function tickSimulation(
   input: InputState,
   dtMs: number,
   opponentInput?: InputState,
+  extraInputs?: Record<string, InputState>,
 ): SimState {
   if (state.phase === 'victory' || state.phase === 'defeat') return state;
   if (state.phase === 'paused') {
@@ -1842,7 +1843,11 @@ export function tickSimulation(
       deadEnemies.push(enemy);
       continue;
     }
-    if (state.battleMode && enemy.isPlayer) {
+    if (extraInputs?.[enemy.id] !== undefined) {
+      // MP Battle: human actor driven by remote client input instead of AI.
+      const humanCtrl = getOrCreateController(state, enemy.id, extraInputs[enemy.id]);
+      handlePlayerInput(state, extraInputs[enemy.id], humanCtrl, dtMs, enemy);
+    } else if (state.battleMode && enemy.isPlayer) {
       // Battle CPU: guild actor driven by synthesized VS input, not tickAI.
       // handlePlayerInput already decrements invulnerableMs for this branch.
       const oppCtrl = getOrCreateController(state, enemy.id, createEmptyCpuInput());
