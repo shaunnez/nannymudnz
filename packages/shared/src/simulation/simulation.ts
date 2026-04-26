@@ -1187,8 +1187,46 @@ function performBasicAttack(player: Actor, state: SimState, ctrl: PlayerControll
 
   const guild = getGuild(player.guildId!);
   const baseStr = player.stats.STR;
-  const baseDmg = Math.round((10 + baseStr * 0.5) * dmgMult * (0.95 + state.rng() * 0.1));
-  const range = (player.heldPickup?.type === 'club' ? 70 : 55) * (isJumpAttack ? 1.2 : 1);
+  const heldDef: PickupDef | undefined = player.heldPickup ? PICKUP_DEFS[player.heldPickup.type] : undefined;
+
+  // throwing_star: attack fires a projectile instead of melee swing
+  if (heldDef?.type === 'throwing_star' && player.heldPickup) {
+    player.animationId = 'throw';
+    player.state = 'attacking';
+    state.projectiles.push({
+      id: `proj_${state.nextProjectileId++}`,
+      ownerId: player.id,
+      guildId: null,
+      team: player.team,
+      x: player.x,
+      y: player.y,
+      z: player.z + player.height * 0.55,
+      vx: player.facing * 600,
+      vy: 0,
+      vz: 0,
+      damage: heldDef.throwDamage ?? 30,
+      damageType: 'physical',
+      range: heldDef.throwRange ?? 600,
+      traveled: 0,
+      radius: heldDef.throwRadius ?? 8,
+      knockdown: false,
+      knockbackForce: 0,
+      effects: {},
+      piercing: true,
+      color: heldDef.color,
+      type: 'thrown_throwing_star',
+      hitActorIds: [],
+    });
+    player.heldPickup = null;
+    ctrl.lastAttackMs = state.timeMs;
+    return;
+  }
+
+  let baseDmg = Math.round((10 + baseStr * 0.5) * dmgMult * (0.95 + state.rng() * 0.1));
+  if (heldDef?.damage !== undefined && heldDef.category === 'weapon') {
+    baseDmg = Math.round(heldDef.damage * dmgMult);
+  }
+  const range = (heldDef?.attackRange ?? 55) * (isJumpAttack ? 1.2 : 1);
 
   const animId = ctrl.attackChain === 1 ? 'attack_1' : ctrl.attackChain === 2 ? 'attack_2' : 'attack_3';
   player.animationId = animId;
@@ -1232,7 +1270,7 @@ function performBasicAttack(player: Actor, state: SimState, ctrl: PlayerControll
     return Math.sign(dx) === player.facing;
   });
 
-  if (player.heldPickup?.type === 'club') {
+  if (player.heldPickup && heldDef?.category === 'weapon') {
     player.heldPickup.hitsLeft--;
     if (player.heldPickup.hitsLeft <= 0) player.heldPickup = null;
   }
@@ -1268,6 +1306,15 @@ function performBasicAttack(player: Actor, state: SimState, ctrl: PlayerControll
       if (!target.isAlive) {
         player.bloodtally = Math.min(10, (player.bloodtally || 0) + 3);
         player.mp = player.bloodtally;
+      }
+    }
+  }
+
+  // Apply weapon hitEffect to all hit targets
+  if (heldDef?.hitEffect && targets.length > 0) {
+    for (const target of targets) {
+      for (const [etype, edata] of Object.entries(heldDef.hitEffect)) {
+        addStatusEffect(state, target, etype as StatusEffectType, edata.magnitude, edata.durationMs, player.id);
       }
     }
   }
