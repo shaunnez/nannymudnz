@@ -119,9 +119,8 @@ export function StageSelect({ initialStage, onBack, onReady }: Props) {
         <span>◀▶▲▼ MOVE</span>
         <span>↵ FIGHT</span>
         <span>ESC BACK</span>
-        <span style={{ marginLeft: 'auto' }}>
-          {STAGES.filter((s) => isStageUnlocked(s.id)).length} / {STAGES.length} UNLOCKED
-        </span>
+        <span style={{ marginLeft: 'auto' }}>WIN ON STORY MODE TO UNLOCK MAPS</span>
+        <span>{STAGES.filter((s) => isStageUnlocked(s.id)).length} / {STAGES.length} UNLOCKED</span>
       </div>
     </div>
   );
