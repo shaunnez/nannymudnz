@@ -85,12 +85,10 @@ export function HudOverlay({
   // don't flicker guests onto the host's side of the bar for one frame.
   if (inMp && (!localSessionId || !hostSessionId)) return null;
 
-  // Server convention: host's char is state.player, guest's is state.opponent.
-  // In SP VS, local is always state.player. In MP, show the local player on
-  // the left regardless of which schema slot they occupy.
-  const localIsHost = inMp && localSessionId === hostSessionId;
-  const p1 = inMp && !localIsHost ? state.opponent! : state.player;
-  const p2 = isVs ? (inMp && !localIsHost ? state.player : state.opponent) : null;
+  // Server convention: state.player = host (P1), state.opponent = guest (P2).
+  // Both clients see the same fixed P1-left / P2-right ordering.
+  const p1 = state.player;
+  const p2 = isVs ? state.opponent : null;
 
   return (
     <div

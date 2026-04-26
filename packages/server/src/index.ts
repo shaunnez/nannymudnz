@@ -2,6 +2,16 @@ import { Server, matchMaker, createRouter, createEndpoint } from 'colyseus';
 import { createServer } from 'node:http';
 import { MatchRoom } from './rooms/MatchRoom.js';
 
+const CORS_HEADERS = {
+  'access-control-allow-origin': '*',
+  'access-control-allow-methods': 'GET, OPTIONS',
+  'access-control-allow-headers': 'content-type, ngrok-skip-browser-warning',
+};
+
+const publicRoomsPreflightEndpoint = createEndpoint('/api/public-rooms', { method: 'OPTIONS' }, async () => {
+  return new Response(null, { status: 204, headers: CORS_HEADERS });
+});
+
 const publicRoomsEndpoint = createEndpoint('/api/public-rooms', { method: 'GET' }, async () => {
   try {
     const rooms = await matchMaker.query({});
@@ -17,12 +27,12 @@ const publicRoomsEndpoint = createEndpoint('/api/public-rooms', { method: 'GET' 
       }));
     return new Response(JSON.stringify(publicRooms), {
       status: 200,
-      headers: { 'content-type': 'application/json' },
+      headers: { 'content-type': 'application/json', ...CORS_HEADERS },
     });
   } catch {
     return new Response(JSON.stringify({ error: 'query failed' }), {
       status: 500,
-      headers: { 'content-type': 'application/json' },
+      headers: { 'content-type': 'application/json', ...CORS_HEADERS },
     });
   }
 });
@@ -33,7 +43,7 @@ const gameServer = new Server({ server: app });
 gameServer.define('match', MatchRoom).filterBy(['code', 'visibility']);
 
 // Must be set before listen() so bindRouterToTransport picks it up.
-gameServer.router = createRouter({ publicRoomsEndpoint });
+gameServer.router = createRouter({ publicRoomsPreflightEndpoint, publicRoomsEndpoint });
 
 const port = Number(process.env.PORT ?? 2567);
 

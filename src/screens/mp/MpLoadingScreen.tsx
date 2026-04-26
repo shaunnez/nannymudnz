@@ -8,7 +8,7 @@ import { GUILDS } from '@nannymud/shared/simulation/guildData';
 import { GUILD_META } from '../../data/guildMeta';
 import { TIPS } from '../LoadingScreen';
 import { theme, guildAccent, GuildMonogram } from '../../ui';
-import { useMatchState, getMatchSlots } from './useMatchState';
+import { useMatchState } from './useMatchState';
 import { usePhaseBounce } from './usePhaseBounce';
 import { MpLoading } from './MpLoading';
 import { usePreloader } from './usePreloader';
@@ -96,8 +96,10 @@ export function MpLoadingScreen({ room, onPhaseChange }: Props) {
       };
     });
   } else {
-    const { localSlot, opponentSlot } = getMatchSlots(state, room.sessionId);
-    tiles = [localSlot, opponentSlot].filter(Boolean).map((p, i) => {
+    const allSlots = Array.from(state.players.values());
+    const p1Slot = allSlots.find(s => s.sessionId === state.hostSessionId);
+    const p2Slot = allSlots.find(s => s.sessionId !== state.hostSessionId);
+    tiles = [p1Slot, p2Slot].filter(Boolean).map((p, i) => {
       const guildId = (p!.guildId as GuildId | undefined) ?? 'adventurer';
       const guild = GUILDS.find(g => g.id === guildId);
       const isMe = p!.sessionId === room.sessionId;
@@ -107,7 +109,7 @@ export function MpLoadingScreen({ room, onPhaseChange }: Props) {
         name: guild?.name ?? guildId,
         teamColor: theme.lineSoft,
         team: '',
-        label: isMe ? 'YOU' : `P${i + 1}`,
+        label: isMe ? `P${i + 1} · YOU` : `P${i + 1}`,
         isMe,
         loadProgress: p!.loadProgress,
         isCpu: false,

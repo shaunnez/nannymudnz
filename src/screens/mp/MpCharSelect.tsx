@@ -90,6 +90,10 @@ export function MpCharSelect({ room, onLeave, onPhaseChange }: Props) {
 
   if (!state) return <MpLoading />;
 
+  const isHost = room.sessionId === state.hostSessionId;
+  const localPlayerNum = isHost ? 'P1' : 'P2';
+  const opponentPlayerNum = isHost ? 'P2' : 'P1';
+
   const opponentGuildId = opponentSlot?.locked ? opponentSlot.guildId : null;
   const localGuildId = isLocked
     ? (localSlot!.guildId as GuildId)
@@ -160,7 +164,7 @@ export function MpCharSelect({ room, onLeave, onPhaseChange }: Props) {
         {/* Left panel — local player */}
         <SidePanel
           role="P1"
-          roleLabel="P1 · YOU"
+          roleLabel={`${localPlayerNum} · YOU`}
           guildId={localGuildId}
           locked={isLocked || localPick !== null}
           active={true}
@@ -239,7 +243,7 @@ export function MpCharSelect({ room, onLeave, onPhaseChange }: Props) {
                         zIndex: 2,
                       }}
                     >
-                      ◆ P1{localPickHere && !isLocked ? '·✓' : ''}
+                      ◆ {localPlayerNum}{localPickHere && !isLocked ? '·✓' : ''}
                     </div>
                   )}
                   {oppLockedHere && (
@@ -299,7 +303,7 @@ export function MpCharSelect({ room, onLeave, onPhaseChange }: Props) {
         {opponentSlot?.locked && opponentGuildId ? (
           <SidePanel
             role="CPU"
-            roleLabel={`P2 · ${opponentSlot.name || 'OPPONENT'}`}
+            roleLabel={`${opponentPlayerNum} · ${opponentSlot.name || 'OPPONENT'}`}
             guildId={opponentGuildId as GuildId}
             locked={true}
             active={false}
@@ -324,7 +328,7 @@ export function MpCharSelect({ room, onLeave, onPhaseChange }: Props) {
                 color: theme.inkMuted,
               }}
             >
-              {opponentSlot ? 'P2 · OPPONENT' : 'OPP · EMPTY'}
+              {opponentSlot ? `${opponentPlayerNum} · OPPONENT` : 'OPP · EMPTY'}
             </div>
             <div
               style={{

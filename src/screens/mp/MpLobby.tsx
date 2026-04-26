@@ -53,10 +53,12 @@ export function MpLobby({ room, onLeave, onPhaseChange }: Props) {
   }, [chatMessages]);
 
   // Derived state — null-safe so hooks below can use them unconditionally.
-  const { localSlot, opponentSlot } = state
+  const { localSlot } = state
     ? getMatchSlots(state, room.sessionId)
-    : { localSlot: null, opponentSlot: null };
+    : { localSlot: null };
   const isHost = !!state && room.sessionId === state.hostSessionId;
+  const p1Slot = state ? ([...state.players.values()].find(p => p.sessionId === state.hostSessionId) ?? null) : null;
+  const p2Slot = state ? ([...state.players.values()].find(p => p.sessionId !== state.hostSessionId) ?? null) : null;
   const currentReady = localSlot?.ready ?? false;
   const connectedPlayers = state ? [...state.players.values()].filter(p => p.connected) : [];
   const filledCount = connectedPlayers.length;
@@ -256,13 +258,21 @@ export function MpLobby({ room, onLeave, onPhaseChange }: Props) {
               })
             ) : (
               <>
-                <SlotCard slot={localSlot ?? null} isYou showHost={isHost} showKick={false} onToggleReady={() => room.send('ready_toggle', { ready: !currentReady })} slotIndex={0} />
                 <SlotCard
-                  slot={opponentSlot ?? null}
-                  isYou={false}
-                  showHost={!isHost && !!opponentSlot && opponentSlot.sessionId === state.hostSessionId}
-                  showKick={isHost && !!opponentSlot}
-                  onKick={() => opponentSlot && room.send('kick', { sessionId: opponentSlot.sessionId })}
+                  slot={p1Slot}
+                  isYou={isHost}
+                  showHost
+                  showKick={false}
+                  onToggleReady={isHost ? () => room.send('ready_toggle', { ready: !currentReady }) : undefined}
+                  slotIndex={0}
+                />
+                <SlotCard
+                  slot={p2Slot}
+                  isYou={!isHost}
+                  showHost={false}
+                  showKick={isHost && !!p2Slot}
+                  onKick={() => p2Slot && room.send('kick', { sessionId: p2Slot.sessionId })}
+                  onToggleReady={!isHost ? () => room.send('ready_toggle', { ready: !currentReady }) : undefined}
                   slotIndex={1}
                 />
               </>

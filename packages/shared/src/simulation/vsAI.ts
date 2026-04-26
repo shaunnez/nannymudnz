@@ -207,7 +207,6 @@ export function synthesizeVsCpuInput(
       const canFire = canAttack && inAttackRange && (isRanged || !shouldRetreat);
 
       if (canFire && state.rng() < aggressionPct + 0.2) {
-        if (!isRanged) desiredAttack = true;
         opp.lastAttackTimeMs = state.timeMs;
 
         if (
@@ -218,14 +217,18 @@ export function synthesizeVsCpuInput(
           const slot = pickAbilitySlot(opp, state, dist, preferRange);
           if (slot != null) {
             desiredAbility = slot;
-            desiredAttack = false;
             ai.abilityCooldownMs = tuning.abilityCooldownMs;
           }
         }
 
-        // Melee basic attack — only in tight range.
-        if (!isRanged && !desiredAbility && !inMeleeRange) {
-          desiredAttack = false;
+        // Basic attack: melee guilds need tight range, ranged use their rangedBasic
+        // projectile at any depth-aligned range (inAttackRange already guards depth).
+        if (!desiredAbility) {
+          if (isRanged) {
+            desiredAttack = true;
+          } else if (inMeleeRange) {
+            desiredAttack = true;
+          }
         }
       }
     }

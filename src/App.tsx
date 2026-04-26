@@ -17,7 +17,6 @@ import { MpStageSelect } from './screens/mp/MpStageSelect';
 import { MpBattle } from './screens/mp/MpBattle';
 import { MpLoadingScreen } from './screens/mp/MpLoadingScreen';
 import { GUILDS } from '@nannymud/shared/simulation/guildData';
-import { getMatchSlots } from './screens/mp/useMatchState';
 import { ScalingFrame } from './layout/ScalingFrame';
 import { Scanlines, theme } from './ui';
 import { useAppState, type AppScreen } from './state/useAppState';
@@ -423,24 +422,19 @@ export default function App() {
         {state.screen === 'mp_results' && state.mpRoom && (() => {
           const room = state.mpRoom;
           const rstate = room.state;
-          const { localSlot, opponentSlot } = getMatchSlots(rstate, room.sessionId);
-          const localGuild = (localSlot?.guildId as GuildId | undefined) ?? 'adventurer';
-          const oppGuild = (opponentSlot?.guildId as GuildId | undefined) ?? 'knight';
-          const localWon = rstate.matchWinnerSessionId === room.sessionId;
-          const localIsHost = room.sessionId === rstate.hostSessionId;
-          let adjustedStats: MatchStats | undefined;
-          if (mpMatchStats) {
-            const localStats = localIsHost ? mpMatchStats.p1 : mpMatchStats.p2;
-            const oppStats = localIsHost ? mpMatchStats.p2 : mpMatchStats.p1;
-            adjustedStats = { p1: localStats, p2: oppStats };
-          }
+          const slots = Array.from(rstate.players.values());
+          const p1Slot = slots.find(s => s.sessionId === rstate.hostSessionId);
+          const p2Slot = slots.find(s => s.sessionId !== rstate.hostSessionId);
+          const p1Guild = (p1Slot?.guildId as GuildId | undefined) ?? 'adventurer';
+          const p2Guild = (p2Slot?.guildId as GuildId | undefined) ?? 'knight';
+          const hostWon = rstate.matchWinnerSessionId === rstate.hostSessionId;
           return (
             <ResultsScreen
-              p1={localGuild}
-              p2={oppGuild}
-              winner={localWon ? 'P1' : 'P2'}
+              p1={p1Guild}
+              p2={p2Guild}
+              winner={hostWon ? 'P1' : 'P2'}
               score={0}
-              matchStats={adjustedStats}
+              matchStats={mpMatchStats ?? undefined}
               onRematch={() => room.send('rematch_offer', {})}
               onMenu={leaveMp}
             />
