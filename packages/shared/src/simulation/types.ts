@@ -170,7 +170,7 @@ export interface EnemyDef {
   attackCooldownMs: number;
   ai: AIBehavior;
   dropCopper: [number, number];
-  dropWeapon: string | null;
+  dropWeapon: PickupType | null;
   dropWeaponChance: number;
   width: number;
   height: number;
