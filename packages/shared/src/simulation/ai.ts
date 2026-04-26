@@ -104,12 +104,10 @@ export function tickAI(actor: Actor, state: SimState, dtSec: number, vfxEvents: 
   const dist = Math.hypot(dx, dy);
   const speed = getEffectiveMoveSpeed(actor);
 
-  if (actor.kind === 'bandit_king') {
-    tickBossAI(actor, target, state, dtSec, vfxEvents, speed, dist, dx, dy);
-    return;
-  }
-
   switch (ai.behavior) {
+    case 'boss':
+      tickBossAI(actor, target, state, dtSec, vfxEvents, speed, dist, dx, dy);
+      break;
     case 'chaser':
       tickChaserAI(actor, target, state, dtSec, vfxEvents, speed, dist, dx, dy);
       break;

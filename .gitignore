@@ -38,3 +38,6 @@ public/world/*/raw/
 .claude/worktrees
 .playwright-cli
 public/craftpix
+
+# Screen tour output
+screen-tour-report/

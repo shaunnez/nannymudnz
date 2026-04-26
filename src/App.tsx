@@ -30,6 +30,7 @@ import { ChampBracketScreen } from './screens/ChampBracketScreen';
 import { ChampTransitionScreen } from './screens/ChampTransitionScreen';
 import { ChampResultsScreen } from './screens/ChampResultsScreen';
 import { SurvivalResultsScreen } from './screens/SurvivalResultsScreen';
+import { parseDebugParams, buildDebugState } from './state/debugRouter';
 
 const PHASE_TO_SCREEN: Record<MatchPhase, AppScreen> = {
   lobby: 'mp_lobby',
@@ -70,6 +71,22 @@ export default function App() {
 
     if (window.location.pathname === '/multiplayer' && state.screen === 'title') {
       go('mp_hub');
+      return;
+    }
+
+    // ?screen=<AppScreen> debug deep-link — seeds every screen with realistic mocked state.
+    const intent = parseDebugParams(params);
+    if (intent) {
+      const r = buildDebugState(intent);
+      go(r.screen);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      set(r.stateFields as any);
+      if (r.finalScore !== undefined) setFinalScore(r.finalScore);
+      if (r.finalMatchStats !== undefined) setFinalMatchStats(r.finalMatchStats);
+      if (r.battlePlayerWon !== undefined) setBattlePlayerWon(r.battlePlayerWon);
+      if (r.finalBattStats !== undefined) setFinalBattStats(r.finalBattStats);
+      if (r.champPrevRound !== undefined) setChampPrevRound(r.champPrevRound);
+      if (r.champPlayerWon !== undefined) setChampPlayerWon(r.champPlayerWon);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
