@@ -30,7 +30,7 @@ function makePickup(type: Pickup['type'], heldBy: string): Pickup {
 
 describe('weapon attack override', () => {
   it('bat extends attack range — hits enemy at 58u that default range 55 would miss', () => {
-    let state = createInitialState('adventurer', 'assembly', 1);
+    const state = createInitialState('adventurer', 'assembly', 1);
     state.timeMs = 1000; // advance past attack cooldown
     state.player.facing = 1;
 
