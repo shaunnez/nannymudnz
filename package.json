@@ -17,8 +17,8 @@
     "typecheck": "tsc --noEmit -p tsconfig.app.json && tsc --noEmit -p packages/shared/tsconfig.json",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:screens": "playwright test --config=playwright.config.ts",
-    "test:screens:headed": "playwright test --config=playwright.config.ts --headed",
+    "test:screens": "npx kill-port 5173 2567 && playwright test --config=playwright.config.ts",
+    "test:screens:headed": "npx kill-port 5173 2567 && playwright test --config=playwright.config.ts --headed",
     "test:screens:report": "start screen-tour-report/REPORT.md"
   },
   "dependencies": {

@@ -31,6 +31,7 @@ export default defineConfig({
     stdout: 'pipe',
     stderr: 'pipe',
   },
-  timeout: 90_000,
+  timeout: 150_000,
+  workers: 1,   // sequential — prevents MP Phaser loads from blocking SP networkidle
   retries: 0,
 });

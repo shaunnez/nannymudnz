@@ -85,13 +85,27 @@ The simulation is deterministic and shared between client (single-player) and se
 ## Testing
 
 ```bash
-npm test           # one-shot
-npm run test:watch # watch mode
-npm run typecheck  # tsc --noEmit across all packages
-npm run lint       # ESLint
+npm test                  # Vitest — sim + unit tests
+npm run test:watch        # watch mode
+npm run typecheck         # tsc --noEmit across all packages
+npm run lint              # ESLint
+npm run test:screens      # Playwright screen tour (38 screens, SP + MP)
+npm run test:screens:headed  # same but headed — watch it navigate
 ```
 
 The golden test at `packages/shared/src/simulation/__tests__/golden.test.ts` is the determinism gate for multiplayer. If you change simulation code and it fails, the change introduced non-determinism — fix the code rather than the snapshot.
+
+### Screen tour
+
+`npm run test:screens` kills stale dev servers, starts a fresh one, visits every screen with mocked state, and writes `screen-tour-report/REPORT.md` with embedded screenshots and a bug table.
+
+**Deep-link any screen during development:**
+```
+http://localhost:5173/?screen=results&outcome=win&p1=adventurer&p2=knight
+```
+Params: `screen`, `mode`, `p1`, `p2`, `stage`, `outcome=win|lose`, `team=4v4|2v2v2v2|2v2|1v1`, `round`, `survScore`, `survWave`, `guild`.
+
+To add or modify screen-tour visits, edit `tests/screen-tour/manifest.ts`. The spec files are `tests/screen-tour/sp.spec.ts` (SP + flows) and `tests/screen-tour/mp.spec.ts` (MP two-context).
 
 ## Art
 

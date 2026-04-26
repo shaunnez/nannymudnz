@@ -16,6 +16,7 @@ npm run build       # client build to dist/
 npm run typecheck   # tsc on src/ + packages/shared/
 npm run lint        # ESLint flat config
 npm test            # Vitest — ALL tests must pass, golden sim test is the determinism gate
+npm run test:screens  # Playwright screen tour — 38 screens, SP+MP, writes screen-tour-report/REPORT.md
 npx tsx scripts/balance-runner.ts  # headless 15×15 guild win-rate matrix (~3-5 min); writes scripts/balance-output.csv
 ```
 
