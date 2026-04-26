@@ -68,7 +68,7 @@ export class SimStateSchema extends Schema {
   // Untracked: accumulated match statistics. Synced at match-end by the server
   // room; not tick-synced through the schema diff stream.
   matchStats: MatchStats = {
-    p1: { damageDealt: 0, damageTaken: 0, abilitiesCast: 0, maxCombo: 0, critHits: 0, totalHits: 0, healingDone: 0, _comboRun: 0 },
-    p2: { damageDealt: 0, damageTaken: 0, abilitiesCast: 0, maxCombo: 0, critHits: 0, totalHits: 0, healingDone: 0, _comboRun: 0 },
+    p1: { damageDealt: 0, damageTaken: 0, abilitiesCast: 0, maxCombo: 0, critHits: 0, totalHits: 0, healingDone: 0, _comboRun: 0, killingBlowAbilityId: null },
+    p2: { damageDealt: 0, damageTaken: 0, abilitiesCast: 0, maxCombo: 0, critHits: 0, totalHits: 0, healingDone: 0, _comboRun: 0, killingBlowAbilityId: null },
   };
 }

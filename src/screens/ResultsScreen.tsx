@@ -27,8 +27,11 @@ export function ResultsScreen({ p1, p2, winner, score, matchStats, onRematch, on
 
   const stats = useMemo(() => {
     if (matchStats) {
-      const ms1 = winner === 'P1' ? matchStats.p1 : matchStats.p2;
-      const ms2 = winner === 'P1' ? matchStats.p2 : matchStats.p1;
+      // Always show p1 left, p2 right — do NOT reorder by winner.
+      // The winner banner already indicates who won; swapping columns
+      // just makes it look like the winner had zero stats.
+      const ms1 = matchStats.p1;
+      const ms2 = matchStats.p2;
       const critPct1 = ms1.totalHits > 0 ? Math.min(100, Math.round((ms1.critHits / ms1.totalHits) * 100)) : 0;
       const critPct2 = ms2.totalHits > 0 ? Math.min(100, Math.round((ms2.critHits / ms2.totalHits) * 100)) : 0;
       return [
@@ -69,7 +72,14 @@ export function ResultsScreen({ p1, p2, winner, score, matchStats, onRematch, on
     return () => window.removeEventListener('keydown', onKey);
   }, [onMenu, onRematch]);
 
-  const killingBlow = winGuild.abilities[4];
+  const kbAbilityId = winner === 'P1'
+    ? matchStats?.p2.killingBlowAbilityId   // last ability that hit the loser (p2's hp = the target)
+    : matchStats?.p1.killingBlowAbilityId;
+  // kbAbilityId tracks the last ability to damage the *winner's* target (the loser actor).
+  // Look it up in winner's ability list.
+  const killingBlow = kbAbilityId
+    ? ([...winGuild.abilities, winGuild.rmb].find(a => a.id === kbAbilityId) ?? null)
+    : null;
 
   return (
     <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
@@ -166,6 +176,21 @@ export function ResultsScreen({ p1, p2, winner, score, matchStats, onRematch, on
             Match breakdown
           </SectionLabel>
 
+          {/* Column headers: always P1 left, P2 right */}
+          <div style={{ display: 'grid', gridTemplateColumns: '60px 1fr 110px 1fr 60px', gap: 10, alignItems: 'center' }}>
+            <div style={{ fontFamily: theme.fontMono, fontSize: 9, color: winner === 'P1' ? accW : accL, textAlign: 'right', letterSpacing: 2 }}>
+              P1{winner === 'P1' ? ' ★' : ''}
+            </div>
+            <div />
+            <div style={{ fontFamily: theme.fontMono, fontSize: 9, color: theme.inkMuted, letterSpacing: 2, textAlign: 'center' }}>
+              {p1Guild.name.slice(0, 6).toUpperCase()} VS {p2Guild.name.slice(0, 6).toUpperCase()}
+            </div>
+            <div />
+            <div style={{ fontFamily: theme.fontMono, fontSize: 9, color: winner === 'P2' ? accW : accL, textAlign: 'left', letterSpacing: 2 }}>
+              {winner === 'P2' ? '★ ' : ''}P2
+            </div>
+          </div>
+
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 4 }}>
             {stats.map((s) => {
               const numA = typeof s.a === 'number' ? s.a : parseFloat(String(s.a));
@@ -185,7 +210,7 @@ export function ResultsScreen({ p1, p2, winner, score, matchStats, onRematch, on
                     style={{
                       fontFamily: theme.fontMono,
                       fontSize: 12,
-                      color: accW,
+                      color: winner === 'P1' ? accW : accL,
                       textAlign: 'right',
                     }}
                   >
@@ -206,7 +231,7 @@ export function ResultsScreen({ p1, p2, winner, score, matchStats, onRematch, on
                         top: 0,
                         bottom: 0,
                         width: `${(numA / max) * 100}%`,
-                        background: accW,
+                        background: winner === 'P1' ? accW : accL,
                       }}
                     />
                   </div>
@@ -236,7 +261,7 @@ export function ResultsScreen({ p1, p2, winner, score, matchStats, onRematch, on
                         top: 0,
                         bottom: 0,
                         width: `${(numB / max) * 100}%`,
-                        background: accL,
+                        background: winner === 'P2' ? accW : accL,
                       }}
                     />
                   </div>
@@ -244,7 +269,7 @@ export function ResultsScreen({ p1, p2, winner, score, matchStats, onRematch, on
                     style={{
                       fontFamily: theme.fontMono,
                       fontSize: 12,
-                      color: accL,
+                      color: winner === 'P2' ? accW : accL,
                       textAlign: 'left',
                     }}
                   >
@@ -274,27 +299,42 @@ export function ResultsScreen({ p1, p2, winner, score, matchStats, onRematch, on
             >
               KILLING BLOW
             </div>
-            <div
-              style={{
-                fontFamily: theme.fontDisplay,
-                fontSize: 22,
-                color: accW,
-                letterSpacing: '-0.01em',
-              }}
-            >
-              {killingBlow.name}
-            </div>
-            <div
-              style={{
-                fontFamily: theme.fontBody,
-                fontSize: 12,
-                color: theme.inkDim,
-                marginTop: 4,
-                lineHeight: 1.5,
-              }}
-            >
-              {killingBlow.description}
-            </div>
+            {killingBlow ? (
+              <>
+                <div
+                  style={{
+                    fontFamily: theme.fontDisplay,
+                    fontSize: 22,
+                    color: accW,
+                    letterSpacing: '-0.01em',
+                  }}
+                >
+                  {killingBlow.name}
+                </div>
+                <div
+                  style={{
+                    fontFamily: theme.fontBody,
+                    fontSize: 12,
+                    color: theme.inkDim,
+                    marginTop: 4,
+                    lineHeight: 1.5,
+                  }}
+                >
+                  {killingBlow.description}
+                </div>
+              </>
+            ) : (
+              <div
+                style={{
+                  fontFamily: theme.fontDisplay,
+                  fontSize: 22,
+                  color: theme.inkMuted,
+                  letterSpacing: '-0.01em',
+                }}
+              >
+                TIME
+              </div>
+            )}
           </div>
         </div>
       </div>

@@ -319,7 +319,7 @@ export function createSurvivalState(guildId: GuildId, seed: number = Date.now())
 }
 
 function emptyActorStats() {
-  return { damageDealt: 0, damageTaken: 0, abilitiesCast: 0, maxCombo: 0, critHits: 0, totalHits: 0, healingDone: 0, _comboRun: 0 };
+  return { damageDealt: 0, damageTaken: 0, abilitiesCast: 0, maxCombo: 0, critHits: 0, totalHits: 0, healingDone: 0, _comboRun: 0, killingBlowAbilityId: null };
 }
 
 function makeEmptyMatchStats(): MatchStats {
@@ -332,7 +332,7 @@ function statSide(actorId: string): 'p1' | 'p2' | null {
   return null;
 }
 
-function trackDamage(state: SimState, attackerId: string, targetId: string, amount: number, isCrit: boolean): void {
+function trackDamage(state: SimState, attackerId: string, targetId: string, amount: number, isCrit: boolean, abilityId?: string): void {
   if (amount <= 0) return;
   const ms = state.matchStats;
   const aSide = statSide(attackerId);
@@ -344,6 +344,9 @@ function trackDamage(state: SimState, attackerId: string, targetId: string, amou
     if (isCrit) as.critHits++;
     as._comboRun++;
     if (as._comboRun > as.maxCombo) as.maxCombo = as._comboRun;
+    // Record the last ability that damages each tracked target so the
+    // results screen can show what actually dealt the killing blow.
+    if (tSide && abilityId) ms[tSide].killingBlowAbilityId = abilityId;
   }
   if (tSide) {
     ms[tSide].damageTaken += amount;
@@ -638,7 +641,7 @@ function detonateGroundTarget(player: Actor, ability: AbilityDef, state: SimStat
   for (const target of enemies) {
     const isCrit = checkCrit(player, state.rng);
     const dmg = Math.round(calcDamage(ability, player.stats, target, isCrit, state.rng) * dmgMult);
-    trackDamage(state, player.id, target.id, applyDamage(target, dmg, state.vfxEvents, isCrit), isCrit);
+    trackDamage(state, player.id, target.id, applyDamage(target, dmg, state.vfxEvents, isCrit), isCrit, ability.id);
     applyEffects(ability, target, player, state);
     if (ability.knockdown || dmg >= KNOCKDOWN_THRESHOLD) {
       applyKnockback(target, ability.knockbackForce || 100, player.facing, ability.knockdown, state.vfxEvents);
@@ -913,7 +916,7 @@ function fireAbility(player: Actor, ability: AbilityDef, state: SimState, ctrl: 
     for (const target of aoeTargets) {
       const isCrit = checkCrit(player, state.rng);
       const dmg = Math.round(calcDamage(ability, player.stats, target, isCrit, state.rng) * dmgMult);
-      trackDamage(state, player.id, target.id, applyDamage(target, dmg, state.vfxEvents, isCrit), isCrit);
+      trackDamage(state, player.id, target.id, applyDamage(target, dmg, state.vfxEvents, isCrit), isCrit, ability.id);
       applyEffects(ability, target, player, state);
       if (ability.knockdown && dmg >= KNOCKDOWN_THRESHOLD) {
         applyKnockback(target, ability.knockbackForce || 150, player.facing, true, state.vfxEvents);
@@ -937,7 +940,7 @@ function fireAbility(player: Actor, ability: AbilityDef, state: SimState, ctrl: 
     for (const target of targets) {
       const isCrit = checkCrit(player, state.rng);
       const dmg = Math.round(calcDamage(ability, player.stats, target, isCrit, state.rng) * dmgMult);
-      trackDamage(state, player.id, target.id, applyDamage(target, dmg, state.vfxEvents, isCrit), isCrit);
+      trackDamage(state, player.id, target.id, applyDamage(target, dmg, state.vfxEvents, isCrit), isCrit, ability.id);
       applyEffects(ability, target, player, state);
       if (ability.knockdown || dmg >= KNOCKDOWN_THRESHOLD) {
         applyKnockback(target, ability.knockbackForce || 100, player.facing, ability.knockdown, state.vfxEvents);

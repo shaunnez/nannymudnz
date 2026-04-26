@@ -385,6 +385,7 @@ export interface ActorMatchStats {
   totalHits: number;
   healingDone: number;
   _comboRun: number;
+  killingBlowAbilityId: string | null;
 }
 
 export interface MatchStats {
