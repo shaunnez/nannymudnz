@@ -45,7 +45,9 @@ export interface PublicRoom {
 }
 
 export async function getPublicRooms(): Promise<PublicRoom[]> {
-  const response = await fetch(`${HTTP_URL}/api/public-rooms`);
+  const headers: Record<string, string> = {};
+  if (HTTP_URL.includes('ngrok')) headers['ngrok-skip-browser-warning'] = '1';
+  const response = await fetch(`${HTTP_URL}/api/public-rooms`, { headers });
   if (!response.ok) throw new Error('Failed to fetch rooms');
   return response.json() as Promise<PublicRoom[]>;
 }
