@@ -1784,6 +1784,10 @@ function handlePlayerInput(state: SimState, input: InputState, ctrl: PlayerContr
           player.heldPickup = nearPickup;
           state.pickups = state.pickups.filter(p => p.id !== nearPickup.id);
           player.animationId = 'pickup';
+          if (def?.category === 'gem' && def.holdBonus) {
+            player.statusEffects = player.statusEffects.filter(e => e.source !== 'gem');
+            addStatusEffect(state, player, def.holdBonus, def.holdMagnitude ?? 1, 999_999_999, 'gem');
+          }
         }
       }
     }
