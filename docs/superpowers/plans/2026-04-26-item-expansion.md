@@ -32,7 +32,56 @@
 
 ---
 
+## Execution Model
+
+```
+Phase 1 — sequential foundation
+  Task 1 (Haiku)  →  Task 2 (Sonnet)  →  Task 3 (Haiku)  →  Task 4 (Sonnet)
+
+Phase 2 — parallel after Task 4 completes
+  Stream A (Sonnet, sequential): Task 5 → Task 6 → Task 7 → Task 8
+  Stream B (Haiku):              Task 9  (PickupView — touches only src/game/view/PickupView.ts)
+  Stream C (Haiku):              Task 12 (index.ts exports — touches only packages/shared/src/index.ts)
+
+Phase 3 — sequential after Stream A finishes
+  Task 10 (Sonnet) — needs Task 8's crate_break VFX and Task 2's Crate type
+
+Phase 4 — sequential after Stream A and Task 10 finish
+  Task 11 (Sonnet) — ParticleFX; depends on Task 4's thrown_* projectile types being in place
+
+Phase 5 — after everything
+  Task 13 (Sonnet) — full verification
+```
+
+**Model assignments:**
+
+| Task | Model | Reason |
+|------|-------|--------|
+| 1 — pickupData.ts | Haiku 4.5 | Pure data entry, no logic |
+| 2 — types.ts | Sonnet 4.6 | Type system surgery across shared interfaces |
+| 3 — enemyData.ts dropWeapon | Haiku 4.5 | One-line type change |
+| 4 — sim plumbing | Sonnet 4.6 | spawnPickup, crate init, throw refactor |
+| 5 — consumable auto-use | Sonnet 4.6 | TDD, simulation logic |
+| 6 — gem passive | Sonnet 4.6 | TDD, simulation logic |
+| 7 — weapon override | Sonnet 4.6 | TDD, attack code surgery |
+| 8 — crate hit/break | Sonnet 4.6 | TDD, attack extension |
+| 9 — PickupView | Haiku 4.5 | Mechanical drawBody cases, no logic |
+| 10 — CrateView + GameplayScene | Sonnet 4.6 | New view class + Phaser wiring |
+| 11 — ParticleFX VFX | Sonnet 4.6 | Phaser particle patterns |
+| 12 — index.ts exports | Haiku 4.5 | Two export lines |
+| 13 — verification | Sonnet 4.6 | Runs all checks, manual test |
+
+**Write-scope isolation (prevents conflicts in parallel streams):**
+- Stream A (Tasks 5–8) exclusively owns `simulation.ts` and the four test files
+- Stream B (Task 9) exclusively owns `src/game/view/PickupView.ts`
+- Stream C (Task 12) exclusively owns `packages/shared/src/index.ts`
+- No two parallel streams write the same file
+
+---
+
 ## Task 1: Create `pickupData.ts` — full registry
+
+**Model:** Haiku 4.5 | **Execution:** Sequential (run first — all other tasks depend on it)
 
 **Files:**
 - Create: `packages/shared/src/simulation/pickupData.ts`
@@ -227,6 +276,8 @@ git commit -m "feat(items): pickupData.ts — PICKUP_DEFS registry, crate tables
 
 ## Task 2: Extend `types.ts` — PickupType, Crate, SimState, VFXEventType
 
+**Model:** Sonnet 4.6 | **Execution:** Sequential after Task 1
+
 **Files:**
 - Modify: `packages/shared/src/simulation/types.ts`
 
@@ -309,6 +360,8 @@ git commit -m "feat(types): PickupType, Crate, SimState.crates, VFXEventType add
 
 ## Task 3: Widen `dropWeapon` in `enemyData.ts`
 
+**Model:** Haiku 4.5 | **Execution:** Sequential after Task 2
+
 **Files:**
 - Modify: `packages/shared/src/simulation/enemyData.ts`
 
@@ -350,6 +403,8 @@ git commit -m "feat(enemies): widen dropWeapon to PickupType"
 ---
 
 ## Task 4: `simulation.ts` plumbing — spawnPickup, createInitialState crates, throw refactor
+
+**Model:** Sonnet 4.6 | **Execution:** Sequential after Task 3 — unlocks Phase 2 parallel streams
 
 **Files:**
 - Modify: `packages/shared/src/simulation/simulation.ts`
@@ -492,6 +547,8 @@ git commit -m "feat(sim): spawnPickup helper, crate init, throw code driven by P
 ---
 
 ## Task 5: Consumable auto-use — tests then implementation
+
+**Model:** Sonnet 4.6 | **Execution:** Stream A — sequential after Task 4, before Task 6
 
 **Files:**
 - Create: `packages/shared/src/simulation/__tests__/pickupConsumable.test.ts`
@@ -678,6 +735,8 @@ git commit -m "feat(sim): consumable auto-use — heal, resource, cleanse, buff"
 
 ## Task 6: Gem passive buff — tests then implementation
 
+**Model:** Sonnet 4.6 | **Execution:** Stream A — sequential after Task 5
+
 **Files:**
 - Create: `packages/shared/src/simulation/__tests__/pickupGem.test.ts`
 - Modify: `packages/shared/src/simulation/simulation.ts`
@@ -808,6 +867,8 @@ git commit -m "feat(sim): gem passive buff — status effect applied/removed on 
 ---
 
 ## Task 7: Weapon attack override — tests then implementation
+
+**Model:** Sonnet 4.6 | **Execution:** Stream A — sequential after Task 6
 
 **Files:**
 - Create: `packages/shared/src/simulation/__tests__/pickupWeapon.test.ts`
@@ -1029,6 +1090,8 @@ git commit -m "feat(sim): weapon attack override — range, damage, hitEffect, t
 
 ## Task 8: Crate hit detection and break — tests then implementation
 
+**Model:** Sonnet 4.6 | **Execution:** Stream A — sequential after Task 7; completing this unblocks Task 10
+
 **Files:**
 - Create: `packages/shared/src/simulation/__tests__/crate.test.ts`
 - Modify: `packages/shared/src/simulation/simulation.ts`
@@ -1195,6 +1258,8 @@ git commit -m "feat(sim): crate hit detection, breakCrate, deterministic loot dr
 
 ## Task 9: `PickupView.ts` — category-driven rendering
 
+**Model:** Haiku 4.5 | **Execution:** Stream B — parallel with Tasks 5–8 (owns only `PickupView.ts`)
+
 **Files:**
 - Modify: `src/game/view/PickupView.ts`
 
@@ -1329,6 +1394,8 @@ git commit -m "feat(view): PickupView category-driven drawBody for all 20 pickup
 ---
 
 ## Task 10: `CrateView.ts` + `GameplayScene.ts` wiring
+
+**Model:** Sonnet 4.6 | **Execution:** Sequential after Task 8 (needs crate_break VFX type from Task 8)
 
 **Files:**
 - Create: `src/game/view/CrateView.ts`
@@ -1527,6 +1594,8 @@ git commit -m "feat(view): CrateView + GameplayScene reconcileCrates + crate_bre
 
 ## Task 11: `ParticleFX.ts` — elemental throw VFX
 
+**Model:** Sonnet 4.6 | **Execution:** Sequential after Task 10 (owns only `ParticleFX.ts`, but dispatch after rendering is wired)
+
 **Files:**
 - Modify: `src/game/view/ParticleFX.ts`
 
@@ -1626,6 +1695,8 @@ git commit -m "feat(vfx): elemental throw VFX — torch, bomb, smoke_bomb, throw
 
 ## Task 12: Export new types from `index.ts`
 
+**Model:** Haiku 4.5 | **Execution:** Stream C — parallel with Tasks 5–8 (owns only `index.ts`)
+
 **Files:**
 - Modify: `packages/shared/src/index.ts`
 
@@ -1656,6 +1727,8 @@ git commit -m "chore: export new pickup types from shared package index"
 ---
 
 ## Task 13: Final verification
+
+**Model:** Sonnet 4.6 | **Execution:** Sequential after all tasks complete
 
 - [ ] **Step 1: Run full test suite**
 
