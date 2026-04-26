@@ -1,4 +1,4 @@
-import type { StatusEffectType } from './types';
+import type { StatusEffectType, StageId } from './types';
 
 export type PickupCategory = 'weapon' | 'gem' | 'consumable' | 'throwable' | 'crate';
 
@@ -134,10 +134,6 @@ export const PICKUP_DEFS: Record<PickupType, PickupDef> = {
     instantEffects: [{ type: 'damage_reduction', magnitude: 20, durationMs: 8_000 }],
   },
 };
-
-export type StageId =
-  | 'assembly' | 'market' | 'kitchen' | 'tower' | 'grove'
-  | 'catacombs' | 'throne' | 'docks' | 'rooftops';
 
 export const CRATE_LOOT_TABLE: PickupType[] = [
   'rock', 'rock', 'club', 'club',

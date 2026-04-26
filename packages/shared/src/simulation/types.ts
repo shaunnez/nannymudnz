@@ -1,5 +1,8 @@
 export type DamageType = 'physical' | 'magical' | 'nature' | 'holy' | 'shadow' | 'necrotic' | 'psychic';
 
+import type { PickupType } from './pickupData';
+export type { PickupType, PickupCategory, PickupDef } from './pickupData';
+
 export type GroundZoneVfxStyle = 'ring' | 'puddle';
 
 export interface GroundZone {
@@ -278,12 +281,21 @@ export interface AIState {
 
 export interface Pickup {
   id: string;
-  type: 'rock' | 'club';
+  type: PickupType;
   x: number;
   y: number;
   z: number;
   hitsLeft: number;
   heldBy: string | null;
+}
+
+export interface Crate {
+  id: string;
+  x: number;
+  y: number;
+  hp: number;
+  hpMax: number;
+  isAlive: boolean;
 }
 
 export interface Projectile {
@@ -325,7 +337,9 @@ export type VFXEventType =
   | 'aura_pulse'
   | 'zone_pulse'
   | 'summon_spawn'
-  | 'boss_phase';
+  | 'boss_phase'
+  | 'pickup_consumed'
+  | 'crate_break';
 
 export interface VFXEvent {
   type: VFXEventType;
@@ -426,6 +440,7 @@ export interface SimState {
   enemies: Actor[];
   allies: Actor[];
   pickups: Pickup[];
+  crates: Crate[];
   projectiles: Projectile[];
   groundZones: GroundZone[];
   vfxEvents: VFXEvent[];
