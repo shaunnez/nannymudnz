@@ -3,7 +3,7 @@ import type {
   AbilityDef, ActorKind, AnimationId, PlayerController, StatusEffectType, VFXEvent, GroundZone,
   MatchStats, StageId, EnemyDef, Crate, Pickup,
 } from './types';
-import { PICKUP_DEFS, STAGE_CRATES } from './pickupData';
+import { PICKUP_DEFS, STAGE_CRATES, CRATE_LOOT_TABLE } from './pickupData';
 import type { PickupType, PickupDef } from './pickupData';
 import { getGuild, DRUID_WOLF_ABILITIES, DRUID_WOLF_RMB } from './guildData';
 import { makeRng } from './rng';
@@ -1319,6 +1319,19 @@ function performBasicAttack(player: Actor, state: SimState, ctrl: PlayerControll
     }
   }
 
+  // Crate hit detection
+  for (const crate of state.crates) {
+    if (!crate.isAlive) continue;
+    const dx = crate.x - player.x;
+    const dy = crate.y - player.y;
+    if (Math.abs(dx) < range && Math.abs(dy) < ATTACK_Y_TOLERANCE) {
+      if (Math.abs(dx) < 1 || Math.sign(dx) === player.facing) {
+        crate.hp -= baseDmg;
+        if (crate.hp <= 0) breakCrate(state, crate);
+      }
+    }
+  }
+
   state.vfxEvents.push({
     type: 'hit_spark',
     color: guild.color,
@@ -1972,6 +1985,23 @@ function spawnEnemyDrop(state: SimState, enemy: Actor): void {
   if (def.dropWeapon && state.rng() < def.dropWeaponChance) {
     state.pickups.push(spawnPickup(state, def.dropWeapon, enemy.x, enemy.y));
   }
+}
+
+function breakCrate(state: SimState, crate: Crate): void {
+  crate.isAlive = false;
+  const count = 1 + Math.floor(state.rng() * 2); // 1 or 2
+  for (let i = 0; i < count; i++) {
+    const type = CRATE_LOOT_TABLE[Math.floor(state.rng() * CRATE_LOOT_TABLE.length)];
+    const offsetX = i === 0 ? -20 : 20;
+    state.pickups.push(spawnPickup(state, type, crate.x + offsetX, crate.y));
+  }
+  state.vfxEvents.push({
+    type: 'crate_break',
+    color: '#8B6914',
+    x: crate.x,
+    y: crate.y,
+    actorId: crate.id,
+  });
 }
 
 function tickGroundZones(state: SimState, dtMs: number): void {
