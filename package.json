@@ -19,7 +19,8 @@
     "test:watch": "vitest",
     "test:screens": "npx kill-port 5173 2567 && playwright test --config=playwright.config.ts",
     "test:screens:headed": "npx kill-port 5173 2567 && playwright test --config=playwright.config.ts --headed",
-    "test:screens:report": "start screen-tour-report/REPORT.md"
+    "test:screens:report": "start screen-tour-report/REPORT.md",
+    "balance": "npx tsx scripts/balance-runner.ts"
   },
   "dependencies": {
     "@colyseus/schema": "^4.0.20",

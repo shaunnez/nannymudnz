@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { Room } from '@colyseus/sdk';
 import type { MatchState, MatchPhase } from '@nannymud/shared';
 import type { GuildId } from '@nannymud/shared/simulation/types';
@@ -18,15 +18,17 @@ interface Props {
   onPhaseChange: (phase: MatchPhase) => void;
 }
 
-const GRID_LAYOUTS: Record<number, { cols: number; monogram: number }> = {
-  2: { cols: 2, monogram: 110 },
-  3: { cols: 3, monogram: 90 },
-  4: { cols: 2, monogram: 90 },
-  5: { cols: 3, monogram: 72 },
-  6: { cols: 3, monogram: 72 },
-  7: { cols: 4, monogram: 62 },
-  8: { cols: 4, monogram: 62 },
+const GRID_COLS: Record<number, number> = {
+  2: 2, 3: 3, 4: 2, 5: 3, 6: 3, 7: 4, 8: 4,
 };
+
+function computeMonogramSize(cols: number, rows: number): number {
+  const gridW = window.innerWidth - 48;
+  const gridH = window.innerHeight - 62 - 38 - 40; // header ~62, footer ~38, grid padding 40
+  const cardW = (gridW - 12 * (cols - 1)) / cols;
+  const cardH = (gridH - 12 * (rows - 1)) / rows;
+  return Math.max(48, Math.min(cardW - 20, cardH - 90));
+}
 
 const TEAM_COLORS: Record<string, string> = {
   A: '#5cf2c2', B: '#ff5d73', C: '#ffb347', D: '#928bff',
@@ -119,8 +121,17 @@ export function MpLoadingScreen({ room, onPhaseChange }: Props) {
     });
   }
 
-  const n = Math.max(2, Math.min(8, tiles.length)) as keyof typeof GRID_LAYOUTS;
-  const layout = GRID_LAYOUTS[n] ?? GRID_LAYOUTS[8];
+  const n = Math.max(2, Math.min(8, tiles.length));
+  const cols = GRID_COLS[n] ?? 4;
+  const rows = Math.ceil(n / cols);
+  const [monogramSize, setMonogramSize] = useState(() => computeMonogramSize(cols, rows));
+
+  useLayoutEffect(() => {
+    setMonogramSize(computeMonogramSize(cols, rows));
+    const obs = new ResizeObserver(() => setMonogramSize(computeMonogramSize(cols, rows)));
+    obs.observe(document.documentElement);
+    return () => obs.disconnect();
+  }, [cols, rows]);
 
   return (
     <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', background: `linear-gradient(180deg, ${accent}18, ${theme.bgDeep} 60%)` }}>
@@ -140,7 +151,7 @@ export function MpLoadingScreen({ room, onPhaseChange }: Props) {
         flex: 1,
         padding: '20px 24px',
         display: 'grid',
-        gridTemplateColumns: `repeat(${layout.cols}, minmax(0, 1fr))`,
+        gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
         gap: 12,
         alignContent: 'center',
         justifyItems: 'stretch',
@@ -173,9 +184,9 @@ export function MpLoadingScreen({ room, onPhaseChange }: Props) {
                 )}
               </div>
 
-              <GuildMonogram guildId={tile.guildId} size={layout.monogram} selected={tile.isMe} />
+              <GuildMonogram guildId={tile.guildId} size={monogramSize} selected={tile.isMe} />
 
-              <div style={{ fontFamily: theme.fontDisplay, fontSize: 11, color: slotAccent, textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', width: '100%' }}>
+              <div style={{ fontFamily: theme.fontDisplay, fontSize: 11, color: theme.ink, textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', width: '100%' }}>
                 {tile.name}
               </div>
 

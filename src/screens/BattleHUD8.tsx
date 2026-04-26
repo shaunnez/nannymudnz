@@ -178,7 +178,7 @@ export function BattleHUD8({ game, slots, localSlotIndex = 0 }: Props) {
                     <GuildMonogram guildId={slot.guildId} size={20} selected={isHuman} dim={isDead} />
                     <div style={{ minWidth: 0 }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span style={{ fontFamily: theme.fontMono, fontSize: 7, color: teamColor, letterSpacing: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        <span style={{ fontFamily: theme.fontMono, fontSize: 7, color: isHuman ? theme.accent : (slot.team ? teamColor : theme.ink), letterSpacing: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                           {(guild?.name ?? slot.guildId).slice(0, 8).toUpperCase()}
                         </span>
                         {isDead && <span style={{ fontFamily: theme.fontMono, fontSize: 6, color: theme.bad, flexShrink: 0 }}>KO</span>}

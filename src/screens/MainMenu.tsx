@@ -11,6 +11,7 @@ interface MenuItem {
   target: AppScreen | null;
   mode?: GameMode;
   enabled: boolean;  // false → visually dimmed, click is no-op (unbuilt screens)
+  href?: string;     // external link — opens in new tab instead of navigating
 }
 
 // Items whose target screen doesn't exist yet are marked enabled:false and
@@ -24,7 +25,8 @@ const MENU_ITEMS: MenuItem[] = [
   { id: 'batt',  label: 'BATTLE',        sub: '4 vs 4 · configure all 8 slots',target: 'charselect', mode: 'batt',  enabled: true },
   { id: 'champ', label: 'CHAMPIONSHIP',  sub: 'Bracketed tournament',          target: 'charselect', mode: 'champ', enabled: true },
   { id: 'moves', label: 'MOVE LIST',     sub: 'Ability reference per guild',   target: 'moves',      enabled: true },
-  { id: 'set',   label: 'SETTINGS',      sub: 'Controls · video · audio',      target: 'settings',   enabled: true },
+  { id: 'guide', label: 'GAME GUIDE',   sub: 'Rules, guilds, and controls',   target: null,         enabled: true, href: 'https://github.com/shaunnez/nannymudnz/raw/refs/heads/main/docs/GAME-GUIDE.pdf' },
+  { id: 'set',   label: 'SETTINGS',     sub: 'Controls · video · audio',      target: 'settings',   enabled: true },
 ];
 
 
@@ -62,7 +64,9 @@ export function MainMenu({ onPick }: Props) {
 
   const activate = (index: number) => {
     const item = MENU_ITEMS[index];
-    if (!item || !item.enabled || !item.target) return;
+    if (!item || !item.enabled) return;
+    if (item.href) { window.open(item.href, '_blank', 'noopener'); return; }
+    if (!item.target) return;
     onPick(item.target, item.mode);
   };
 
@@ -128,15 +132,15 @@ export function MainMenu({ onPick }: Props) {
               <div
                 key={m.id}
                 onMouseEnter={() => setSel(i)}
-                onClick={() => { if (m.enabled && m.target) onPick(m.target, m.mode); }}
+                onClick={() => activate(i)}
                 style={{
                   display: 'grid',
                   gridTemplateColumns: '34px 1fr auto',
                   gap: 14,
                   alignItems: 'center',
-                  padding: mobile ? '14px 0' : '16px 0',
+                  padding: mobile ? '11px 0' : '13px 0',
                   borderBottom: `1px solid ${theme.lineSoft}`,
-                  cursor: m.enabled && m.target ? 'pointer' : 'default',
+                  cursor: m.enabled && (m.target || m.href) ? 'pointer' : 'default',
                   opacity: m.enabled ? 1 : 0.45,
                 }}
               >
@@ -191,7 +195,7 @@ export function MainMenu({ onPick }: Props) {
                     {m.sub}
                   </div>
                 </div>
-                {m.target && (
+                {(m.target || m.href) && (
                   <ChevronRight
                     size={22}
                     strokeWidth={2.25}
