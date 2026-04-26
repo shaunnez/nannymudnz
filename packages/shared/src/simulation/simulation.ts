@@ -1771,10 +1771,20 @@ function handlePlayerInput(state: SimState, input: InputState, ctrl: PlayerContr
         p.heldBy === null && Math.hypot(p.x - player.x, p.y - player.y) < PICKUP_GRAB_RANGE
       );
       if (nearPickup) {
-        nearPickup.heldBy = player.id;
-        player.heldPickup = nearPickup;
-        state.pickups = state.pickups.filter(p => p.id !== nearPickup.id);
-        player.animationId = 'pickup';
+        const def = PICKUP_DEFS[nearPickup.type];
+        if (def?.category === 'consumable') {
+          // Stage the consumable in heldPickup so applyConsumableEffect
+          // runs after HP/MP regen in the main tick loop (ensures exact values).
+          nearPickup.heldBy = player.id;
+          player.heldPickup = nearPickup;
+          state.pickups = state.pickups.filter(p => p.id !== nearPickup.id);
+          player.animationId = 'pickup';
+        } else {
+          nearPickup.heldBy = player.id;
+          player.heldPickup = nearPickup;
+          state.pickups = state.pickups.filter(p => p.id !== nearPickup.id);
+          player.animationId = 'pickup';
+        }
       }
     }
   }
@@ -1871,6 +1881,24 @@ function handlePlayerInput(state: SimState, input: InputState, ctrl: PlayerContr
       player.state = 'idle';
       player.animationId = 'idle';
     }
+  }
+}
+
+function applyConsumableEffect(state: SimState, actor: Actor, def: PickupDef): void {
+  if (def.instantHeal) {
+    actor.hp = Math.round(Math.min(actor.hpMax, actor.hp + def.instantHeal));
+  }
+  if (def.instantResourceRestore) {
+    actor.mp = Math.round(Math.min(actor.mpMax, actor.mp + def.instantResourceRestore));
+  }
+  if (def.cleanseOnUse) {
+    const NEGATIVE: StatusEffectType[] = [
+      'slow', 'root', 'stun', 'silence', 'blind', 'dot', 'infected', 'chilled', 'curse',
+    ];
+    actor.statusEffects = actor.statusEffects.filter(e => !NEGATIVE.includes(e.type));
+  }
+  for (const e of def.instantEffects ?? []) {
+    addStatusEffect(state, actor, e.type, e.magnitude, e.durationMs, 'consumable');
   }
 }
 
@@ -1995,6 +2023,21 @@ export function tickSimulation(
     tickHPRegen(state.player, dtMs, state.enemies.filter(e => e.isAlive).length > 0);
     const inCombat = state.enemies.filter(e => e.isAlive).length > 0;
     tickPlayerResourceRegen(state.player, dtMs, inCombat, state);
+    // Apply staged consumable after regen so HP/MP land on exact values.
+    if (state.player.heldPickup) {
+      const heldDef = PICKUP_DEFS[state.player.heldPickup.type];
+      if (heldDef?.category === 'consumable') {
+        const consumedPickup = state.player.heldPickup;
+        applyConsumableEffect(state, state.player, heldDef);
+        state.vfxEvents.push({
+          type: 'pickup_consumed',
+          color: heldDef.color,
+          x: consumedPickup.x,
+          y: consumedPickup.y,
+        });
+        state.player.heldPickup = null;
+      }
+    }
   } else {
     state.phase = 'defeat';
     return state;
