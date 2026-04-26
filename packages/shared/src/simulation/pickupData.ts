@@ -1,5 +1,4 @@
-// packages/shared/src/simulation/pickupData.ts
-import type { StatusEffectType } from './types';
+import type { StatusEffectType, StageId } from './types';
 
 export type PickupCategory = 'weapon' | 'gem' | 'consumable' | 'throwable' | 'crate';
 
@@ -15,21 +14,16 @@ export interface PickupDef {
   category: PickupCategory;
   name: string;
   color: string;
-  // weapon: stats when held and swung
   damage?: number;
   attackRange?: number;
   attackCooldownMs?: number;
-  // throwable
   throwable: boolean;
   throwDamage?: number;
   throwRange?: number;
-  throwRadius?: number; // AoE hit radius for projectile (default 10)
-  // applied on melee hit OR throw impact
+  throwRadius?: number;
   hitEffect?: Partial<Record<StatusEffectType, { magnitude: number; durationMs: number }>>;
-  // gem: passive status effect while held (source = 'gem')
   holdBonus?: StatusEffectType;
   holdMagnitude?: number;
-  // consumable: immediate on-contact effect (never held)
   instantHeal?: number;
   instantResourceRestore?: number;
   cleanseOnUse?: boolean;
@@ -140,10 +134,6 @@ export const PICKUP_DEFS: Record<PickupType, PickupDef> = {
     instantEffects: [{ type: 'damage_reduction', magnitude: 20, durationMs: 8_000 }],
   },
 };
-
-export type StageId =
-  | 'assembly' | 'market' | 'kitchen' | 'tower' | 'grove'
-  | 'catacombs' | 'throne' | 'docks' | 'rooftops';
 
 export const CRATE_LOOT_TABLE: PickupType[] = [
   'rock', 'rock', 'club', 'club',

@@ -1,8 +1,10 @@
 import type {
   SimState, Actor, InputState, GuildId, Projectile, DamageType,
   AbilityDef, ActorKind, AnimationId, PlayerController, StatusEffectType, VFXEvent, GroundZone,
-  MatchStats, StageId, EnemyDef,
+  MatchStats, StageId, EnemyDef, Crate, Pickup,
 } from './types';
+import { PICKUP_DEFS, STAGE_CRATES, CRATE_LOOT_TABLE } from './pickupData';
+import type { PickupType, PickupDef } from './pickupData';
 import { getGuild, DRUID_WOLF_ABILITIES, DRUID_WOLF_RMB } from './guildData';
 import { makeRng } from './rng';
 import { ENEMY_DEFS, STAGE_WAVES, LEVEL_STAT_MULT } from './enemyData';
@@ -271,6 +273,14 @@ export function createInitialState(
     enemies: [],
     allies: [],
     pickups: [],
+    crates: (STAGE_CRATES[resolvedStageId as keyof typeof STAGE_CRATES] ?? []).map((pos, i) => ({
+      id: `crate_${i}`,
+      x: pos.x,
+      y: pos.y,
+      hp: 60,
+      hpMax: 60,
+      isAlive: true,
+    } satisfies Crate)),
     projectiles: [],
     groundZones: [],
     vfxEvents: [],
@@ -1177,8 +1187,47 @@ function performBasicAttack(player: Actor, state: SimState, ctrl: PlayerControll
 
   const guild = getGuild(player.guildId!);
   const baseStr = player.stats.STR;
-  const baseDmg = Math.round((10 + baseStr * 0.5) * dmgMult * (0.95 + state.rng() * 0.1));
-  const range = (player.heldPickup?.type === 'club' ? 70 : 55) * (isJumpAttack ? 1.2 : 1);
+  const heldDef: PickupDef | undefined = player.heldPickup ? PICKUP_DEFS[player.heldPickup.type] : undefined;
+
+  // throwing_star: attack fires a projectile instead of melee swing
+  if (heldDef?.type === 'throwing_star' && player.heldPickup) {
+    player.animationId = 'throw';
+    player.state = 'attacking';
+    state.projectiles.push({
+      id: `proj_${state.nextProjectileId++}`,
+      ownerId: player.id,
+      guildId: null,
+      team: player.team,
+      x: player.x,
+      y: player.y,
+      z: player.z + player.height * 0.55,
+      vx: player.facing * 600,
+      vy: 0,
+      vz: 0,
+      damage: heldDef.throwDamage ?? 30,
+      damageType: 'physical',
+      range: heldDef.throwRange ?? 600,
+      traveled: 0,
+      radius: heldDef.throwRadius ?? 8,
+      knockdown: false,
+      knockbackForce: 0,
+      effects: {},
+      piercing: true,
+      color: heldDef.color,
+      type: 'thrown_throwing_star',
+      hitActorIds: [],
+    });
+    state.vfxEvents.push({ type: 'projectile_spawn', x: player.x, y: player.y, color: heldDef.color, abilityId: 'thrown_throwing_star' });
+    player.heldPickup = null;
+    ctrl.lastAttackMs = state.timeMs;
+    return;
+  }
+
+  let baseDmg = Math.round((10 + baseStr * 0.5) * dmgMult * (0.95 + state.rng() * 0.1));
+  if (heldDef?.damage !== undefined && heldDef.category === 'weapon') {
+    baseDmg = Math.round(heldDef.damage * dmgMult);
+  }
+  const range = (heldDef?.attackRange ?? 55) * (isJumpAttack ? 1.2 : 1);
 
   const animId = ctrl.attackChain === 1 ? 'attack_1' : ctrl.attackChain === 2 ? 'attack_2' : 'attack_3';
   player.animationId = animId;
@@ -1222,7 +1271,7 @@ function performBasicAttack(player: Actor, state: SimState, ctrl: PlayerControll
     return Math.sign(dx) === player.facing;
   });
 
-  if (player.heldPickup?.type === 'club') {
+  if (player.heldPickup && heldDef?.category === 'weapon') {
     player.heldPickup.hitsLeft--;
     if (player.heldPickup.hitsLeft <= 0) player.heldPickup = null;
   }
@@ -1258,6 +1307,28 @@ function performBasicAttack(player: Actor, state: SimState, ctrl: PlayerControll
       if (!target.isAlive) {
         player.bloodtally = Math.min(10, (player.bloodtally || 0) + 3);
         player.mp = player.bloodtally;
+      }
+    }
+  }
+
+  // Apply weapon hitEffect to all hit targets
+  if (heldDef?.hitEffect && targets.length > 0) {
+    for (const target of targets) {
+      for (const [etype, edata] of Object.entries(heldDef.hitEffect)) {
+        addStatusEffect(state, target, etype as StatusEffectType, edata.magnitude, edata.durationMs, player.id);
+      }
+    }
+  }
+
+  // Crate hit detection
+  for (const crate of state.crates) {
+    if (!crate.isAlive) continue;
+    const dx = crate.x - player.x;
+    const dy = crate.y - player.y;
+    if (Math.abs(dx) < range && Math.abs(dy) < ATTACK_Y_TOLERANCE) {
+      if (Math.abs(dx) < 1 || Math.sign(dx) === player.facing) {
+        crate.hp -= baseDmg;
+        if (crate.hp <= 0) breakCrate(state, crate);
       }
     }
   }
@@ -1712,42 +1783,74 @@ function handlePlayerInput(state: SimState, input: InputState, ctrl: PlayerContr
   if (input.grabJustPressed) {
     if (player.heldPickup) {
       const pickup = player.heldPickup;
-      const proj: Projectile = {
-        id: `proj_${state.nextProjectileId++}`,
-        ownerId: player.id,
-        guildId: null,
-        team: player.team,
-        x: player.x,
-        y: player.y,
-        z: player.z + player.height * 0.55,
-        vx: player.facing * 500,
-        vy: 0,
-        vz: 100,
-        damage: 8 + player.stats.STR,
-        damageType: 'physical',
-        range: 400,
-        traveled: 0,
-        radius: 10,
-        knockdown: pickup.type === 'rock',
-        knockbackForce: 80,
-        effects: pickup.type === 'rock' ? { stun: { magnitude: 1, durationMs: 300 } } : {},
-        piercing: false,
-        color: pickup.type === 'rock' ? '#9ca3af' : '#92400e',
-        type: `thrown_${pickup.type}`,
-        hitActorIds: [],
-      };
-      state.projectiles.push(proj);
-      player.heldPickup = null;
-      player.animationId = 'throw';
+      const def: PickupDef | undefined = PICKUP_DEFS[pickup.type];
+
+      if (def && !def.throwable) {
+        // Non-throwable (gems, chain): drop to ground
+        if (def.category === 'gem') {
+          player.statusEffects = player.statusEffects.filter(e => e.source !== 'gem');
+        }
+        pickup.heldBy = null;
+        pickup.x = player.x;
+        pickup.y = player.y;
+        state.pickups.push(pickup);
+        player.heldPickup = null;
+      } else {
+        const proj: Projectile = {
+          id: `proj_${state.nextProjectileId++}`,
+          ownerId: player.id,
+          guildId: null,
+          team: player.team,
+          x: player.x,
+          y: player.y,
+          z: player.z + player.height * 0.55,
+          vx: player.facing * (def?.throwRange ? Math.min(600, def.throwRange * 1.2) : 500),
+          vy: 0,
+          vz: 100,
+          damage: def?.throwDamage ?? 20,
+          damageType: 'physical',
+          range: def?.throwRange ?? 400,
+          traveled: 0,
+          radius: def?.throwRadius ?? 10,
+          knockdown: false,
+          knockbackForce: 60,
+          effects: def?.hitEffect ? { ...def.hitEffect } : {},
+          piercing: false,
+          color: def?.color ?? '#9ca3af',
+          type: `thrown_${pickup.type}`,
+          hitActorIds: [],
+        };
+        state.projectiles.push(proj);
+        state.vfxEvents.push({ type: 'projectile_spawn', x: player.x, y: player.y, color: def?.color ?? '#9ca3af', abilityId: `thrown_${pickup.type}` });
+        if (def?.category === 'gem') {
+          player.statusEffects = player.statusEffects.filter(e => e.source !== 'gem');
+        }
+        player.heldPickup = null;
+        player.animationId = 'throw';
+      }
     } else {
       const nearPickup = state.pickups.find(p =>
         p.heldBy === null && Math.hypot(p.x - player.x, p.y - player.y) < PICKUP_GRAB_RANGE
       );
       if (nearPickup) {
-        nearPickup.heldBy = player.id;
-        player.heldPickup = nearPickup;
-        state.pickups = state.pickups.filter(p => p.id !== nearPickup.id);
-        player.animationId = 'pickup';
+        const def = PICKUP_DEFS[nearPickup.type];
+        if (def?.category === 'consumable') {
+          // Stage the consumable in heldPickup so applyConsumableEffect
+          // runs after HP/MP regen in the main tick loop (ensures exact values).
+          nearPickup.heldBy = player.id;
+          player.heldPickup = nearPickup;
+          state.pickups = state.pickups.filter(p => p.id !== nearPickup.id);
+          player.animationId = 'pickup';
+        } else {
+          nearPickup.heldBy = player.id;
+          player.heldPickup = nearPickup;
+          state.pickups = state.pickups.filter(p => p.id !== nearPickup.id);
+          player.animationId = 'pickup';
+          if (def?.category === 'gem' && def.holdBonus) {
+            player.statusEffects = player.statusEffects.filter(e => e.source !== 'gem');
+            addStatusEffect(state, player, def.holdBonus, def.holdMagnitude ?? 1, 999_999_999, 'gem');
+          }
+        }
       }
     }
   }
@@ -1847,20 +1950,60 @@ function handlePlayerInput(state: SimState, input: InputState, ctrl: PlayerContr
   }
 }
 
-function spawnPickup(state: SimState, enemy: Actor): void {
+function applyConsumableEffect(state: SimState, actor: Actor, def: PickupDef): void {
+  if (def.instantHeal) {
+    actor.hp = Math.round(Math.min(actor.hpMax, actor.hp + def.instantHeal));
+  }
+  if (def.instantResourceRestore) {
+    actor.mp = Math.round(Math.min(actor.mpMax, actor.mp + def.instantResourceRestore));
+  }
+  if (def.cleanseOnUse) {
+    const NEGATIVE: StatusEffectType[] = [
+      'slow', 'root', 'stun', 'silence', 'blind', 'dot', 'infected', 'chilled', 'curse',
+    ];
+    actor.statusEffects = actor.statusEffects.filter(e => !NEGATIVE.includes(e.type));
+  }
+  for (const e of def.instantEffects ?? []) {
+    addStatusEffect(state, actor, e.type, e.magnitude, e.durationMs, 'consumable');
+  }
+}
+
+function spawnPickup(state: SimState, type: PickupType, x: number, y: number): Pickup {
+  const p: Pickup = {
+    id: `pickup_${state.nextPickupId++}`,
+    type,
+    x,
+    y,
+    z: 0,
+    hitsLeft: 999,
+    heldBy: null,
+  };
+  return p;
+}
+
+function spawnEnemyDrop(state: SimState, enemy: Actor): void {
   const def = ENEMY_DEFS[enemy.kind];
   if (!def) return;
   if (def.dropWeapon && state.rng() < def.dropWeaponChance) {
-    state.pickups.push({
-      id: `pickup_${state.nextPickupId++}`,
-      type: def.dropWeapon as 'rock' | 'club',
-      x: enemy.x,
-      y: enemy.y,
-      z: 0,
-      hitsLeft: def.dropWeapon === 'club' ? 8 : 1,
-      heldBy: null,
-    });
+    state.pickups.push(spawnPickup(state, def.dropWeapon, enemy.x, enemy.y));
   }
+}
+
+function breakCrate(state: SimState, crate: Crate): void {
+  crate.isAlive = false;
+  const count = 1 + Math.floor(state.rng() * 2); // 1 or 2
+  for (let i = 0; i < count; i++) {
+    const type = CRATE_LOOT_TABLE[Math.floor(state.rng() * CRATE_LOOT_TABLE.length)];
+    const offsetX = i === 0 ? -20 : 20;
+    state.pickups.push(spawnPickup(state, type, crate.x + offsetX, crate.y));
+  }
+  state.vfxEvents.push({
+    type: 'crate_break',
+    color: '#8B6914',
+    x: crate.x,
+    y: crate.y,
+    actorId: crate.id,
+  });
 }
 
 function tickGroundZones(state: SimState, dtMs: number): void {
@@ -1963,6 +2106,21 @@ export function tickSimulation(
     tickHPRegen(state.player, dtMs, state.enemies.filter(e => e.isAlive).length > 0);
     const inCombat = state.enemies.filter(e => e.isAlive).length > 0;
     tickPlayerResourceRegen(state.player, dtMs, inCombat, state);
+    // Apply staged consumable after regen so HP/MP land on exact values.
+    if (state.player.heldPickup) {
+      const heldDef = PICKUP_DEFS[state.player.heldPickup.type];
+      if (heldDef?.category === 'consumable') {
+        const consumedPickup = state.player.heldPickup;
+        applyConsumableEffect(state, state.player, heldDef);
+        state.vfxEvents.push({
+          type: 'pickup_consumed',
+          color: heldDef.color,
+          x: consumedPickup.x,
+          y: consumedPickup.y,
+        });
+        state.player.heldPickup = null;
+      }
+    }
   } else {
     state.phase = 'defeat';
     return state;
@@ -2018,7 +2176,7 @@ export function tickSimulation(
   for (const dead of deadEnemies) {
     if (dead.deathTimeMs === 0) {
       dead.deathTimeMs = state.timeMs;
-      spawnPickup(state, dead);
+      spawnEnemyDrop(state, dead);
       state.score += dead.hpMax;
       if (state.battleMode && state.battStats) {
         const deadEntry = state.battStats[dead.id];

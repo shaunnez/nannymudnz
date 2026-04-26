@@ -239,9 +239,33 @@ export function consumeVfxEvents(scene: Phaser.Scene, events: VFXEvent[]): void 
     if (guildFired) continue;
 
     switch (event.type) {
-      case 'projectile_spawn':
-        // Visual lives on the ProjectileView; nothing to do here.
+      case 'projectile_spawn': {
+        // Visual lives on the ProjectileView; add elemental burst for thrown items.
+        const throwType = event.abilityId;
+        if (throwType === 'thrown_torch') {
+          for (let i = 0; i < 6; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            spawnBurstSpark(scene, x, y, angle, 40 + Math.random() * 60, 3, 0xff6600, 0.9, 350);
+          }
+        } else if (throwType === 'thrown_bomb') {
+          for (let i = 0; i < 16; i++) {
+            const angle = (i / 16) * Math.PI * 2;
+            spawnBurstSpark(scene, x, y, angle, 80 + Math.random() * 120, 4, 0xffcc00, 1.0, 400);
+          }
+          spawnExpandingRing(scene, x, y, 40, 1.2, 0xff8800, 0.7, 0.1, 2, false, 350);
+        } else if (throwType === 'thrown_smoke_bomb') {
+          for (let i = 0; i < 10; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            spawnBurstSpark(scene, x, y, angle, 10 + Math.random() * 30, 6, 0x9aab9a, 0.6, 1200);
+          }
+        } else if (throwType === 'thrown_throwing_star') {
+          for (let i = 0; i < 4; i++) {
+            const angle = (i / 4) * Math.PI * 2;
+            spawnBurstSpark(scene, x, y, angle, 30 + Math.random() * 20, 2, 0xc0c0c0, 0.7, 150);
+          }
+        }
         break;
+      }
 
       case 'hit_spark': {
         if (newVfx) {
