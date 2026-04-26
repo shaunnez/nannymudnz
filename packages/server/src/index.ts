@@ -2,15 +2,13 @@ import { Server, matchMaker, createRouter, createEndpoint } from 'colyseus';
 import { createServer } from 'node:http';
 import { MatchRoom } from './rooms/MatchRoom.js';
 
-const CORS_HEADERS = {
-  'access-control-allow-origin': '*',
-  'access-control-allow-methods': 'GET, OPTIONS',
-  'access-control-allow-headers': 'content-type, ngrok-skip-browser-warning',
+// Colyseus handles OPTIONS preflights at the HTTP server level using this header list.
+// ngrok-skip-browser-warning must be included or the Vercel frontend's preflight is rejected.
+matchMaker.controller.DEFAULT_CORS_HEADERS = {
+  ...matchMaker.controller.DEFAULT_CORS_HEADERS,
+  'Access-Control-Allow-Headers':
+    'Origin, X-Requested-With, Content-Type, Accept, Authorization, ngrok-skip-browser-warning',
 };
-
-const publicRoomsPreflightEndpoint = createEndpoint('/api/public-rooms', { method: 'OPTIONS' }, async () => {
-  return new Response(null, { status: 204, headers: CORS_HEADERS });
-});
 
 const publicRoomsEndpoint = createEndpoint('/api/public-rooms', { method: 'GET' }, async () => {
   try {
@@ -27,12 +25,12 @@ const publicRoomsEndpoint = createEndpoint('/api/public-rooms', { method: 'GET' 
       }));
     return new Response(JSON.stringify(publicRooms), {
       status: 200,
-      headers: { 'content-type': 'application/json', ...CORS_HEADERS },
+      headers: { 'content-type': 'application/json' },
     });
   } catch {
     return new Response(JSON.stringify({ error: 'query failed' }), {
       status: 500,
-      headers: { 'content-type': 'application/json', ...CORS_HEADERS },
+      headers: { 'content-type': 'application/json' },
     });
   }
 });
@@ -43,7 +41,7 @@ const gameServer = new Server({ server: app });
 gameServer.define('match', MatchRoom).filterBy(['code', 'visibility']);
 
 // Must be set before listen() so bindRouterToTransport picks it up.
-gameServer.router = createRouter({ publicRoomsPreflightEndpoint, publicRoomsEndpoint });
+gameServer.router = createRouter({ publicRoomsEndpoint });
 
 const port = Number(process.env.PORT ?? 2567);
 

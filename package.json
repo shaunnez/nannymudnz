@@ -9,7 +9,7 @@
   "scripts": {
     "dev:client": "vite",
     "dev:server": "node --watch --watch-path=packages/server/src --watch-path=packages/shared/src --import @swc-node/register/esm-register packages/server/src/index.ts",
-    "dev": "concurrently -n client,server -c blue,green \"npm:dev:client\" \"npm:dev:server\"",
+    "dev": "npx kill-port 5173 2567 && concurrently -n client,server -c blue,green \"npm:dev:client\" \"npm:dev:server\"",
     "kill": "bash scripts/kill-dev.sh",
     "build": "vite build",
     "lint": "eslint .",
