@@ -274,6 +274,8 @@ export interface AIState {
   pursuitDir?: -1 | 0 | 1;
   // Cooldown between CPU ability fires (ms remaining).
   abilityCooldownMs?: number;
+  // Timestamp of the last AI jump, for kite-jump throttling.
+  lastJumpMs?: number;
 }
 
 export interface Pickup {

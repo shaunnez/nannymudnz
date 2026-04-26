@@ -5,18 +5,19 @@ import { getGuild } from './guildData';
 /**
  * VS-mode CPU opponent controller.
  *
- * The opponent in single-player VS is a full-featured guild actor — it has
- * abilities, combos, stats, status effects. Rather than duplicate combat
- * routing, we synthesize an InputState each tick and feed it through the
- * same `handlePlayerInput` pipeline that the local player and MP opponent
- * use. This keeps combat behaviour identical for CPU and humans.
+ * Synthesizes an InputState each tick and feeds it through the same
+ * `handlePlayerInput` pipeline that local players and MP opponents use.
  *
- * Difficulty (0..5) maps to Training / Easy / Knight / Veteran / Master /
- * Mats — labels defined in MainMenu.tsx. Higher difficulty = shorter
- * decision interval, more aggressive pursuit, higher block/ability chance.
+ * Guild strategy fields drive behaviour:
+ *   preferRange      → ideal engagement distance ('close' 55 / 'mid' 180 / 'long' 320)
+ *   retreatBelowHpPct → flee when HP falls below this fraction
+ *   aggressionPct    → gates whether the bot presses attack this tick (not movement speed)
+ *   useAtCloseRange  → ability only fires when close to target
+ *   useAtLongRange   → ability only fires when far from target
+ *   isHeal ability   → prioritised when HP < 60%
+ *   blockOnReaction  → whether to block when player is swinging nearby
  *
- * Determinism: input decisions that involve randomness must use `state.rng()`
- * so the golden / vs tests stay reproducible.
+ * Determinism: all random decisions use `state.rng()`.
  */
 
 function areTeammateActors(a: Actor, b: Actor): boolean {
@@ -35,42 +36,37 @@ function findVsTarget(state: SimState, opp: Actor): Actor | null {
   });
 }
 
-// Default basic-attack reach in `performBasicAttack` is 55 (no pickup) — see
-// simulation.ts. Keep in sync if that constant moves.
 const BASIC_ATTACK_RANGE = 55;
-/** Step this far inside real range before swinging so attacks connect. */
 const APPROACH_MARGIN = 8;
-/** Hysteresis — resume chasing only when absDx exceeds this. Must be ≤ BASIC_ATTACK_RANGE
- * to prevent a dead zone where fighters are stopped but outside attack range. */
-const RETREAT_MARGIN = 0;
-/** Target depth overlap when approaching — inside ATTACK_Y_TOLERANCE. */
 const DEPTH_TARGET_WINDOW = 20;
 
+/** Ideal engagement distance per preferRange. */
+const IDEAL_DIST: Record<string, number> = {
+  close: BASIC_ATTACK_RANGE,
+  mid:   180,
+  long:  320,
+};
+
 interface Tuning {
-  /** Min gap between "decide-again" cycles (ms). Lower = more reactive. */
   decisionIntervalMs: number;
-  /** Base attack-cooldown the CPU respects between its own swings (ms). */
   attackCadenceMs: number;
-  /** Probability per decision tick to start blocking when player is attacking. */
   blockChance: number;
-  /** Probability per decision tick to fire an ability instead of a basic. */
   abilityChance: number;
-  /** Minimum gap between ability fires (ms) regardless of rng. */
   abilityCooldownMs: number;
 }
 
 const TUNING_BY_DIFFICULTY: Tuning[] = [
-  // 0 Training — mostly idle, occasional approach.
+  // 0 Training
   { decisionIntervalMs: 1200, attackCadenceMs: 99999, blockChance: 0,    abilityChance: 0,    abilityCooldownMs: 99999 },
-  // 1 Easy — slow attacks, no block.
+  // 1 Easy
   { decisionIntervalMs: 600,  attackCadenceMs: 1400,  blockChance: 0,    abilityChance: 0,    abilityCooldownMs: 99999 },
-  // 2 Knight (default) — steady attacks, occasional abilities.
+  // 2 Knight (default)
   { decisionIntervalMs: 350,  attackCadenceMs: 900,   blockChance: 0.15, abilityChance: 0.10, abilityCooldownMs: 4500 },
-  // 3 Veteran — aggressive, notable block.
+  // 3 Veteran
   { decisionIntervalMs: 220,  attackCadenceMs: 700,   blockChance: 0.35, abilityChance: 0.18, abilityCooldownMs: 3000 },
-  // 4 Master — heavy pressure, frequent abilities.
+  // 4 Master
   { decisionIntervalMs: 140,  attackCadenceMs: 550,   blockChance: 0.55, abilityChance: 0.30, abilityCooldownMs: 2000 },
-  // 5 Mats — frame-grinding menace.
+  // 5 Mats
   { decisionIntervalMs: 80,   attackCadenceMs: 400,   blockChance: 0.75, abilityChance: 0.45, abilityCooldownMs: 1200 },
 ];
 
@@ -81,36 +77,18 @@ function getTuning(difficulty: number): Tuning {
 
 export function createEmptyCpuInput(): InputState {
   return {
-    left: false,
-    right: false,
-    up: false,
-    down: false,
-    jump: false,
-    attack: false,
-    block: false,
-    grab: false,
-    pause: false,
-    leftJustPressed: false,
-    rightJustPressed: false,
-    jumpJustPressed: false,
-    attackJustPressed: false,
-    blockJustPressed: false,
-    grabJustPressed: false,
-    pauseJustPressed: false,
-    fullscreenToggleJustPressed: false,
-    lastLeftPressMs: 0,
-    lastRightPressMs: 0,
-    runningLeft: false,
-    runningRight: false,
+    left: false, right: false, up: false, down: false,
+    jump: false, attack: false, block: false, grab: false, pause: false,
+    leftJustPressed: false, rightJustPressed: false,
+    jumpJustPressed: false, attackJustPressed: false,
+    blockJustPressed: false, grabJustPressed: false,
+    pauseJustPressed: false, fullscreenToggleJustPressed: false,
+    lastLeftPressMs: 0, lastRightPressMs: 0,
+    runningLeft: false, runningRight: false,
     testAbilitySlot: null,
   };
 }
 
-/**
- * Mutates `prevInput` in place and returns it, producing the opponent's
- * input for this tick. Keeping the same object across ticks lets us compute
- * `*JustPressed` edges cleanly.
- */
 export function synthesizeVsCpuInput(
   state: SimState,
   opp: Actor,
@@ -123,115 +101,163 @@ export function synthesizeVsCpuInput(
     : state.player;
   const tuning = getTuning(difficulty);
 
-  // Snapshot previous button states so we can compute JustPressed edges.
   const prev = {
-    left: prevInput.left,
-    right: prevInput.right,
-    attack: prevInput.attack,
-    block: prevInput.block,
-    jump: prevInput.jump,
+    left: prevInput.left, right: prevInput.right,
+    attack: prevInput.attack, block: prevInput.block, jump: prevInput.jump,
   };
 
   const ai = opp.aiState;
   ai.lastActionMs += dtMs;
   ai.abilityCooldownMs = Math.max(0, (ai.abilityCooldownMs ?? 0) - dtMs);
 
-  // Compute spatial relationship every tick so pursuit hysteresis responds
-  // continuously, not only on decision edges.
   const dx = player.x - opp.x;
   const dy = player.y - opp.y;
   const absDx = Math.abs(dx);
   const absDy = Math.abs(dy);
+  const dist = Math.hypot(dx, dy);
 
-  // Hysteresis bands around the real melee range. Outside the retreat band
-  // we chase; inside the approach band we stop and engage; in between we
-  // hold the prior commitment, which prevents the start/stop stutter that
-  // happened when |dx| fluttered across a single threshold.
-  const approachUntil = BASIC_ATTACK_RANGE - APPROACH_MARGIN;
-  const retreatBeyond = BASIC_ATTACK_RANGE + RETREAT_MARGIN;
+  // ── Guild strategy ──────────────────────────────────────────────────────
+  const guild = opp.guildId ? getGuild(opp.guildId) : null;
+  const strategy = guild?.strategy;
+  const preferRange = strategy?.preferRange ?? 'close';
+  const idealDist = IDEAL_DIST[preferRange] ?? BASIC_ATTACK_RANGE;
+  const retreatHpPct = strategy?.retreatBelowHpPct ?? 0;
+  const aggressionPct = strategy?.aggressionPct ?? 0.7;
+  const hpPct = opp.hp / opp.hpMax;
+  const isRanged = preferRange !== 'close';
+
+  // ── Low-HP retreat ──────────────────────────────────────────────────────
+  // Only retreat when dangerously low on HP — not when kiting normally.
+  const isLowHp = retreatHpPct > 0 && hpPct < retreatHpPct;
+
+  // ── Ranged kite: maintain distance, but tighter threshold ───────────────
+  // Ranged bots back off only when considerably inside their ideal range.
+  // Using 0.35× (not 0.6×) prevents constant retreat from normal spacing.
+  const kiteRetreat = isRanged && dist < idealDist * 0.35 && !isLowHp;
+
+  const shouldRetreat = isLowHp || kiteRetreat;
+
+  // ── Horizontal movement (always full-speed; no stochastic gate) ─────────
+  // Movement is deterministic per tick. aggressionPct gates attack eagerness
+  // (below), NOT movement speed — slow-aggression guilds still reposition.
+  const approachUntil = idealDist - APPROACH_MARGIN;
+  const retreatBeyond = idealDist;
 
   let pursuitDir: -1 | 0 | 1 = ai.pursuitDir ?? 0;
-  if (pursuitDir === 0) {
+  if (shouldRetreat) {
+    pursuitDir = dx > 0 ? -1 : 1;    // move away from target
+  } else if (pursuitDir === 0) {
     if (absDx > retreatBeyond) pursuitDir = dx > 0 ? 1 : -1;
   } else {
     if (absDx < approachUntil) pursuitDir = 0;
-    else pursuitDir = dx > 0 ? 1 : -1; // keep chasing in current-sign direction
+    else pursuitDir = dx > 0 ? 1 : -1;
   }
   ai.pursuitDir = pursuitDir;
 
-  // Horizontal pursuit — held every frame, not just on decision ticks.
-  let desiredLeft = pursuitDir === -1;
-  let desiredRight = pursuitDir === 1;
+  const desiredLeft = pursuitDir === -1;
+  const desiredRight = pursuitDir === 1;
 
-  // Depth adjustment — nudge onto player's plane so basic attacks connect.
-  // Held every frame for the same reason.
-  let desiredUp = absDy > DEPTH_TARGET_WINDOW && dy < 0;
-  let desiredDown = absDy > DEPTH_TARGET_WINDOW && dy > 0;
+  // ── Depth adjustment ────────────────────────────────────────────────────
+  const desiredUp = absDy > DEPTH_TARGET_WINDOW && dy < 0;
+  const desiredDown = absDy > DEPTH_TARGET_WINDOW && dy > 0;
+
+  // ── Jump: kite-jump (ranged) or gap-close leap (melee) ──────────────────
+  let desiredJump = false;
+  const jumpCooldownElapsed = (ai.lastJumpMs ?? 0) + 2000 < state.timeMs;
+  if (jumpCooldownElapsed) {
+    // Ranged guilds jump while retreating to break pursuit; melee jump to close.
+    const retreatJump = kiteRetreat && state.rng() < 0.30;
+    const gapJump = !shouldRetreat && !isRanged && dist > 180 && state.rng() < 0.18;
+    if (retreatJump || gapJump) {
+      desiredJump = true;
+      ai.lastJumpMs = state.timeMs;
+    }
+  }
 
   let desiredAttack = false;
   let desiredBlock = false;
   let desiredAbility: number | null = null;
 
   const inMeleeRange = absDx <= BASIC_ATTACK_RANGE && absDy <= ATTACK_Y_TOLERANCE;
+  // For ranged guilds, consider them "in range" to fire abilities at any dist
+  // where depth plane is aligned; for melee, use tight melee range.
+  const inAttackRange = isRanged
+    ? absDy <= ATTACK_Y_TOLERANCE + 20
+    : inMeleeRange;
+
   const makingDecision = ai.lastActionMs >= tuning.decisionIntervalMs;
 
   if (makingDecision) {
     ai.lastActionMs = 0;
 
-    // Attack when in range and our cadence has elapsed.
-    const canAttack = state.timeMs - opp.lastAttackTimeMs >= tuning.attackCadenceMs;
-    if (inMeleeRange && canAttack) {
-      desiredAttack = true;
-      opp.lastAttackTimeMs = state.timeMs;
+    // ── Heal priority ────────────────────────────────────────────────────
+    if (hpPct < 0.6 && ai.abilityCooldownMs === 0 && opp.guildId) {
+      const healSlot = pickHealSlot(opp, state);
+      if (healSlot != null) {
+        desiredAbility = healSlot;
+        ai.abilityCooldownMs = tuning.abilityCooldownMs;
+      }
+    }
 
-      // Ability roll — only try to fire on ticks where we'd otherwise attack,
-      // so ability fires happen in range where they're useful. testAbilitySlot
-      // bypasses combo detection and is routed directly to fireAbility in
-      // handlePlayerInput (simulation.ts), which works for any actor.
-      if (
-        ai.abilityCooldownMs === 0 &&
-        state.rng() < tuning.abilityChance &&
-        opp.guildId
-      ) {
-        const slot = pickAbilitySlot(opp, state);
-        if (slot != null) {
-          desiredAbility = slot;
-          desiredAttack = false;   // ability takes precedence this tick
-          ai.abilityCooldownMs = tuning.abilityCooldownMs;
+    if (desiredAbility == null) {
+      const canAttack = state.timeMs - opp.lastAttackTimeMs >= tuning.attackCadenceMs;
+
+      // Ranged guilds fire abilities even while kite-retreating; melee don't
+      // attack while retreating.
+      const canFire = canAttack && inAttackRange && (isRanged || !shouldRetreat);
+
+      if (canFire && state.rng() < aggressionPct + 0.2) {
+        if (!isRanged) desiredAttack = true;
+        opp.lastAttackTimeMs = state.timeMs;
+
+        if (
+          ai.abilityCooldownMs === 0 &&
+          state.rng() < tuning.abilityChance &&
+          opp.guildId
+        ) {
+          const slot = pickAbilitySlot(opp, state, dist, preferRange);
+          if (slot != null) {
+            desiredAbility = slot;
+            desiredAttack = false;
+            ai.abilityCooldownMs = tuning.abilityCooldownMs;
+          }
+        }
+
+        // Melee basic attack — only in tight range.
+        if (!isRanged && !desiredAbility && !inMeleeRange) {
+          desiredAttack = false;
         }
       }
     }
 
-    // Block reaction — if the player is currently attacking within range,
-    // there's a difficulty-scaled chance we raise guard instead of striking.
+    // ── Block reaction ───────────────────────────────────────────────────
     const playerAttacking = player.state === 'attacking';
     if (
       playerAttacking &&
       absDx <= BASIC_ATTACK_RANGE + 20 &&
       absDy <= ATTACK_Y_TOLERANCE + 15 &&
+      (strategy?.blockOnReaction ?? false) &&
       state.rng() < tuning.blockChance
     ) {
       desiredBlock = true;
       desiredAttack = false;
       desiredAbility = null;
-      desiredLeft = false;
-      desiredRight = false;
     }
   }
 
-  // Write out the new input with JustPressed edges.
+  // Write output.
   prevInput.left = desiredLeft;
   prevInput.right = desiredRight;
   prevInput.up = desiredUp;
   prevInput.down = desiredDown;
-  prevInput.jump = false;
+  prevInput.jump = desiredJump;
   prevInput.attack = desiredAttack;
   prevInput.block = desiredBlock;
   prevInput.grab = false;
   prevInput.pause = false;
   prevInput.leftJustPressed = desiredLeft && !prev.left;
   prevInput.rightJustPressed = desiredRight && !prev.right;
-  prevInput.jumpJustPressed = false;
+  prevInput.jumpJustPressed = desiredJump && !prev.jump;
   prevInput.attackJustPressed = desiredAttack && !prev.attack;
   prevInput.blockJustPressed = desiredBlock && !prev.block;
   prevInput.grabJustPressed = false;
@@ -246,16 +272,34 @@ export function synthesizeVsCpuInput(
   return prevInput;
 }
 
+/** Pick the best available heal-ability slot. Returns null if none ready. */
+function pickHealSlot(opp: Actor, state: SimState): number | null {
+  if (!opp.guildId) return null;
+  const guild = getGuild(opp.guildId);
+  for (let i = 0; i < guild.abilities.length && i < 5; i++) {
+    const a = guild.abilities[i];
+    if (!a.isHeal) continue;
+    if (opp.mp < a.cost) continue;
+    const cd = opp.abilityCooldowns.get(a.id) ?? 0;
+    if (cd > state.timeMs) continue;
+    return i + 1;
+  }
+  return null;
+}
+
 /**
- * Pick a guild ability slot (0-based in the player's input schema: 1-5 are
- * ability slots, 6 is rmb). Returns `null` if nothing is affordable.
- *
- * Weights abilities by affordability and cost: cheap abilities fire more
- * often, expensive ones save themselves for availability. Uses state.rng()
- * for determinism.
+ * Pick a guild ability slot weighted by cost, range appropriateness, and
+ * strategy hints (useAtCloseRange / useAtLongRange).
  */
-function pickAbilitySlot(opp: Actor, state: SimState): number | null {
-  const guild = getGuild(opp.guildId!);
+function pickAbilitySlot(
+  opp: Actor,
+  state: SimState,
+  dist: number,
+  preferRange: string,
+): number | null {
+  if (!opp.guildId) return null;
+  const guild = getGuild(opp.guildId);
+  const strat = guild.strategy?.abilities ?? {};
   const candidates: { slot: number; weight: number }[] = [];
 
   for (let i = 0; i < guild.abilities.length && i < 5; i++) {
@@ -263,8 +307,18 @@ function pickAbilitySlot(opp: Actor, state: SimState): number | null {
     if (opp.mp < a.cost) continue;
     const cd = opp.abilityCooldowns.get(a.id) ?? 0;
     if (cd > state.timeMs) continue;
-    // Cheaper abilities get more weight; always at least 1.
-    candidates.push({ slot: i + 1, weight: Math.max(1, 6 - a.cost) });
+
+    // Range filter from strategy hints.
+    const slotStrat = strat[(i + 1) as keyof typeof strat];
+    if (slotStrat) {
+      if ((slotStrat as { useAtCloseRange?: boolean }).useAtCloseRange && dist > 120) continue;
+      if ((slotStrat as { useAtLongRange?: boolean }).useAtLongRange && dist < 100) continue;
+    }
+
+    const baseWeight = Math.max(1, 6 - Math.max(0, a.cost));
+    // Ranged guilds prefer projectile abilities when at range.
+    const rangeBonus = a.isProjectile && preferRange !== 'close' && dist > 100 ? 3 : 0;
+    candidates.push({ slot: i + 1, weight: baseWeight + rangeBonus });
   }
 
   if (guild.rmb && opp.mp >= guild.rmb.cost) {

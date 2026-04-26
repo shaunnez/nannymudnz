@@ -308,7 +308,7 @@ export function GameScreen({
           onMenu={handleStoryVictoryMenu}
         />
       )}
-      {preloading && (
+      {preloading && netMode !== 'mp' && (
         <div style={{ position: 'absolute', inset: 0 }}>
           {battleMode && battleSlots ? (
             <BattleLoadingScreen

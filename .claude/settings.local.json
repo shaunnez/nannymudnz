@@ -118,7 +118,8 @@
       "Bash(npx kill-port *)",
       "Bash(taskkill /F /IM node.exe)",
       "Bash(sort -k2)",
-      "Bash(python3 -c \"import json; m=json.load\\(open\\('public/vfx/effects/metadata.json'\\)\\); s=m['assets']['slash_5']; print\\(f'slash_5 frameSize: {s[\\\\\"frameSize\\\\\"]}'\\); print\\(f'slash_5 anchor: {s[\\\\\"anchor\\\\\"]}'\\); print\\(f'Expected center: \\({s[\\\\\"frameSize\\\\\"][\\\\\"w\\\\\"]//2}, {s[\\\\\"frameSize\\\\\"][\\\\\"h\\\\\"]//2}\\)'\\); print\\(f'Match: {s[\\\\\"anchor\\\\\"][\\\\\"x\\\\\"] == s[\\\\\"frameSize\\\\\"][\\\\\"w\\\\\"]//2 and s[\\\\\"anchor\\\\\"][\\\\\"y\\\\\"] == s[\\\\\"frameSize\\\\\"][\\\\\"h\\\\\"]//2}'\\)\")"
+      "Bash(python3 -c \"import json; m=json.load\\(open\\('public/vfx/effects/metadata.json'\\)\\); s=m['assets']['slash_5']; print\\(f'slash_5 frameSize: {s[\\\\\"frameSize\\\\\"]}'\\); print\\(f'slash_5 anchor: {s[\\\\\"anchor\\\\\"]}'\\); print\\(f'Expected center: \\({s[\\\\\"frameSize\\\\\"][\\\\\"w\\\\\"]//2}, {s[\\\\\"frameSize\\\\\"][\\\\\"h\\\\\"]//2}\\)'\\); print\\(f'Match: {s[\\\\\"anchor\\\\\"][\\\\\"x\\\\\"] == s[\\\\\"frameSize\\\\\"][\\\\\"w\\\\\"]//2 and s[\\\\\"anchor\\\\\"][\\\\\"y\\\\\"] == s[\\\\\"frameSize\\\\\"][\\\\\"h\\\\\"]//2}'\\)\")",
+      "Bash(python3 -c \"from PIL import Image; img = Image.open\\('C:/Users/nimbl/projects/nannymud/public/world/kitchen/horizon.png'\\); print\\(f'Size: {img.size}, Mode: {img.mode}, Format: {img.format}'\\)\")"
     ]
   }
 }

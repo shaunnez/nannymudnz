@@ -17,3 +17,29 @@ Ideally with new tests, as i add features, AI is checking relevant screen and sc
 Android - not good
 
 Add screenshots for mobile mode as well in test plan.
+
+Bugs for Multiplayer 1v1 - player 1 is fine, player 2 is not.
+
+Bug 0 - Choose your guild - player 2 locks in a guild, on their screen it shows they are P1
+
+Bug 1 - Room lobby - P1 should be at top, players should be in order they joined. Currently for player 2 it shows them at top (i.e. in p1 position).
+
+Bug 2 - MP Loading screen -  for player 2, it shows them as player 1 and on the left hand side of the screen
+
+Bug 3 - Mp Game - P1 sees the correct header (their avatar + health) followed by P2, however P2 is flipped. On left side of screen it shows them as P1 when they should be on p2
+
+Bug 4 - Final tally - again P1 is correct. But P2 shows "Victor P2" when it hsould be "Victor P1", and on the right stats it's also flipped for P2 and it says "P2 wins".
+
+It's very hard to know in the screens folder which screen relates to which mode of if anything is shared.
+
+I think if we could map it out so we know the below (keep in mind i'm making up the file names but you get the gist)
+
+Versus -> Guild picker.tsx (or whatever it is) -> BattleFieldpicker.tsx -> Game loader.tsx -> Versus Game mode.tsx -> versus results.tsx
+
+And then the same for stage mode, survival, and battle.
+
+These all work FINE for the most part.
+
+Then we need to do the same for multiplayer.
+
+I have a feeling multiplayer and game state is a bug  jumbled, as depending on if you go multiplayer 1v1 versus 4v4 we get diff screens during game, results etc.
