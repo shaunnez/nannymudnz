@@ -241,33 +241,40 @@ export class MatchRoom extends Room<MatchState> {
 
     this.onMessage('rematch_offer', (client: Client) => {
       if (this.state.phase !== 'results') return;
-      // Only a known slot may offer
       if (!this.state.players.has(client.sessionId)) return;
-      this.pendingRematchOffer = client.sessionId;
+
+      if (this.pendingRematchOffer && this.pendingRematchOffer !== client.sessionId) {
+        // Both players have offered — reset for a new char_select round
+        this.resetForRematch();
+      } else {
+        this.pendingRematchOffer = client.sessionId;
+        this.broadcast('rematch_status', { offererSessionId: client.sessionId });
+      }
     });
 
     this.onMessage('rematch_accept', (client: Client, msg: { accept: boolean }) => {
       if (this.state.phase !== 'results') return;
       if (!this.state.players.has(client.sessionId)) return;
-      // Must have a pending offer from the OTHER player
       if (!this.pendingRematchOffer || this.pendingRematchOffer === client.sessionId) return;
-      if (!msg.accept) return; // decline — stay in results, no state change
-
-      // Both agree — reset for a new char_select round
-      this.pendingRematchOffer = null;
-      this.state.matchWinnerSessionId = '';
-      this.state.stageId = '';
-      this.state.hoveredStageIdx = 0;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (this.state as any).sim = undefined;
-      this.plainSim = null;
-      for (const slot of this.state.players.values()) {
-        slot.ready = false;
-        slot.locked = false;
-        slot.guildId = '';
-      }
-      this.state.phase = 'char_select';
+      if (!msg.accept) return;
+      this.resetForRematch();
     });
+  }
+
+  private resetForRematch(): void {
+    this.pendingRematchOffer = null;
+    this.state.matchWinnerSessionId = '';
+    this.state.stageId = '';
+    this.state.hoveredStageIdx = 0;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (this.state as any).sim = undefined;
+    this.plainSim = null;
+    for (const slot of this.state.players.values()) {
+      slot.ready = false;
+      slot.locked = false;
+      slot.guildId = '';
+    }
+    this.state.phase = 'char_select';
   }
 
   onJoin(client: Client, opts: { name?: string; playerName?: string }) {
@@ -544,7 +551,37 @@ export class MatchRoom extends Room<MatchState> {
       const simPhase = this.plainSim.phase;
       if (simPhase === 'victory' || simPhase === 'defeat') {
         this.state.phase = 'results';
-        this.broadcast('match_result', { matchStats: this.plainSim.matchStats });
+
+        // Determine which actor IDs are on the winning side so each client
+        // can independently check "did I win?" without relying on the host's
+        // sim perspective. Foe definition mirrors the sim: enemies NOT sharing
+        // the player's battleTeam (null team = always a foe).
+        const sim = this.plainSim;
+        const winnerActorIds: string[] = [];
+        if (simPhase === 'victory') {
+          winnerActorIds.push(sim.player.id);
+          for (const enemy of sim.enemies) {
+            if (sim.player.battleTeam != null && enemy.battleTeam === sim.player.battleTeam) {
+              winnerActorIds.push(enemy.id);
+            }
+          }
+        } else {
+          // Foes won — collect every surviving foe
+          for (const enemy of sim.enemies) {
+            const isFoe = !(
+              sim.player.battleTeam != null &&
+              enemy.battleTeam != null &&
+              enemy.battleTeam === sim.player.battleTeam
+            );
+            if (isFoe && enemy.isAlive) winnerActorIds.push(enemy.id);
+          }
+        }
+
+        this.broadcast('match_result', {
+          matchStats: sim.matchStats,
+          battStats: sim.battStats,
+          winnerActorIds,
+        });
       }
     } else if (this.plainSim.round?.phase === 'matchOver') {
       // VS mode: best-of rounds resolved.

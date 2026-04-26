@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { createInitialState, tickSimulation } from '../simulation';
-import type { InputState, Crate } from '../types';
+import type { InputState, Crate, Projectile } from '../types';
 
 function idleInput(): InputState {
   return {
@@ -58,6 +58,45 @@ describe('crate hit detection', () => {
     expect(state.crates[0].isAlive).toBe(false);
     expect(state.pickups.length).toBeGreaterThanOrEqual(1);
     expect(state.pickups.length).toBeLessThanOrEqual(2);
+  });
+
+  it('projectile hitting a crate damages and can break it (including different depth)', () => {
+    let state = createInitialState('adventurer', 'assembly', 1);
+    state.timeMs = 1000;
+    state.enemies = [];
+    // Crate at different depth (y) than player — should still be hittable by projectile
+    state.crates = [{ ...makeCrate(state.player.x + 40, state.player.y + 80), hp: 1 }];
+    const proj: Projectile = {
+      id: 'proj_test',
+      ownerId: state.player.id,
+      guildId: null,
+      team: 'player',
+      x: state.player.x,
+      y: state.player.y,
+      z: 0,
+      vx: 200,
+      vy: 0,
+      vz: 0,
+      damage: 20,
+      damageType: 'physical',
+      range: 200,
+      traveled: 0,
+      radius: 8,
+      knockdown: false,
+      knockbackForce: 0,
+      effects: {},
+      piercing: false,
+      color: '#fff',
+      type: 'basic_ranged',
+      hitActorIds: [],
+    };
+    state.projectiles = [proj];
+    // Tick enough times for the projectile to travel 40px to the crate
+    for (let i = 0; i < 5; i++) {
+      state = tickSimulation(state, idleInput(), 16);
+    }
+    expect(state.crates[0].isAlive).toBe(false);
+    expect(state.pickups.length).toBeGreaterThanOrEqual(1);
   });
 
   it('crate break loot roll is deterministic — same seed = same loot', () => {

@@ -10,11 +10,13 @@ interface Props {
   winner: 'P1' | 'P2';
   score: number;
   matchStats?: MatchStats;
+  myReady?: boolean;
+  opponentReadyLabel?: string;
   onRematch: () => void;
   onMenu: () => void;
 }
 
-export function ResultsScreen({ p1, p2, winner, score, matchStats, onRematch, onMenu }: Props) {
+export function ResultsScreen({ p1, p2, winner, score, matchStats, myReady, opponentReadyLabel, onRematch, onMenu }: Props) {
   const p1Guild = useMemo(() => GUILDS.find((g) => g.id === p1)!, [p1]);
   const p2Guild = useMemo(() => GUILDS.find((g) => g.id === p2)!, [p2]);
 
@@ -65,12 +67,12 @@ export function ResultsScreen({ p1, p2, winner, score, matchStats, onRematch, on
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Enter') { e.preventDefault(); onRematch(); }
+      if (e.key === 'Enter') { e.preventDefault(); if (!myReady) onRematch(); }
       else if (e.key === 'Escape' || e.key === 'Backspace') { e.preventDefault(); onMenu(); }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [onMenu, onRematch]);
+  }, [onMenu, onRematch, myReady]);
 
   const kbAbilityId = winner === 'P1'
     ? matchStats?.p2.killingBlowAbilityId   // last ability that hit the loser (p2's hp = the target)
@@ -104,8 +106,30 @@ export function ResultsScreen({ p1, p2, winner, score, matchStats, onRematch, on
             Final tally
           </span>
         </div>
-        <div style={{ justifySelf: 'end' }}>
-          <Btn size="md" primary onClick={onRematch}>REMATCH →</Btn>
+        <div style={{ justifySelf: 'end', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 5 }}>
+          {opponentReadyLabel && (
+            <div style={{ fontFamily: theme.fontMono, fontSize: 9, color: theme.good, letterSpacing: 2 }}>
+              ▸ {opponentReadyLabel} READY
+            </div>
+          )}
+          {myReady ? (
+            <button style={{
+              padding: '8px 16px',
+              fontSize: 13,
+              background: `${theme.good}22`,
+              color: theme.good,
+              border: `1px solid ${theme.good}`,
+              fontFamily: theme.fontMono,
+              letterSpacing: 1,
+              textTransform: 'uppercase',
+              cursor: 'default',
+              borderRadius: 2,
+            }}>
+              READY ✓
+            </button>
+          ) : (
+            <Btn size="md" primary onClick={onRematch}>REMATCH →</Btn>
+          )}
         </div>
       </div>
 
@@ -156,7 +180,6 @@ export function ResultsScreen({ p1, p2, winner, score, matchStats, onRematch, on
             {winMeta.bio}
           </div>
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-            <Chip tone="good" mono>SCORE · {score.toLocaleString()}</Chip>
             <Chip tone="accent" mono>{winMeta.tag.toUpperCase()}</Chip>
             <Chip mono>VS {loseGuild.name.toUpperCase()}</Chip>
           </div>

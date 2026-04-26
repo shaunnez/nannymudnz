@@ -1,6 +1,6 @@
 # Nannymud — Game Guide
 
-> A browser-native 2.5D beat-'em-up in the spirit of Little Fighter 2. Fifteen guilds, nine stages, three modes, one deterministic engine, zero audio files.
+> A browser-native 2.5D beat-'em-up in the spirit of Little Fighter 2. Fifteen guilds, nine stages, six modes, one deterministic engine, zero audio files.
 
 ---
 
@@ -15,12 +15,15 @@
 7. [The Nine Stages](#the-nine-stages)
 8. [Story Mode](#story-mode)
 9. [VS & Multiplayer](#vs--multiplayer)
-10. [The HUD](#the-hud)
-11. [Stats & Resources](#stats--resources)
-12. [Audio System](#audio-system)
-13. [Balance Tooling](#balance-tooling)
-14. [Autonomous Build Agents](#autonomous-build-agents)
-15. [Tech Stack](#tech-stack)
+10. [Items & Crates](#items--crates)
+11. [Settings](#settings)
+12. [Mobile & PWA](#mobile--pwa)
+13. [The HUD](#the-hud)
+14. [Stats & Resources](#stats--resources)
+15. [Audio System](#audio-system)
+16. [Balance Tooling](#balance-tooling)
+17. [Autonomous Build Agents](#autonomous-build-agents)
+18. [Tech Stack](#tech-stack)
 
 ---
 
@@ -43,13 +46,24 @@ Everything in the game was built from scratch with no external game assets:
 ## Modes
 
 ### Story Mode
-Single-player run across the Plains of Nan. Six waves of escalating enemies culminate in a three-phase boss fight against the **Bandit King**. The stage scrolls right as you clear each wave; enemies spawn ahead of your position. Die once and it is over.
+Single-player progression through the nine stages. Each stage has its own hand-crafted wave composition of guild enemies running the full vsAI pipeline, with per-level stat scaling. Every stage ends in a multi-phase boss fight — health thresholds trigger new move sets, summons, and stat buffs. Clear a stage to unlock the next; locked stages show a padlock on the map.
+
+Die once and the run ends.
 
 ### VS (1v1 vs CPU)
-Pick any two guilds, pick a stage, fight. Best-of-three rounds. The AI opponent runs the same simulation logic as the server, at max difficulty. Guild matchups matter — there is a complete win-rate matrix to prove it.
+Pick any two guilds, pick a stage, fight. Best-of-three rounds. The AI opponent runs the same simulation logic as the authoritative server, at the difficulty set in Settings. Guild matchups matter — there is a complete win-rate matrix to prove it.
 
-### Multiplayer (Online 1v1)
-Server-authoritative match via Colyseus. Host creates a room, shares the code; guest joins. Both players run through the full lobby flow — character select, stage select — before the match starts. Best-of-three rounds. The server owns all simulation state; clients send inputs only.
+### Survival
+Endless waves on a single stage. Waves escalate in difficulty without limit. Your score is tracked and displayed as a wave-count leaderboard at the end of the run.
+
+### Battle (4v4)
+Configurable team fight with up to 8 slots. In the Battle Config screen you assign guilds to Team A and Team B (up to 4 each), lock each slot, then advance to stage select. The 8-slot HUD shows all fighters' HP bars in two rows. Last team with a standing fighter wins.
+
+### Championship
+A bracketed single-elimination tournament. Up to 15 guilds enter (CPU-controlled unless you take a slot). Wins advance you through the bracket; a post-round reveal shows your next opponent. The Championship bracket screen shows the full bracket tree at all times.
+
+### Multiplayer (Online)
+Server-authoritative match via Colyseus. Host creates a room (public or private), shares the code; guests join. Supports 1v1 and Battle mode (up to 8 players). A public room browser lists open lobbies — no code needed. Both players run through character select and stage select before the match starts. The server owns all simulation state; clients send inputs only.
 
 ---
 
@@ -81,6 +95,19 @@ Abilities are executed through directional input sequences followed by the attac
 | `K+J` | Hold block, press attack (RMB utility) |
 
 All keybinds are remappable in Settings and persist via localStorage.
+
+### Mobile Controls
+
+On touch devices the game renders an on-screen control layer:
+
+| Control | Position | Action |
+|---|---|---|
+| Virtual joystick | Bottom-right | Movement (all 4 directions + diagonals) |
+| J button | Bottom-left of joystick | Attack |
+| K button | Left of J | Block |
+| Pause button | Top-right | Pause / resume |
+
+Run is triggered by double-tapping the left or right edge of the joystick. Abilities use the same combo inputs — hold a direction then tap J. Keybind remapping is keyboard-only (use a physical keyboard or remap before switching to touch).
 
 ---
 
@@ -430,28 +457,28 @@ Each stage has its own colour theme, atmospheric flavour text, and background tr
 
 ## Story Mode
 
-A single-player left-to-right run across the Plains of Nan. Waves spawn ahead of you as you advance. Die once and the run ends.
+A single-player left-to-right progression through the nine stages. Each stage has its own wave set of guild-themed enemies running the full vsAI pipeline. Waves spawn ahead of you as you advance; die once and the run ends. Beat a stage to unlock the next — locked stages show a padlock on the stage-select map.
 
-### Wave Progression
+### Stage Progression & Scaling
 
-| Wave | Trigger X | Enemies |
-|---|---|---|
-| 1 | 400 | 2× Plains Bandit |
-| 2 | 900 | 3× Plains Bandit + 1× Bandit Archer |
-| 3 | 1600 | 2× Wolf |
-| 4 | 2400 | 2× Plains Bandit + 2× Bandit Archer |
-| 5 | 3200 | 1× Bandit Brute + 2× Wolf |
-| 6 (Boss) | 3800 | **Bandit King** |
+Enemy HP and damage scale per stage level. The difficulty curve is gradual across the first eight stages; the ninth is the hardest. Each stage's final wave is a multi-phase boss fight.
 
-### Enemy Roster
+### Per-Stage Wave Compositions
 
-| Enemy | HP | Notes |
-|---|---|---|
-| Plains Bandit | 160 | Melee chaser, armor 5 |
-| Bandit Archer | 120 | Ranged, 300u projectile range |
-| Wolf | 120 | Pack AI, fast |
-| Bandit Brute | 320 | Slow (70 speed), heavy armor 15, hits for 18 |
-| Bandit King | 3200 | Boss. Armor 20, MR 10, 35 damage, 80u range, 1000ms attack CD |
+Each stage runs a hand-crafted wave set mixing standard enemies, guild-specific enemies, and a boss:
+
+- **Waves 1–5** — Standard enemies plus guild-type fighters running the vsAI combat pipeline
+- **Wave 6 (Boss)** — A multi-phase boss with health-gated phase transitions
+
+### Boss Phase System
+
+Each stage boss has multiple phases keyed to HP thresholds. When a threshold is crossed:
+
+- Move sets change (new abilities activate, old ones deactivate)
+- Stat multipliers apply (increased speed/damage in later phases)
+- Summons may spawn (additional enemies join mid-fight)
+
+Eight boss variants are in the roster, each tied to its stage's guild theme.
 
 ### Summons (player guild abilities)
 
@@ -492,6 +519,101 @@ After each match the game displays a full breakdown for both players:
 | Healing | Total healing done |
 
 Winner side is highlighted; loser is greyed. Guild tags are displayed for both players (e.g., `HOLY TANK`, `STALKER LIFESTEAL`).
+
+---
+
+## Items & Crates
+
+Items spawn as pickups on the stage floor. Walk over a pickup to collect it — gems and consumables activate automatically on contact; weapons are held until thrown or dropped.
+
+### Pickup Categories
+
+| Category | Examples | Effect on pickup |
+|---|---|---|
+| **Weapon** | Sword, Torch, Bomb, Smoke Bomb, Throwing Star | Overrides your attack with the weapon's range/damage/hitEffect; throw with the Grab key for elemental VFX |
+| **Gem** | Ruby, Sapphire, Emerald, Topaz… | Applies a passive status effect (damage boost, speed boost, armor, etc.) while held; removing it cancels the effect |
+| **Consumable** | Health Potion, Mana Potion, Elixir… | Auto-used on contact — instant heal, resource restore, or cleanse |
+| **Crate** | Wooden Crate | Destructible object; attack it to break it and spawn 1–3 random loot items from the crate's loot table |
+
+### Weapon Throws
+
+Holding a weapon and pressing Grab launches it as a projectile with elemental VFX:
+
+| Weapon | VFX |
+|---|---|
+| Torch | Fire trail + burn impact |
+| Bomb | Explosion AoE |
+| Smoke Bomb | Smoke cloud on impact |
+| Throwing Star | Piercing spin impact |
+
+Other weapons throw as generic projectiles.
+
+### Gem Passive Buffs
+
+Gems apply status effects via the same engine as ability buffs:
+
+- **Ruby** — damage boost
+- **Sapphire** — speed boost
+- **Emerald** — regen / healing over time
+- **Topaz** — armor boost
+
+The buff lasts as long as you hold the gem. If an enemy knocks the gem away and picks it up, they get the buff instead.
+
+---
+
+## Settings
+
+Open Settings from the main menu. All settings persist to localStorage.
+
+### Controls
+
+Remap every key action individually. Default layout is shown in the Controls table above.
+
+### Video
+
+| Setting | Description |
+|---|---|
+| New VFX | Enables craftpix AI-generated slash and explosion sprites overlaying procedural effects. Also swaps the Hunter to its chibi sprite variant. |
+| Fullscreen | Toggle fullscreen (also bound to F in-game) |
+
+### Audio
+
+Independent sliders for Master Volume, Music, and SFX. Changes take effect immediately.
+
+### Difficulty
+
+| Setting | Scope |
+|---|---|
+| VS CPU Difficulty | Easy / Medium / Hard / Max — applies to the AI opponent in VS mode |
+| Battle CPU Difficulty | Same scale — applies to CPU-controlled slots in Battle mode |
+| Championship CPU Difficulty | Applies to all CPU brackets in Championship |
+| Story Enemy HP Scale | 10%–100% — scales all enemy HP in Story mode (useful for tuning challenge) |
+
+---
+
+## Mobile & PWA
+
+### Installing as a PWA
+
+Nannymud is a Progressive Web App. To install:
+
+- **iOS (Safari):** Tap the Share button → **Add to Home Screen**
+- **Android (Chrome):** Tap the three-dot menu → **Add to Home Screen** (or accept the install prompt)
+
+Once installed it launches in fullscreen standalone mode with no browser chrome. A Workbox service worker caches all game assets at install time — the game runs offline after the first load.
+
+### Portrait Orientation
+
+The game blocks portrait orientation on mobile and shows an instruction overlay asking you to rotate the device. All game screens require landscape.
+
+### Touch Controls Layout
+
+See the [Mobile Controls](#mobile-controls) section under Controls above for the full joystick/button layout.
+
+### Viewport Tuning
+
+- **iOS:** width fixed at 900 CSS px via a UA-script to work around Safari's dynamic viewport behaviour
+- **Android:** device-width viewport for correct pixel mapping on high-DPI displays
 
 ---
 
@@ -675,6 +797,7 @@ This starts a self-paced `/loop`. The orchestrator reads open `todo`-labelled is
 | Tests | Vitest + a golden determinism snapshot for MP correctness |
 | Linting | ESLint flat config with custom rule: no browser APIs in simulation |
 | Simulation | Pure TypeScript, deterministic, shared client/server |
+| PWA | vite-plugin-pwa / Workbox — service worker, offline cache, manifest |
 
 ### Architecture Principle
 
@@ -682,4 +805,4 @@ The simulation layer (`packages/shared/src/simulation/**`) is pure — no Phaser
 
 ---
 
-*Built with Vite · React · Phaser 3 · Colyseus · Web Audio API · PixelLab · TypeScript*
+*Built with Vite · React · Phaser 3 · Colyseus · Web Audio API · PixelLab · TypeScript · vite-plugin-pwa*

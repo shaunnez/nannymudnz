@@ -29,16 +29,27 @@ const MENU_ITEMS: MenuItem[] = [
 
 
 const NEWS = [
-  { d: '24 APR', t: 'Survival, Battle & Championship modes designed', b: 'Three new game modes specced out — endless waves, 1v1 deathmatch rules, and a full bracketed tournament system.' },
-  { d: '24 APR', t: 'Guild balancer ships',                 b: 'Automated 4 500-match bot-vs-bot matrix now keeps all 15 guilds within a 40–60 % win-rate band.' },
-  { d: '24 APR', t: 'Multiplayer stats & post-match screen', b: 'Damage dealt, kills, ability usage, and a winner banner now appear at the end of every online match.' },
-  { d: '24 APR', t: 'Public room browser live',             b: 'Open lobbies are listed in real time — no code needed, just click and join.' },
-  { d: '24 APR', t: 'Druid bear form & Ranger wolf pet',    b: 'Druid shapeshifts into a bear with a new ability set; Ranger summons a wolf pet with its own AI and cycling modes.' },
-  { d: '24 APR', t: 'PixelLab VFX sprites across all guilds', b: 'Over 50 ability effects — impacts, flashes, bursts, and teleport pops — replaced with AI-generated pixel art.' },
-  { d: '24 APR', t: 'LF2-style tiled stage backdrops',     b: 'All 9 stages now scroll with layered pixel-art backgrounds, matching the classic Little Fighter 2 look.' },
-  { d: '24 APR', t: 'Stealth system & vampire nocturne',    b: 'Vampire can vanish from opponent view, break stealth for a bonus hit, and trigger a full nocturne darkness dome.' },
-  { d: '24 APR', t: 'Live MP lobby with chat',              b: 'Multiplayer lobby upgraded with player slot cards, room metadata strip, and real-time in-lobby chat.' },
-  { d: '24 APR', t: '1v1 multiplayer launched (Colyseus)',  b: 'Full online 1v1 mode with server-authoritative simulation, state sync, and 50 ms interpolation went live.' },
+  { d: '26 APR', t: 'Items — 21 pickups, crates, elemental throws',  b: 'Weapons, gems, and consumables drop from enemies and breakable crates. Gems apply passive buffs on pickup and remove on drop. Consumables self-use on contact. Throw weapons for elemental VFX — torch, bomb, smoke, throwing star.' },
+  { d: '26 APR', t: 'Story mode reborn — stages, scaling, unlocks',  b: 'Each of the nine stages runs its own wave composition with guild enemies on the full vsAI pipeline. Stats scale per level. Beat a stage to unlock the next; a padlock shows uncleared maps.' },
+  { d: '26 APR', t: 'Eight bosses with phase transitions',            b: 'Every stage ends in a multi-phase boss fight — health thresholds trigger new move sets, summons, and stat scaling. Eight boss variants in total.' },
+  { d: '26 APR', t: 'Survival, Battle & Championship live',           b: 'All three modes are now playable end-to-end. Survival runs endless ranked waves. Battle is a configurable 4v4 with 8 slot-lock screens. Championship runs a full bracketed tournament.' },
+  { d: '26 APR', t: 'Full mobile support',                            b: 'Virtual joystick, on-screen J/K/pause buttons, viewport scaling, install prompt, and portrait block. Runs on iOS and Android browsers.' },
+  { d: '26 APR', t: 'Install as a PWA',                               b: 'Nannymud is now a Progressive Web App. Add to home screen for a fullscreen standalone launch and offline caching via service worker.' },
+  { d: '26 APR', t: 'Per-mode difficulty + enemy HP scale',           b: 'Settings exposes independent CPU difficulty for VS, Battle, and Championship. Story mode adds an enemy HP scale slider (10–100 %).' },
+  { d: '26 APR', t: 'New VFX toggle in Settings → Video',             b: 'Opt in to craftpix slash and explosion sprites — AI-generated pixel art overlaying procedural effects. The chibi Hunter sprite also swaps in when New VFX is enabled.' },
+  { d: '26 APR', t: 'Loading screens overhauled',                     b: 'Unified tile grid shows real per-player asset progress. Battle mode gets an 8-card layout so you can see every fighter loading in.' },
+  { d: '26 APR', t: 'Balance pass — all 15 guilds in the band',       b: 'Nine iterations of the 4 500-match runner. Every guild sits within 40–60 % win rate across all matchups.' },
+  { d: '26 APR', t: 'MP lobby + room browser polished',               b: 'Public room list, chat panel, meta strip, slot cards, tap-to-ready on mobile, Battle 8-slot config grid, and host kick all landed.' },
+  { d: '26 APR', t: '38-screen Playwright tour green',                b: 'Every screen visits cleanly. Deep-link any screen in dev with ?screen=results&outcome=win&p1=adventurer. Generates a screenshot bug report.' },
+  { d: '24 APR', t: 'Druid bear form & Ranger wolf pet',              b: 'Druid shapeshifts into a bear with a new ability set; Hunter summons a wolf pet with its own AI and cycling modes.' },
+  { d: '24 APR', t: 'PixelLab VFX sprites across all guilds',         b: 'Over 50 ability effects — impacts, flashes, bursts, and teleport pops — replaced with AI-generated pixel art.' },
+  { d: '24 APR', t: 'LF2-style tiled stage backdrops',                b: 'All 9 stages now scroll with layered pixel-art backgrounds, matching the classic Little Fighter 2 look.' },
+  { d: '24 APR', t: 'Stealth system & vampire nocturne',              b: 'Vampire can vanish from opponent view, break stealth for a bonus hit, and trigger a full nocturne darkness dome.' },
+  { d: '24 APR', t: 'Live MP lobby with chat',                        b: 'Multiplayer lobby upgraded with player slot cards, room metadata strip, and real-time in-lobby chat.' },
+  { d: '24 APR', t: 'Multiplayer stats & post-match screen',          b: 'Damage dealt, kills, ability usage, and a winner banner now appear at the end of every online match.' },
+  { d: '24 APR', t: 'Public room browser live',                       b: 'Open lobbies are listed in real time — no code needed, just click and join.' },
+  { d: '24 APR', t: 'Guild balancer ships',                           b: 'Automated 4 500-match bot-vs-bot matrix keeps all 15 guilds within a 40–60 % win-rate band.' },
+  { d: '24 APR', t: '1v1 multiplayer launched (Colyseus)',            b: 'Full online 1v1 mode with server-authoritative simulation, state sync, and 50 ms interpolation went live.' },
 ];
 
 interface Props {

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { BattleSlot } from '@nannymud/shared/simulation/types';
 import { GUILDS } from '@nannymud/shared/simulation/guildData';
 import { GUILD_META } from '../data/guildMeta';
@@ -62,8 +62,13 @@ export function BattleLoadingScreen({ slots, stageId, humanProgress }: Props) {
     return 1; // 'off' slots are shown as complete/placeholder
   };
 
-  const row1 = slots.slice(0, 4);
-  const row2 = slots.slice(4, 8);
+  const active = slots.filter((s) => s.type !== 'off');
+  const n = active.length;
+  const cols = n <= 2 ? 2 : n <= 4 ? 2 : n <= 6 ? 3 : 4;
+  const rows = Math.ceil(n / cols);
+  // Compute initial monogram size synchronously from window so there's no flash on first paint.
+  // Header ~68px, footer ~66px, grid padding 40px, gaps 12px per gutter.
+  const initMonogramSize = computeMonogramSize(cols, rows);
 
   return (
     <div
@@ -99,22 +104,23 @@ export function BattleLoadingScreen({ slots, stageId, humanProgress }: Props) {
           </div>
         </div>
         <div style={{ fontFamily: theme.fontMono, fontSize: 10, color: accent, letterSpacing: 3 }}>
-          HUE · {stage.hue}°
+          {n} FIGHTERS
         </div>
       </div>
 
-      {/* Fighter grid — 1 or 2 rows of 4 */}
+      {/* Fighter grid — responsive columns based on fighter count */}
       <div
         style={{
           flex: 1, position: 'relative',
-          display: 'flex', flexDirection: 'column', justifyContent: 'center',
-          gap: 6, padding: '10px 24px',
+          display: 'grid',
+          gridTemplateColumns: `repeat(${cols}, 1fr)`,
+          alignContent: 'stretch',
+          gap: 12, padding: '20px 24px',
         }}
       >
-        <FighterRow slots={row1} slotOffset={0} getProgress={getProgress} />
-        {row2.length > 0 && (
-          <FighterRow slots={row2} slotOffset={4} getProgress={getProgress} />
-        )}
+        {active.map((slot, i) => (
+          <FighterCard key={i} slot={slot} progress={getProgress(slot, slots.indexOf(slot))} initMonogramSize={initMonogramSize} />
+        ))}
       </div>
 
       {/* Tips footer */}
@@ -143,120 +149,93 @@ export function BattleLoadingScreen({ slots, stageId, humanProgress }: Props) {
   );
 }
 
-interface RowProps {
-  slots: BattleSlot[];
-  slotOffset: number;
-  getProgress: (slot: BattleSlot, i: number) => number;
-}
-
-function FighterRow({ slots, slotOffset, getProgress }: RowProps) {
-  return (
-    <div style={{ display: 'grid', gridTemplateColumns: `repeat(${slots.length}, 1fr)`, gap: 6 }}>
-      {slots.map((slot, i) => (
-        <FighterCard key={i} slot={slot} progress={getProgress(slot, i + slotOffset)} />
-      ))}
-    </div>
-  );
+function computeMonogramSize(cols: number, rows: number): number {
+  const gridW = window.innerWidth - 48;          // 24px grid padding each side
+  const gridH = window.innerHeight - 80 - 70 - 40; // header ~80, footer ~70, grid padding 40
+  const cardW = (gridW - 12 * (cols - 1)) / cols;
+  const cardH = (gridH - 12 * (rows - 1)) / rows;
+  // contentRect excludes border+padding: card is border(1)+pad(14) each side horiz → -30 extra,
+  // border(1)+pad(12/14) vert → -28 extra. Card content overhead ~130px tall, ~28px wide.
+  return Math.max(48, Math.min(cardW - 58, cardH - 158));
 }
 
 interface CardProps {
   slot: BattleSlot;
   progress: number;
+  initMonogramSize: number;
 }
 
-function FighterCard({ slot, progress }: CardProps) {
-  const isOff = slot.type === 'off';
+function FighterCard({ slot, progress, initMonogramSize }: CardProps) {
+  const cardRef = useRef<HTMLDivElement>(null);
+  const [monogramSize, setMonogramSize] = useState(initMonogramSize);
+
+  useLayoutEffect(() => {
+    if (!cardRef.current) return;
+    const obs = new ResizeObserver(([entry]) => {
+      const { width, height } = entry.contentRect;
+      const available = Math.min(width - 28, height - 130);
+      setMonogramSize(Math.max(48, available));
+    });
+    obs.observe(cardRef.current);
+    return () => obs.disconnect();
+  }, []);
   const isHuman = slot.type === 'human';
-  const meta = isOff ? null : GUILD_META[slot.guildId];
-  const guild = isOff ? null : GUILDS.find((g) => g.id === slot.guildId);
+  const meta = GUILD_META[slot.guildId];
+  const guild = GUILDS.find((g) => g.id === slot.guildId);
   const cardAccent = meta ? guildAccent(meta.hue) : theme.lineSoft;
   const teamColor = slot.team ? TEAM_COLORS[slot.team] : cardAccent;
   const borderColor = isHuman ? theme.accent : teamColor;
   const pct = Math.round(progress * 100);
   const ready = progress >= 1;
 
-  if (isOff) {
-    return (
-      <div
-        style={{
-          padding: '8px 12px',
-          border: `1px solid ${theme.lineSoft}`,
-          background: theme.bgDeep,
-          opacity: 0.25,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          minHeight: 68,
-        }}
-      >
-        <span style={{ fontFamily: theme.fontMono, fontSize: 10, color: theme.inkMuted, letterSpacing: 2 }}>
-          —
-        </span>
-      </div>
-    );
-  }
-
   return (
     <div
+      ref={cardRef}
       style={{
-        padding: '8px 12px',
+        padding: '12px 14px 14px',
         border: `1px solid ${borderColor}`,
         background: isHuman ? `${theme.accent}0a` : theme.bgDeep,
-        display: 'flex', flexDirection: 'column', gap: 6,
+        boxShadow: isHuman ? `0 0 0 1px ${theme.accent}44 inset` : 'none',
+        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
       }}
     >
-      {/* Identity row */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        <GuildMonogram guildId={slot.guildId} size={36} selected={ready} />
-        <div style={{ minWidth: 0 }}>
-          <div
-            style={{
-              fontFamily: theme.fontDisplay, fontSize: 15, color: theme.ink,
-              letterSpacing: '-0.01em', lineHeight: 1.1,
-              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-            }}
-          >
-            {guild?.name ?? slot.guildId}
-          </div>
-          <div style={{ fontFamily: theme.fontMono, fontSize: 8, color: teamColor, letterSpacing: 2, marginTop: 2 }}>
-            {meta?.tag.toUpperCase() ?? ''}
-          </div>
+      {/* Status badge */}
+      <div style={{ alignSelf: 'stretch', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <span style={{ fontFamily: theme.fontMono, fontSize: 8, color: teamColor, letterSpacing: 2 }}>
+          {slot.team ? `TEAM ${slot.team}` : (isHuman ? 'YOU' : 'CPU')}
+        </span>
+        <span style={{ fontFamily: theme.fontMono, fontSize: 8, letterSpacing: 2, color: ready ? theme.good : theme.warn }}>
+          {ready ? 'READY' : `${pct}%`}
+        </span>
+      </div>
+
+      {/* Monogram */}
+      <GuildMonogram guildId={slot.guildId} size={monogramSize} selected={isHuman} />
+
+      {/* Name + tag */}
+      <div style={{ textAlign: 'center', minWidth: 0, width: '100%' }}>
+        <div style={{
+          fontFamily: theme.fontDisplay, fontSize: 13, color: cardAccent,
+          overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+        }}>
+          {guild?.name ?? slot.guildId}
         </div>
-        <div
-          style={{
-            marginLeft: 'auto', fontFamily: theme.fontMono, fontSize: 10, letterSpacing: 2,
-            color: ready ? theme.good : theme.warn, flexShrink: 0,
-          }}
-        >
-          {ready ? 'READY' : 'LOADING…'}
-        </div>
+        {meta?.tag && (
+          <div style={{ fontFamily: theme.fontMono, fontSize: 8, color: theme.inkMuted, letterSpacing: 2, marginTop: 2 }}>
+            {meta.tag.toUpperCase()}
+          </div>
+        )}
       </div>
 
       {/* Progress bar */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-        <div
-          style={{
-            display: 'flex', justifyContent: 'space-between',
-            fontFamily: theme.fontMono, fontSize: 8, color: theme.inkMuted, letterSpacing: 2,
-          }}
-        >
-          <span>PROGRESS</span>
-          <span style={{ color: ready ? cardAccent : theme.ink }}>{pct}%</span>
-        </div>
-        <div
-          style={{
-            width: '100%', height: 5,
-            background: theme.bgDeep, border: `1px solid ${theme.lineSoft}`,
-            position: 'relative', overflow: 'hidden',
-          }}
-        >
-          <div
-            style={{
-              position: 'absolute', top: 0, bottom: 0, left: 0,
-              width: `${pct}%`,
-              background: isHuman ? theme.accent : cardAccent,
-              transition: 'width 80ms linear',
-            }}
-          />
-        </div>
+      <div style={{ alignSelf: 'stretch', height: 4, background: theme.line, position: 'relative', overflow: 'hidden' }}>
+        <div style={{
+          position: 'absolute', top: 0, bottom: 0, left: 0,
+          width: `${pct}%`,
+          background: isHuman ? theme.accent : cardAccent,
+          transition: 'width 80ms linear',
+          boxShadow: isHuman ? `0 0 8px ${theme.accent}` : 'none',
+        }} />
       </div>
     </div>
   );

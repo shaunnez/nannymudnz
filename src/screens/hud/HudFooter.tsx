@@ -9,9 +9,11 @@ interface Props {
   p2: Actor | null;
   simTimeMs: number;
   state: SimState;
+  /** Which side the local human player is on. Defaults to 'p1' (SP / host). */
+  localSide?: 'p1' | 'p2';
 }
 
-export function HudFooter({ mode, p1, p2, simTimeMs, state }: Props) {
+export function HudFooter({ mode, p1, p2, simTimeMs, state, localSide = 'p1' }: Props) {
   return (
     <div
       style={{
@@ -30,13 +32,13 @@ export function HudFooter({ mode, p1, p2, simTimeMs, state }: Props) {
       }}
     >
       <div style={{ flex: 1, minWidth: 0 }}>
-        <AbilityStripSection actor={p1} side="p1" showKeys simTimeMs={simTimeMs} label="P1" interactive />
+        <AbilityStripSection actor={p1} side="p1" showKeys simTimeMs={simTimeMs} label="P1" interactive={localSide === 'p1'} />
       </div>
       <div style={{ flex: 1, minWidth: 0 }}>
         {mode === 'story' ? (
           <StoryRightPanel actor={p1} simTimeMs={simTimeMs} bossSpawned={state.bossSpawned} />
         ) : p2 ? (
-          <AbilityStripSection actor={p2} side="p2" showKeys={false} simTimeMs={simTimeMs} label="P2" />
+          <AbilityStripSection actor={p2} side="p2" showKeys={false} simTimeMs={simTimeMs} label="P2" interactive={localSide === 'p2'} />
         ) : null}
       </div>
     </div>

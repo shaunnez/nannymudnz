@@ -6,6 +6,7 @@ interface Props {
   slots: BattleSlot[];
   battStats: Record<string, BattStatEntry> | null;
   playerWon: boolean;
+  myActorId?: string;
   onRematch: () => void;
   onMenu: () => void;
 }
@@ -21,7 +22,7 @@ function computeScore(entry: BattStatEntry): number {
   return Math.round(entry.kills * 500 + entry.dmgDealt * 0.5 - entry.deaths * 200 + entry.healing * 0.3);
 }
 
-export function BattleResultsScreen({ slots, battStats, playerWon, onRematch, onMenu }: Props) {
+export function BattleResultsScreen({ slots, battStats, playerWon, myActorId, onRematch, onMenu }: Props) {
   const activeSlots = slots.filter((s) => s.type !== 'off');
 
   // Map slot index → battStats entry. Human slot is 'player'; CPU slots are 'battle_N'.
@@ -33,7 +34,10 @@ export function BattleResultsScreen({ slots, battStats, playerWon, onRematch, on
     const entry: BattStatEntry = battStats?.[actorId] ?? { kills: 0, deaths: 0, dmgDealt: 0, healing: 0 };
     const guild = GUILDS.find((g) => g.id === slot.guildId) ?? GUILDS[0];
     const score = computeScore(entry);
-    return { slot, guild, entry, score, isPlayer: slot.type === 'human' };
+    // isMe: if myActorId provided (MP), only that actor is "you"; otherwise fall
+    // back to the SP convention where the single human slot is the player.
+    const isMe = myActorId != null ? actorId === myActorId : slot.type === 'human';
+    return { slot, guild, entry, score, isMe };
   }).sort((a, b) => b.score - a.score);
 
   const winner = rows[0];
@@ -48,7 +52,7 @@ export function BattleResultsScreen({ slots, battStats, playerWon, onRematch, on
         <div>
           <div style={{ fontFamily: theme.fontMono, fontSize: 10, color: theme.inkMuted, letterSpacing: 4 }}>RESULTS · BATTLE</div>
           <div style={{ fontFamily: theme.fontDisplay, fontSize: 56, color: theme.accent, lineHeight: 1, letterSpacing: '-0.03em', marginTop: 4 }}>
-            {winner?.isPlayer ? (playerWon ? 'You win' : 'You lose') : `${winner?.guild.name} wins`}
+            {winner?.isMe ? (playerWon ? 'You win' : 'You lose') : `${winner?.guild.name} wins`}
           </div>
           <div style={{ fontFamily: theme.fontBody, fontSize: 13, color: theme.inkDim, marginTop: 6 }}>
             {activeSlots.length} fighters
@@ -85,7 +89,7 @@ export function BattleResultsScreen({ slots, battStats, playerWon, onRematch, on
                 gap: 12, padding: '8px 0',
                 borderBottom: `1px solid ${theme.lineSoft}`,
                 alignItems: 'center',
-                background: r.isPlayer ? `${theme.accent}08` : 'transparent',
+                background: r.isMe ? `${theme.accent}08` : 'transparent',
               }}>
                 <span style={{ fontFamily: theme.fontDisplay, fontSize: 15, color: isWinner ? theme.accent : theme.inkDim }}>
                   {i + 1}
@@ -93,7 +97,7 @@ export function BattleResultsScreen({ slots, battStats, playerWon, onRematch, on
                 <GuildMonogram guildId={r.guild.id} size={32} selected={isWinner} />
                 <div>
                   <div style={{ fontFamily: theme.fontDisplay, fontSize: 13, color: isWinner ? theme.accent : theme.ink }}>
-                    {r.isPlayer ? 'You' : r.guild.name}
+                    {r.isMe ? 'You' : r.guild.name}
                   </div>
                   <div style={{ fontFamily: theme.fontMono, fontSize: 9, color: theme.inkDim, letterSpacing: 1 }}>
                     {r.guild.name.toUpperCase()}

@@ -64,6 +64,7 @@ export class GameplayScene extends Phaser.Scene {
   private inputSender: InputSender | null = null;
   private stateSync: StateSync | null = null;
   private onMpStateChange: (() => void) | null = null;
+  private unsubVfx: (() => void) | null = null;
   /**
    * Per-client camera. In MP, `sim.cameraX` tracks whichever actor the server
    * calls `state.player` (always the host), so reading it on the joiner would
@@ -122,7 +123,7 @@ export class GameplayScene extends Phaser.Scene {
         });
       };
       this.room.onStateChange(this.onMpStateChange);
-      this.room.onMessage('vfx', (events: VFXEvent[]) => {
+      this.unsubVfx = this.room.onMessage('vfx', (events: VFXEvent[]) => {
         this.consumeCrateVfx(events);
         consumeVfxEvents(this, events);
       });
@@ -545,6 +546,7 @@ export class GameplayScene extends Phaser.Scene {
 
   private reconcileCrates(): void {
     const live = this.simState.crates;
+    if (!live) return;
     const seen = new Set<string>();
     for (const crate of live) {
       seen.add(crate.id);
@@ -596,6 +598,10 @@ export class GameplayScene extends Phaser.Scene {
       this.room.onStateChange.remove(this.onMpStateChange);
     }
     this.onMpStateChange = null;
+    if (this.unsubVfx) {
+      this.unsubVfx();
+      this.unsubVfx = null;
+    }
     this.room = null;
     this.inputSender = null;
     this.stateSync = null;

@@ -281,6 +281,9 @@ export function GameScreen({
         <BattleHUD8
           game={gameRef.current}
           slots={battleSlots}
+          localSlotIndex={Math.max(0, [...(matchRoom?.state?.battleSlots ?? [])].findIndex(
+            (s) => (s as { ownerSessionId: string }).ownerSessionId === matchRoom?.sessionId
+          ))}
         />
       )}
       {netMode !== 'mp' && isPaused && !showMoves && (

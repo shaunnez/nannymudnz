@@ -94,7 +94,7 @@ export function SettingsScreen({
     <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
       <div
         style={{
-          padding: '18px 36px',
+          padding: '8px 36px',
           borderBottom: `1px solid ${theme.lineSoft}`,
           display: 'grid',
           gridTemplateColumns: '1fr auto 1fr',

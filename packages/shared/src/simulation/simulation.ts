@@ -1543,6 +1543,19 @@ function tickProjectiles(state: SimState, dtSec: number): void {
       }
     }
 
+    // Projectile vs crate — crates are solid world objects, no depth-axis check
+    if (!hit) {
+      for (const crate of state.crates) {
+        if (!crate.isAlive) continue;
+        if (Math.abs(crate.x - proj.x) <= 22 + proj.radius) {
+          crate.hp -= proj.damage;
+          if (crate.hp <= 0) breakCrate(state, crate);
+          hit = true;
+          break;
+        }
+      }
+    }
+
     if (hit) toRemove.push(proj.id);
   }
 

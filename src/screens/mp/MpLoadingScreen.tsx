@@ -46,10 +46,12 @@ export function MpLoadingScreen({ room, onPhaseChange }: Props) {
     room.send('load_progress', { value: progress });
   }, [room, progress]);
 
-  // Signal ready once preload is complete
+  // Signal ready once preload is complete — hold for 5 s so the loading screen
+  // stays visible while the main Phaser game boots (avoids a black-screen flash).
   useEffect(() => {
     if (!done) return;
-    room.send('ready_to_start', {});
+    const t = setTimeout(() => room.send('ready_to_start', {}), 5000);
+    return () => clearTimeout(t);
   }, [room, done]);
 
   if (!state) return <MpLoading />;

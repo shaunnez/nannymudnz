@@ -20,7 +20,7 @@ import { GUILDS } from '@nannymud/shared/simulation/guildData';
 import { ScalingFrame } from './layout/ScalingFrame';
 import { Scanlines, theme } from './ui';
 import { useAppState, type AppScreen } from './state/useAppState';
-import type { GuildId, MatchStats, BattStatEntry } from '@nannymud/shared/simulation/types';
+import type { GuildId, MatchStats, BattStatEntry, BattleTeam } from '@nannymud/shared/simulation/types';
 import { BattleConfigScreen } from './screens/BattleConfigScreen';
 import { BattleResultsScreen } from './screens/BattleResultsScreen';
 import { MobileWelcome } from './screens/MobileWelcome';
@@ -50,6 +50,9 @@ export default function App() {
   const [finalBattStats, setFinalBattStats] = useState<Record<string, BattStatEntry> | null>(null);
   const [champPrevRound, setChampPrevRound] = useState<0 | 1 | 2>(0);
   const [champPlayerWon, setChampPlayerWon] = useState(false);
+  const [mpRematchOffererSessionId, setMpRematchOffererSessionId] = useState<string | null>(null);
+  const [mpBattStats, setMpBattStats] = useState<Record<string, BattStatEntry> | null>(null);
+  const [mpWinnerActorIds, setMpWinnerActorIds] = useState<string[]>([]);
 
   // URL routing: /multiplayer → mp_hub on initial mount.
   useEffect(() => {
@@ -129,9 +132,18 @@ export default function App() {
     const room = state.mpRoom;
     if (!room) return;
     setMpMatchStats(null);
-    room.onMessage('match_result', (msg: { matchStats: MatchStats }) => {
+    setMpBattStats(null);
+    setMpWinnerActorIds([]);
+    const unsub = room.onMessage('match_result', (msg: {
+      matchStats: MatchStats;
+      battStats?: Record<string, BattStatEntry>;
+      winnerActorIds?: string[];
+    }) => {
       setMpMatchStats(msg.matchStats);
+      if (msg.battStats) setMpBattStats(msg.battStats);
+      if (msg.winnerActorIds) setMpWinnerActorIds(msg.winnerActorIds);
     });
+    return () => unsub();
   }, [state.mpRoom]);
 
   const onPhaseChange = useCallback(
@@ -141,6 +153,33 @@ export default function App() {
     },
     [go],
   );
+
+  // Track rematch_status messages so ResultsScreen can show who's ready.
+  useEffect(() => {
+    const room = state.mpRoom;
+    if (!room || state.screen !== 'mp_results') {
+      setMpRematchOffererSessionId(null);
+      return;
+    }
+    const unsub = room.onMessage('rematch_status', (msg: { offererSessionId: string }) => {
+      setMpRematchOffererSessionId(msg.offererSessionId);
+    });
+    return () => { unsub(); setMpRematchOffererSessionId(null); };
+  }, [state.mpRoom, state.screen]);
+
+  // The mp_results screen is an inline IIFE that can't use usePhaseBounce.
+  // Watch for the server transitioning away from 'results' (e.g. after both
+  // players send rematch_offer) and navigate accordingly.
+  useEffect(() => {
+    const room = state.mpRoom;
+    if (state.screen !== 'mp_results' || !room) return;
+    const handler = () => {
+      const phase = room.state.phase;
+      if (phase !== 'results') onPhaseChange(phase);
+    };
+    room.onStateChange(handler);
+    return () => room.onStateChange.remove(handler);
+  }, [state.mpRoom, state.screen, onPhaseChange]);
 
   const leaveMp = useCallback(() => {
     const room = state.mpRoom;
@@ -422,12 +461,58 @@ export default function App() {
         {state.screen === 'mp_results' && state.mpRoom && (() => {
           const room = state.mpRoom;
           const rstate = room.state;
+
+          if (rstate.gameMode === 'battle') {
+            // Map BattleSlotSchema (slotType → type), drop 'off' slots.
+            // Order is preserved — slot 0 (host) maps to actor id 'player',
+            // which must stay at index 0 for BattleResultsScreen's stat lookup.
+            const allBattleSlots = Array.from(rstate.battleSlots);
+            const bSlots = allBattleSlots
+              .map(s => ({
+                type: s.slotType as 'human' | 'cpu' | 'off',
+                guildId: s.guildId as GuildId,
+                team: (s.team || null) as BattleTeam,
+              }))
+              .filter(s => s.type !== 'off');
+
+            // Derive this client's actor ID from its slot index.
+            // createMpBattleState assigns: firstHumanIdx → 'player',
+            // other human at index i → 'mp_human_${i}'.
+            const firstHumanIdx = allBattleSlots.findIndex(s => s.slotType === 'human');
+            const mySlotIdx = allBattleSlots.findIndex(s => s.ownerSessionId === room.sessionId);
+            const myActorId: string | undefined =
+              mySlotIdx < 0
+                ? undefined
+                : mySlotIdx === firstHumanIdx
+                ? 'player'
+                : `mp_human_${mySlotIdx}`;
+
+            const playerWon = myActorId != null && mpWinnerActorIds.includes(myActorId);
+
+            return (
+              <BattleResultsScreen
+                slots={bSlots}
+                battStats={mpBattStats}
+                playerWon={playerWon}
+                myActorId={myActorId}
+                onRematch={() => room.send('rematch_offer', {})}
+                onMenu={leaveMp}
+              />
+            );
+          }
+
+          // Versus mode (1v1)
           const slots = Array.from(rstate.players.values());
           const p1Slot = slots.find(s => s.sessionId === rstate.hostSessionId);
           const p2Slot = slots.find(s => s.sessionId !== rstate.hostSessionId);
           const p1Guild = (p1Slot?.guildId as GuildId | undefined) ?? 'adventurer';
           const p2Guild = (p2Slot?.guildId as GuildId | undefined) ?? 'knight';
           const hostWon = rstate.matchWinnerSessionId === rstate.hostSessionId;
+          const myReady = mpRematchOffererSessionId === room.sessionId;
+          const opponentOffered = mpRematchOffererSessionId !== null && mpRematchOffererSessionId !== room.sessionId;
+          const opponentReadyLabel = opponentOffered
+            ? (mpRematchOffererSessionId === rstate.hostSessionId ? 'P1' : 'P2')
+            : undefined;
           return (
             <ResultsScreen
               p1={p1Guild}
@@ -435,6 +520,8 @@ export default function App() {
               winner={hostWon ? 'P1' : 'P2'}
               score={0}
               matchStats={mpMatchStats ?? undefined}
+              myReady={myReady}
+              opponentReadyLabel={opponentReadyLabel}
               onRematch={() => room.send('rematch_offer', {})}
               onMenu={leaveMp}
             />

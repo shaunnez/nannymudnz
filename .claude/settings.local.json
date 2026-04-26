@@ -123,7 +123,12 @@
       "Bash(xargs -I {} basename {})",
       "Bash(netstat -ano)",
       "Bash(awk '{print $5}')",
-      "Bash(taskkill *)"
+      "Bash(taskkill *)",
+      "Bash(grep -v \"^$\")",
+      "Bash(where pandoc *)",
+      "Bash(where wkhtmltopdf *)",
+      "Bash(where npx *)",
+      "Bash(npx md-to-pdf *)"
     ]
   }
 }

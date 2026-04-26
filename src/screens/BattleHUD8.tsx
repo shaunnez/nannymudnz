@@ -13,6 +13,8 @@ import { useIsMobile } from '../hooks/useIsMobile';
 interface Props {
   game: Phaser.Game | null;
   slots: BattleSlot[];
+  /** Index into slots[] that belongs to the local human player. 0 = host/P1 (default). */
+  localSlotIndex?: number;
 }
 
 const TEAM_COLORS: Record<string, string> = {
@@ -28,7 +30,7 @@ function formatTime(ms: number): string {
   return `${String(m).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
 }
 
-export function BattleHUD8({ game, slots }: Props) {
+export function BattleHUD8({ game, slots, localSlotIndex = 0 }: Props) {
   const stateRef = useRef<SimState | null>(null);
   const [, setTick] = useState(0);
   const [frameEl, setFrameEl] = useState<HTMLDivElement | null>(null);
@@ -108,7 +110,19 @@ export function BattleHUD8({ game, slots }: Props) {
           </div>
         </div>
 
-        {/* Battle footer: abilities left, 2×2 team-B grid right (or P2 abilities in 1v1) */}
+        {/* Battle footer: local player abilities left, opponents right */}
+        {(() => {
+          const localActor = localSlotIndex === 0
+            ? state.player
+            : (state.enemies[localSlotIndex - 1] ?? state.player);
+          const localLabel = `P${localSlotIndex + 1}`;
+          const localColor = localSlotIndex === 0 ? theme.team1 : theme.team2;
+          const localSide: 'p1' | 'p2' = localSlotIndex === 0 ? 'p1' : 'p2';
+          const opp1v1Actor = localSlotIndex === 0 ? state.enemies[0] : state.player;
+          const opp1v1Label = localSlotIndex === 0 ? 'P2' : 'P1';
+          const opp1v1Color = localSlotIndex === 0 ? theme.team2 : theme.team1;
+          const opp1v1Side: 'p1' | 'p2' = localSlotIndex === 0 ? 'p2' : 'p1';
+          return (
         <div style={{
           position: 'absolute', bottom: 0, left: 0, right: 0, height: 128,
           display: 'flex', flexDirection: 'row',
@@ -116,21 +130,21 @@ export function BattleHUD8({ game, slots }: Props) {
           pointerEvents: 'auto',
         }}>
           <div style={{ flex: 1, minWidth: 0, padding: '8px 14px 10px', display: 'flex', flexDirection: 'column', gap: 4 }}>
-            <div style={{ fontFamily: theme.fontMono, fontSize: 10, letterSpacing: 3, color: theme.team1 }}>
-              P1 · ABILITIES
+            <div style={{ fontFamily: theme.fontMono, fontSize: 10, letterSpacing: 3, color: localColor }}>
+              {localLabel} · ABILITIES
             </div>
-            <AbilityStrip actor={state.player} side="p1" showKeys simTimeMs={state.timeMs} interactive />
+            <AbilityStrip actor={localActor} side={localSide} showKeys simTimeMs={state.timeMs} interactive />
           </div>
-          {bottom.length === 0 && state.enemies[0]?.guildId ? (
+          {activeSlots.length === 2 && opp1v1Actor?.guildId ? (
             <div style={{
               flex: 1, minWidth: 0, padding: '8px 14px 10px',
               display: 'flex', flexDirection: 'column', gap: 4,
               borderLeft: `1px solid ${theme.line}`,
             }}>
-              <div style={{ fontFamily: theme.fontMono, fontSize: 10, letterSpacing: 3, color: theme.team2 }}>
-                P2 · ABILITIES
+              <div style={{ fontFamily: theme.fontMono, fontSize: 10, letterSpacing: 3, color: opp1v1Color }}>
+                {opp1v1Label} · ABILITIES
               </div>
-              <AbilityStrip actor={state.enemies[0]} side="p2" showKeys={false} simTimeMs={state.timeMs} />
+              <AbilityStrip actor={opp1v1Actor} side={opp1v1Side} showKeys={false} simTimeMs={state.timeMs} />
             </div>
           ) : bottom.length > 0 ? (
             <div style={{
@@ -182,6 +196,8 @@ export function BattleHUD8({ game, slots }: Props) {
             </div>
           ) : null}
         </div>
+          );
+        })()}
         {mobile && <TouchJoystick />}
         {mobile && <TouchActionButtons />}
       </div>

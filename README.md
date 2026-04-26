@@ -1,14 +1,17 @@
 # Nannymud
 
-A browser-native 2.5D side-scrolling beat-'em-up in the style of Little Fighter 2. Pick one of 15 guild characters and fight through 6 waves of enemies on the Plains of Nan, ending in a 3-phase boss battle against the Bandit King — or challenge a friend to a 1v1 multiplayer match.
+A browser-native 2.5D side-scrolling beat-'em-up in the style of Little Fighter 2. Pick one of 15 guild characters and fight through nine stages of escalating enemies, multi-phase boss battles, and item drops — or challenge friends to Battle mode, Championship brackets, or server-authoritative online play. Installable as a PWA with full mobile touch support.
 
 ![Built with](https://img.shields.io/badge/Built%20with-Vite%20%7C%20React%20%7C%20Phaser%203%20%7C%20Colyseus-8b5cf6)
 
 ## Modes
 
-- **Story** — single-player run: 6 waves of escalating enemies on a scrolling stage, boss fight at the end.
-- **VS** — local 1v1 against an AI (pick both guilds).
-- **Multiplayer 1v1** — server-authoritative online match over WebSocket. Host creates a room, friend joins via code. Best-of-three rounds with randomized respawn positions.
+- **Story** — single-player run through the nine stages. Each stage has its own wave composition of guild enemies running the full vsAI pipeline, per-level stat scaling, and a multi-phase boss fight. Clear a stage to unlock the next.
+- **VS** — local 1v1 against an AI opponent (pick both guilds, pick a stage). Best-of-three rounds.
+- **Survival** — endless waves on a single stage, ranked by score. Waves escalate forever.
+- **Battle** — configurable 4v4 (up to 8 slots). Assign guilds to both teams in the slot-lock screen, then fight.
+- **Championship** — bracketed tournament across all 15 guilds. Advance through the bracket or get eliminated.
+- **Multiplayer** — server-authoritative online match over WebSocket. Host creates a room (public or private); friend joins via code. Supports 1v1, Battle mode (up to 8 players), and a public room browser.
 
 ## Playable guilds (15)
 
@@ -31,6 +34,16 @@ Adventurer, Knight, Mage, Druid, Hunter, Monk, Viking, Prophet, Vampire, Cultist
 | Guild utility | K + J |
 
 Keybinds are remappable in-game and persist via localStorage.
+
+### Mobile controls
+
+On touch devices the game renders a virtual joystick (right side) and on-screen J / K / pause buttons. All combat inputs are supported; keybind remapping is keyboard-only.
+
+## Mobile & PWA
+
+Nannymud is a Progressive Web App. On iOS (Safari) or Android (Chrome), tap **Share → Add to Home Screen** to install it. The installed version launches fullscreen, and a service worker caches assets for offline use.
+
+Portrait orientation is blocked — rotate to landscape for the best experience on phones.
 
 ## Getting started
 
@@ -81,6 +94,7 @@ The simulation is deterministic and shared between client (single-player) and se
 - **npm workspaces** — monorepo with `packages/shared` and `packages/server`
 - **Vitest** — unit and determinism tests
 - **ESLint (flat config)** — linting; enforces the "no browser APIs in simulation" boundary
+- **vite-plugin-pwa / Workbox** — service worker, offline cache, PWA manifest
 
 ## Testing
 
@@ -113,7 +127,6 @@ Character sprites are generated with [PixelLab AI](https://pixellab.ai/) via `sc
 
 ## Known limitations
 
-- No mobile / touch input
 - No character progression between runs
 - Boss phase 3 stomp AoE is simplified to melee range (true shockwave is TODO)
 - MP rematch flow doesn't yet carry score across the "return to lobby" step

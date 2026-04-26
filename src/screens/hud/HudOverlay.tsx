@@ -90,6 +90,10 @@ export function HudOverlay({
   const p1 = state.player;
   const p2 = isVs ? state.opponent : null;
 
+  // In MP, the guest (joiner) is P2 — their ability strip must be the interactive one.
+  const localSide: 'p1' | 'p2' =
+    inMp && localSessionId && hostSessionId && localSessionId !== hostSessionId ? 'p2' : 'p1';
+
   return (
     <div
       ref={setFrameEl}
@@ -127,6 +131,7 @@ export function HudOverlay({
           p2={p2}
           simTimeMs={state.timeMs}
           state={state}
+          localSide={localSide}
         />
         {mobile && <TouchJoystick />}
         {mobile && <TouchActionButtons />}
