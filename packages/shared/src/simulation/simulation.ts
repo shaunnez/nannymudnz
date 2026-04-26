@@ -1217,6 +1217,7 @@ function performBasicAttack(player: Actor, state: SimState, ctrl: PlayerControll
       type: 'thrown_throwing_star',
       hitActorIds: [],
     });
+    state.vfxEvents.push({ type: 'projectile_spawn', x: player.x, y: player.y, color: heldDef.color, abilityId: 'thrown_throwing_star' });
     player.heldPickup = null;
     ctrl.lastAttackMs = state.timeMs;
     return;
@@ -1820,6 +1821,7 @@ function handlePlayerInput(state: SimState, input: InputState, ctrl: PlayerContr
           hitActorIds: [],
         };
         state.projectiles.push(proj);
+        state.vfxEvents.push({ type: 'projectile_spawn', x: player.x, y: player.y, color: def?.color ?? '#9ca3af', abilityId: `thrown_${pickup.type}` });
         if (def?.category === 'gem') {
           player.statusEffects = player.statusEffects.filter(e => e.source !== 'gem');
         }
