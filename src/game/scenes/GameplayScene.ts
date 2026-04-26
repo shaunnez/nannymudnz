@@ -20,6 +20,7 @@ import { BackgroundView } from '../view/BackgroundView';
 import { ActorView } from '../view/ActorView';
 import { ProjectileView } from '../view/ProjectileView';
 import { PickupView } from '../view/PickupView';
+import { CrateView } from '../view/CrateView';
 import { consumeVfxEvents } from '../view/ParticleFX';
 import type { Actor, Projectile, Pickup, InputState, VFXEvent } from '@nannymud/shared/simulation/types';
 import { WORLD_WIDTH } from '@nannymud/shared/simulation/constants';
@@ -49,6 +50,7 @@ export class GameplayScene extends Phaser.Scene {
   private actorViews = new Map<string, ActorView>();
   private projectileViews = new Map<string, ProjectileView>();
   private pickupViews = new Map<string, PickupView>();
+  private crateViews = new Map<string, CrateView>();
   private debugText?: Phaser.GameObjects.Text;
   private phaseHandoffFired = false;
   private audio!: AudioManager;
@@ -120,7 +122,10 @@ export class GameplayScene extends Phaser.Scene {
         });
       };
       this.room.onStateChange(this.onMpStateChange);
-      this.room.onMessage('vfx', (events: VFXEvent[]) => consumeVfxEvents(this, events));
+      this.room.onMessage('vfx', (events: VFXEvent[]) => {
+        this.consumeCrateVfx(events);
+        consumeVfxEvents(this, events);
+      });
     } else if (mode === 'vs') {
       if (!p2) throw new Error('VS mode requires a p2 guild');
       const difficulty = (this.game.registry.get('difficulty') as number | null) ?? 2;
@@ -252,6 +257,8 @@ export class GameplayScene extends Phaser.Scene {
     this.reconcileActors(null);
     this.reconcileProjectiles();
     this.reconcilePickups();
+    this.reconcileCrates();
+    this.consumeCrateVfx(this.simState.vfxEvents);
     this.updateCastingIndicator(this.simState.player.id);
     consumeVfxEvents(this, this.simState.vfxEvents);
     this.game.registry.set('simState', this.simState);
@@ -310,6 +317,7 @@ export class GameplayScene extends Phaser.Scene {
     this.reconcileActors(interp);
     this.reconcileProjectiles();
     this.reconcilePickups();
+    this.reconcileCrates();
     // VFX consumption moved to onMpStateChange so it fires per server tick,
     // not per render frame — otherwise the same hit_spark would replay until
     // the next state sync arrived.
@@ -535,6 +543,39 @@ export class GameplayScene extends Phaser.Scene {
     }
   }
 
+  private reconcileCrates(): void {
+    const live = this.simState.crates;
+    const seen = new Set<string>();
+    for (const crate of live) {
+      seen.add(crate.id);
+      let view = this.crateViews.get(crate.id);
+      if (!view) {
+        view = new CrateView(this, crate);
+        this.crateViews.set(crate.id, view);
+      }
+      view.syncFrom(crate);
+    }
+    for (const [id, view] of this.crateViews) {
+      if (!seen.has(id)) {
+        view.destroy();
+        this.crateViews.delete(id);
+      }
+    }
+  }
+
+  getCrateView(id: string): CrateView | undefined {
+    return this.crateViews.get(id);
+  }
+
+  private consumeCrateVfx(events: VFXEvent[]): void {
+    for (const event of events) {
+      if (event.type === 'crate_break' && event.actorId) {
+        const view = this.crateViews.get(event.actorId);
+        if (view) view.shake(this);
+      }
+    }
+  }
+
   private onShutdown = (): void => {
     if (this.simState && this.netMode !== 'mp') resetController(this.simState, 'player');
     if (this.inputAdapter) this.inputAdapter.dispose();
@@ -545,6 +586,8 @@ export class GameplayScene extends Phaser.Scene {
     this.projectileViews.clear();
     for (const view of this.pickupViews.values()) view.destroy();
     this.pickupViews.clear();
+    for (const view of this.crateViews.values()) view.destroy();
+    this.crateViews.clear();
     this.debugText?.destroy();
     this.debugText = undefined;
     if (this.audio) this.audio.dispose();
