@@ -429,8 +429,8 @@ export function consumeVfxEvents(scene: Phaser.Scene, events: VFXEvent[]): void 
     const abilityId = event.abilityId ?? '';
     const ownerId   = event.ownerId ?? event.actorId ?? '';
 
-    // Guild-specific sprite VFX (always runs regardless of newVfx setting).
-    const guildFired = spawnGuildVfx(scene, event, x, y);
+    // Guild-specific sprite VFX — gated with procedural since it's the old system.
+    const guildFired = proceduralVfx && spawnGuildVfx(scene, event, x, y);
 
     // Ability overlay sprites — only when new VFX is enabled.
     if (newVfx && abilityId) {
