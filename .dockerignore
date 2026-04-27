@@ -1,0 +1,13 @@
+node_modules
+dist
+.git
+.superpowers
+src
+public
+docs
+scripts
+playwright*
+screen-tour-report
+*.md
+.claude
+.bolt
