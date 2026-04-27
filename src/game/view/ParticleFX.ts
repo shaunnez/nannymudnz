@@ -3,7 +3,7 @@ import type { VFXEvent, VFXEventType } from '@nannymud/shared/simulation/types';
 import { DEPTH_SCALE, worldYToScreenY, getScreenYBand, type ScreenYBand } from '../constants';
 import { spawnGuildVfx } from './VfxRegistry';
 import { spawnEffectVfx, type SpawnEffectOptions } from './EffectsRegistry';
-import { readUseNewVfx } from '../../state/useDevSettings';
+import { readUseNewVfx, readUseProceduralVfx } from '../../state/useDevSettings';
 
 // ── Hex colour helpers ────────────────────────────────────────────────────────
 function hexToInt(hex: string): number {
@@ -418,8 +418,9 @@ function spawnBlinkTrail(
 
 // ── Main consumer ─────────────────────────────────────────────────────────────
 export function consumeVfxEvents(scene: Phaser.Scene, events: VFXEvent[]): void {
-  const band    = getScreenYBand(scene);
-  const newVfx  = readUseNewVfx();
+  const band          = getScreenYBand(scene);
+  const newVfx        = readUseNewVfx();
+  const proceduralVfx = readUseProceduralVfx();
 
   for (const event of events) {
     const { x, y } = worldCoords(event, band);
@@ -443,6 +444,7 @@ export function consumeVfxEvents(scene: Phaser.Scene, events: VFXEvent[]): void 
     }
 
     if (guildFired) continue;
+    if (!proceduralVfx) continue;
 
     // ── Procedural fallbacks ────────────────────────────────────────────────
     switch (event.type) {

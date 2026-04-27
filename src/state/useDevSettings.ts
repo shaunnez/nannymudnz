@@ -5,15 +5,18 @@ const STORAGE_KEY = 'nannymud_dev_settings';
 interface DevSettings {
   enemyHpScale: number;
   useNewVfx: boolean;
+  useProceduralVfx: boolean;
 }
+
+const DEFAULTS: DevSettings = { enemyHpScale: 1, useNewVfx: false, useProceduralVfx: true };
 
 function loadSettings(): DevSettings {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return { enemyHpScale: 1, useNewVfx: false };
-    return { enemyHpScale: 1, useNewVfx: false, ...JSON.parse(raw) as Partial<DevSettings> };
+    if (!raw) return { ...DEFAULTS };
+    return { ...DEFAULTS, ...JSON.parse(raw) as Partial<DevSettings> };
   } catch {
-    return { enemyHpScale: 1, useNewVfx: false };
+    return { ...DEFAULTS };
   }
 }
 
@@ -27,6 +30,10 @@ export function readEnemyHpScale(): number {
 
 export function readUseNewVfx(): boolean {
   return loadSettings().useNewVfx;
+}
+
+export function readUseProceduralVfx(): boolean {
+  return loadSettings().useProceduralVfx;
 }
 
 export function useDevSettings() {
@@ -44,10 +51,18 @@ export function useDevSettings() {
     setSettings(next);
   };
 
+  const setUseProceduralVfx = (v: boolean) => {
+    const next = { ...settings, useProceduralVfx: v };
+    saveSettings(next);
+    setSettings(next);
+  };
+
   return {
     enemyHpScale: settings.enemyHpScale,
     setEnemyHpScale,
     useNewVfx: settings.useNewVfx,
     setUseNewVfx,
+    useProceduralVfx: settings.useProceduralVfx,
+    setUseProceduralVfx,
   };
 }

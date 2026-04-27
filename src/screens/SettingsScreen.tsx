@@ -63,7 +63,7 @@ export function SettingsScreen({
   const [volume, setVolume] = useState(loadVolume);
   const [bindings, setBindings] = useState<KeyBindings>(loadKeyBindings);
   const [rebinding, setRebinding] = useState<keyof KeyBindings | null>(null);
-  const { enemyHpScale, setEnemyHpScale, useNewVfx, setUseNewVfx } = useDevSettings();
+  const { enemyHpScale, setEnemyHpScale, useNewVfx, setUseNewVfx, useProceduralVfx, setUseProceduralVfx } = useDevSettings();
   const mobile = useIsMobile();
 
   useEffect(() => {
@@ -260,6 +260,12 @@ export function SettingsScreen({
             sub="Craftpix sprite effects instead of procedural sparks and rings"
             on={useNewVfx}
             onClick={() => setUseNewVfx(!useNewVfx)}
+          />
+          <Toggle
+            label="Procedural VFX"
+            sub="Sparks, rings and orbs — turn off to isolate the new sprites"
+            on={useProceduralVfx}
+            onClick={() => setUseProceduralVfx(!useProceduralVfx)}
           />
         </div>
 
