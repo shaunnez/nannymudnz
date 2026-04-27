@@ -255,6 +255,286 @@
         "h": 615
       },
       "scale": 0.407
+    },
+    "fire_arrow": {
+      "frames": 8,
+      "frameDurationMs": 60,
+      "loop": false,
+      "anchor": {
+        "x": 300,
+        "y": 160
+      },
+      "frameSize": {
+        "w": 600,
+        "h": 320
+      },
+      "scale": 0.5
+    },
+    "fire_spell": {
+      "frames": 8,
+      "frameDurationMs": 60,
+      "loop": false,
+      "anchor": {
+        "x": 320,
+        "y": 180
+      },
+      "frameSize": {
+        "w": 640,
+        "h": 360
+      },
+      "scale": 0.5
+    },
+    "flame10": {
+      "frames": 32,
+      "frameDurationMs": 60,
+      "loop": false,
+      "anchor": {
+        "x": 311,
+        "y": 200
+      },
+      "frameSize": {
+        "w": 623,
+        "h": 400
+      },
+      "scale": 0.5
+    },
+    "flame2": {
+      "frames": 16,
+      "frameDurationMs": 60,
+      "loop": false,
+      "anchor": {
+        "x": 225,
+        "y": 200
+      },
+      "frameSize": {
+        "w": 451,
+        "h": 400
+      },
+      "scale": 0.5
+    },
+    "flame3": {
+      "frames": 32,
+      "frameDurationMs": 60,
+      "loop": false,
+      "anchor": {
+        "x": 171,
+        "y": 200
+      },
+      "frameSize": {
+        "w": 343,
+        "h": 400
+      },
+      "scale": 0.5
+    },
+    "flame4": {
+      "frames": 32,
+      "frameDurationMs": 60,
+      "loop": false,
+      "anchor": {
+        "x": 168,
+        "y": 200
+      },
+      "frameSize": {
+        "w": 336,
+        "h": 400
+      },
+      "scale": 0.5
+    },
+    "flame5": {
+      "frames": 32,
+      "frameDurationMs": 60,
+      "loop": false,
+      "anchor": {
+        "x": 261,
+        "y": 200
+      },
+      "frameSize": {
+        "w": 523,
+        "h": 400
+      },
+      "scale": 0.5
+    },
+    "flame6": {
+      "frames": 18,
+      "frameDurationMs": 60,
+      "loop": false,
+      "anchor": {
+        "x": 261,
+        "y": 200
+      },
+      "frameSize": {
+        "w": 523,
+        "h": 400
+      },
+      "scale": 0.5
+    },
+    "flame8": {
+      "frames": 32,
+      "frameDurationMs": 60,
+      "loop": false,
+      "anchor": {
+        "x": 199,
+        "y": 200
+      },
+      "frameSize": {
+        "w": 398,
+        "h": 400
+      },
+      "scale": 0.5
+    },
+    "flame9": {
+      "frames": 31,
+      "frameDurationMs": 60,
+      "loop": false,
+      "anchor": {
+        "x": 212,
+        "y": 200
+      },
+      "frameSize": {
+        "w": 425,
+        "h": 400
+      },
+      "scale": 0.5
+    },
+    "water10": {
+      "frames": 14,
+      "frameDurationMs": 60,
+      "loop": false,
+      "anchor": {
+        "x": 286,
+        "y": 188
+      },
+      "frameSize": {
+        "w": 573,
+        "h": 377
+      },
+      "scale": 0.5
+    },
+    "water3": {
+      "frames": 23,
+      "frameDurationMs": 60,
+      "loop": false,
+      "anchor": {
+        "x": 300,
+        "y": 200
+      },
+      "frameSize": {
+        "w": 600,
+        "h": 400
+      },
+      "scale": 0.5
+    },
+    "water4": {
+      "frames": 16,
+      "frameDurationMs": 60,
+      "loop": false,
+      "anchor": {
+        "x": 300,
+        "y": 200
+      },
+      "frameSize": {
+        "w": 600,
+        "h": 400
+      },
+      "scale": 0.5
+    },
+    "water5": {
+      "frames": 31,
+      "frameDurationMs": 60,
+      "loop": false,
+      "anchor": {
+        "x": 287,
+        "y": 200
+      },
+      "frameSize": {
+        "w": 574,
+        "h": 400
+      },
+      "scale": 0.5
+    },
+    "water6": {
+      "frames": 12,
+      "frameDurationMs": 60,
+      "loop": false,
+      "anchor": {
+        "x": 300,
+        "y": 200
+      },
+      "frameSize": {
+        "w": 600,
+        "h": 400
+      },
+      "scale": 0.5
+    },
+    "water7": {
+      "frames": 14,
+      "frameDurationMs": 60,
+      "loop": false,
+      "anchor": {
+        "x": 300,
+        "y": 200
+      },
+      "frameSize": {
+        "w": 600,
+        "h": 400
+      },
+      "scale": 0.5
+    },
+    "water9": {
+      "frames": 32,
+      "frameDurationMs": 60,
+      "loop": false,
+      "anchor": {
+        "x": 300,
+        "y": 200
+      },
+      "frameSize": {
+        "w": 600,
+        "h": 400
+      },
+      "scale": 0.5
+    },
+    "water_arrow": {
+      "frames": 8,
+      "frameDurationMs": 60,
+      "loop": false,
+      "anchor": {
+        "x": 240,
+        "y": 180
+      },
+      "frameSize": {
+        "w": 480,
+        "h": 360
+      },
+      "scale": 0.5
+    },
+    "water_ball": {
+      "frames": 12,
+      "frameDurationMs": 60,
+      "loop": false,
+      "anchor": {
+        "x": 200,
+        "y": 200
+      },
+      "frameSize": {
+        "w": 400,
+        "h": 400
+      },
+      "scale": 0.5
+    },
+    "water_spell": {
+      "frames": 8,
+      "frameDurationMs": 60,
+      "loop": false,
+      "anchor": {
+        "x": 320,
+        "y": 180
+      },
+      "frameSize": {
+        "w": 640,
+        "h": 360
+      },
+      "scale": 0.5
     }
   }
 }

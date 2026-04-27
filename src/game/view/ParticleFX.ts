@@ -1,53 +1,245 @@
 import Phaser from 'phaser';
-import type { VFXEvent } from '@nannymud/shared/simulation/types';
+import type { VFXEvent, VFXEventType } from '@nannymud/shared/simulation/types';
 import { DEPTH_SCALE, worldYToScreenY, getScreenYBand, type ScreenYBand } from '../constants';
 import { spawnGuildVfx } from './VfxRegistry';
-import { spawnEffectVfx } from './EffectsRegistry';
+import { spawnEffectVfx, type SpawnEffectOptions } from './EffectsRegistry';
 import { readUseNewVfx } from '../../state/useDevSettings';
 
-const SLASH_KEYS = ['slash_1','slash_2','slash_3','slash_4','slash_5','slash_6','slash_7','slash_8','slash_9','slash_10'] as const;
-export const EXPLOSION_KEYS = ['explosion_1','explosion_2','explosion_3','explosion_5','explosion_6','explosion_8','explosion_9','explosion_10'] as const;
-
-function randomSlashKey(): string {
-  return SLASH_KEYS[Math.floor(Math.random() * SLASH_KEYS.length)];
-}
-
-// Effects-layer overlay: fires IN ADDITION to guild sprite VFX.
-// Maps abilityId → effects asset key for hit_spark, aoe_pop, or channel_pulse events.
-// Fill this in per-ability once the full VFX alignment pass is done.
-const EFFECTS_OVERLAY: Partial<Record<string, string>> = {
-  // ── Slashes ───────────────────────────────────────────────────────────────
-  // e.g.  jab: 'slash_1',
-
-  // ── Explosions ────────────────────────────────────────────────────────────
-  // e.g.  meteor: 'explosion_8',
-};
-
-function getEffectsOverlay(abilityId: string | undefined): string | undefined {
-  if (!abilityId) return undefined;
-  return EFFECTS_OVERLAY[abilityId];
-}
-
-/**
- * Consumes per-tick VFXEvents emitted by the simulation and spawns short-lived
- * Phaser objects (Graphics / Text) with tweens that self-destroy on complete.
- *
- * Mirrors ParticleSystem in src/rendering/particles.ts at the level of "what
- * flickers on screen when stuff happens." Sprite-sheet VFX (assetKey lookup
- * against GuildVfxSet) is deferred to Task 9 — the procedural fallback paths
- * from the Canvas build are the ones implemented here.
- *
- * Coordinate convention: VFX live in world-space x and projected screen-y.
- * Because the main camera scrolls by simState.cameraX, world-x objects
- * auto-track the player. No setScrollFactor(0) on these.
- */
-
+// ── Hex colour helpers ────────────────────────────────────────────────────────
 function hexToInt(hex: string): number {
   const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
   if (!m) return 0xffffff;
   return (parseInt(m[1], 16) << 16) | (parseInt(m[2], 16) << 8) | parseInt(m[3], 16);
 }
 
+// ── Effect definition types ───────────────────────────────────────────────────
+interface EffectDef {
+  key: string;
+  tint?: boolean;       // apply event.color as tint
+  scaleMul?: number;    // multiplier on asset base scale
+  yOffset?: number;     // screen px, positive = up
+  angle?: number;       // rotation degrees
+}
+
+// Combo state: cycle through a list of effects per actor+ability hit sequence.
+// Resets if the same combo isn't hit within COMBO_RESET_MS.
+const COMBO_RESET_MS = 2000;
+const comboState = new Map<string, { idx: number; ts: number }>();
+
+function nextComboIndex(actorId: string, abilityId: string, len: number): number {
+  const key = `${actorId}:${abilityId}`;
+  const now = Date.now();
+  const cur = comboState.get(key);
+  let idx = 0;
+  if (cur && now - cur.ts < COMBO_RESET_MS) {
+    idx = (cur.idx + 1) % len;
+  }
+  comboState.set(key, { idx, ts: now });
+  return idx;
+}
+
+// Per-ability, per-event-type override. Each entry is either a single effect
+// or an array of effects (all play simultaneously).
+type EventOverride = EffectDef | EffectDef[];
+type ComboOverride = { combo: true; defs: EffectDef[] };
+
+interface AbilityVFX {
+  hit_spark?:       EventOverride | ComboOverride;
+  aoe_pop?:         EventOverride;
+  channel_pulse?:   EventOverride;
+  aura_pulse?:      EventOverride;
+  zone_pulse?:      EventOverride;
+  heal_glow?:       EventOverride;
+  [key: string]:    EventOverride | ComboOverride | undefined;
+}
+
+function isCombo(v: EventOverride | ComboOverride): v is ComboOverride {
+  return (v as ComboOverride).combo === true;
+}
+
+// ── Full ability → VFX mapping ────────────────────────────────────────────────
+// Only active when useNewVfx setting is on.
+const ABILITY_VFX: Partial<Record<string, AbilityVFX>> = {
+
+  // ── ADVENTURER ─────────────────────────────────────────────────────────────
+  rallying_cry:    { aoe_pop:      { key: 'explosion_2', tint: true } },
+  slash:           { hit_spark:    { combo: true, defs: [
+                       { key: 'slash_5', tint: true },
+                       { key: 'slash_8', tint: true },
+                       { key: 'slash_6', tint: true },
+                     ] } },
+  quickshot:       { hit_spark:    { key: 'fire_arrow', scaleMul: 0.5 } },
+  adrenaline_rush: { aoe_pop:      { key: 'explosion_3', tint: true } },
+
+  // ── KNIGHT ─────────────────────────────────────────────────────────────────
+  holy_rebuke:     { aoe_pop:      { key: 'explosion_8', tint: true } },
+  valorous_strike: { hit_spark:    { key: 'slash_6', tint: true } },
+  taunt:           { aoe_pop:      { key: 'explosion_10', tint: true } },
+  shield_wall:     { aura_pulse:   { key: 'flame6', tint: true } },
+  last_stand:      { aoe_pop:      { key: 'explosion_3', tint: true } },
+  shield_block:    { aura_pulse:   { key: 'flame6', tint: true, scaleMul: 0.6 } },
+
+  // ── MAGE ───────────────────────────────────────────────────────────────────
+  ice_nova:        { aoe_pop:      { key: 'water4', tint: true } },
+  frostbolt:       { hit_spark:    { key: 'flame10', tint: true } },
+  arcane_shard:    { hit_spark:    { key: 'water_arrow', tint: true } },
+  meteor:          { aoe_pop:      [{ key: 'fire_spell' }, { key: 'explosion_1' }] },
+  short_teleport:  { aoe_pop:      { key: 'explosion_6', tint: true } },
+
+  // ── DRUID (human form) ─────────────────────────────────────────────────────
+  wild_growth:     { aoe_pop:      { key: 'explosion_8', tint: true } },
+  entangle:        { hit_spark:    { key: 'flame4', tint: true } },
+  rejuvenate:      { heal_glow:    { key: 'water9', tint: true, yOffset: 60, scaleMul: 0.6 } },
+  cleanse:         { heal_glow:    { key: 'flame6', tint: true } },
+  tranquility:     { channel_pulse: { key: 'water10', tint: true },
+                     hit_spark:    { key: 'flame2', tint: true, yOffset: 50 } },
+  shapeshift:      { aura_pulse:   { key: 'water6', tint: true } },
+
+  // ── DRUID (wolf form) ──────────────────────────────────────────────────────
+  wolf_maul:       { hit_spark:    { key: 'slash_6', tint: true } },
+  wolf_charge:     { hit_spark:    { key: 'water5', tint: true } },
+  wolf_roar:       { aoe_pop:      { key: 'water_spell', tint: true } },
+  wolf_rend:       { hit_spark:    { key: 'slash_8', tint: true } },
+  wolf_primal_fury:{ aoe_pop:      { key: 'water4', tint: true } },
+  wolf_revert:     { aura_pulse:   { key: 'water6', tint: true } },
+
+  // ── HUNTER ─────────────────────────────────────────────────────────────────
+  piercing_volley: { hit_spark:    { key: 'water_arrow', tint: true } },
+  aimed_shot:      { hit_spark:    { key: 'water_arrow', tint: true },
+                     aoe_pop:      { key: 'explosion_2', tint: true } },
+  bear_trap:       { aoe_pop:      { key: 'explosion_2', tint: true } },
+  rain_of_arrows:  { hit_spark:    { key: 'water3', tint: true } },
+
+  // ── MONK ───────────────────────────────────────────────────────────────────
+  serenity:        { aura_pulse:   { key: 'water6', tint: true } },
+  flying_kick:     { hit_spark:    { key: 'water5', tint: true } },
+  jab:             { hit_spark:    { key: 'slash_7', tint: true } },
+  five_point_palm: { hit_spark:    [{ key: 'slash_4', tint: true },
+                                    { key: 'explosion_5', tint: true }] },
+  dragons_fury:    { channel_pulse: { key: 'flame9', tint: true },
+                     hit_spark:    [{ key: 'slash_4', tint: true },
+                                    { key: 'explosion_5', tint: true }] },
+  monk_parry:      { hit_spark:    { key: 'slash_7', tint: true } },
+
+  // ── VIKING ─────────────────────────────────────────────────────────────────
+  whirlwind:       { channel_pulse: { key: 'flame3', tint: true } },
+  harpoon:         { hit_spark:    { key: 'fire_arrow' } },
+  bloodlust:       { aoe_pop:      { key: 'explosion_3', tint: true } },
+  axe_swing:       { hit_spark:    { key: 'slash_6', tint: true } },
+  undying_rage:    { aoe_pop:      { key: 'explosion_10', tint: true } },
+  shield_bash:     { hit_spark:    [{ key: 'slash_8', tint: true },
+                                    { key: 'explosion_5', tint: true }] },
+
+  // ── PROPHET ────────────────────────────────────────────────────────────────
+  prophetic_shield:{ aura_pulse:   { key: 'water6', tint: true } },
+  smite:           { hit_spark:    { key: 'explosion_6', tint: true } },
+  bless:           { heal_glow:    { key: 'flame6', tint: true, yOffset: 50 } },
+  divine_intervention: { aura_pulse: [{ key: 'flame6', tint: true },
+                                       { key: 'water10', tint: true }] },
+  divine_insight:  { aoe_pop:      { key: 'water4', tint: true } },
+
+  // ── VAMPIRE ────────────────────────────────────────────────────────────────
+  hemorrhage:      { hit_spark:    { key: 'water3', tint: true } },
+  blood_drain:     { channel_pulse: { key: 'water7', tint: true } },
+  fang_strike:     { hit_spark:    { key: 'slash_6', tint: true } },
+  nocturne:        { aura_pulse:   { key: 'flame2', tint: true } },
+  mist_step:       { aoe_pop:      { key: 'explosion_2', tint: true, scaleMul: 0.6 } },
+
+  // ── CULTIST ────────────────────────────────────────────────────────────────
+  summon_spawn:    { aoe_pop:      { key: 'explosion_5', tint: true } },
+  whispers:        { hit_spark:    { key: 'water_arrow', tint: true } },
+  madness:         { aoe_pop:      { key: 'explosion_8', tint: true } },
+  tendril_grasp:   { zone_pulse:   { key: 'flame4', tint: true } },
+  open_the_gate:   { channel_pulse: { key: 'flame9', tint: true },
+                     aoe_pop:      { key: 'explosion_10', tint: true } },
+  gaze_abyss:      { aura_pulse:   { key: 'flame6', tint: true } },
+
+  // ── CHAMPION ───────────────────────────────────────────────────────────────
+  tithe_of_blood:  { aoe_pop:      { key: 'explosion_3', tint: true } },
+  berserker_charge:{ hit_spark:    [{ key: 'slash_8', tint: true },
+                                    { key: 'explosion_2', tint: true }] },
+  execute:         { hit_spark:    [{ key: 'slash_6', tint: true },
+                                    { key: 'explosion_5', tint: true }] },
+  cleaver:         { hit_spark:    { key: 'flame8', tint: true, angle: 90 } },
+  skullsplitter:   { hit_spark:    [{ key: 'slash_10', tint: true },
+                                    { key: 'explosion_6', tint: true }] },
+
+  // ── DARKMAGE ───────────────────────────────────────────────────────────────
+  soul_leech:      { hit_spark:    { key: 'flame8', tint: true } },
+  shadow_bolt:     { hit_spark:    { key: 'water_arrow', tint: true } },
+  eternal_night:   { zone_pulse:   { key: 'flame2', tint: true } },
+  shadow_cloak:    { aura_pulse:   { key: 'flame6', tint: true } },
+
+  // ── CHEF ───────────────────────────────────────────────────────────────────
+  feast:           { aoe_pop:      { key: 'explosion_5', tint: true } },
+  ladle_bash:      { hit_spark:    { key: 'slash_8', tint: true } },
+  hot_soup:        { heal_glow:    { key: 'water5', tint: true, yOffset: 50 } },
+  spice_toss:      { hit_spark:    { key: 'fire_arrow', scaleMul: 0.6 } },
+  signature_dish:  { channel_pulse: { key: 'flame5', tint: true },
+                     aoe_pop:      { key: 'explosion_10', tint: true } },
+  pocket_dish:     { aoe_pop:      { key: 'explosion_2', tint: true } },
+
+  // ── LEPER ──────────────────────────────────────────────────────────────────
+  plague_vomit:    { aoe_pop:      { key: 'flame3', tint: true } },
+  diseased_claw:   { hit_spark:    { key: 'slash_6', tint: true } },
+  necrotic_embrace:{ hit_spark:    { key: 'flame8', tint: true } },
+  rotting_tide:    { channel_pulse: { key: 'flame10', tint: true },
+                     aoe_pop:      { key: 'explosion_8', tint: true } },
+  miasma:          { aura_pulse:   { key: 'flame2', tint: true } },
+
+  // ── MASTER ─────────────────────────────────────────────────────────────────
+  chosen_strike:   { hit_spark:    { combo: true, defs: [
+                       { key: 'slash_5', tint: true },
+                       { key: 'slash_8', tint: true },
+                       { key: 'slash_6', tint: true },
+                     ] } },
+  chosen_nuke:     { aoe_pop:      { key: 'explosion_8', tint: true } },
+  eclipse:         { aura_pulse:   { key: 'water6', tint: true } },
+  apotheosis:      { channel_pulse: { key: 'explosion_10', tint: true } },
+};
+
+// ── Spawn helpers ─────────────────────────────────────────────────────────────
+function resolveOpts(def: EffectDef, eventColor: string): SpawnEffectOptions {
+  return {
+    tint:     def.tint ? hexToInt(eventColor) : undefined,
+    scaleMul: def.scaleMul,
+    yOffset:  def.yOffset,
+    angle:    def.angle,
+  };
+}
+
+function spawnDef(
+  scene: Phaser.Scene,
+  def: EffectDef,
+  x: number,
+  y: number,
+  facing: 1 | -1,
+  color: string,
+): void {
+  spawnEffectVfx(scene, def.key, x, y, { facing, ...resolveOpts(def, color) });
+}
+
+function spawnOverride(
+  scene: Phaser.Scene,
+  override: EventOverride | ComboOverride,
+  x: number,
+  y: number,
+  facing: 1 | -1,
+  color: string,
+  abilityId: string,
+  ownerId: string,
+): void {
+  if (isCombo(override)) {
+    const idx = nextComboIndex(ownerId, abilityId, override.defs.length);
+    spawnDef(scene, override.defs[idx], x, y, facing, color);
+  } else if (Array.isArray(override)) {
+    for (const def of override) spawnDef(scene, def, x, y, facing, color);
+  } else {
+    spawnDef(scene, override, x, y, facing, color);
+  }
+}
+
+// ── Coordinate helpers ────────────────────────────────────────────────────────
 function worldCoords(event: VFXEvent, band: ScreenYBand): { x: number; y: number } {
   return {
     x: event.x,
@@ -55,6 +247,7 @@ function worldCoords(event: VFXEvent, band: ScreenYBand): { x: number; y: number
   };
 }
 
+// ── Procedural helpers ────────────────────────────────────────────────────────
 function spawnText(
   scene: Phaser.Scene,
   x: number,
@@ -103,13 +296,12 @@ function spawnBurstSpark(
   g.setPosition(x, y);
   g.setDepth(y + 1000);
   g.setAlpha(alpha);
-
   const vx = Math.cos(angle) * speed;
   const vy = Math.sin(angle) * speed;
   scene.tweens.add({
     targets: g,
     x: x + vx * (lifetimeMs / 1000),
-    y: y + vy * (lifetimeMs / 1000) + 80 * (lifetimeMs / 1000) * (lifetimeMs / 1000) * 0.5,
+    y: y + vy * (lifetimeMs / 1000) + 80 * (lifetimeMs / 1000) ** 2 * 0.5,
     alpha: 0,
     duration: lifetimeMs,
     ease: 'Quad.easeOut',
@@ -134,8 +326,6 @@ function spawnExpandingRing(
   const draw = (): void => {
     g.clear();
     if (dashed) {
-      // Phaser Graphics has no native dashed arc — approximate with short arc
-      // segments. Cheap enough since these live ~300-400ms.
       const segs = 20;
       const arcLen = (Math.PI * 2) / segs;
       for (let i = 0; i < segs; i += 2) {
@@ -204,7 +394,6 @@ function spawnBlinkTrail(
 ): void {
   const g = scene.add.graphics();
   g.lineStyle(3, color, 1);
-  // dashed line approximation — draw ~5px segments with gaps
   const dx = x2 - x1;
   const dy = y2 - y1;
   const len = Math.hypot(dx, dy) || 1;
@@ -227,20 +416,37 @@ function spawnBlinkTrail(
   });
 }
 
+// ── Main consumer ─────────────────────────────────────────────────────────────
 export function consumeVfxEvents(scene: Phaser.Scene, events: VFXEvent[]): void {
-  const band = getScreenYBand(scene);
-  const newVfx = readUseNewVfx();
+  const band    = getScreenYBand(scene);
+  const newVfx  = readUseNewVfx();
+
   for (const event of events) {
     const { x, y } = worldCoords(event, band);
-    const colorInt = hexToInt(event.color);
+    const colorInt  = hexToInt(event.color);
+    const facing    = event.facing ?? 1;
+    const abilityId = event.abilityId ?? '';
+    const ownerId   = event.ownerId ?? event.actorId ?? '';
+
+    // Guild-specific sprite VFX (always runs regardless of newVfx setting).
     const guildFired = spawnGuildVfx(scene, event, x, y);
-    const overlayKey = newVfx ? getEffectsOverlay(event.abilityId) : undefined;
-    if (overlayKey) spawnEffectVfx(scene, overlayKey, x, y, event.facing ?? 1);
+
+    // Ability overlay sprites — only when new VFX is enabled.
+    if (newVfx && abilityId) {
+      const abilityOverride = ABILITY_VFX[abilityId];
+      if (abilityOverride) {
+        const override = abilityOverride[event.type as VFXEventType];
+        if (override) {
+          spawnOverride(scene, override, x, y, facing, event.color, abilityId, ownerId);
+        }
+      }
+    }
+
     if (guildFired) continue;
 
+    // ── Procedural fallbacks ────────────────────────────────────────────────
     switch (event.type) {
       case 'projectile_spawn': {
-        // Visual lives on the ProjectileView; add elemental burst for thrown items.
         const throwType = event.abilityId;
         if (throwType === 'thrown_torch') {
           for (let i = 0; i < 6; i++) {
@@ -268,14 +474,16 @@ export function consumeVfxEvents(scene: Phaser.Scene, events: VFXEvent[]): void 
       }
 
       case 'hit_spark': {
-        if (newVfx) {
-          spawnEffectVfx(scene, randomSlashKey(), x, y, event.facing ?? 1);
-        } else {
+        if (newVfx && !ABILITY_VFX[abilityId]?.hit_spark) {
+          // Default slash for any melee hit not explicitly mapped.
+          const slashKeys = ['slash_1','slash_2','slash_3','slash_4','slash_5',
+                             'slash_6','slash_7','slash_8','slash_9','slash_10'];
+          const key = slashKeys[Math.floor(Math.random() * slashKeys.length)];
+          spawnEffectVfx(scene, key, x, y, { facing });
+        } else if (!newVfx) {
           for (let i = 0; i < 6; i++) {
             const angle = (i / 6) * Math.PI * 2 + Math.random() * 0.5;
-            const speed = 80 + Math.random() * 120;
-            const radius = 2 + Math.random() * 3;
-            spawnBurstSpark(scene, x, y, angle, speed, radius, colorInt, 1, 300);
+            spawnBurstSpark(scene, x, y, angle, 80 + Math.random() * 120, 2 + Math.random() * 3, colorInt, 1, 300);
           }
         }
         break;
@@ -299,7 +507,6 @@ export function consumeVfxEvents(scene: Phaser.Scene, events: VFXEvent[]): void 
           const sx = x + Math.cos(angle) * 15;
           const sy = y + Math.sin(angle) * 15;
           const radius = 4 + Math.random() * 4;
-          // Upward float with slight outward drift
           const g = scene.add.graphics();
           g.fillStyle(0x4ade80, 1);
           g.fillCircle(0, 0, radius);
@@ -320,7 +527,7 @@ export function consumeVfxEvents(scene: Phaser.Scene, events: VFXEvent[]): void 
       }
 
       case 'blink_trail': {
-        const x2 = event.x2 ?? event.x;
+        const x2   = event.x2 ?? event.x;
         const y2End = worldYToScreenY(event.y2 ?? event.y, band.min, band.max)
           - (event.z ?? 0) * DEPTH_SCALE;
         spawnBlinkTrail(scene, x, y, x2, y2End, colorInt, 400);
@@ -328,10 +535,10 @@ export function consumeVfxEvents(scene: Phaser.Scene, events: VFXEvent[]): void 
       }
 
       case 'damage_number': {
-        const text = event.value !== undefined ? String(Math.round(event.value)) : '';
-        const color = event.isHeal ? '#4ade80' : event.isCrit ? '#f97316' : '#fef08a';
+        const text    = event.value !== undefined ? String(Math.round(event.value)) : '';
+        const color   = event.isHeal ? '#4ade80' : event.isCrit ? '#f97316' : '#fef08a';
         const fontSize = event.isCrit ? 18 : event.isHeal ? 14 : 15;
-        const jitterX = (Math.random() - 0.5) * 20;
+        const jitterX  = (Math.random() - 0.5) * 20;
         spawnText(scene, x + jitterX, y, text, color, fontSize, 800, -48);
         break;
       }
@@ -342,8 +549,6 @@ export function consumeVfxEvents(scene: Phaser.Scene, events: VFXEvent[]): void 
       }
 
       case 'ability_name': {
-        // Special fade curve: quick fade-in, hold, fade-out. Phaser's tween
-        // yoyo doesn't match; use two sequential tweens via a small state.
         const text = (event.text ?? '').toUpperCase();
         const t = scene.add.text(x, y, text, {
           fontFamily: '"Space Grotesk", sans-serif',
@@ -391,11 +596,8 @@ export function consumeVfxEvents(scene: Phaser.Scene, events: VFXEvent[]): void 
       case 'zone_pulse': {
         const r = event.radius || 60;
         if (event.style === 'ring') {
-          // Large persistent zone (e.g. Eternal Night) — near-full-duration so
-          // overlapping pulses give a continuous solid circle effect.
           spawnExpandingRing(scene, x, y, r, 1.0, colorInt, 0.55, 0.12, 2, false, 950);
         } else {
-          // Puddle / trap marker — tight ring at fixed radius with a faint fill.
           spawnExpandingRing(scene, x, y, r, 1.0, colorInt, 0.7, 0.25, 3, true, 850);
         }
         break;

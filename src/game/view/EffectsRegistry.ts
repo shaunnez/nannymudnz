@@ -14,6 +14,14 @@ interface EffectsMetadata {
   assets: Record<string, EffectAssetMetadata>;
 }
 
+export interface SpawnEffectOptions {
+  facing?: 1 | -1;
+  tint?: number;        // Phaser int color e.g. 0x93c5fd
+  scaleMul?: number;    // multiplier on the asset's base scale
+  yOffset?: number;     // screen-space Y offset, positive = up
+  angle?: number;       // rotation in degrees
+}
+
 const META_KEY = 'meta:effects';
 let loadedMeta: EffectsMetadata | null = null;
 
@@ -63,7 +71,7 @@ export function spawnEffectVfx(
   key: string,
   x: number,
   y: number,
-  facing: 1 | -1 = 1,
+  opts: SpawnEffectOptions = {},
 ): boolean {
   if (!loadedMeta) return false;
   const asset = loadedMeta.assets[key];
@@ -72,13 +80,20 @@ export function spawnEffectVfx(
   const ak = animKey(key);
   if (!scene.textures.exists(tk) || !scene.anims.exists(ak)) return false;
 
+  const { facing = 1, tint, scaleMul = 1, yOffset = 0, angle = 0 } = opts;
   const fs = asset.frameSize ?? loadedMeta.frameSize;
+  const sy = y - yOffset;
+
   const sprite = scene.add
-    .sprite(x, y, tk, 0)
+    .sprite(x, sy, tk, 0)
     .setOrigin(asset.anchor.x / fs.w, asset.anchor.y / fs.h)
-    .setScale(asset.scale)
-    .setDepth(y + 1000);
+    .setScale(asset.scale * scaleMul)
+    .setDepth(sy + 1000);
+
   if (facing === -1) sprite.setFlipX(true);
+  if (tint !== undefined) sprite.setTint(tint);
+  if (angle !== 0) sprite.setAngle(angle);
+
   sprite.once(Phaser.Animations.Events.ANIMATION_COMPLETE, () => sprite.destroy());
   sprite.play(ak);
   return true;
