@@ -2,7 +2,7 @@ FROM node:22-alpine
 WORKDIR /app
 
 # Copy workspace manifests so npm ci can resolve packages/* symlinks
-COPY package.json package-lock.json ./
+COPY package.json package-lock.json .npmrc ./
 COPY packages/shared/package.json packages/shared/
 COPY packages/server/package.json packages/server/
 
