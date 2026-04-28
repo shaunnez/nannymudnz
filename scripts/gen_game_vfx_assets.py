@@ -34,6 +34,7 @@ MAX_HEIGHT = 400  # px
 # ---------------------------------------------------------------------------
 EFFECTS = {
     # pack2 flames
+    "flame1":  28,
     "flame2":  16,
     "flame3":  32,
     "flame4":  32,
@@ -43,15 +44,19 @@ EFFECTS = {
     "flame9":  31,
     "flame10": 32,
     # pack3 water
+    "water1":  32,
+    "water2":  17,
     "water3":  23,
     "water4":  16,
     "water5":  31,
     "water6":  12,
     "water7":  14,
+    "water8":  21,
     "water9":  32,
     "water10": 14,
     # pack1
     "fire_arrow":  8,
+    "fire_ball":   8,
     "fire_spell":  8,
     "water_arrow": 8,
     "water_spell": 8,

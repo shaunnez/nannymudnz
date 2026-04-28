@@ -70,6 +70,8 @@ const ABILITY_VFX: Partial<Record<string, AbilityVFX>> = {
                      ] } },
   quickshot:       { hit_spark:    { key: 'fire_arrow', scaleMul: 0.5 } },
   adrenaline_rush: { aoe_pop:      { key: 'explosion_3', tint: true } },
+  bandage:         { channel_pulse: { key: 'water1', tint: true, scaleMul: 0.6 } },
+  second_wind:     { heal_glow:    { key: 'flame1', tint: true, yOffset: 40, scaleMul: 0.5 } },
 
   // ── KNIGHT ─────────────────────────────────────────────────────────────────
   holy_rebuke:     { aoe_pop:      { key: 'explosion_8', tint: true } },
@@ -83,6 +85,7 @@ const ABILITY_VFX: Partial<Record<string, AbilityVFX>> = {
   ice_nova:        { aoe_pop:      { key: 'water4', tint: true } },
   frostbolt:       { hit_spark:    { key: 'flame10', tint: true } },
   arcane_shard:    { hit_spark:    { key: 'water_arrow', tint: true } },
+  blink:           { aoe_pop:      { key: 'water2', tint: true, scaleMul: 0.8 } },
   meteor:          { aoe_pop:      [{ key: 'fire_spell' }, { key: 'explosion_1' }] },
   short_teleport:  { aoe_pop:      { key: 'explosion_6', tint: true } },
 
@@ -109,6 +112,8 @@ const ABILITY_VFX: Partial<Record<string, AbilityVFX>> = {
                      aoe_pop:      { key: 'explosion_2', tint: true } },
   bear_trap:       { aoe_pop:      { key: 'explosion_2', tint: true } },
   rain_of_arrows:  { hit_spark:    { key: 'water3', tint: true } },
+  disengage:       { aoe_pop:      { key: 'explosion_2', tint: true, scaleMul: 0.6 } },
+  pet_command:     { aoe_pop:      { key: 'explosion_2', tint: true, scaleMul: 0.35 } },
 
   // ── MONK ───────────────────────────────────────────────────────────────────
   serenity:        { aura_pulse:   { key: 'water6', tint: true } },
@@ -144,6 +149,7 @@ const ABILITY_VFX: Partial<Record<string, AbilityVFX>> = {
   fang_strike:     { hit_spark:    { key: 'slash_6', tint: true } },
   nocturne:        { aura_pulse:   { key: 'flame2', tint: true } },
   mist_step:       { aoe_pop:      { key: 'explosion_2', tint: true, scaleMul: 0.6 } },
+  shadow_step:     { aoe_pop:      { key: 'water8', tint: true, scaleMul: 0.7 } },
 
   // ── CULTIST ────────────────────────────────────────────────────────────────
   summon_spawn:    { aoe_pop:      { key: 'explosion_5', tint: true } },
@@ -163,12 +169,16 @@ const ABILITY_VFX: Partial<Record<string, AbilityVFX>> = {
   cleaver:         { hit_spark:    { key: 'flame8', tint: true, angle: 90 } },
   skullsplitter:   { hit_spark:    [{ key: 'slash_10', tint: true },
                                     { key: 'explosion_6', tint: true }] },
+  challenge:       { aoe_pop:      { key: 'explosion_9', tint: true, scaleMul: 0.8 } },
 
   // ── DARKMAGE ───────────────────────────────────────────────────────────────
   soul_leech:      { hit_spark:    { key: 'flame8', tint: true } },
   shadow_bolt:     { hit_spark:    { key: 'water_arrow', tint: true } },
   eternal_night:   { zone_pulse:   { key: 'flame2', tint: true } },
   shadow_cloak:    { aura_pulse:   { key: 'flame6', tint: true } },
+  curse:           { hit_spark:    { key: 'fire_ball', tint: true } },
+  darkness:        { zone_pulse:   { key: 'flame4', tint: true } },
+  grasping_shadow: { hit_spark:    { key: 'water_arrow', tint: true } },
 
   // ── CHEF ───────────────────────────────────────────────────────────────────
   feast:           { aoe_pop:      { key: 'explosion_5', tint: true } },
@@ -186,6 +196,7 @@ const ABILITY_VFX: Partial<Record<string, AbilityVFX>> = {
   rotting_tide:    { channel_pulse: { key: 'flame10', tint: true },
                      aoe_pop:      { key: 'explosion_8', tint: true } },
   miasma:          { aura_pulse:   { key: 'flame2', tint: true } },
+  contagion:       { aoe_pop:      { key: 'flame3', tint: true, scaleMul: 0.7 } },
 
   // ── MASTER ─────────────────────────────────────────────────────────────────
   chosen_strike:   { hit_spark:    { combo: true, defs: [
@@ -196,6 +207,8 @@ const ABILITY_VFX: Partial<Record<string, AbilityVFX>> = {
   chosen_nuke:     { aoe_pop:      { key: 'explosion_8', tint: true } },
   eclipse:         { aura_pulse:   { key: 'water6', tint: true } },
   apotheosis:      { channel_pulse: { key: 'explosion_10', tint: true } },
+  chosen_utility:  { aoe_pop:      { key: 'explosion_6', tint: true, scaleMul: 0.6 } },
+  class_swap:      { aura_pulse:   { key: 'water6', tint: true, scaleMul: 0.5 } },
 };
 
 // ── Spawn helpers ─────────────────────────────────────────────────────────────

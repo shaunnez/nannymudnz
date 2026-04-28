@@ -535,6 +535,76 @@
         "h": 360
       },
       "scale": 0.5
+    },
+    "fire_ball": {
+      "frames": 8,
+      "frameDurationMs": 60,
+      "loop": false,
+      "anchor": {
+        "x": 200,
+        "y": 200
+      },
+      "frameSize": {
+        "w": 400,
+        "h": 400
+      },
+      "scale": 0.5
+    },
+    "flame1": {
+      "frames": 28,
+      "frameDurationMs": 60,
+      "loop": false,
+      "anchor": {
+        "x": 226,
+        "y": 200
+      },
+      "frameSize": {
+        "w": 453,
+        "h": 400
+      },
+      "scale": 0.5
+    },
+    "water1": {
+      "frames": 32,
+      "frameDurationMs": 60,
+      "loop": false,
+      "anchor": {
+        "x": 355,
+        "y": 200
+      },
+      "frameSize": {
+        "w": 711,
+        "h": 400
+      },
+      "scale": 0.5
+    },
+    "water2": {
+      "frames": 17,
+      "frameDurationMs": 60,
+      "loop": false,
+      "anchor": {
+        "x": 300,
+        "y": 200
+      },
+      "frameSize": {
+        "w": 600,
+        "h": 400
+      },
+      "scale": 0.5
+    },
+    "water8": {
+      "frames": 21,
+      "frameDurationMs": 60,
+      "loop": false,
+      "anchor": {
+        "x": 300,
+        "y": 200
+      },
+      "frameSize": {
+        "w": 600,
+        "h": 400
+      },
+      "scale": 0.5
     }
   }
 }
