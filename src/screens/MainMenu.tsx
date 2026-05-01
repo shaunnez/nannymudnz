@@ -18,7 +18,7 @@ interface MenuItem {
 // dimmed. Batch 3 turns on charselect; batch 6 enables moves + settings; batch
 // 7 enables mp_hub.
 const MENU_ITEMS: MenuItem[] = [
-  { id: 'vs',    label: "PHIL'S GAME",    sub: 'Two-player arena combat',       target: 'charselect', mode: 'vs',    enabled: true },
+  { id: 'vs',    label: 'VERSUS',        sub: 'Two-player arena combat',       target: 'charselect', mode: 'vs',    enabled: true },
   { id: 'stage', label: 'STAGE MODE',    sub: 'Ascend the fifteen guilds',     target: 'charselect', mode: 'stage', enabled: true },
   { id: 'surv',  label: 'SURVIVAL',      sub: 'Endless waves, ranked table',   target: 'charselect', mode: 'surv',  enabled: true },
   { id: 'mp',    label: 'MULTIPLAYER',   sub: 'Up to 8 · FFA · Teams · Co-op', target: 'mp_hub',     enabled: true },
